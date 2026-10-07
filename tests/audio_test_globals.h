@@ -12,7 +12,7 @@ extern byte DAT_0023c3a8;
 extern undefined1 DAT_0023c384;
 extern undefined4 DAT_0023c280, DAT_0023c330;
 extern int DAT_0023c378;
-extern undefined4 *DAT_0023c3b8;
+extern char *DAT_0023c3b8;
 extern char s__SOUND__0008750c[], s_uw00_mod_00087514[];
 
 /* Sound-effects-subsystem twins of DAT_00087454/DAT_00087448 (both
@@ -28,7 +28,7 @@ extern byte DAT_0023c39c;
    audio.c's own declarations -- only ever touched on the dead
    DAT_0023c3b8!=0 path (never true in this fixture, see
    audio_fixture_reset), but still need real storage/macros to link. */
-extern int DAT_0023c3bc;
+extern char *DAT_0023c3bc;
 #define DAT_0023c3d4 DAT_0023c3d4_backing[0]
 extern undefined1 DAT_0023c3d4_backing[128];
 

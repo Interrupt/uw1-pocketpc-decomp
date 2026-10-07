@@ -31,6 +31,10 @@
 #   EXTRA_ENV="UW_DEBUG_INV=1 UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT=1"
 #                            extra env vars (space-separated KEY=VAL pairs)
 #                            forwarded to the binary for every script
+#   SDL_VIDEODRIVER=dummy    SDL video/audio drivers for the runs. Default to SDL's
+#   SDL_AUDIODRIVER=dummy    headless "dummy" drivers so the suite never opens a real window,
+#                            takes focus or plays sound; set them to empty (or e.g. cocoa /
+#                            coreaudio) to watch a script run on screen.
 #   ASAN_OPTIONS=detect_leaks=0   passed straight through to the ASan
 #                            runtime. Off by default because
 #                            LeakSanitizer isn't supported on this
@@ -42,7 +46,7 @@
 #                            from known benign leaks, ASan simply
 #                            refuses to start otherwise here.
 #
-# All scripts are launched at once, each against its own SDL window, and
+# All scripts are launched at once, each against its own (headless, see above) SDL window, and
 # run concurrently rather than one at a time -- each uw_asan instance only
 # ever touches its own window/log/demo file, and demomode's mouse
 # injectors no longer warp the real OS cursor (see uw_inject_mouse_down's
@@ -64,6 +68,9 @@ BIN="${BIN:-build/uw_asan}"
 DEBUG_LEVEL="${DEBUG_LEVEL:-WARN}"
 EXTRA_ENV="${EXTRA_ENV:-}"
 ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=0}"
+# Headless by default. `${VAR-default}` (no colon) so an explicitly empty value means "SDL's own default".
+SDL_VIDEODRIVER="${SDL_VIDEODRIVER-dummy}"
+SDL_AUDIODRIVER="${SDL_AUDIODRIVER-dummy}"
 
 DEFAULT_SCRIPTS="demo_critter_orbit_cardinal.txt demo_inventory_container_item_click_test.txt demo_inventory_container_torch_use_test.txt demo_inventory_dropback_test.txt demo_inventory_invalid_drop_test.txt demo_inventory_open_bag_test.txt"
 
@@ -140,7 +147,7 @@ for s in $SCRIPTS; do
     # process's PID, not a wrapper shell's), race it against a watchdog
     # timer instead of a fixed sleep, then wait for whichever finishes
     # first. No `timeout` command needed, so this works on stock OSX.
-    env $EXTRA_ENV ASAN_OPTIONS="$ASAN_OPTIONS" UW_DEMO_DELAY_MS=100 UW_DATA_DIR="$script_data_dir" UW_DEBUG_LEVEL="$DEBUG_LEVEL" UW_DEMO_FILE="$(pwd)/$s" UW_FAST_SLEEP=1 "./$BIN" >"$log" 2>&1 &
+    env ${SDL_VIDEODRIVER:+SDL_VIDEODRIVER="$SDL_VIDEODRIVER"} ${SDL_AUDIODRIVER:+SDL_AUDIODRIVER="$SDL_AUDIODRIVER"} $EXTRA_ENV ASAN_OPTIONS="$ASAN_OPTIONS" UW_DEMO_DELAY_MS=100 UW_DATA_DIR="$script_data_dir" UW_DEBUG_LEVEL="$DEBUG_LEVEL" UW_DEMO_FILE="$(pwd)/$s" UW_FAST_SLEEP=1 "./$BIN" >"$log" 2>&1 &
     pid=$!
 
     (

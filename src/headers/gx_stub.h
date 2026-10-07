@@ -10,30 +10,32 @@
 #define UW_SYNTH_KEY 0x55570002u
 
 int GXOpenDisplay(void *hwnd, unsigned int flags);
-int GXCloseDisplay(void);
-void *GXBeginDraw(void);
-int GXEndDraw(void);
+int uw_save_rgb565_region_bmp(const char *path, const unsigned short *pixels, int w, int h, int stride_pixels);
+void uw_debug_mkdir_p(const char *path);
+int GXCloseDisplay();
+void *GXBeginDraw();
+int GXEndDraw();
 /* Queue a cursor overlay update through the normal display pacing. */
-void uw_request_cursor_present(void);
+void uw_request_cursor_present();
 /* Batch a gameplay tick's draw requests into one display refresh. Modal
    viewers present immediately while the surrounding tick is suspended. */
-void uw_begin_present_batch(void);
-void uw_end_present_batch(void);
+void uw_begin_present_batch();
+void uw_end_present_batch();
 /* Finish one render batch and present the completed frame using SDL vsync,
    bypassing the software deadline. Ordinary flushes remain paced. */
-void gfx_finalizedraw(void);
+void gfx_finalizedraw();
 /* Input handlers may block and run their own redraw/input loops. */
-void uw_suspend_present_batch(void);
-void uw_resume_present_batch(void);
-void uw_begin_modal_present(void);
-void uw_end_modal_present(void);
+void uw_suspend_present_batch();
+void uw_resume_present_batch();
+void uw_begin_modal_present();
+void uw_end_modal_present();
 
-int GXOpenInput(void);
-int GXCloseInput(void);
+int GXOpenInput();
+int GXCloseInput();
 void *GXGetDefaultKeys(void *outBuffer);
-void *GXGetDisplayProperties(void);
-int GXSuspend(void);
-int GXResume(void);
+void *GXGetDisplayProperties();
+int GXSuspend();
+int GXResume();
 
 /* Saves the current window contents (post-rotation, what's actually on screen) as a BMP. Returns 1
    on success, 0 on failure (no window yet, or the write failed). */
@@ -59,15 +61,15 @@ void debug_framebuffer_dump(const char *tag);
 /* Debug tool: one-shot capture of every individual 3D face draw for the next 3D render pass, armed
    live from the UW_MODEL_TUNER debug panel's "dump_3d_frame" button rather than an env var.
    uw_debug_request_3d_ frame_dump() arms it... */
-void uw_debug_request_3d_frame_dump(void);
+void uw_debug_request_3d_frame_dump();
 void uw_debug_dump_3d_face(const char *tag);
 /* Returns -1 if no capture was pending (the common case -- called unconditionally every
    render_visible_tile_list pass), otherwise the number of faces just captured. */
-int uw_debug_3d_frame_dump_finish(void);
+int uw_debug_3d_frame_dump_finish();
 /* Directory the most recent (or in-progress) 3D face capture wrote
    into, e.g. "debug/facedumps/20260927_161447". Valid once the first
    capture this process has started. */
-const char *uw_debug_3d_frame_dump_last_dir(void);
+const char *uw_debug_3d_frame_dump_last_dir();
 
 /* Debug tool: if UW_DEBUG_DUMP_TMAP is set (and not "0"), dumps a level's 64x64 tile map to a BMP
    right after it's loaded from the .ark file -- solid tiles (tile type 0, the classic UW "rock/no
@@ -82,7 +84,7 @@ void uw_debug_dump_revealmap(const unsigned char *reveal_data);
 /* Returns 1 and clears the flag if a mouse event (move/click) was processed since the last call, 0
    otherwise. One-shot "was there a pending mouse message" signal for PeekMessageW (PeekMessage) --
    see its comment in ordinal_stubs.c for why this is needed alongside DAT_0023c448. */
-int uw_take_mouse_event_pending(void);
+int uw_take_mouse_event_pending();
 
 
 /* For scripted/unattended testing: warps the real cursor to (window_x, window_y) (SDL window

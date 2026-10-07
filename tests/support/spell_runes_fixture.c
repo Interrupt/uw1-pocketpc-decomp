@@ -18,16 +18,16 @@ short click[8];
 int invalid_spells, effects, effect_type, effect_param, sound, failure;
 int skill_result;
 void wait_for_click_release(int buttons) { TEST_ASSERT_EQUAL_INT(1, buttons); }
-int message_scroll_print_wrapped(const char *message)
+int message_scroll_print_wrapped(char *message)
 {
     TEST_ASSERT_EQUAL_STRING("Not a spell", message);
     invalid_spells++;
     return 1;
 }
-undefined4 play_sound_effect_with_pan(int id, int pan, int mode) { sound = id; return 1; }
-void print_scroll_message_by_id(int id) { failure = id; }
-undefined4 roll_skill_check(int skill, int difficulty) { return skill_result; }
-undefined4 dispatch_special_action(int type, int param, ushort *caster, ushort *target)
+int play_sound_effect_with_pan(uint id, byte pan, uint mode) { sound = id; return 1; }
+void print_scroll_message_by_id(uint id) { failure = id; }
+int roll_skill_check(int skill, int difficulty) { return skill_result; }
+int dispatch_special_action(uint type, uint param, void *caster, void *target)
 {
     TEST_ASSERT_EQUAL_PTR(g_player_object, caster);
     TEST_ASSERT_EQUAL_PTR(g_player_object, target);

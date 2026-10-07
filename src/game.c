@@ -21,9 +21,9 @@ byte *g_draw_color_index = g_draw_color_index_backing;
 /* DAT_000879b0/DAT_000890a4 (the active font's 12-byte header and its glyph-bitmap data, both
    filled in by select_active_font's file reads) were plain uninitialized pointers -- no allocation
    anywhere in this file... */
-static static char DAT_000879b0_backing[12];
+static char DAT_000879b0_backing[12];
 char *DAT_000879b0 = DAT_000879b0_backing;
-static static char DAT_000890a4_backing[0x1080];
+static char DAT_000890a4_backing[0x1080];
 char *DAT_000890a4 = DAT_000890a4_backing;
 byte *DAT_0024af78;
 byte *DAT_0024af7c;
@@ -144,10 +144,10 @@ static undefined1 DAT_00086e06;
    fragment; down from 8192. */
 static undefined DAT_00086e00_backing[128];
 #define DAT_00086e00 DAT_00086e00_backing[0]
-static int DAT_000db500;
+static void *DAT_000db500;  /* spectate target object (never assigned in this decompile) */
 short DAT_0024af6c;
 /* Was `int` despite holding a real stack address (main_menu_loop:
-   `DAT_0023bf6c = &local_82c;`) used in pointer arithmetic throughout
+   `DAT_0023bf6c = local_82c;`) used in pointer arithmetic throughout
    this file -- truncating on this 64-bit host. */
 static char *DAT_0023bf6c;
 static ushort DAT_0023bf74;
@@ -207,12 +207,7 @@ static undefined1 DAT_000830b0_backing[256];
 
 // WinMain's real body: single-instance mutex check, window class/window creation, framebuffer + subsystem init, shows the main menu once, then runs the PeekMessage/Translate/Dispatch message pump until quit.
 // was FUN_00077004
-undefined4 app_main_loop(param_1,param_2,param_3,param_4)
-undefined4 param_1;
-undefined4 param_2;
-undefined4 param_3;
-undefined4 param_4;
-
+int app_main_loop(int instance, int prev_instance, int command_line, int show_command)
 {
   uint uVar1;
   int iVar2;
@@ -226,22 +221,22 @@ undefined4 param_4;
   if (uVar1 == 0) {
     DAT_0023c59e = 0;
     DAT_0023c5a0 = 0;
-    DAT_0023c540 = param_1;
-    spawn_message_dispatch_thread(param_1,u_UltimaUW_00087678);
-    iVar2 = create_main_window_and_init_display(param_1,param_4);
+    DAT_0023c540 = instance;
+    spawn_message_dispatch_thread(instance,u_UltimaUW_00087678);
+    iVar2 = create_main_window_and_init_display(instance,show_command);
     if (iVar2 != 0) {
       uVar3 = ce_malloc(0x25800);
       /* was a CONCAT22 pair split across _DAT_0023c5ac/DAT_0023c5b0 --
          see g_uw_framebuffer's declaration comment. */
       g_uw_framebuffer = uVar3;
       uVar3 = ce_malloc(0x25800);
-      load_bmp_resource_to_rgb565(param_1,0xca,uVar3);
+      load_bmp_resource_to_rgb565(instance,0xca,uVar3);
       dirty_rect_union(0,0xf0,0,0x140);
       ce_memmove(g_uw_framebuffer,uVar3,0x25800);
       flush_dirty_rect_to_display_240();
       Sleep(2000);
       LocalFree(uVar3);
-      build_rgb565_palette(0,0xffffffff);
+      build_rgb565_palette(0,-1);
       build_shade_lut();
       DAT_0023c44c = ce_malloc(0x4cce);
       DAT_0023cca0 = ce_malloc(64000);
@@ -312,8 +307,8 @@ undefined4 param_4;
           }
         }
       }
-      uVar3 = window_message_noop_handler(param_1,local_38);
-      return uVar3;
+      iVar2 = window_message_noop_handler(instance,local_38);
+      return iVar2;
     }
   }
   else {
@@ -326,9 +321,7 @@ undefined4 param_4;
 
 // Title/main menu loop: builds the menu layout, dispatches on the selected option (0=continue?, 1=new game -> character_generator_loop, 2=show CREDIT1/2/3.BYT credits screens, 3=load a saved game), looping back to the menu until a game session actually starts.
 // was FUN_0006a3d8
-void main_menu_loop(param_1)
-undefined4 param_1;
-
+void main_menu_loop(int is_first_entry)
 {
   /* stack0xffdc2b6c/2c74/2d7c are leftover placeholder scalars (from an early undeclared-identifier
      fix pass) that separate "copy the install-dir base path" loops below used as
@@ -343,7 +336,7 @@ undefined4 param_1;
   int iVar4;
   char *pcVar5;
   int iVar6;
-  undefined4 uVar7;
+  void *uVar7;
   undefined2 uVar8;
   int iVar9;
   int iVar10;
@@ -359,7 +352,7 @@ undefined4 param_1;
      over only that pointer-holding span instead of retyping iVar4 itself... */
   void *pvVar_buf10000;
   /* Declared as a lone 4-byte scalar, but `&local_82c` is handed to DAT_0023bf6c and then read back
-     through draw_menu_item_list/menu_button_list_navigate as an array of up to 4 (param_1)
+     through draw_menu_item_list/menu_button_list_navigate as an array of up to 4 (is_first_entry)
      0x10-byte-stride records (plus an overlapping 4-byte-stride array access)... */
   char local_82c [256];
   char acStack_7ec [264];
@@ -391,7 +384,7 @@ undefined4 param_1;
   *(short *)(local_82c + 0x3c) = 1;
   *(short *)(local_82c + 0x3e) = 1;
   dirty_rect_union(0,200,0,0x140);
-  DAT_0023bf6c = &local_82c;
+  DAT_0023bf6c = local_82c;
   probe_save_slots(auStack_4d4,local_83c);
   uVar8 = 3;
   if (local_83c[0] != 0) {
@@ -401,7 +394,7 @@ undefined4 param_1;
   if (local_83c[0] != 0) {
     uVar2 = 3;
   }
-  update_journey_onward_availability(param_1);
+  update_journey_onward_availability(is_first_entry);
   push_cursor_icon(0x106c);
   cursor_show_idle_tick();
   bVar11 = false;
@@ -446,7 +439,7 @@ undefined4 param_1;
       if ((DAT_0023bf70 == 0) ||
          /* Was a literal 0 here (an earlier fix pass believed this mirrored sibling call sites like
             decode_gr_entry_to_buffer's genuine "no postprocessing needed" case)... */
-         (iVar10 = load_gr_resource_entries(s_opbtn_00086ee4,0,0xffffffff,&opbtn_gr_bump_alloc_entry,&populate_menu_button_bitmap_entry), iVar10 == 0)) {
+         (iVar10 = load_gr_resource_entries(s_opbtn_00086ee4,0,-1,&opbtn_gr_bump_alloc_entry,&populate_menu_button_bitmap_entry), iVar10 == 0)) {
         report_fatal_error_and_exit(0x300d);
       }
       if (local_838 != 3) {
@@ -561,7 +554,6 @@ undefined4 param_1;
     LocalFree(local_834);
   } while (!bVar11);
   begin_gameplay();
-  return;
 }
 
 
@@ -638,7 +630,7 @@ void init_gameplay_session()
   if ((uintptr_t)DAT_002029cc < 0x10000) {
     return;
   }
-  DAT_0023b82c = (byte *)(DAT_002046b8 + 0x1b);
+  DAT_0023b82c = DAT_002046b8 + 0x1b;
   DAT_00202080 = 0xffff;
   DAT_00201c78 = 0;
   DAT_00201c70 = 0;
@@ -650,10 +642,10 @@ void init_gameplay_session()
   DAT_002048a7 = 8;
   DAT_002048a3 = 1;
   DAT_002048a4 = 0;
-  DAT_002048b8 = &check_and_reset_landing_state;
+  DAT_002048b8 = check_and_reset_landing_state;
   DAT_002048b2 = 0x1100;
   DAT_002048b0 = 0;
-  g_player_object = DAT_0023b82c;
+  g_player_object = (ushort *)DAT_0023b82c;
   load_shading_level_config(0);
   DAT_0023be8c = 0;
   DAT_00086df8 = &DAT_0023bca8;
@@ -805,16 +797,14 @@ void print_help_message()
 // was FUN_00067a44 -- populates the "look at" override fields (DAT_0023be90/be92/be94/bf00/bf02)
 // that update_current_view_from_subject's DAT_0023b82c==0 branch reads: param_1<2 resets to the
 // player's own live position (param_1==1 also applies the eye-height offset)...
-void set_custom_view_target(param_1)
-short param_1;
-
+void set_custom_view_target(short mode)
 {
-  int iVar1;
+  void *iVar1;
   short sVar2;
   bool bVar3;
   
-  bVar3 = param_1 == 1;
-  if (param_1 < 2) {
+  bVar3 = mode == 1;
+  if (mode < 2) {
     DAT_0023be90 = DAT_00204880;
     sVar2 = 0x4880;
     if (bVar3) {
@@ -830,8 +820,8 @@ short param_1;
       DAT_0023bf02 = 0xfc00;
     }
   }
-  else if (param_1 < 0x100) {
-    iVar1 = get_object_record_by_slot_index(param_1);
+  else if (mode < 0x100) {
+    iVar1 = get_object_record_by_slot_index(mode);
     DAT_0023be90 = (*(byte *)(iVar1 + 0x17) & 0xfc) * 0x40 + (*(byte *)(iVar1 + 3) & 0xe0);
     DAT_0023be92 = (*(byte *)(iVar1 + 3) & 0x1c) * 8 + (*(ushort *)(iVar1 + 0x16) & 0x3f0) * 0x10;
     DAT_0023be94 = (*(byte *)(iVar1 + 2) & 0x7f) << 3;
@@ -840,7 +830,6 @@ short param_1;
   if (DAT_0023b82c == 0) {
     set_pending_update_flags(2);
   }
-  return;
 }
 
 
@@ -849,9 +838,7 @@ short param_1;
 // was FUN_00067b98 -- moves the "custom view target" position (DAT_0023be90/be92, set up by
 // set_custom_view_target) based on the live mouse cursor position relative to the game-view rect
 // (DAT_0023bd80/be88 from register_game_view_interact_zones)...
-void move_custom_view_target(param_1)
-undefined4 param_1;
-
+void move_custom_view_target(int unused)
 {
   short *psVar1;
   short sVar2;
@@ -887,7 +874,6 @@ undefined4 param_1;
   if (DAT_0023b82c == 0) {
     set_pending_update_flags(2);
   }
-  return;
 }
 
 
@@ -895,18 +881,16 @@ undefined4 param_1;
 // was FUN_00067d10 -- sets DAT_0023b82c, the object the camera currently tracks (read by
 // update_current_view_from_subject and many others), by opcode: -1 clears it (free-camera mode), 0
 // selects whatever object is under the cursor (gated on DAT_000db500, a spectate-enable flag)...
-void set_view_subject_by_command(param_1)
-short param_1;
-
+void set_view_subject_by_command(short command)
 {
   int iVar1;
   short sVar2;
   
-  if (param_1 == -1) {
+  if (command == -1) {
     DAT_0023b82c = 0;
     return;
   }
-  if (param_1 == 0) {
+  if (command == 0) {
     if (DAT_000db500 == 0) {
       return;
     }
@@ -923,15 +907,15 @@ short param_1;
     }
     DAT_0023b82c = iVar1 * 0x1b + DAT_002046b8;
   }
-  else if (param_1 == 1) {
-    if (DAT_0023b82c == g_player_object) {
+  else if (command == 1) {
+    if (DAT_0023b82c == (char *)g_player_object) {
       return;
     }
-    DAT_0023b82c = g_player_object;
+    DAT_0023b82c = (char *)g_player_object;
   }
   else {
-    if (param_1 != 2) {
-      if (param_1 != 3) {
+    if (command != 2) {
+      if (command != 3) {
         return;
       }
       if (DAT_002046b8 - 0x1b <= DAT_0023b82c) {
@@ -945,7 +929,6 @@ short param_1;
     DAT_0023b82c = DAT_002046b8 - 0x1b;
   }
   set_pending_update_flags(2);
-  return;
 }
 
 
@@ -953,13 +936,10 @@ short param_1;
 // was FUN_00067e2c -- enters free-camera mode: resets the custom view target to the player's own
 // position, then clears the view subject (set_view_subject_by_command(-1)) so
 // move_custom_view_target starts driving the camera instead of normal player movement.
-void enter_free_camera_mode(param_1)
-undefined4 param_1;
-
+void enter_free_camera_mode(int unused)
 {
   set_custom_view_target(0);
-  set_view_subject_by_command(0xffffffff);
-  return;
+  set_view_subject_by_command(-1);
 }
 
 
@@ -967,18 +947,14 @@ undefined4 param_1;
 // was FUN_00067e40 -- directly sets the custom view target's full state (position/facing) from an
 // object record (param_1) with explicit x/y overrides (param_2/param_3), resets a couple of tracked
 // deltas, forces a camera resync...
-void restore_view_from_object_record(param_1,param_2,param_3)
-int param_1;
-short param_2;
-short param_3;
-
+void restore_view_from_object_record(char *record, short x, short y)
 {
   int iVar1;
   
-  DAT_0023be90 = (*(byte *)(param_1 + 3) & 0xe0) + param_2 * 0x100;
-  DAT_0023be92 = (*(byte *)(param_1 + 3) & 0x1c) * 8 + param_3 * 0x100;
-  DAT_0023be94 = (*(byte *)(param_1 + 2) & 0x7f) << 3;
-  DAT_0023bf00 = (*(ushort *)(param_1 + 2) & 0xff80) << 6;
+  DAT_0023be90 = (*(byte *)(record + 3) & 0xe0) + x * 0x100;
+  DAT_0023be92 = (*(byte *)(record + 3) & 0x1c) * 8 + y * 0x100;
+  DAT_0023be94 = (*(byte *)(record + 2) & 0x7f) << 3;
+  DAT_0023bf00 = (*(ushort *)(record + 2) & 0xff80) << 6;
   DAT_0023bf02 = 0;
   DAT_0023bf04 = 0;
   load_shading_level_config(6);
@@ -991,7 +967,6 @@ short param_3;
     DAT_00086b20 = 1;
   }
   refresh_player_equipment_effects();
-  return;
 }
 
 
@@ -1000,9 +975,7 @@ short param_3;
 // (DAT_0023bea4, a rotation-like value, accumulates by a fixed 0xccb step each call), redrawing via
 // render_dungeon_frame_timed every substep.
 // was FUN_00067f1c
-void spin_view_full_rotation(param_1)
-undefined4 param_1;
-
+void spin_view_full_rotation(int unused)
 {
   int iVar1;
   ushort uVar2;
@@ -1033,7 +1006,6 @@ undefined4 param_1;
     DAT_0023bf08 = sVar3;
   } while (uVar2 < 0x40);
   set_view_subject_by_command(1);
-  return;
 }
 
 
@@ -1045,7 +1017,7 @@ void handle_game_view_click_hold()
 
 {
   if (DAT_002020d8 == 0) {
-    move_command_dispatch(0xffffffff);
+    move_command_dispatch(-1);
     if (DAT_0023bf0c == '\0') {
       set_cursor_confine_rect((int)DAT_0023be5c,(int)DAT_0023be80,(int)DAT_0023bd80 + (int)DAT_0023be5c + -1,
                    ((int)DAT_0023be80 - (int)DAT_0023be88) + 1);
@@ -1064,30 +1036,27 @@ void handle_game_view_click_hold()
 // was FUN_0006a0c8 -- postprocess callback for the main menu's "opbtn" (OPBTN.GR) resource load --
 // populates DAT_0023bf6c's per-button record table (bitmap pointer via g_menu_button_bitmaps, plus
 // width/height) as each button-state bitmap finishes loading.
-bool populate_menu_button_bitmap_entry(param_1,param_2,param_3)
-char *param_1;
-int param_2;
-short param_3;
-
+int populate_menu_button_bitmap_entry(void *entry_ptr, uint success, int index)
 {
+  char *entry = (char *)entry_ptr;
   uint uVar1;
   int iVar3;
   int bmp_idx;
 
-  uVar1 = (int)param_3 & 1;
-  iVar3 = (int)param_3 >> 1;
+  uVar1 = (int)index & 1;
+  iVar3 = (int)index >> 1;
   bmp_idx = uVar1 + iVar3 * 4;
   if ((uint)bmp_idx < sizeof(g_menu_button_bitmaps) / sizeof(g_menu_button_bitmaps[0])) {
-    g_menu_button_bitmaps[bmp_idx] = param_1 + 5;
+    g_menu_button_bitmaps[bmp_idx] = entry + 5;
   }
   if ((short)uVar1 == 0) {
     char *rec = DAT_0023bf6c + iVar3 * 0x10;
-    rec[0xc] = param_1[1];
+    rec[0xc] = entry[1];
     rec[0xd] = 0;
-    rec[0xe] = param_1[2];
+    rec[0xe] = entry[2];
     rec[0xf] = 0;
   }
-  return param_2 != 0;
+  return success != 0;
 }
 
 
@@ -1133,17 +1102,14 @@ void animate_title_palette_cycle()
 // was FUN_0006a1c4 -- if param_1 is set, probes the save-slot archives via probe_save_slots and,
 // when no valid save slot exists, calls display_book_or_scroll_page(0) to disable/grey out the
 // "Journey Onward" main-menu option.
-void update_journey_onward_availability(param_1)
-short param_1;
-
+void update_journey_onward_availability(short check_saves)
 {
   short local_ac [4];
   undefined1 auStack_a4 [160];
 
-  if ((param_1 != 0) && (probe_save_slots(auStack_a4,local_ac), local_ac[0] == 0)) {
+  if ((check_saves != 0) && (probe_save_slots(auStack_a4,local_ac), local_ac[0] == 0)) {
     display_book_or_scroll_page(0);
   }
-  return;
 }
 
 
@@ -1152,40 +1118,35 @@ short param_1;
 
 
 // was FUN_0006a200.
-void draw_menu_item_list(param_1,param_2,param_3,param_4)
-short param_1;
-char *param_2;
-char param_3;
-short param_4;
-
+void draw_menu_item_list(short item_count, char *rects, char use_text, short selected)
 {
   short sVar1;
   int iVar2;
-  /* pcVar_rec: dedicated pointer for the param_3=='\0' branch's 0x10-stride
-     rect-record array (param_2 was `int`, truncating the pointer). */
+  /* pcVar_rec: dedicated pointer for the use_text=='\0' branch's 0x10-stride
+     rect-record array (rects was `int`, truncating the pointer). */
   char *pcVar_rec;
   undefined1 uVar3;
   int iVar4;
-  /* ppcVar5/pcVar_str: the param_3!=0 branch indexes param_2 as an array of char* string pointers. */
+  /* ppcVar5/pcVar_str: the use_text!=0 branch indexes rects as an array of char* string pointers. */
   char **ppcVar5;
   char *pcVar_str;
 
-  if (param_3 == '\0') {
+  if (use_text == '\0') {
     decrement_cursor_hide_depth();
-    if (0 < param_1) {
+    if (0 < item_count) {
       iVar4 = 0;
       do {
-        pcVar_rec = param_2 + iVar4 * 0x10;
-        /* Was reading the bitmap pointer back out of param_2's packed 4-byte record slot -- see
+        pcVar_rec = rects + iVar4 * 0x10;
+        /* Was reading the bitmap pointer back out of rects's packed 4-byte record slot -- see
            g_menu_button_bitmaps' declaration comment for why that's now routed through a dedicated
            array instead... */
-        int bmp_idx = (uint)(iVar4 == param_4) + iVar4 * 4;
+        int bmp_idx = (uint)(iVar4 == selected) + iVar4 * 4;
         bitmap_blit_to_framebuffer((int)*(short *)(pcVar_rec + 8),(int)*(short *)(pcVar_rec + 10),
                      (uint)bmp_idx < sizeof(g_menu_button_bitmaps) / sizeof(g_menu_button_bitmaps[0])
                        ? g_menu_button_bitmaps[bmp_idx] : 0,
                      (int)*(short *)(pcVar_rec + 0xe),*(undefined2 *)(pcVar_rec + 0xc),0,0,1);
         iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
-      } while (iVar4 < param_1);
+      } while (iVar4 < item_count);
     }
   }
   else {
@@ -1196,19 +1157,19 @@ short param_4;
        it falls back to the flat g_text_flat_color color... */
     int _saved_af74 = g_text_use_palette_color;
     g_text_use_palette_color = 1;
-    if (0 < param_1) {
+    if (0 < item_count) {
       do {
         uVar3 = 0xa2;
-        if (iVar4 != param_4) {
+        if (iVar4 != selected) {
           uVar3 = 0xaa;
         }
         *g_draw_color_index = uVar3;
         *DAT_00084298 = uVar3;
-        ppcVar5 = (char **)(param_2 + iVar4 * 8);
+        ppcVar5 = (char **)(rects + iVar4 * 8);
         pcVar_str = *ppcVar5;
         if (getenv("UW_DEBUG_TITLEMENU"))
           fprintf(stderr, "[titlemenu] draw_menu_item_list text branch: item=%d/%d ptr=%p str='%s'\n",
-                  iVar4, (int)param_1, (void *)pcVar_str, pcVar_str ? pcVar_str : "(null)");
+                  iVar4, (int)item_count, (void *)pcVar_str, pcVar_str ? pcVar_str : "(null)");
         while (sVar1 = measure_text_width(pcVar_str), 0x13e < sVar1) {
           pcVar_str = *ppcVar5;
           iVar2 = ce_strlen(pcVar_str);
@@ -1221,12 +1182,11 @@ short param_4;
         }
         draw_text_string(*ppcVar5,0xa0 - (short)(iVar2 >> 1),iVar4 * 0x16 + 100);
         iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
-      } while (iVar4 < param_1);
+      } while (iVar4 < item_count);
     }
     g_text_use_palette_color = _saved_af74;
   }
   cursor_show_idle_tick();
-  return;
 }
 
 
@@ -1238,19 +1198,15 @@ short param_4;
 // (param_3=='\0': bitmap buttons; param_3!=0: text items, e.g. the save-slot list): while pointer
 // events remain queued...
 // was FUN_0006ac38
-int poll_menu_pointer_selection(param_1,param_2,param_3)
-undefined4 param_1;
-char *param_2;
-char param_3;
-
+int poll_menu_pointer_selection(int item_count, char *rects, char use_text)
 {
   int iVar1;
   bool bVar2;
   bool bVar3;
   short sVar4;
   short sVar5;
-  /* iVar6 doubles as a byte-offset pointer into param_2 (0x10-stride rect records, param_3=='\0'
-     branch) and a plain int scratch value (distance/threshold math, param_3!=0 branch) -- mutually
+  /* iVar6 doubles as a byte-offset pointer into rects (0x10-stride rect records, use_text=='\0'
+     branch) and a plain int scratch value (distance/threshold math, use_text!=0 branch) -- mutually
      exclusive, but iVar6 stayed `int` either way... */
   char *pcVar_rec;
   int iVar6;
@@ -1263,8 +1219,8 @@ char param_3;
   iVar9 = -1;
   bVar3 = true;
   bVar2 = true;
-  sVar5 = (short)param_1;
-  if (param_3 == '\0') {
+  sVar5 = (short)item_count;
+  if (use_text == '\0') {
     sVar4 = next_input_event();
     if (0 < sVar4) {
       iVar1 = (int)sVar5;
@@ -1275,14 +1231,14 @@ char param_3;
         iVar8 = 0;
         if (0 < iVar1) {
           do {
-            pcVar_rec = param_2 + iVar8 * 0x10;
+            pcVar_rec = rects + iVar8 * 0x10;
             if (((int)*(short *)(pcVar_rec + 8) <= (int)local_30) &&
                ((int)local_30 <= (int)*(short *)(pcVar_rec + 8) + (int)*(short *)(pcVar_rec + 0xc) + -1)) {
               if (((int)local_2e <= (int)*(short *)(pcVar_rec + 10) + (int)*(short *)(pcVar_rec + 0xe) + -1)
                  && ((int)*(short *)(pcVar_rec + 10) <= (int)local_2e)) {
                 bVar2 = true;
                 if ((short)iVar8 != (short)iVar9) {
-                  draw_menu_item_list(param_1,param_2,0,iVar8);
+                  draw_menu_item_list(item_count,rects,0,iVar8);
                   iVar9 = iVar8;
                 }
                 break;
@@ -1311,7 +1267,7 @@ char param_3;
         if (0 < iVar1) {
           iVar8 = 0;
           do {
-            sVar4 = measure_text_width(*(char **)(param_2 + iVar8 * 8));
+            sVar4 = measure_text_width(*(char **)(rects + iVar8 * 8));
             iVar6 = -(int)sVar4;
             iVar7 = iVar6 + 0x140;
             if (iVar7 < 0) {
@@ -1323,7 +1279,7 @@ char param_3;
               if ((iVar6 <= local_2e) && ((int)local_2e < iVar6 + *(short *)(DAT_000879b0 + 6))) {
                 bVar2 = true;
                 if ((short)iVar8 != (short)iVar9) {
-                  draw_menu_item_list(param_1,param_2,param_3,iVar8);
+                  draw_menu_item_list(item_count,rects,use_text,iVar8);
                   iVar9 = iVar8;
                 }
                 break;
@@ -1349,13 +1305,9 @@ char param_3;
 
 
 // was FUN_0006af3c
-int menu_button_list_navigate(param_1,param_2,param_3,param_4)
-int param_1;
-char *param_2;
-undefined1 param_3;
-int param_4;
-
+int menu_button_list_navigate(int item_count, void *rects_ptr, byte use_text, int selected)
 {
+  char *rects = (char *)rects_ptr;
   short sVar1;
   short sVar2;
   int iVar3;
@@ -1366,7 +1318,7 @@ int param_4;
   iVar4 = -2;
   do {
     select_active_font(s_fontbig_sys_0008432c);
-    draw_menu_item_list(param_1,param_2,param_3,param_4);
+    draw_menu_item_list(item_count,rects,use_text,selected);
     select_active_font(s_font5x6p_sys_0008430c);
     /* Was: `ushort _cyc_t = DAT_0023bf74; ... if (DAT_0023bf74 != _cyc_t) draw_menu_item_list(...)`
        -- an earlier session's own addition... */
@@ -1374,16 +1326,16 @@ int param_4;
       advance_menu_music_track();
       animate_title_palette_cycle();
     }
-    if (getenv("UW_DEBUG_TITLEMENU")) fprintf(stderr, "[titlemenu] menu_button_list_navigate: raw event=0x%x param_4=%d\n", (int)sVar2, (int)param_4);
-    sVar1 = (short)param_1;
-    iVar3 = param_4;
+    if (getenv("UW_DEBUG_TITLEMENU")) fprintf(stderr, "[titlemenu] menu_button_list_navigate: raw event=0x%x selected=%d\n", (int)sVar2, (int)selected);
+    sVar1 = (short)item_count;
+    iVar3 = selected;
     iVar5 = iVar4;
     if (0xa7 < sVar2) {
       if (sVar2 < 0x167) {
         if (sVar2 != 0x166) {
           if (sVar2 == 0xa8) {
 LAB_0006b0e4:
-            iVar3 = param_4 + -1;
+            iVar3 = selected + -1;
             iVar5 = iVar4;
             goto LAB_0006b144;
           }
@@ -1424,15 +1376,15 @@ LAB_0006b000:
       if (sVar2 == 0x8f) goto LAB_0006b0e4;
       if (0 < sVar2) {
         if (sVar2 < 4) {
-          iVar3 = poll_menu_pointer_selection(param_1,param_2,param_3);
+          iVar3 = poll_menu_pointer_selection(item_count,rects,use_text);
           sVar2 = (short)iVar3;
           if ((((sVar2 < 0) || (sVar1 <= sVar2)) || (iVar5 = iVar3, sVar2 == (short)iVar4)) &&
-             (iVar3 = param_4, iVar5 = iVar4, sVar1 <= sVar2)) {
+             (iVar3 = selected, iVar5 = iVar4, sVar1 <= sVar2)) {
             iVar3 = (int)sVar2 - (int)sVar1;
           }
         }
         else {
-          iVar5 = param_4;
+          iVar5 = selected;
           if (sVar2 != 0xd) {
             if (sVar2 == 0x1b) goto LAB_0006b130;
             if (sVar2 != 0x8c) {
@@ -1447,7 +1399,7 @@ LAB_0006b000:
     }
     else if (sVar2 == 0x91) {
 LAB_0006b140:
-      iVar3 = param_4 + 1;
+      iVar3 = selected + 1;
     }
     else {
       if (sVar2 != 0x92) {
@@ -1463,16 +1415,16 @@ LAB_0006b0e0:
         }
       }
 LAB_0006b138:
-      iVar3 = param_1 + -1;
+      iVar3 = item_count + -1;
     }
 LAB_0006b144:
     if ((short)iVar3 < 0) {
       iVar3 = 0;
     }
     else if (sVar1 <= (short)iVar3) {
-      iVar3 = param_1 + -1;
+      iVar3 = item_count + -1;
     }
-    param_4 = iVar3;
+    selected = iVar3;
     iVar4 = iVar5;
     if (-2 < (short)iVar5) {
       return iVar5;
@@ -1486,10 +1438,7 @@ LAB_0006b144:
 
 // was FUN_000773ac -- called from app_main_loop (src/game.c, WinMain's real body) right before
 // create_main_window_and_init_display below.
-void spawn_message_dispatch_thread(param_1,param_2)
-undefined4 param_1;
-undefined4 param_2;
-
+void spawn_message_dispatch_thread(int instance, const void *class_name)
 {
   undefined4 local_34;
   code *local_30;
@@ -1508,22 +1457,18 @@ undefined4 param_2;
   local_28 = 0;
   local_20 = 0;
   local_1c = 0;
-  local_24 = param_1;
+  local_24 = instance;
   local_18 = GetStockObject(0);
   local_14 = 0;
-  local_10 = param_2;
+  local_10 = (undefined4)(uintptr_t)class_name;  /* the second argument is really the window-class name pointer */
   RegisterClassW(&local_34);
-  return;
 }
 
 
 
 // was FUN_00077408 -- creates the main app window (CreateWindowExW, a CreateWindowEx-style call)
 // and, if that and the registration check (is_product_registered) both succeed...
-undefined4 create_main_window_and_init_display(param_1,param_2)
-undefined4 param_1;
-undefined4 param_2;
-
+int create_main_window_and_init_display(int instance, int show_command)
 {
   bool bVar1;
   char cVar2;
@@ -1554,7 +1499,7 @@ undefined4 param_2;
   GetSystemMetrics(0);
   DAT_0023c548 = (HWND__ *)
                  CreateWindowExW(0,u_UltimaUW_00087678,u_Ultima_Under_World_00087690,0x10000000);
-  if ((DAT_0023c548 != (HWND__ *)0x0) && (iVar3 = is_product_registered(DAT_0023c548,param_1), iVar3 != 0)) {
+  if ((DAT_0023c548 != (HWND__ *)0x0) && (iVar3 = is_product_registered(DAT_0023c548,instance), iVar3 != 0)) {
     pcVar9 = &DAT_0023cca8;
     ce_memset(&DAT_0023cca8,0,0x104);
     pcVar10 = &DAT_0023c698;
@@ -1629,7 +1574,7 @@ undefined4 param_2;
         pcVar10 = pcVar10 + 1;
       } while (cVar2 != '\0');
     }
-    ShowWindow(DAT_0023c548,param_2);
+    ShowWindow(DAT_0023c548,show_command);
     UpdateWindow(DAT_0023c548);
     iVar3 = GXOpenDisplay(DAT_0023c548,1);
     if (iVar3 != 0) {
@@ -1693,12 +1638,9 @@ undefined4 param_2;
 
 
 // was FUN_00077860 -- trivial passthrough, returns param_2 unchanged.
-undefined4 window_message_noop_handler(param_1,param_2)
-undefined4 param_1;
-undefined4 param_2;
-
+int window_message_noop_handler(int window, int message)
 {
-  return param_2;
+  return message;
 }
 
 
@@ -1706,12 +1648,9 @@ undefined4 param_2;
 // was FUN_00077868 -- stores &DAT_00242010 into the window's extra- data slot 0x94 via
 // load_bmp_resource_to_rgb565 (a SetWindowLong-style helper -- see its other use in
 // create_main_window_and_init_display storing g_uw_framebuffer at slot 0xca).
-void store_window_extra_data_ptr(param_1)
-undefined4 param_1;
-
+void store_window_extra_data_ptr(int module)
 {
-  load_bmp_resource_to_rgb565(param_1,0x94,&DAT_00242010);
-  return;
+  load_bmp_resource_to_rgb565(module,0x94,&DAT_00242010);
 }
 
 
@@ -1719,10 +1658,7 @@ undefined4 param_1;
 // was FUN_00077878 -- looks up window message id param_2 in a {msg_id, handler_ptr} table
 // (DAT_000830b0/UNK_000830b4, 0x13 entries, 8-byte stride) and calls the matched handler with no
 // forwarded args, or falls back to DefWindowProcW (likely DefWindowProc) if no entry matches.
-void dispatch_window_message(param_1,param_2)
-undefined4 param_1;
-int param_2;
-
+void dispatch_window_message(int window, int message)
 {
   uint uVar1;
   int *piVar2;
@@ -1730,7 +1666,7 @@ int param_2;
   piVar2 = (int *)&DAT_000830b0;
   uVar1 = 0;
   do {
-    if (param_2 == *piVar2) {
+    if (message == *piVar2) {
       (**(code **)(&UNK_000830b4 + uVar1 * 8))();
       return;
     }
@@ -1738,7 +1674,6 @@ int param_2;
     piVar2 = piVar2 + 2;
   } while (uVar1 < 0x13);
   DefWindowProcW();
-  return;
 }
 
 
@@ -1748,7 +1683,7 @@ int param_2;
 // was FUN_00077a38 -- shutdown/cleanup routine: calls end_gx_draw_session, frees several
 // conditionally-allocated resources (LocalFree, likely LocalFree/free) and a 0x80-entry pointer
 // array (&DAT_00202308)...
-undefined4 shutdown_game_resources()
+int shutdown_game_resources()
 
 {
   int iVar1;
@@ -1824,17 +1759,16 @@ void debug_print(char *param_1, ...)
 
 
 /* was FUN_0007036c. Bound to key 0x88 in mode 0x1b, arg 2 (uw.c ~59574, register_key_binding). */
-undefined4 print_debug_stat_message(param_1)
-short param_1;
+int print_debug_stat_message(short stat_index)
 {
   undefined4 uVar1;
   uint uVar2;
 
   if (1) {
-    uVar2 = ((uint)param_1 + 10) & 0xff;
+    uVar2 = ((uint)stat_index + 10) & 0xff;
     if ((uVar2 != 10) && (uVar2 != 0xb)) {
       if (uVar2 == 0xc) {
-        cast_detect_life_spell(8,*(undefined1 *)(DAT_00086df8 + (int)param_1 + 0x2b));
+        cast_detect_life_spell(8,*(undefined1 *)(DAT_00086df8 + (int)stat_index + 0x2b));
       }
       else {
         message_scroll_print_wrapped(get_message_string((((int)(short)uVar2 + 0x1f) | 0x400)));
@@ -1867,8 +1801,7 @@ void debug_force_rest_action()
 /* was FUN_000680d0. Bound to keys '1'/'2'/'3' (0x31/0x32/0x33) in mode 0x11 with args -1/0/1
    respectively (uw.c ~59567-59569, register_key_binding). */
 short DAT_0023bf2c;
-void debug_adjust_view_heading(param_1)
-undefined4 param_1;
+void debug_adjust_view_heading(int delta)
 {
   short sVar1;
   short *puVar2;
@@ -1877,20 +1810,19 @@ undefined4 param_1;
   if (DAT_0023bf2c != 0) {
     puVar2 = (short *)&DAT_0023bf02;
   }
-  if ((short)param_1 == 0) {
+  if ((short)delta == 0) {
     set_pending_update_flags(2);
     *puVar2 = 0;
   }
   else {
     sVar1 = 0x1000;
-    if ((short)param_1 == -1) {
+    if ((short)delta == -1) {
       sVar1 = -0x1000;
     }
-    if (step_value_toward_limit(puVar2,sVar1,0x400,(short)param_1) != 0) {
+    if (step_value_toward_limit(puVar2,sVar1,0x400,(short)delta) != 0) {
       set_pending_update_flags(2);
     }
   }
-  return;
 }
 
 
@@ -2045,9 +1977,7 @@ void run_game_startup_sequence()
 // was FUN_0003baf4 -- the game's shutdown counterpart to run_game_startup_sequence: frees input
 // bindings, stops ambient sound and other sound effects/music, releases panel-wipe grtiles, then
 // builds the save directory path and ensures it exists.
-void run_game_shutdown_sequence(param_1)
-undefined4 param_1;
-
+void run_game_shutdown_sequence(int unused)
 {
   char stack0xffdc3250_buf [256];
   char *stack0xffdc3250_ptr;
@@ -2072,7 +2002,6 @@ undefined4 param_1;
   } while (cVar1 != '\0');
   ce_strcat(acStack_108,&DAT_000857a0);
   ensure_save_directory_exists(acStack_108);
-  return;
 }
 
 
@@ -2116,12 +2045,9 @@ void init_main_loop_state()
 // was FUN_0003bc08 -- key-binding callback (registered by
 // init_main_loop_state) that clears the "game running" flag,
 // signaling the main loop to exit.
-void request_game_exit(param_1)
-undefined4 param_1;
-
+void request_game_exit(int key_code)
 {
   DAT_00201b6c = 0;
-  return;
 }
 
 
@@ -2138,9 +2064,7 @@ void show_error_dialog_stub()
 // was FUN_0003c318 -- logs a categorized error message: the error code's top nibble selects one of
 // 5 category strings (Low Memory, EMS Memory, read-data, write-data, resource/internal), logged via
 // NKDbgPrintfW...
-void log_categorized_error_message(param_1)
-short param_1;
-
+void log_categorized_error_message(short error_code)
 {
   char *wptr_24610;
   char cVar1;
@@ -2149,7 +2073,7 @@ short param_1;
   char acStack_857f4 [546760];
   char acStack_2c [40];
 
-  uVar2 = param_1 >> 0xc & 0xf;
+  uVar2 = error_code >> 0xc & 0xf;
   if (uVar2 == 1) {
     pcVar3 = s_Out_of_Low_Memory___000857dc;
   }
@@ -2173,20 +2097,16 @@ short param_1;
     *wptr_24610 = cVar1; wptr_24610 = wptr_24610 + 1;
     pcVar3 = pcVar3 + 1;
   } while (cVar1 != '\0');
-  return;
 }
 
 
 
 // was FUN_0003c3b4 -- logs a categorized fatal error (log_categorized_error_message) then
 // terminates the process.
-void report_categorized_fatal_error(param_1)
-short param_1;
-
+void report_categorized_fatal_error(short error_code)
 {
-  log_categorized_error_message(param_1);
+  log_categorized_error_message(error_code);
   terminate_process(0xffffffff);
-  return;
 }
 
 
@@ -2194,14 +2114,12 @@ short param_1;
 // was FUN_0003c3c8 -- the general-purpose "fatal error" handler used throughout this decompile:
 // formats an "Underworld can no longer run, Error XNNN" code string from param_1 (category letter +
 // 3 octal digits), shows it via ce_strncpy (unimplemented in this port, see the fprintf below)...
-void report_fatal_error_and_exit(param_1)
-ushort param_1;
-
+void report_fatal_error_and_exit(ushort error_code)
 {
   /* ce_strncpy (the real message-box display for this error) isn't implemented, so this is
      currently the only visibility into which fatal error actually fired -- kept as a permanent log
      line, not a one-off diagnostic. */
-  fprintf(stderr, "[fatal] report_fatal_error_and_exit: error code 0x%x\n", param_1);
+  fprintf(stderr, "[fatal] report_fatal_error_and_exit: error code 0x%x\n", error_code);
   char *wptr_24645;
   char cVar1;
   undefined4 uVar2;
@@ -2220,37 +2138,33 @@ ushort param_1;
     *wptr_24645 = cVar1; wptr_24645 = wptr_24645 + 1;
     pcVar3 = pcVar3 + 1;
   } while (cVar1 != '\0');
-  local_2a = ((byte)((short)param_1 >> 0xc) & 0xf) + 0x41;
-  param_1 = param_1 & 0xfff;
-  local_29 = ((byte)((short)param_1 >> 6) & 7) + 0x30;
-  local_28 = ((byte)((short)param_1 >> 3) & 7) + 0x30;
-  local_27 = ((byte)param_1 & 7) + 0x30;
+  local_2a = ((byte)((short)error_code >> 0xc) & 0xf) + 0x41;
+  error_code = error_code & 0xfff;
+  local_29 = ((byte)((short)error_code >> 6) & 7) + 0x30;
+  local_28 = ((byte)((short)error_code >> 3) & 7) + 0x30;
+  local_27 = ((byte)error_code & 7) + 0x30;
   uVar2 = ce_strlen(acStack_54);
   ce_strncpy(&DAT_00201b70,acStack_54,uVar2);
   run_game_shutdown_sequence(0);
   terminate_process(0xffffffe8);
-  return;
 }
 
 
 // was FUN_0003c4a8 -- text-message sibling of report_fatal_error_and_exit: shows a direct message
 // string (rather than a numeric error code) via ce_strncpy, then runs the same
 // shutdown-and-terminate sequence.
-void report_fatal_error_message_and_exit(param_1)
-char *param_1;
-
+void report_fatal_error_message_and_exit(char *message)
 {
   undefined4 uVar1;
 
   /* See report_fatal_error_and_exit's identical fprintf -- ce_strncpy (the real message-box
      display) isn't implemented, so this is the only visibility into which fatal message actually
-     fired. param_1 here is the message text directly, not a numeric code. */
-  fprintf(stderr, "[fatal] report_fatal_error_message_and_exit: %s\n", param_1 ? param_1 : "(null)");
-  uVar1 = ce_strlen(param_1); // was a dropped arg -- param_1 itself, same class as babl_builtin_compare's own comment (uw.c ~10977)
-  ce_strncpy(&DAT_00201b70,param_1,uVar1);
+     fired. message here is the message text directly, not a numeric code. */
+  fprintf(stderr, "[fatal] report_fatal_error_message_and_exit: %s\n", message ? message : "(null)");
+  uVar1 = ce_strlen(message); // was a dropped arg -- message itself, same class as babl_builtin_compare's own comment (uw.c ~10977)
+  ce_strncpy(&DAT_00201b70,message,uVar1);
   run_game_shutdown_sequence(0);
   terminate_process(0xffffffe8);
-  return;
 }
 
 
@@ -2348,7 +2262,7 @@ void handle_game_view_click()
           print_scroll_message_by_id(0x5e);
         }
         else {
-          (*DAT_002020b8)(g_interact_target,1,0);
+          ((void (*)(ushort *, int, int))DAT_002020b8)(g_interact_target,1,0);
         }
       }
       if (g_selected_object != 0) {
@@ -2367,7 +2281,7 @@ LAB_0003f584:
 // was FUN_00040cd4 -- called once from run_game_startup_sequence (see
 // src/game.c:2132) to load/select the game's default HUD font
 // (FONT5X6P.SYS).
-undefined4 select_default_hud_font()
+int select_default_hud_font()
 
 {
   /* Ghidra dropped select_active_font's return value here and always returned 0 (failure)
@@ -2384,7 +2298,7 @@ void play_view_restore_transition()
 
 {
   full_dungeon_redraw();
-  set_view_subject_by_command(0xffffffff);
+  set_view_subject_by_command(-1);
   weapon_overlay_flash_hold(5);
   full_dungeon_redraw();
   weapon_overlay_flash_restore(5);
@@ -2401,7 +2315,7 @@ void play_view_restore_transition()
 // was FUN_00041aac -- called once during game startup (src/game.c:2163, inside
 // run_game_startup_sequence, right after the second splash screen); a report_fatal_error_and_exit
 // failure here is fatal.
-undefined4 load_startup_gr_resources()
+int load_startup_gr_resources()
 
 {
   char stack0xffdc3230_buf [256];
@@ -2501,12 +2415,9 @@ undefined4 load_startup_gr_resources()
 // was FUN_00049924 -- ORs param_1's bits into the pending-update flag word DAT_00201c84, consumed
 // elsewhere to decide what needs redrawing/reprocessing this tick. Callers pass everything from a
 // single bit (2, 0x400, 10) up to near-all-bits requests (0x7dfe/0x7ffe) for a full redraw.
-void set_pending_update_flags(param_1)
-ushort param_1;
-
+void set_pending_update_flags(ushort flags)
 {
-  DAT_00201c84 = DAT_00201c84 | param_1;
-  return;
+  DAT_00201c84 = DAT_00201c84 | flags;
 }
 
 
@@ -2523,7 +2434,7 @@ void show_error_dialog_stub_thunk()
 // Extracted (unit-testing-framework merge) from the chargen "New Game" branch below -- the same
 // \DATA\lev.ark -> \SAVE0\lev.ark seeding sequence inlined there originally, pulled into its own
 // testable function.
-bool prepare_new_game(void)
+bool prepare_new_game()
 {
     char save_directory[264];
     char destination_path[264];
@@ -2585,7 +2496,7 @@ bool prepare_new_game(void)
 }
 
 // Added by the unit-testing-framework merge, alongside prepare_new_game.
-void begin_gameplay(void)
+void begin_gameplay()
 {
     pop_cursor_icon(3);
     cursor_show_idle_tick();
@@ -2596,17 +2507,15 @@ void begin_gameplay(void)
 
 
 // was FUN_0003bc40
-void set_game_mode(param_1)
-undefined4 param_1;
-
+void set_game_mode(int mode)
 {
-  *(char *)(DAT_00085a6c + 8) = (char)param_1;
-  *(char *)(DAT_00085a6c + 9) = (char)((uint)param_1 >> 8);
+  *(char *)(DAT_00085a6c + 8) = (char)mode;
+  *(char *)(DAT_00085a6c + 9) = (char)((uint)mode >> 8);
   /* The real game mode lives at BYTE offset 8 of the DAT_00085a6c struct (== DAT_00085a6c[4] with
      its `short *` typing) -- that is what the 0x3bc40 disasm writes (`strb [buf,#8]` / `[buf,#9]`)
      and what the keybinding dispatcher dispatch_key_binding reads (`ldrb [state,#8]`). */
-  DAT_00085a6c[4] = (short)param_1;
-  DAT_00201b60 = (short)param_1;
+  DAT_00085a6c[4] = (short)mode;
+  DAT_00201b60 = (short)mode;
   if ((short)DAT_00201b60 != 1) {
     if ((short)DAT_00201b60 == 2) {
       DAT_00201b64 = 1;
@@ -2620,20 +2529,17 @@ undefined4 param_1;
   DAT_00201b64 = 0;
 LAB_0003bcb0:
   reset_cursor_confine_rect();
-  return;
 }
 
 
 
 // was FUN_0003bcb8
-void change_game_mode(param_1)
-int param_1;
-
+void change_game_mode(int mode)
 {
   code *pcVar1;
   bool bVar2;
   
-  pcVar1 = (code *)(int)DAT_00201b64;
+  pcVar1 = (code *)0;
   /* Was `pcVar1 != (code *)0xffffffff` -- a 32-bit-pointer-sentinel idiom that's broken on this
      64-bit host even after fixing DAT_00201b64's own signedness above: `pcVar1` sign-extends from a
      negative `int` to a full 64-bit all-ones pointer... */
@@ -2641,35 +2547,32 @@ int param_1;
   if (bVar2) {
     /* 0x80 = 16 entries/mode * 8 bytes/entry (real pointer size) -- was
        0x40 (*4-byte entries), see DAT_00085668's comment. */
-    pcVar1 = *(code **)(&DAT_000856a4 + (int)pcVar1 * 0x80);
+    pcVar1 = *(code **)(&DAT_000856a4 + (int)DAT_00201b64 * 0x80);
   }
   if (bVar2 && pcVar1 != (code *)0x0) {
     (*pcVar1)();
   }
-  if ((short)param_1 < 0) {
-    param_1 = (int)DAT_00201c94;
+  if ((short)mode < 0) {
+    mode = (int)DAT_00201c94;
   }
   else {
     DAT_00201c94 = (short)DAT_00201b60;
   }
-  set_game_mode(param_1);
+  set_game_mode(mode);
   /* 0x80, see DAT_00085668's comment. */
   if ((DAT_00201b64 != -1) && (*(code **)(&DAT_00085668 + DAT_00201b64 * 0x80) != (code *)0x0)) {
     (**(code **)(&DAT_00085668 + DAT_00201b64 * 0x80))();
   }
-  if ((short)param_1 != 1) {
+  if ((short)mode != 1) {
     set_pending_update_flags(0x7ffe);
   }
-  return;
 }
 
 
-void *opbtn_gr_bump_alloc_entry(param_1)
-unsigned int param_1;
-
+void *opbtn_gr_bump_alloc_entry(unsigned int byte_count)
 {
   /* Same allocator-callback role as gr_resource_bump_alloc_entry/hud_icon_gr_bump_alloc_entry/
      decode_gr_entry_bump_alloc_entry (load_gr_resource_entries's param_4, "Ghidra couldn't resolve
      this address" -- see their comments)... */
-  return ce_malloc(param_1);
+  return ce_malloc(byte_count);
 }

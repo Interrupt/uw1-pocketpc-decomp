@@ -2,27 +2,27 @@
 #include "inventory_fixture.h"
 
 /* Local service declarations; game function bodies link these mocks. */
-void *resolve_object_link(ushort *link);
-int encode_object_slot_index(ushort *object);
-undefined4 build_object_display_name(char *text, ushort *object, int a, int b);
+void *resolve_object_link(void *link);
+int encode_object_slot_index(void *object);
+int build_object_display_name(char *text, void *object, int a, int b);
 void push_cursor_icon(int type);
-void pop_cursor_icon(int mode);
+void pop_cursor_icon(ushort mode);
 ushort *pick_object_under_cursor(int mode);
-undefined4 target_in_range(int actor, ushort *target, char *range);
-undefined4 target_line_of_sight(int actor, ushort *target);
-undefined4 check_object_combination(char *actor, ushort *target, int key_id);
+int target_in_range(short actor, void *target, char *range);
+int target_line_of_sight(short actor, void *target);
+int check_object_combination(void *actor, ushort *target, short key_id);
 void handle_game_view_click_hold(void);
 void interact_use(void);
-void describe_picked_terrain(int mode, int tile);
-void handle_object_drop_target(int slot);
+void describe_picked_terrain(byte mode, short tile);
+void handle_object_drop_target(short slot);
 void complete_cast_spell_on_target(void);
 void wait_for_click_release(int mode);
-void complete_use_reagent_on_player(void);
-char *get_message_string(uint id);
+void complete_use_reagent_on_player(ushort *target, int clicked);
+char *get_message_string(ushort id);
 int message_scroll_print_wrapped(char *text);
 void print_scroll_message_by_id(uint id);
-void describe_object_owner(ushort *object, int mode);
-void read_object_text(ushort *object, int mode);
+void describe_object_owner(ushort *object, short mode);
+void read_object_text(ushort *object, short mode);
 
 ushort objects[5][4];
 
@@ -36,15 +36,15 @@ char *g_current_container_record;
 
 ushort *DAT_002046b4;
 
-void *resolve_object_link(ushort *link)
-{
+void *resolve_object_link(void *link_)
+{ ushort *link = (ushort *)link_;
     unsigned slot = *link >> 6;
     if (slot == 0) return NULL;
     TEST_ASSERT_LESS_THAN_UINT(5, slot);
     return objects[slot];
 }
 
-int encode_object_slot_index(ushort *object)
+int encode_object_slot_index(void *object)
 {
     if (object == NULL) return 0;
     for (int i = 1; i < 5; i++)
@@ -95,7 +95,7 @@ uint scroll_message;
 
 int target_reachable = 1, target_obstructed;
 
-undefined4 build_object_display_name(char *text, ushort *object, int a, int b)
+int build_object_display_name(char *text, void *object, int a, int b)
 {
     TEST_ASSERT_EQUAL_PTR(objects[2], object);
     (void)a; (void)b;
@@ -105,18 +105,18 @@ undefined4 build_object_display_name(char *text, ushort *object, int a, int b)
 
 void push_cursor_icon(int type) { TEST_ASSERT_EQUAL_HEX16(0x106, type); }
 
-void pop_cursor_icon(int mode) { TEST_ASSERT_EQUAL_INT(3, mode); reset_cursor++; }
+void pop_cursor_icon(ushort mode) { TEST_ASSERT_EQUAL_INT(3, mode); reset_cursor++; }
 
 ushort *pick_object_under_cursor(int mode)
 { TEST_ASSERT_EQUAL_INT(2, mode); return picked_target; }
 
-undefined4 target_in_range(int actor, ushort *target, char *range)
+int target_in_range(short actor, void *target, char *range)
 { (void)actor; (void)range; TEST_ASSERT_EQUAL_PTR(picked_target, target); return target_reachable; }
 
-undefined4 target_line_of_sight(int actor, ushort *target)
+int target_line_of_sight(short actor, void *target)
 { (void)actor; TEST_ASSERT_EQUAL_PTR(picked_target, target); return target_obstructed; }
 
-undefined4 check_object_combination(char *actor, ushort *target, int key_id)
+int check_object_combination(void *actor, ushort *target, short key_id)
 {
     TEST_ASSERT_EQUAL_PTR(g_player_object, actor);
     TEST_ASSERT_EQUAL_INT(1, key_id);
@@ -129,17 +129,17 @@ void handle_game_view_click_hold(void) { TEST_FAIL_MESSAGE("Unexpected held clic
 
 void interact_use(void) { TEST_FAIL_MESSAGE("Unexpected direct use"); }
 
-void describe_picked_terrain(int mode, int tile) { (void)mode; (void)tile; TEST_FAIL_MESSAGE("Unexpected terrain action"); }
+void describe_picked_terrain(byte mode, short tile) { (void)mode; (void)tile; TEST_FAIL_MESSAGE("Unexpected terrain action"); }
 
-void handle_object_drop_target(int slot) { (void)slot; TEST_FAIL_MESSAGE("Unexpected drop"); }
+void handle_object_drop_target(short slot) { (void)slot; TEST_FAIL_MESSAGE("Unexpected drop"); }
 
 void complete_cast_spell_on_target(void) { TEST_FAIL_MESSAGE("Unexpected spell"); }
 
 void wait_for_click_release(int mode) { TEST_ASSERT_EQUAL_INT(1, mode); released_clicks++; }
 
-void complete_use_reagent_on_player(void) { TEST_FAIL_MESSAGE("Unexpected reagent"); }
+void complete_use_reagent_on_player(ushort *target, int clicked) { (void)target; (void)clicked; TEST_FAIL_MESSAGE("Unexpected reagent"); }
 
-char *get_message_string(uint id)
+char *get_message_string(ushort id)
 {
     message_lookups++;
     last_message_id = id;
@@ -162,10 +162,10 @@ int message_scroll_print_wrapped(char *text)
 void print_scroll_message_by_id(uint id)
 { TEST_ASSERT_NOT_NULL(picked_target); scroll_message = id; }
 
-void describe_object_owner(ushort *object, int mode)
+void describe_object_owner(ushort *object, short mode)
 { last_action_object = object; last_action_mode = mode; other_actions++; }
 
-void read_object_text(ushort *object, int mode)
+void read_object_text(ushort *object, short mode)
 { last_action_object = object; last_action_mode = mode; other_actions++; }
 
 byte level_one[0x7c08];
@@ -260,8 +260,8 @@ char *g_open_container_list;
 int container_grid_redraws, container_arrow_redraws;
 
 void decrement_cursor_hide_depth(void) { cursor_hide_calls++; }
-undefined4 cursor_show_idle_tick(void) { cursor_show_calls++; return 0; }
-void redraw_inventory_widget_range(int first, int last)
+int cursor_show_idle_tick(void) { cursor_show_calls++; return 0; }
+void redraw_inventory_widget_range(int first, short last)
 {
     if (first == 12 && last == 19) container_grid_redraws++;
     else { TEST_ASSERT_EQUAL_INT(20, first); TEST_ASSERT_EQUAL_INT(20, last); }
@@ -271,13 +271,13 @@ void redraw_inventory_widget(int widget)
     if (widget == 21 || widget == 22) container_arrow_redraws++;
     else TEST_ASSERT_LESS_THAN_INT(11, widget);
 }
-undefined4 grtile_alloc_registered(int width, int height)
+uint grtile_alloc_registered(uint width, uint height)
 { (void)width; (void)height; return 1; }
-undefined4 capture_framebuffer_rect_to_grtile(int tile, int x, int y, int w, int h)
+int capture_framebuffer_rect_to_grtile(uint tile, int x, int y, int w, short h)
 { (void)tile; (void)x; (void)y; (void)w; (void)h; return 1; }
-void draw_sprite_by_id(int tile, int x, int y, int w, int h)
+void draw_sprite_by_id(int tile, int x, int y, int w, short h)
 { (void)tile; (void)x; (void)y; (void)w; (void)h; }
-void set_hud_status_value(int field, int value)
+void set_hud_status_value(byte field, ushort value)
 { (void)field; (void)value; TEST_FAIL_MESSAGE("Unexpected special container"); }
 void *ce_malloc(unsigned int size)
 {

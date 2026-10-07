@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-ushort DAT_00100610;
+short DAT_00100610;  /* sentinel -1 (set by weapon_swing.c) -- was ushort, which made every `!= -1` test always true */
 static undefined2 DAT_00100600;
 static ushort DAT_00100604;
 static short DAT_001005f4;
@@ -96,14 +96,14 @@ static undefined1 DAT_002046e4;
 // randomize stance; medium: walk toward the tracked target's own tile via npc_walk_toward_tile,
 // i.e. chase; far: random-walk reposition + relink tilemap bucket)
 void npc_combat_approach_tick()
-
 {
   int uw_ord2005_rem_40 = 0;
   ushort uVar1;
   char cVar2;
   char cVar3;
   short sVar4;
-  char *iVar5;
+  int iVar5;
+  char *iVar5_rec;
   byte *pbVar6;
   uint extraout_r1;
   uint uVar7;
@@ -113,11 +113,11 @@ void npc_combat_approach_tick()
   if (DAT_00101900 < 3) {
     if (DAT_00101734 != 0) {
       *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xc1 | 1;
-      iVar5 = DAT_0010190c;
+      iVar5_rec = (char *)DAT_0010190c;
       uVar1 = *(ushort *)((char *)DAT_0010190c + 0xb);
       uw_ord2005_rem_40 = ((int)((uVar1 >> 0xc) + 1)) % (4);
       uVar7 = uVar1 & 0xfff;
-      *(char *)(iVar5 + 0xb) = (char)uVar7;
+      *(char *)(iVar5_rec + 0xb) = (char)uVar7;
       *(byte *)((char *)DAT_0010190c + 0xc) = (byte)(uVar7 >> 8) | (byte)(((uw_ord2005_rem_40 & 0xf) << 0xc) >> 8)
       ;
       *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
@@ -142,7 +142,7 @@ void npc_combat_approach_tick()
     iVar5 = ordint_divmod((int)sVar4,
                          (((int)DAT_00101918 - (int)(short)DAT_00101408) * 0x10000 >> 0x10) << 2).quot;
     cVar2 = DAT_001013f8;
-    iVar5 = ((int)iVar5 + (int)iVar8) * 0x1000000;
+    iVar5 = ((int)(uintptr_t)iVar5 + (int)iVar8) * 0x1000000;
     iVar9 = (int)DAT_00101410;
     iVar8 = ordint_divmod((int)sVar4,
                          (((int)DAT_001013f8 - (int)(short)DAT_00101410) * 0x10000 >> 0x10) << 2).quot;
@@ -158,7 +158,7 @@ void npc_combat_approach_tick()
     uVar7 = *(ushort *)((char *)DAT_0010190c + 0x16) & 0x3ff;
     *(char *)((char *)DAT_0010190c + 0x16) = (char)uVar7;
     *(byte *)((char *)DAT_0010190c + 0x17) =
-         (byte)(uVar7 >> 8) | (byte)((((int)(char)((uint)iVar5 >> 0x18) & 0x3fU) << 10) >> 8);
+         (byte)(uVar7 >> 8) | (byte)((((int)(char)((uint)(uintptr_t)iVar5 >> 0x18) & 0x3fU) << 10) >> 8);
     uVar7 = *(ushort *)((char *)DAT_0010190c + 0x16) & 0xfc0f |
             ((int)(char)((uint)iVar8 >> 0x18) & 0x3fU) << 4;
     *(char *)((char *)DAT_0010190c + 0x16) = (char)uVar7;
@@ -173,7 +173,6 @@ void npc_combat_approach_tick()
     *(byte *)((char *)DAT_0010190c + 2) = *pbVar6 >> 1 & 0x78 | (byte)uVar7;
     *(char *)((char *)DAT_0010190c + 3) = (char)(uVar7 >> 8);
   }
-  return;
 }
 
 
@@ -183,7 +182,6 @@ void npc_combat_approach_tick()
 // the tracked target or already at its tile, else picks a sub-goal (try_npc_special_ability_alt/
 // try_npc_special_ability_no_los/try_npc_special_ability_ranged)
 void npc_combat_engage_close_tick()
-
 {
   int uw_ord2005_rem_46 = 0;
   char cVar1;
@@ -192,7 +190,8 @@ void npc_combat_engage_close_tick()
   byte bVar3;
   ushort uVar4;
   uint uVar5;
-  char *iVar6;
+  int iVar6;
+  char *iVar6_rec;
   bool bVar7;
   undefined1 local_28;
   
@@ -220,7 +219,7 @@ void npc_combat_engage_close_tick()
     *(char *)((char *)DAT_0010190c + 0xe) = (char)(uVar5 >> 8);
   }
   if (((uVar4 < 100) || ((DAT_00101918 == DAT_00101408 && (DAT_001013f8 == DAT_00101410)))) &&
-     ((uVar5 = (int)DAT_0010140c - (int)DAT_00101420 >> 0x1f,
+     ((uVar5 = ((int)DAT_0010140c - (int)DAT_00101420) >> 0x1f,
       (int)(((int)DAT_0010140c - (int)DAT_00101420 ^ uVar5) - uVar5) < 4 ||
       ((*(byte *)(DAT_00101404 + 10) & 0x80) != 0)))) {
     /* ARM 0x301f4 passes the fine-coordinate squared distance in r0. */
@@ -248,11 +247,11 @@ void npc_combat_engage_close_tick()
     }
     *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xc0;
     *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
-    iVar6 = (char *)DAT_0010190c;
+    iVar6_rec = (char *)DAT_0010190c;
     uVar4 = *(ushort *)((char *)DAT_0010190c + 0xb);
     uw_ord2005_rem_46 = ((int)((uVar4 >> 0xc) + 1)) % (4);
     uVar5 = uVar4 & 0xfff;
-    *(char *)(iVar6 + 0xb) = (char)uVar5;
+    *(char *)(iVar6_rec + 0xb) = (char)uVar5;
     *(byte *)((char *)DAT_0010190c + 0xc) = (byte)(uVar5 >> 8) | (byte)(((uw_ord2005_rem_46 & 0xf) << 0xc) >> 8);
     *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
     return;
@@ -273,7 +272,6 @@ LAB_000302bc:
     *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) & 0xfd;
     npc_set_goal(4,0);
   }
-  return;
 }
 
 
@@ -281,9 +279,7 @@ LAB_000302bc:
 // was FUN_00030364 -- the shared attack/stance action called by every
 // combat-engage goal handler once in range: sets combat-ready frame
 // bits (byte 0x13/9/0x15) based on param_1, squared fine-coordinate distance
-undefined4 npc_combat_set_stance(param_1)
-ushort param_1;
-
+int npc_combat_set_stance(ushort stance_code)
 {
   int uw_ord2005_rem_47 = 0; int uw_ord2005_rem_48 = 0; int uw_ord2005_rem_49 = 0; int uw_ord2005_rem_50 = 0; int uw_ord2005_rem_51 = 0; int uw_ord2005_rem_52 = 0; int uw_ord2005_rem_53 = 0; int uw_ord2005_rem_54 = 0; int uw_ord2005_rem_55 = 0; int uw_ord2005_rem_56 = 0;
   undefined1 uVar1;
@@ -300,7 +296,8 @@ ushort param_1;
   int extraout_r1_05;
   int extraout_r1_06;
   int extraout_r1_07;
-  char *iVar6;
+  int iVar6;
+  char *iVar6_rec;
   uint extraout_r1_08;
   int iVar7;
   byte bVar8;
@@ -317,7 +314,7 @@ ushort param_1;
   uVar1 = (undefined1)(uVar9 << 5);
   *(undefined1 *)((char *)DAT_0010190c + 9) = uVar1;
   *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xbf;
-  if (param_1 < 0x31) {
+  if (stance_code < 0x31) {
     uVar5 = ce_rand();
     uw_ord2005_rem_47 = ((int)(uVar5)) % (4);
     if (uw_ord2005_rem_47 != 0) {
@@ -333,13 +330,13 @@ LAB_00030534:
     uw_ord2005_rem_49 = ((int)(uVar5)) % (2);
     uw_ord2005_rem_50 = ((int)(uVar9 + uw_ord2005_rem_49 * 4 + 6)) % (8);
     *(char *)((char *)DAT_0010190c + 9) = (char)(uw_ord2005_rem_50 << 5);
-    iVar6 = (char *)DAT_0010190c;
+    iVar6_rec = (char *)DAT_0010190c;
     bVar8 = *(byte *)((char *)DAT_0010190c + 0x13);
     bVar3 = ordint_divmod(3,(uint)*(byte *)(DAT_00101404 + 0xb) << 1).quot;
-    *(byte *)(iVar6 + 0x13) = (bVar3 ^ bVar8) & 0x7f ^ bVar8;
+    *(byte *)(iVar6_rec + 0x13) = (bVar3 ^ bVar8) & 0x7f ^ bVar8;
   }
   else {
-    if (0x51 < param_1) {
+    if (0x51 < stance_code) {
       *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xec | 0x2c;
       *(undefined1 *)((char *)DAT_0010190c + 9) = uVar1;
       goto LAB_00030534;
@@ -380,7 +377,7 @@ LAB_000305e4:
     }
     *(byte *)((char *)DAT_0010190c + 0x14) = bVar8;
   }
-  if (param_1 < 0x65) {
+  if (stance_code < 0x65) {
     uVar5 = ce_rand();
     uw_ord2005_rem_54 = ((int)(uVar5)) % (4);
     if (uw_ord2005_rem_54 == 0) {
@@ -407,16 +404,16 @@ LAB_000305e4:
     if ((uVar4 & 0xf000) < 0xf000) {
       *(char *)((char *)DAT_0010190c + 0xf) = (char)(uVar4 & 0xfff);
       *(byte *)((char *)DAT_0010190c + 0x10) =
-           (byte)((uVar4 & 0xf000) + 0x1000 >> 8) ^ (byte)((uVar4 & 0xfff) >> 8);
+           (byte)(((uVar4 & 0xf000) + 0x1000) >> 8) ^ (byte)((uVar4 & 0xfff) >> 8);
     }
   }
   *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
-  iVar6 = (char *)DAT_0010190c;
+  iVar6_rec = (char *)DAT_0010190c;
   uVar2 = *(ushort *)((char *)DAT_0010190c + 0xb);
   uw_ord2005_rem_56 = ((int)((uVar2 >> 0xc) + 1)) % (4);
   uVar9 = uVar2 & 0xfff;
   uVar4 = uVar9 | (uw_ord2005_rem_56 & 0xf) << 0xc;
-  *(char *)(iVar6 + 0xb) = (char)uVar9;
+  *(char *)(iVar6_rec + 0xb) = (char)uVar9;
 LAB_00030860:
   *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar4 >> 8);
   return 1;
@@ -429,12 +426,12 @@ LAB_00030860:
 // but a wider dist^2<0x90 (~12 tile) engage radius; otherwise positions
 // via npc_combat_position_tick or picks a sub-goal
 void npc_combat_engage_wide_tick()
-
 {
   int uw_ord2005_rem_63 = 0;
   ushort uVar1;
   ushort distance_squared;
-  char *iVar2;
+  int iVar2;
+  char *iVar2_rec;
   uint uVar3;
   uint extraout_r1;
   
@@ -455,11 +452,11 @@ void npc_combat_engage_wide_tick()
       *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
       *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
       *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xc0;
-      iVar2 = (char *)DAT_0010190c;
+      iVar2_rec = (char *)DAT_0010190c;
       uVar1 = *(ushort *)((char *)DAT_0010190c + 0xb);
       uw_ord2005_rem_63 = ((int)((uVar1 >> 0xc) + 1)) % (4);
       uVar3 = uVar1 & 0xfff;
-      *(char *)(iVar2 + 0xb) = (char)uVar3;
+      *(char *)(iVar2_rec + 0xb) = (char)uVar3;
       *(byte *)((char *)DAT_0010190c + 0xc) = (byte)(uVar3 >> 8) | (byte)(((uw_ord2005_rem_63 & 0xf) << 0xc) >> 8)
       ;
     }
@@ -480,7 +477,6 @@ void npc_combat_engage_wide_tick()
       }
     }
   }
-  return;
 }
 
 
@@ -491,7 +487,6 @@ void npc_combat_engage_wide_tick()
 // combat-engage handlers: fine facing/frame adjustment relative to
 // the target's heading and distance (flanking/circling in melee range)
 void npc_combat_position_tick()
-
 {
   int uw_ord2005_rem_64 = 0; int uw_ord2005_rem_65 = 0; int uw_ord2005_rem_66 = 0; int uw_ord2005_rem_67 = 0; int uw_ord2005_rem_68 = 0; int uw_ord2005_rem_69 = 0; int uw_ord2005_rem_70 = 0; int uw_ord2005_rem_71 = 0; int uw_ord2005_rem_72 = 0; int uw_ord2005_rem_73 = 0; int uw_ord2005_rem_74 = 0; int uw_ord2005_rem_75 = 0; int uw_ord2005_rem_76 = 0;
   uint uVar1;
@@ -513,7 +508,8 @@ void npc_combat_position_tick()
   byte bVar4;
   byte bVar5;
   ushort uVar6;
-  char *iVar7;
+  int iVar7;
+  char *iVar7_rec;
   uint uVar8;
   
   if (DAT_00101734 == 0) {
@@ -549,11 +545,11 @@ void npc_combat_position_tick()
       *(char *)(DAT_0010190c + 3) = (char)(uVar1 >> 8);
       *(byte *)(DAT_0010190c + 0x18) = *(byte *)(DAT_0010190c + 0x18) & 0xe0;
       *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 199 | 7;
-      iVar7 = DAT_0010190c;
+      iVar7_rec = (char *)DAT_0010190c;
       uVar6 = *(ushort *)(DAT_0010190c + 0xb);
       uw_ord2005_rem_68 = ((int)((uVar6 >> 0xc) + 1)) % (4);
       uVar1 = uVar6 & 0xfff;
-      *(char *)(iVar7 + 0xb) = (char)uVar1;
+      *(char *)(iVar7_rec + 0xb) = (char)uVar1;
       *(byte *)(DAT_0010190c + 0xc) =
            (byte)(uVar1 >> 8) | (byte)(((uw_ord2005_rem_68 & 0xf) << 0xc) >> 8);
       *(byte *)(DAT_0010190c + 0x13) =
@@ -576,7 +572,7 @@ LAB_000314d0:
       uw_ord2005_rem_69 = ((int)(uVar2)) % (0x40);
       if ((uw_ord2005_rem_69 & 0xff) < (bVar4 & 0xf) + 8) {
         uVar2 = ce_rand();
-        iVar7 = DAT_0010190c;
+        iVar7_rec = (char *)DAT_0010190c;
         bVar4 = *(byte *)(DAT_0010190c + 9);
         uw_ord2005_rem_70 = ((int)(uVar2)) % (0x40);
         uw_ord2005_rem_71 = ((int)(uw_ord2005_rem_70 + (uint)bVar4 + 0xe0)) % (0x100);
@@ -584,13 +580,13 @@ LAB_000314d0:
       }
       else {
         uVar1 = (uint)*(byte *)(DAT_0010190c + 9);
-        iVar7 = DAT_0010190c;
+        iVar7_rec = (char *)DAT_0010190c;
       }
       if (DAT_00101430 == 0) {
         uVar1 = adjust_heading_away_from_player(uVar1,0x18);
-        iVar7 = DAT_0010190c;
+        iVar7_rec = (char *)DAT_0010190c;
       }
-      *(byte *)(iVar7 + 9) = (byte)uVar1;
+      *(byte *)(iVar7_rec + 9) = (byte)uVar1;
       uVar8 = *(ushort *)(DAT_0010190c + 2) & 0xfc7f | (uVar1 & 0xe0) << 2;
       *(char *)(DAT_0010190c + 2) = (char)uVar8;
       *(char *)(DAT_0010190c + 3) = (char)(uVar8 >> 8);
@@ -608,11 +604,11 @@ LAB_000314d0:
           *(byte *)(DAT_0010190c + 0x18) = *(byte *)(DAT_0010190c + 0x18) & 0xe0;
           *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 0xfc | 4;
           *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0xc0;
-          iVar7 = DAT_0010190c;
+          iVar7_rec = (char *)DAT_0010190c;
           uVar6 = *(ushort *)(DAT_0010190c + 0xb);
           uw_ord2005_rem_72 = ((int)((uVar6 >> 0xc) + 1)) % (4);
           uVar1 = uVar6 & 0xfff;
-          *(char *)(iVar7 + 0xb) = (char)uVar1;
+          *(char *)(iVar7_rec + 0xb) = (char)uVar1;
           *(byte *)(DAT_0010190c + 0xc) =
                (byte)(uVar1 >> 8) | (byte)(((uw_ord2005_rem_72 & 0xf) << 0xc) >> 8);
           return;
@@ -621,14 +617,14 @@ LAB_000314d0:
       }
       uVar2 = ce_rand();
       uVar3 = ce_rand();
-      iVar7 = DAT_0010190c;
+      iVar7_rec = (char *)DAT_0010190c;
       bVar4 = *(byte *)(DAT_0010190c + 9);
       uw_ord2005_rem_73 = ((int)(uVar2)) % (2);
       uw_ord2005_rem_74 = ((int)((uint)(bVar4 >> 5) + uw_ord2005_rem_73 * 4 + 6)) % (8);
       uw_ord2005_rem_75 = ((int)(uVar3)) % (0x20);
       uVar1 = uw_ord2005_rem_74 + uw_ord2005_rem_75 * 0x20;
       bVar5 = (byte)uVar1;
-      *(byte *)(iVar7 + 9) = bVar5;
+      *(byte *)(iVar7_rec + 9) = bVar5;
       uVar1 = *(ushort *)(DAT_0010190c + 2) & 0xfc7f | (uVar1 & 0xe0) << 2;
       *(char *)(DAT_0010190c + 2) = (char)uVar1;
       *(char *)(DAT_0010190c + 3) = (char)(uVar1 >> 8);
@@ -647,16 +643,15 @@ LAB_000314d0:
     *(byte *)(DAT_0010190c + 0x13) =
          (*(byte *)(DAT_0010190c + 0x13) ^ bVar4) & 0x7f ^ *(byte *)(DAT_0010190c + 0x13);
     *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0xec | 0x2c;
-    iVar7 = DAT_0010190c;
+    iVar7_rec = (char *)DAT_0010190c;
     uVar6 = *(ushort *)(DAT_0010190c + 0xb);
     uw_ord2005_rem_76 = ((int)((uVar6 >> 0xc) + 1)) % (4);
     uVar1 = uVar6 & 0xfff;
-    *(char *)(iVar7 + 0xb) = (char)uVar1;
+    *(char *)(iVar7_rec + 0xb) = (char)uVar1;
     *(byte *)(DAT_0010190c + 0xc) =
          (byte)(uVar1 >> 8) | (byte)(((uw_ord2005_rem_76 & 0xf) << 0xc) >> 8);
     *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 0xfc | 4;
   }
-  return;
 }
 
 
@@ -666,7 +661,6 @@ LAB_000314d0:
 // (detect_npc_wander_proximity, dist^2>399); if lost, reverts straight to idle state
 // 0x20, otherwise continues closing on the target
 void npc_combat_disengage_tick()
-
 {
   int uw_ord2005_rem_77 = 0; int uw_ord2005_rem_78 = 0; int uw_ord2005_rem_79 = 0; int uw_ord2005_rem_80 = 0; int uw_ord2005_rem_81 = 0;
   ushort uVar1;
@@ -697,7 +691,7 @@ void npc_combat_disengage_tick()
       *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0xe0 | 0x20;
       uVar4 = ce_rand();
       uw_ord2005_rem_77 = ((int)(uVar4)) % (2);
-      iVar2 = DAT_0010190c;
+      iVar2 = (char *)DAT_0010190c;
       if (uw_ord2005_rem_77 != 0) {
         uVar6 = *(ushort *)(DAT_0010190c + 0xb);
         uw_ord2005_rem_78 = ((int)((uVar6 >> 0xc) + 1)) % (4);
@@ -714,7 +708,7 @@ void npc_combat_disengage_tick()
       *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 0xfe | 6;
       uVar4 = ce_rand();
       uw_ord2005_rem_79 = ((int)(uVar4)) % (2);
-      iVar2 = DAT_0010190c;
+      iVar2 = (char *)DAT_0010190c;
       if (uw_ord2005_rem_79 != 0) {
         uVar1 = *(ushort *)(DAT_0010190c + 0xb);
         uw_ord2005_rem_80 = ((int)((uVar1 >> 0xc) + 1)) % (4);
@@ -738,7 +732,6 @@ void npc_combat_disengage_tick()
       }
     }
   }
-  return;
 }
 
 
@@ -746,12 +739,7 @@ void npc_combat_disengage_tick()
 // was FUN_00025a98 -- part of the combat hit-test flow (called from resolve_melee_swing_hit's own
 // "[hit-test]" trace): given a target's hit-zone span [param_1,param_2] and an impact span
 // [param_3,param_4]...
-undefined4 resolve_combat_hit_zone(param_1,param_2,param_3,param_4)
-short param_1;
-short param_2;
-short param_3;
-short param_4;
-
+int resolve_combat_hit_zone(short zone_min, short zone_max, short hit_min, short hit_max)
 {
   int uw_ord2005_rem_3 = 0; int uw_ord2005_rem_4 = 0; int uw_ord2005_rem_5 = 0;
   int iVar1;
@@ -760,16 +748,16 @@ short param_4;
   int extraout_r1_00;
   int extraout_r1_01;
   
-  iVar1 = (int)(short)((int)param_3 + (int)param_4 >> 1);
-  if (iVar1 < param_1 + 1) {
+  iVar1 = (int)(short)(((int)hit_min + (int)hit_max) >> 1);
+  if (iVar1 < zone_min + 1) {
     return 2;
   }
-  if (param_2 + -1 < iVar1) {
+  if (zone_max + -1 < iVar1) {
 LAB_00025aec:
     uVar2 = 3;
   }
   else {
-    if (iVar1 < (short)((int)param_2 + (int)param_1 >> 1)) {
+    if (iVar1 < (short)(((int)zone_max + (int)zone_min) >> 1)) {
       uVar2 = ce_rand();
       uw_ord2005_rem_3 = ((int)(uVar2)) % (2);
       if (uw_ord2005_rem_3 != 0) {
@@ -796,9 +784,7 @@ LAB_00025aec:
 // was FUN_00025b84 -- part of the combat hit-test flow: scans nearby object records (&DAT_00202c3a
 // family) for the one closest, in projected screen space, to a target ray/point described by
 // param_1...
-int find_nearest_hit_target(param_1)
-short * param_1;
-
+int find_nearest_hit_target(short *screen_pos)
 {
   byte bVar1;
   char cVar2;
@@ -816,12 +802,12 @@ short * param_1;
   short local_34;
   short local_32;
   
-  cVar2 = (char)param_1[0xb];
+  cVar2 = (char)screen_pos[0xb];
   iVar12 = -1;
   local_32 = -1;
   iVar11 = 100000;
   local_34 = (short)cVar2;
-  iVar9 = (int)(((int)cVar2 + (uint)*(byte *)((char *)param_1 + 0x15)) * 0x10000) >> 0x10;
+  iVar9 = (int)(((int)cVar2 + (uint)*(byte *)((char *)screen_pos + 0x15)) * 0x10000) >> 0x10;
   iVar10 = (int)(short)cVar2;
   /* ARM 0x25bdc..0x25bf4 retains the attacker record as a pointer. */
   pcAttacker = (short)DAT_00100610 * 0x1b + DAT_002046b8;
@@ -839,15 +825,15 @@ short * param_1;
            ((iVar5 = object_ptr_in_arena(puVar6), iVar5 == 0 ||
             ((*(byte *)((char *)puVar6 + 0x19) & 0x40) == 0)))) ||
           ((iVar10 == iVar9 + -1 && (iVar11 == 100000)))))) {
-        uVar7 = (int)*(short *)(&DAT_00202c3c + iVar10 * 6) + (((int)*param_1 << 0x10) >> 0x13) &
+        uVar7 = (int)*(short *)(&DAT_00202c3c + iVar10 * 6) + (((int)*screen_pos << 0x10) >> 0x13) &
                 0x3f;
         DAT_00100600 = (undefined2)uVar7;
         iVar5 = (int)*(short *)(&DAT_00202c3c + iVar10 * 6) -
-                ((int)((uVar7 - (((int)*param_1 << 0x10) >> 0x13)) * 0x10000) >> 0x10);
+                ((int)((uVar7 - (((int)*screen_pos << 0x10) >> 0x13)) * 0x10000) >> 0x10);
         if (iVar5 < 0) {
           iVar5 = iVar5 + 0x3f;
         }
-        uVar8 = (int)(short)(iVar5 >> 6) + (((int)param_1[1] << 0x10) >> 0x13) & 0x3f;
+        uVar8 = (int)(short)(iVar5 >> 6) + (((int)screen_pos[1] << 0x10) >> 0x13) & 0x3f;
         DAT_00100604 = (ushort)uVar8;
         iVar5 = (int)(((uVar7 * -8 - (uint)(*(byte *)((char *)puVar6 + 3) >> 5)) +
                       (int)(short)((uVar3 >> 7 & 0x1f8) + (ushort)(bVar1 >> 5))) * 0x10000) >> 0x10;
@@ -867,15 +853,15 @@ short * param_1;
     iVar12 = (int)local_32;
   }
   if (-1 < (short)iVar12) {
-    uVar7 = (int)*(short *)(&DAT_00202c3c + (short)iVar12 * 6) + (((int)*param_1 << 0x10) >> 0x13) &
+    uVar7 = (int)*(short *)(&DAT_00202c3c + (short)iVar12 * 6) + (((int)*screen_pos << 0x10) >> 0x13) &
             0x3f;
     DAT_00100600 = (undefined2)uVar7;
     iVar9 = (int)*(short *)(&DAT_00202c3c + (short)iVar12 * 6) -
-            ((int)((uVar7 - (((int)*param_1 << 0x10) >> 0x13)) * 0x10000) >> 0x10);
+            ((int)((uVar7 - (((int)*screen_pos << 0x10) >> 0x13)) * 0x10000) >> 0x10);
     if (iVar9 < 0) {
       iVar9 = iVar9 + 0x3f;
     }
-    DAT_00100604 = (short)(iVar9 >> 6) + (param_1[1] >> 3) & 0x3f;
+    DAT_00100604 = (short)(iVar9 >> 6) + (screen_pos[1] >> 3) & 0x3f;
   }
   return iVar12;
 }
@@ -885,11 +871,7 @@ short * param_1;
 // was FUN_00025ed8 -- part of the combat hit-test flow (own "[blood-splat]" trace): walks outward
 // from the impact point along param_1's heading until it finds a floor/ceiling boundary, then
 // spawns a blood-splat decal object (id 0x1cb) there...
-void spawn_blood_splat_object(param_1,param_2,param_3)
-undefined4 param_1;
-int param_2;
-byte * param_3;
-
+void spawn_blood_splat_object(int object_slot, int step_count, byte *snapshot)
 {
   byte bVar1;
   byte bVar2;
@@ -906,23 +888,23 @@ byte * param_3;
   short local_18;
   short local_16;
 
-  param_2 = param_2 + 1;
-  DAT_00202c6c = param_3;
-  param_3[8] = 1;
+  step_count = step_count + 1;
+  DAT_00202c6c = snapshot;
+  snapshot[8] = 1;
   DAT_00202c6c[10] = 0;
   DAT_00202c6c[0xb] = 0;
   local_18 = (short)((uint)((int)*(short *)DAT_00202c6c << 0x14) >> 0x10);
   local_16 = (short)((uint)((int)*(short *)(DAT_00202c6c + 2) << 0x14) >> 0x10);
-  if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[blood-splat] spawn_blood_splat_object ENTRY param_1=%d param_2=%d\n", (int)param_1, param_2);
+  if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[blood-splat] spawn_blood_splat_object ENTRY object_slot=%d step_count=%d\n", (int)object_slot, step_count);
   while (collision_build_height_field(0),
         ((*(ushort *)(DAT_00202c6c + 0xe) | *(ushort *)(DAT_00202c6c + 0xc)) & 0x300) == 0) {
-    project_position_by_heading(param_1,0x10,&local_18,&local_16);
-    param_2 = param_2 + -1;
+    project_position_by_heading(object_slot,0x10,&local_18,&local_16);
+    step_count = step_count + -1;
     *DAT_00202c6c = (byte)((int)local_18 >> 4);
     DAT_00202c6c[1] = (byte)((uint)((int)local_18 >> 4) >> 8);
     DAT_00202c6c[2] = (byte)((int)local_16 >> 4);
     DAT_00202c6c[3] = (byte)((uint)((int)local_16 >> 4) >> 8);
-    if (param_2 * 0x10000 >> 0x10 < 1) {
+    if (step_count * 0x10000 >> 0x10 < 1) {
       if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[blood-splat] spawn_blood_splat_object: no floor/ceiling boundary found within range, bailing\n");
       return;
     }
@@ -961,15 +943,13 @@ byte * param_3;
   if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[blood-splat] spawn_blood_splat_object: tilemap_lookup(%d,%d)=%p, appending\n", (int)sVar4>>3, (int)sVar5>>3, (void*)iVar9);
   object_list_append_tail(iVar9 + 2,iVar7);
   if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[blood-splat] spawn_blood_splat_object: SUCCESS, splat placed\n");
-  return;
 }
 
 
 // was FUN_00026194 -- resolves a melee weapon swing's hit test: computes the swing's attack
 // direction/position, checks for a wall collision (spawning a blood-splat decal on the wall via
 // spawn_blood_splat_object if so) versus a creature collision...
-undefined4 resolve_melee_swing_hit()
-
+int resolve_melee_swing_hit()
 {
   byte bVar1;
   char cVar2;
@@ -990,7 +970,7 @@ undefined4 resolve_melee_swing_hit()
 #define local_32 (*(short *)(local_pos_record + 0xa))
 
   ce_memset(local_pos_record, 0, sizeof(local_pos_record));
-  DAT_00202c6c = &local_3c;
+  DAT_00202c6c = local_pos_record;
   uVar7 = (uint)DAT_001005f4;
   local_34 = (char)DAT_001005f4 + '\x01';
   local_32 = DAT_00100610;
@@ -1065,10 +1045,7 @@ undefined4 resolve_melee_swing_hit()
 
 // was FUN_00026570 -- resolves whether a confirmed hit actually penetrates: rolls a skill check
 // (weapon skill + facing modifier vs the target's armor-class-shaped table at &DAT_001007e2)...
-int resolve_weapon_hit_skill_check(param_1,param_2)
-short param_1;
-undefined4 param_2;
-
+int resolve_weapon_hit_skill_check(short hit_flag, int target_slot)
 {
   int uw_ord2005_rem_6 = 0;
   byte bVar1;
@@ -1081,7 +1058,7 @@ undefined4 param_2;
   uint uVar7;
   ushort uVar8;
   
-  puVar2 = (ushort *)get_object_record_by_slot_index(param_2);
+  puVar2 = (ushort *)get_object_record_by_slot_index(target_slot);
   uVar6 = (uint)*puVar2;
   if ((uVar6 & 0x1c0) == 0x40) {
     uVar7 = uVar6 & 0x3f;
@@ -1097,7 +1074,7 @@ undefined4 param_2;
     iVar3 = roll_skill_check(DAT_00100628 + uVar6,(int)(char)(&DAT_001007e2)[uVar7 * 0x30]);
     DAT_001005d8 = 0;
     if ((short)iVar3 != 2) {
-      if ((((short)iVar3 == -1) && (param_1 == 1)) &&
+      if ((((short)iVar3 == -1) && (hit_flag == 1)) &&
          (pbVar5 = (byte *)get_object_record_by_slot_index((int)DAT_00100620),
          ((&DAT_001007da)[(*pbVar5 & 0x3f) * 0x30] & 1) == 0)) {
         bVar1 = *(byte *)(DAT_00086df8 + 100);
@@ -1109,7 +1086,7 @@ undefined4 param_2;
     DAT_001005d8 = 1;
     uVar6 = ce_rand();
     DAT_0010061c = (short)((int)((uVar6 & 0x1f) + 0x30) >> 5) * DAT_0010061c;
-    if ((short)param_2 == 1) {
+    if ((short)target_slot == 1) {
       weapon_overlay_flash_once(0xb8);
       uVar8 = DAT_00100624 + 1U & 3;
       if (uVar8 == 3) {
@@ -1124,7 +1101,7 @@ undefined4 param_2;
       damage_equipped_item_in_slot(uVar8,uVar4,4,1,1);
     }
   }
-  else if (((param_1 == 1) && ((uVar6 & 0x1f0) == 0x140)) &&
+  else if (((hit_flag == 1) && ((uVar6 & 0x1f0) == 0x140)) &&
           (iVar3 = rand_below(0xc), iVar3 < (int)(((byte)*puVar2 & 7) * 2))) {
     bVar1 = *(byte *)(DAT_00086df8 + 100);
     uVar4 = roll_dice_sum(2,4);
@@ -1137,9 +1114,7 @@ undefined4 param_2;
 
 // was FUN_00026858 -- applies a landed melee hit's damage: rolls a damage dice pool, reduces it by
 // the target's armor value (looked up from &DAT_001007d0), plays the impact sound...
-void apply_melee_damage(param_1)
-undefined1 param_1;
-
+void apply_melee_damage(byte hit_type)
 {
   int uw_ord2005_rem_7 = 0; int uw_ord2005_rem_8 = 0;
   uint uVar1;
@@ -1223,7 +1198,7 @@ undefined1 param_1;
   }
   uVar7 = get_object_record_by_slot_index((int)DAT_00100610);
   iVar11 = apply_typed_damage_to_object(puVar6,uVar7,(int)DAT_00100600,(int)DAT_00100604,
-                        CONCAT11(uVar12,(char)sVar3),CONCAT11(uVar13,param_1));
+                        CONCAT11(uVar12,(char)sVar3),CONCAT11(uVar13,hit_type));
   sVar2 = DAT_00100610;
   cVar10 = DAT_001005dc;
   if ((sVar3 != 0) && (DAT_00100610 != -1)) {
@@ -1285,19 +1260,18 @@ undefined1 param_1;
       }
     }
   }
-  return;
 }
 
 
 
 // was FUN_00026eb4 -- picks and plays a combat impact sound effect: id
-// 10 for a whiffed/no-target swing (param_1==0), else id 7 or 8
+// 10 for a whiffed/no-target swing (result==0), else id 7 or 8
 // depending on whether the attacker's weapon type and the target's
 // armor/shield type both indicate a "blocked" match (a metal-on-metal
 // clang vs a duller impact).
 //
 // BUG FIX (real crash, same class as play_sound_effect_at_object's own
-// fix in audio.c): the hit branch (param_1 != 0) dereferenced
+// fix in audio.c): the hit branch (result != 0) dereferenced
 // get_object_record_by_slot_index(DAT_00100610)'s result unconditionally
 // (`DAT_00100610 = *puVar6 & 0x1ff;`) with no NULL check -- confirmed
 // byte-for-byte against a live Ghidra decompile of the real FUN_00026eb4,
@@ -1316,28 +1290,26 @@ undefined1 param_1;
 // get_object_record_by_slot_index's real pointer result on BOTH paths
 // that reach play_sound_effect_at_object(uVar5,uVar4,0) below -- was
 // `undefined4` (32-bit), truncating the real 64-bit object pointer
-// right here, before the already-fixed param_2 type on the callee side
-// ever gets a chance to matter. Confirmed via a live Ghidra decompile of
-// the real FUN_00026eb4 that this `undefined4 uVar4;` is genuinely how
+// right here, before the already-fixed object-pointer type on the callee
+// side ever gets a chance to matter. Confirmed via a live Ghidra decompile
+// of the real FUN_00026eb4 that this `undefined4 uVar4;` is genuinely how
 // the original compiled game typed it too (same unrecovered-32-bit-
 // pointer-width class as every other fix on this branch). Live repro
 // (the user's own attack-crash.txt, replayed under lldb): confirmed the
 // first fix alone didn't resolve the crash because of this exact
 // truncation still happening one call frame earlier. Widened to a real
 // pointer type.
-undefined4 play_weapon_impact_sound(param_1)
-short param_1;
-
+int play_weapon_impact_sound(short result)
 {
   uint uVar1;
   byte bVar2;
   ushort uVar3;
-  char *uVar4;
+  void *uVar4;
   undefined4 uVar5;
   ushort *puVar6;
   byte bVar7;
 
-  if (param_1 == 0) {
+  if (result == 0) {
     uVar4 = get_object_record_by_slot_index((int)(short)DAT_00100610);
     uVar5 = 10;
     goto LAB_0002701c;
@@ -1383,7 +1355,6 @@ LAB_0002701c:
 // was FUN_0002702c -- computes the attacker's facing relative to the target (DAT_00100628, a
 // mirrored 0-4 octant offset from the two objects' own heading fields)...
 void compute_attack_relative_facing()
-
 {
   int uw_ord2005_rem_9 = 0;
   /* ARM 0x27038..0x27068 reads both returned object pointers directly. */
@@ -1398,7 +1369,6 @@ void compute_attack_relative_facing()
   if (4 < (uw_ord2005_rem_9 & 0xff)) {
     DAT_00100628 = '\b' - DAT_00100628;
   }
-  return;
 }
 
 
@@ -1406,8 +1376,7 @@ void compute_attack_relative_facing()
 // was FUN_000270d0 -- top-level melee swing resolution: calls resolve_melee_swing_hit to hit-test
 // the swing, then (if a creature was struck and isn't already excluded by a same-faction/arena
 // check) computes relative facing, resolves the weapon-vs-armor skill check...
-undefined4 process_melee_attack_swing()
-
+int process_melee_attack_swing()
 {
   int iVar1;
   undefined4 uVar2;
@@ -1456,10 +1425,7 @@ undefined4 process_melee_attack_swing()
 // was FUN_000272c0 -- resolves the player's currently equipped weapon (the item in the off-hand
 // slot, 8-handedness) into an attack-data record pointer (*param_1) and outputs the raw item
 // pointer itself (*param_2): if it's a ranged weapon (category 0x10) with a valid ammo type...
-undefined4 resolve_equipped_weapon_attack(param_1,param_2)
-char * * param_1;
-char * * param_2;
-
+int resolve_equipped_weapon_attack(char * *out_attack_data, char * *out_weapon_object)
 {
   uint uVar1;
   ushort uVar2;
@@ -1467,9 +1433,9 @@ char * * param_2;
   ushort *puVar4;
   int iVar5;
 
-  *param_1 = 0;
+  *out_attack_data = 0;
   puVar4 = (ushort *)get_equipped_item_at_slot(8 - (*(byte *)(DAT_00086df8 + 100) & 1));
-  *param_2 = (char *)puVar4;
+  *out_weapon_object = (char *)puVar4;
   if (puVar4 != (ushort *)0x0) {
     uVar2 = *puVar4;
     uVar1 = (uint)(short)(uVar2 & 0x1ff);
@@ -1481,17 +1447,17 @@ char * * param_2;
           wait_for_click_release(1);
           return 0xffffffff;
         }
-        *param_1 = &DAT_002027d0 + iVar5;
+        *out_attack_data = &DAT_002027d0 + iVar5;
         return 0;
       }
     }
     else if ((uVar2 & 0x1f0) == 0) {
-      *param_1 = &DAT_00202800 + (uVar1 & 0xf) * 8;
+      *out_attack_data = &DAT_00202800 + (uVar1 & 0xf) * 8;
       DAT_001005f4 = (byte)(&DAT_00202c91)[uVar1 * 0xd] & 7;
     }
   }
-  if (*param_1 == 0) {
-    *param_1 = &DAT_00202878;
+  if (*out_attack_data == 0) {
+    *out_attack_data = &DAT_00202878;
     DAT_001005f4 = DAT_00202d54 & 7;
   }
   return 1;
@@ -1502,11 +1468,7 @@ char * * param_2;
 // was FUN_000273f8 -- computes the player's own weapon-swing attack stats: to-hit base
 // (DAT_00100608, from the player's own weapon skill plus a strength-derived bonus, +7 more if a
 // "berserk"-shaped flag at DAT_00086df8+0xb4 is set) and damage dice pool...
-void compute_player_weapon_attack_stats(param_1,param_2,param_3)
-char * param_1;
-char * param_2;
-short param_3;
-
+void compute_player_weapon_attack_stats(char *weapon_stats, char *weapon_item, short attack_type)
 {
   byte bVar1;
   char *iVar2;
@@ -1518,7 +1480,7 @@ short param_3;
   int local_28;
   
   iVar2 = DAT_00086df8;
-  bVar1 = *(byte *)(param_1 + 6);
+  bVar1 = *(byte *)(weapon_stats + 6);
   uVar3 = (ushort)bVar1;
   if ((5 < bVar1) || (bVar1 < 2)) {
     uVar3 = 2;
@@ -1538,11 +1500,11 @@ short param_3;
   }
   else {
     sVar4 = ordint_divmod(9,(&DAT_001007d5)[(*g_player_object & 0x3f) * 0x30]).quot;
-    DAT_0010061c = (ushort)*(byte *)(param_1 + (uint)(byte)(&DAT_00084eff)[param_3]) + sVar4;
+    DAT_0010061c = (ushort)*(byte *)(weapon_stats + (uint)(byte)(&DAT_00084eff)[attack_type]) + sVar4;
   }
   DAT_00100610 = 1;
-  DAT_001005f8 = param_3;
-  if (((param_2 != 0) && (resolve_object_variant_or_special_link(param_2,&local_2c,&local_2a,&local_28), local_28 == 0)) &&
+  DAT_001005f8 = attack_type;
+  if (((weapon_item != 0) && (resolve_object_variant_or_special_link(weapon_item,&local_2c,&local_2a,&local_28), local_28 == 0)) &&
      (local_2c == 0xc)) {
     if ((local_2a & 8) == 0) {
       DAT_00100608 = (local_2a & 7) + DAT_00100608 + 1;
@@ -1551,67 +1513,53 @@ short param_3;
       DAT_0010061c = (local_2a & 7) + DAT_0010061c + 1;
     }
   }
-  return;
 }
 
 
 // was FUN_00027b3c -- a general-purpose "attacker object directly hits target object"
 // damage-application entry point (parallel to, but independent of, the player's own
 // tick_weapon_swing_state chain)...
-void apply_direct_object_hit(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
-undefined2 param_1;
-ushort * param_2;
-ushort * param_3;
-undefined2 param_4;
-undefined2 param_5;
-undefined2 param_6;
-undefined1 param_7;
-
+void apply_direct_object_hit(short hit_flag, void *attacker_ptr, ushort *target, short tile_x, short tile_y, short damage_dice, byte hit_type)
 {
+  ushort *attacker = (ushort *)attacker_ptr;
   short sVar1;
   uint uVar2;
   int iVar3;
   uint uVar4;
   
-  DAT_00100604 = param_5;
+  DAT_00100604 = tile_y;
   DAT_001005d8 = 0;
   DAT_00100628 = 0;
-  DAT_001005dc = ((byte)param_2[1] & 0x7f) + ((byte)(&DAT_00202c90)[(*param_2 & 0x1ff) * 0xd] >> 1);
+  DAT_001005dc = ((byte)attacker[1] & 0x7f) + ((byte)(&DAT_00202c90)[(*attacker & 0x1ff) * 0xd] >> 1);
   DAT_001005fc = 0x80;
-  DAT_00100600 = param_4;
-  DAT_00100610 = param_1;
-  DAT_00100620 = encode_object_slot_index(param_3);
-  uVar4 = (byte)param_2[1] & 0x7f;
-  uVar2 = (byte)param_3[1] & 0x7f;
-  sVar1 = resolve_combat_hit_zone(uVar2,(byte)(&DAT_00202c90)[(*param_3 & 0x1ff) * 0xd] + uVar2,uVar4,
-                       (byte)(&DAT_00202c90)[(*param_2 & 0x1ff) * 0xd] + uVar4);
+  DAT_00100600 = tile_x;
+  DAT_00100610 = hit_flag;
+  DAT_00100620 = encode_object_slot_index(target);
+  uVar4 = (byte)attacker[1] & 0x7f;
+  uVar2 = (byte)target[1] & 0x7f;
+  sVar1 = resolve_combat_hit_zone(uVar2,(byte)(&DAT_00202c90)[(*target & 0x1ff) * 0xd] + uVar2,uVar4,
+                       (byte)(&DAT_00202c90)[(*attacker & 0x1ff) * 0xd] + uVar4);
   DAT_00100624 = sVar1 + 4;
-  DAT_0010061c = param_6;
-  if (param_3 == g_player_object) {
+  DAT_0010061c = damage_dice;
+  if (target == g_player_object) {
     play_sound_effect_with_pan(3,0,0);
   }
   else {
-    iVar3 = object_ptr_in_arena(param_3);
+    iVar3 = object_ptr_in_arena(target);
     if (iVar3 != 0) {
-      play_sound_effect_at_object(4,param_3,0);
+      play_sound_effect_at_object(4,target,0);
     }
   }
-  apply_melee_damage(param_7);
-  return;
+  apply_melee_damage(hit_type);
 }
 
 
 // was FUN_00027ce0 -- resolves an NPC's melee attack: computes its to-hit base (DAT_00100608) and
 // damage dice pool (DAT_0010061c) from its own monster-stat table
 // (&DAT_001007d0/&DAT_001007d5/&DAT_001007e1)...
-int resolve_npc_melee_attack(param_1,param_2,param_3,param_4,param_5)
-byte * param_1;
-undefined2 param_2;
-undefined1 param_3;
-short param_4;
-short param_5;
-
+int resolve_npc_melee_attack(void *npc_ptr, short tile_x, byte tile_y, short offset_x, short offset_y)
 {
+  byte *npc = (byte *)npc_ptr;
   byte bVar1;
   char cVar2;
   short sVar3;
@@ -1623,18 +1571,18 @@ short param_5;
   uint uVar7;
   
   DAT_001005f4 = 2;
-  DAT_00100610 = encode_object_slot_index(param_1);
-  iVar6 = (*param_1 & 0x3f) * 0x30;
-  iVar5 = param_4 * 3 + iVar6;
+  DAT_00100610 = encode_object_slot_index(npc);
+  iVar6 = (*npc & 0x3f) * 0x30;
+  iVar5 = offset_x * 3 + iVar6;
   bVar1 = (&DAT_001007d0)[iVar5 + 0x14];
   DAT_0010061c = (ushort)bVar1;
-  DAT_001005f8 = param_2;
-  DAT_001005fc = param_3;
-  sVar3 = ordint_divmod(5,(&DAT_001007d5)[(*param_1 & 0x3f) * 0x30]).quot;
+  DAT_001005f8 = tile_x;
+  DAT_001005fc = tile_y;
+  sVar3 = ordint_divmod(5,(&DAT_001007d5)[(*npc & 0x3f) * 0x30]).quot;
   DAT_0010061c = (ushort)bVar1 + sVar3;
   DAT_00100608 = (short)(char)(&DAT_001007d0)[iVar5 + 0x13] +
                  (short)((int)(char)(&DAT_001007e1)[iVar6] >> 1);
-  if ((param_1[0xe] & 4) != 0) {
+  if ((npc[0xe] & 4) != 0) {
     /* Both ordint_divmod calls below were the same fabricated-remainder bug fixed elsewhere this
        session (this port's ordint_divmod never populates extraout_r1/extraout_r1_00); computed each
        remainder directly instead. */
@@ -1644,25 +1592,25 @@ short param_5;
     DAT_0010061c = DAT_0010061c + (short)(uVar4 % 0xc) + 4;
   }
   if (getenv("UW_DEBUG_NPC_WANDER")) {
-    ushort _pos = *(ushort *)(param_1 + 0x16);
-    fprintf(stderr, "[npc-wander] obj=%p param_2=%d param_3=%d param_4=%d param_5=%d"
+    ushort _pos = *(ushort *)(npc + 0x16);
+    fprintf(stderr, "[npc-wander] obj=%p tile_x=%d tile_y=%d offset_x=%d offset_y=%d"
             " base_iVar5=%d bVar1=%d DAT_00100608=%d DAT_0010061c=%d src_tile=(%u,%u)\n",
-            (void *)param_1, (int)(short)param_2, (int)param_3, (int)param_4, (int)param_5,
+            (void *)npc, (int)(short)tile_x, (int)tile_y, (int)offset_x, (int)offset_y,
             iVar5, (int)bVar1, (int)DAT_00100608, (int)DAT_0010061c,
             (unsigned)(_pos >> 10), (unsigned)((_pos & 0x3f0) >> 4));
   }
   iVar5 = process_melee_attack_swing();
   if (getenv("UW_DEBUG_NPC_WANDER")) {
-    ushort _pos = *(ushort *)(param_1 + 0x16);
+    ushort _pos = *(ushort *)(npc + 0x16);
     fprintf(stderr, "[npc-wander] process_melee_attack_swing returned %d DAT_00100620=%d dst_tile=(%u,%u)\n",
             iVar5, (int)DAT_00100620,
             (unsigned)(_pos >> 10), (unsigned)((_pos & 0x3f0) >> 4));
   }
   if ((iVar5 != 0) && (DAT_00100620 == 1)) {
-    if (((short)(*(byte *)(DAT_00086df8 + 0x5f) >> 2 & 0xf) < param_5) &&
+    if (((short)(*(byte *)(DAT_00086df8 + 0x5f) >> 2 & 0xf) < offset_y) &&
        (cVar2 = resolve_damage_type_resistance(g_player_object,1,0x10), cVar2 != '\0')) {
       uVar7 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
-      *(byte *)(DAT_00086df8 + 0x5f) = (byte)uVar7 | (byte)(((int)param_5 & 0xfU) << 2);
+      *(byte *)(DAT_00086df8 + 0x5f) = (byte)uVar7 | (byte)(((int)offset_y & 0xfU) << 2);
       *(char *)(DAT_00086df8 + 0x60) = (char)(uVar7 >> 8);
     }
   }
@@ -1673,9 +1621,7 @@ short param_5;
 // was FUN_00027f14 -- grants the player experience for killing param_1 (a monster object, category
 // 0x40): plays a HUD update and music sting, rolls XP from the monster's own stat table
 // (&DAT_001007f8), with a random spread when a specific stat flag bit is set...
-void award_monster_kill_experience(param_1)
-ushort * param_1;
-
+void award_monster_kill_experience(ushort *monster)
 {
   int uw_ord2005_rem_10 = 0;
   short sVar1;
@@ -1683,13 +1629,13 @@ ushort * param_1;
   undefined4 uVar3;
   int extraout_r1;
   
-  if ((*param_1 & 0x1c0) == 0x40) {
+  if ((*monster & 0x1c0) == 0x40) {
     set_hud_status_value(4,2);
     set_pending_music_track(9);
-    sVar1 = *(short *)(&DAT_001007f8 + ((byte)*param_1 & 0x3f) * 0x30);
+    sVar1 = *(short *)(&DAT_001007f8 + ((byte)*monster & 0x3f) * 0x30);
     iVar2 = roll_dice_sum(2,(int)sVar1);
     iVar2 = iVar2 + sVar1 * 4;
-    if ((param_1[7] & 4) != 0) {
+    if ((monster[7] & 4) != 0) {
       uVar3 = ce_rand();
       uw_ord2005_rem_10 = ((int)(uVar3)) % (0x18);
       iVar2 = (uw_ord2005_rem_10 + 0x18) * (iVar2 * 0x10000 >> 0x10);
@@ -1700,7 +1646,6 @@ ushort * param_1;
     }
     grant_experience_points(iVar2);
   }
-  return;
 }
 
 
@@ -1709,7 +1654,6 @@ ushort * param_1;
 // s__DATA_cmb_dat_00084f40) relative to the game data path
 // (DAT_0023cca8) into the &DAT_00100630 buffer (0x3c bytes).
 void load_combat_data_file()
-
 {
   char stack0xffdc3250_buf [256];
   char *stack0xffdc3250_ptr;
@@ -1726,27 +1670,22 @@ void load_combat_data_file()
   } while (cVar1 != '\0');
   ce_strcat(acStack_108,s__DATA_cmb_dat_00084f40);
   read_buffer_from_file(acStack_108,&DAT_00100630,0x3c);
-  return;
 }
 
 
 // was FUN_0002a2c8 -- reads a fixed 0xc00-byte block from file handle param_1 into &DAT_001007d0
 // (the monster combat-stat table apply_melee_damage/ resolve_npc_melee_attack read armor/attack
 // values from).
-void load_monster_combat_stats(param_1)
-undefined4 param_1;
-
+void load_monster_combat_stats(int file_handle)
 {
-  read_file_handle(param_1,&DAT_001007d0,0xc00);
-  return;
+  read_file_handle(file_handle,&DAT_001007d0,0xc00);
 }
 
 
 // was FUN_00030aac -- an NPC combat sub-goal attempt (one of 3 confirmed sibling sub-goals
 // npc_combat_engage_close_tick picks between when not yet close enough to attack, per its own
 // comment).
-undefined4 try_npc_special_ability_no_los()
-
+int try_npc_special_ability_no_los()
 {
   int uw_ord2005_rem_59 = 0;
   byte bVar1;
@@ -1781,8 +1720,7 @@ undefined4 try_npc_special_ability_no_los()
 // was FUN_00030be0 -- an NPC combat sub-goal attempt (sibling of try_npc_special_ability_no_los):
 // requires a clear line of sight (check_fine_line_of_sight) and a resource check
 // (check_npc_target_alignment(1), likely "can afford this ability's cost")...
-undefined4 try_npc_special_ability_ranged()
-
+int try_npc_special_ability_ranged()
 {
   int uw_ord2005_rem_60 = 0; int uw_ord2005_rem_61 = 0;
   byte bVar1;
@@ -1831,8 +1769,7 @@ undefined4 try_npc_special_ability_ranged()
 // was FUN_00030e50 -- an NPC combat sub-goal attempt (third sibling of
 // try_npc_special_ability_no_los/_ranged): also requires line of sight and the same resource
 // check...
-undefined4 try_npc_special_ability_alt()
-
+int try_npc_special_ability_alt()
 {
   int uw_ord2005_rem_62 = 0;
   byte bVar1;
@@ -1867,10 +1804,7 @@ undefined4 try_npc_special_ability_alt()
 // was FUN_000318d8 -- adjusts an NPC's current heading (param_1) to swerve away from the player
 // when the player is within param_2 tiles (distance squared): if closer than threshold, computes
 // the heading toward the player and...
-uint adjust_heading_away_from_player(param_1,param_2)
-uint param_1;
-uint param_2;
-
+uint adjust_heading_away_from_player(uint heading, uint min_distance_sq)
 {
   /* Was `int`, truncating the real 64-bit pointer get_object_record_by_slot_index(1) returns --
      same class of bug fixed repeatedly elsewhere this session. Confirmed live crashing on the very
@@ -1887,48 +1821,46 @@ uint param_2;
   uint uVar4;
   uint uVar5;
   
-  iVar1 = get_object_record_by_slot_index(1);
+  iVar1 = (intptr_t)get_object_record_by_slot_index(1);
   uVar3 = ((*(ushort *)(iVar1 + 0x16) >> 7 & 0x1f8) + (uint)(*(byte *)(iVar1 + 3) >> 5)) -
           (uint)DAT_00101910;
   uVar5 = ((*(ushort *)(iVar1 + 0x16) >> 1 & 0x1f8) + ((*(byte *)(iVar1 + 3) & 0x1c) >> 2)) -
           (uint)DAT_0010141c;
   uVar2 = uVar5 & 0xffff;
   uVar4 = uVar3 & 0xffff;
-  if ((int)(uVar4 * uVar4 + uVar2 * uVar2 & 0xffff) < (int)((param_2 & 0xffff) * (param_2 & 0xffff))
+  if ((int)(uVar4 * uVar4 + uVar2 * uVar2 & 0xffff) < (int)((min_distance_sq & 0xffff) * (min_distance_sq & 0xffff))
      ) {
     uVar2 = compute_movement_heading((int)(uVar3 * 0x1000000) >> 0x18,(int)(uVar5 * 0x1000000) >> 0x18);
     /* All 5 ordint_divmod calls below were the same fabricated-remainder bug fixed elsewhere this
        session (this port's ordint_divmod never populates extraout_r1/extraout_r1_NN) -- computed
        each remainder directly instead. */
     iVar1 = (((uVar2 & 0xff) + 4) % 8) * 0x20;
-    uVar4 = param_1 & 0xff;
+    uVar4 = heading & 0xff;
     uVar2 = ((iVar1 - uVar4) + 0x100) & 0xff;
     if ((0x3f < uVar2) && (uVar2 < 0xc1)) {
       if (uVar2 < 0x60) {
-        param_1 = (iVar1 + 0xe0) & 0xff;
+        heading = (iVar1 + 0xe0) & 0xff;
       }
       else if (uVar2 < 0x80) {
-        param_1 = (uVar4 + 0x20) & 0xff;
+        heading = (uVar4 + 0x20) & 0xff;
       }
       else if (uVar2 < 0xa1) {
-        param_1 = (uVar4 + 0xe0) & 0xff;
+        heading = (uVar4 + 0xe0) & 0xff;
       }
       else {
-        param_1 = (iVar1 + 0x20) & 0xff;
+        heading = (iVar1 + 0x20) & 0xff;
       }
-      param_1 = param_1 & 0xff;
+      heading = heading & 0xff;
     }
   }
-  return param_1;
+  return heading;
 }
 
 
 // was FUN_00032410 -- checks/adjusts an NPC's 8-way facing toward a target position
 // (DAT_00101908/0x1c minus DAT_00101910/0x1c, the same aim-point delta check_fine_line_of_sight's
 // own callers compute): param_1==0 checks the coarse 8-way heading via compute_movement_heading...
-undefined4 check_npc_target_alignment(param_1)
-int param_1;
-
+int check_npc_target_alignment(int mode)
 {
   int uw_ord2005_rem_87 = 0; int uw_ord2005_rem_88 = 0; int uw_ord2005_rem_89 = 0;
   int iVar1;
@@ -1945,10 +1877,10 @@ int param_1;
   iVar1 = (int)(((uint)DAT_00101908 - (uint)DAT_00101910) * 0x1000000) >> 0x18;
   iVar2 = (int)(((uint)DAT_00101418 - (uint)DAT_0010141c) * 0x1000000) >> 0x18;
   cVar5 = compute_movement_heading(iVar1,iVar2);
-  iVar4 = DAT_0010190c;
+  iVar4 = (char *)DAT_0010190c;
   uVar3 = *(ushort *)((char *)DAT_0010190c + 2);
   uw_ord2005_rem_87 = ((int)(((int)cVar5 - ((int)(char)(uVar3 >> 7) & 7U)) + 8)) % (8);
-  if (param_1 == 0) {
+  if (mode == 0) {
     if (uw_ord2005_rem_87 == '\0') {
       uVar6 = 1;
     }
@@ -1979,10 +1911,7 @@ int param_1;
 // was FUN_0003276c -- checks/adjusts an NPC's fine-grained facing toward a target delta
 // (param_1,param_2): computes the precise angle via slope ratios fed through
 // compute_angle_from_slope (an atan2-shaped helper, not yet named)...
-undefined4 check_npc_fine_facing_alignment(param_1,param_2)
-char param_1;
-char param_2;
-
+int check_npc_fine_facing_alignment(char delta_x, char delta_y)
 {
   int uw_ord2005_rem_90 = 0; int uw_ord2005_rem_91 = 0; int uw_ord2005_rem_92 = 0;
   uint uVar1;
@@ -2002,8 +1931,8 @@ char param_2;
   uVar4 = (uVar4 ^ *(byte *)((char *)DAT_0010190c + 0x18)) & 0x1f ^ uVar4;
   uVar3 = integer_sqrt((int)DAT_00101444 * (int)DAT_00101444 + (int)DAT_00101448 * (int)DAT_00101448
                       );
-  uVar6 = (uint)param_1;
-  uVar1 = (uint)param_2;
+  uVar6 = (uint)delta_x;
+  uVar1 = (uint)delta_y;
   uVar3 = uVar3 & 0xffff;
   if (uVar3 == 0) {
     uVar8 = 1;
@@ -2054,11 +1983,7 @@ char param_2;
 
 // was FUN_000346a0 -- applies param_2 points of damage to object param_1 from damaging object
 // param_3 (NULL if none, e.g. environmental damage).
-undefined4 apply_damage_to_object(param_1,param_2,param_3)
-ushort * param_1;
-byte param_2;
-ushort * param_3;
-
+int apply_damage_to_object(ushort *target, byte damage, ushort *attacker)
 {
   short sVar1;
   uint uVar2;
@@ -2066,60 +1991,58 @@ ushort * param_3;
   undefined4 uVar4;
   int iVar5;
   bool bVar6;
+  uint attacker_id = 0;  /* was the `attacker` pointer param itself, reused as an integer id (truncating cast) */
 
-  bVar6 = param_3 == (ushort *)0x0;
-  iVar5 = (((int)(short)*param_1 & 0xfU) + (short)((*param_1 & 0x30) >> 4) * 0x10) * 0x30;
-  if (bVar6) {
-    param_3 = (ushort *)0x0;
-  }
-  *(byte *)((char *)param_1 + 0x11) = *(char *)((char *)param_1 + 0x11) + param_2;
+  bVar6 = attacker == (ushort *)0x0;
+  iVar5 = (((int)(short)*target & 0xfU) + (short)((*target & 0x30) >> 4) * 0x10) * 0x30;
+  *(byte *)((char *)target + 0x11) = *(char *)((char *)target + 0x11) + damage;
   if (!bVar6) {
-    if ((*param_3 & 0x1c0) == 0x40) {
-      sVar1 = encode_object_slot_index(param_3);
+    if ((*attacker & 0x1c0) == 0x40) {
+      sVar1 = encode_object_slot_index(attacker);
       uVar2 = (uint)sVar1;
       if (0xff < (int)uVar2) {
         uVar2 = 0;
       }
-      param_3 = (ushort *)(uVar2 & 0xff);
+      attacker_id = uVar2 & 0xff;
     }
     else {
-      param_3 = (ushort *)(uint)(byte)param_3[9];
+      attacker_id = (byte)attacker[9];
     }
   }
-  uVar2 = (uint)param_3 & 0xff;
+  uVar2 = attacker_id & 0xff;
   if (uVar2 != 0) {
-    *(char *)(param_1 + 9) = (char)param_3;
+    *(char *)(target + 9) = (char)attacker_id;
   }
-  if ((uVar2 == 1) && ((param_1[5] & 0x80) == 0)) {
+  if ((uVar2 == 1) && ((target[5] & 0x80) == 0)) {
     DAT_000853d0 = (&DAT_001007d9)[iVar5];
-    DAT_0010194c = encode_object_slot_index(param_1);
-    DAT_0010192c = *(byte *)((char *)param_1 + 0x17) >> 2;
-    DAT_00101930 = (byte)(param_1[0xb] >> 4) & 0x3f;
-    DAT_00101934 = (byte)param_1[1] >> 3 & 0xf;
+    DAT_0010194c = encode_object_slot_index(target);
+    DAT_0010192c = *(byte *)((char *)target + 0x17) >> 2;
+    DAT_00101930 = (byte)(target[0xb] >> 4) & 0x3f;
+    DAT_00101934 = (byte)target[1] >> 3 & 0xf;
     DAT_00101940 = *(undefined4 *)(DAT_00086df8 + 0xce);
   }
-  if (param_2 < (byte)param_1[4]) {
-    *(byte *)(param_1 + 4) = (byte)param_1[4] - param_2;
-    if (param_1 == g_player_object) {
+  if (damage < (byte)target[4]) {
+    *(byte *)(target + 4) = (byte)target[4] - damage;
+    if (target == g_player_object) {
       refresh_experience_display();
     }
   }
   else {
-    *(undefined1 *)(param_1 + 4) = 0;
-    iVar3 = handle_monster_death(param_1);
+    *(undefined1 *)(target + 4) = 0;
+    iVar3 = handle_monster_death(target);
     if (iVar3 != 0) {
       if (uVar2 == 1) {
-        award_monster_kill_experience(param_1);
+        award_monster_kill_experience(target);
       }
       return 1;
     }
   }
   if (uVar2 == 1) {
-    sVar1 = ordint_divmod((byte)(&g_monster_max_stats_table)[iVar5] + 1,(uint)(byte)param_1[4] << 6).quot;
+    sVar1 = ordint_divmod((byte)(&g_monster_max_stats_table)[iVar5] + 1,(uint)(byte)target[4] << 6).quot;
     uVar4 = 5;
   }
   else {
-    if (param_1 != g_player_object) {
+    if (target != g_player_object) {
       return 0;
     }
     if (uVar2 == 0) {
@@ -2140,62 +2063,52 @@ ushort * param_3;
 // was FUN_000382cc -- resolves elemental/damage-type resistance for object param_1 against a
 // damage-type bitmask (param_3), returning the effective damage to apply: 0 if fully resisted,
 // otherwise param_2 (the original damage amount) unchanged.
-undefined4 resolve_damage_type_resistance(param_1,param_2,param_3)
-ushort * param_1;
-undefined4 param_2;
-uint param_3;
-
+int resolve_damage_type_resistance(ushort *object, int damage, uint damage_type_mask)
 {
   int uw_ord2005_rem_102 = 0;
   undefined4 uVar1;
   int extraout_r1;
   uint uVar2;
 
-  uVar2 = (uint)(byte)(&DAT_00202c99)[(*param_1 & 0x1ff) * 0xd];
-  if ((uVar2 & param_3 & 0xff) != 0) {
-    if ((param_3 & 3) != 0) {
+  uVar2 = (uint)(byte)(&DAT_00202c99)[(*object & 0x1ff) * 0xd];
+  if ((uVar2 & damage_type_mask & 0xff) != 0) {
+    if ((damage_type_mask & 3) != 0) {
       uVar1 = ce_rand();
       uw_ord2005_rem_102 = ((int)(uVar1)) % (3);
       if (uw_ord2005_rem_102 < (int)(uVar2 & 3)) {
         return 0;
       }
-      param_3 = param_3 & 0xfc;
+      damage_type_mask = damage_type_mask & 0xfc;
     }
-    if ((uVar2 & param_3 & 0xff) != 0) {
+    if ((uVar2 & damage_type_mask & 0xff) != 0) {
       return 0;
     }
   }
-  return param_2;
+  return damage;
 }
 
 
 // was FUN_00038374 -- the general-purpose "apply damage/effect to any object" entry point (param_1:
 // target; param_2: the damaging object/weapon, or 0; param_3/param_4: tile x/y, when relevant;
 // param_5: raw damage amount; param_6: damage-type bitmask).
-undefined4 apply_typed_damage_to_object(param_1,param_2,param_3,param_4,param_5,param_6)
-ushort * param_1;
-ushort *param_2; /* damaging object, forwarded to apply_damage_to_object */
-undefined4 param_3;
-undefined2 param_4;
-undefined1 param_5;
-undefined1 param_6;
-
+/* damaging object, forwarded to apply_damage_to_object */
+int apply_typed_damage_to_object(ushort *target, ushort *attacker, int tile_x, short tile_y, byte damage, byte damage_type)
 {
   uint uVar1;
   undefined4 uVar2;
   int iVar3;
 
-  uVar1 = resolve_damage_type_resistance(param_1,param_5,param_6);
-  if ((*param_1 & 0x1c0) == 0x40) {
-    uVar2 = apply_damage_to_object(param_1,uVar1,param_2);
+  uVar1 = resolve_damage_type_resistance(target,damage,damage_type);
+  if ((*target & 0x1c0) == 0x40) {
+    uVar2 = apply_damage_to_object(target,uVar1,attacker);
   }
   else {
-    iVar3 = apply_object_durability_damage(param_1,param_2,uVar1 & 0xff,param_3,param_4);
+    iVar3 = apply_object_durability_damage(target,attacker,uVar1 & 0xff,tile_x,tile_y);
     if (iVar3 == 0) {
       uVar2 = 0;
     }
     else {
-      uVar2 = apply_object_destruction_effect(param_1,param_2,param_6,param_3,param_4);
+      uVar2 = apply_object_destruction_effect(target,attacker,damage_type,tile_x,tile_y);
     }
   }
   return uVar2;
@@ -2205,13 +2118,8 @@ undefined1 param_6;
 // was FUN_00038418 -- applies durability damage (param_3, already shifted right by the object
 // type's hardness/resistance divisor from DAT_00202c97) to a non-NPC object param_1, returning
 // whether it broke (durability reached 0).
-bool apply_object_durability_damage(param_1,param_2,param_3,param_4,param_5)
-ushort * param_1;
-ushort *param_2; /* damaging actor, forwarded to the destruction trigger */
-short param_3;
-undefined4 param_4;
-undefined2 param_5;
-
+/* damaging actor, forwarded to the destruction trigger */
+bool apply_object_durability_damage(ushort *object, ushort *attacker, short damage, int tile_x, short tile_y)
 {
   int iVar1;
   ushort uVar2;
@@ -2220,43 +2128,43 @@ undefined2 param_5;
   int iVar5;
   uint uVar6;
   
-  if ((((*param_1 & 0x2000) == 0) &&
-      (uVar6 = ((byte)(&DAT_00202c97)[(*param_1 & 0x1ff) * 0xd] & 0xc) >> 2, (short)uVar6 != 3)) &&
-     (iVar5 = (int)param_3 >> uVar6, 0 < (short)iVar5)) {
-    iVar4 = object_ptr_in_arena(param_1);
+  if ((((*object & 0x2000) == 0) &&
+      (uVar6 = ((byte)(&DAT_00202c97)[(*object & 0x1ff) * 0xd] & 0xc) >> 2, (short)uVar6 != 3)) &&
+     (iVar5 = (int)damage >> uVar6, 0 < (short)iVar5)) {
+    iVar4 = object_ptr_in_arena(object);
     if (iVar4 == 0) {
-      if ((0x13f < (*param_1 & 0x1ff)) && ((*param_1 & 0x1ff) < 0x148)) {
-        uVar2 = param_1[3];
+      if ((0x13f < (*object & 0x1ff)) && ((*object & 0x1ff) < 0x148)) {
+        uVar2 = object[3];
         if (((uVar2 & 1) != 0) && ((uVar2 & 0x3e) != 0)) {
           uVar6 = (uVar2 >> 1 & 0x1f) - iVar5;
           if ((int)(uVar6 * 0x10000) >> 0x10 < 1) {
             uVar6 = 0;
           }
-          *(byte *)(param_1 + 3) = (byte)(uVar2 & 0xffc1) | (byte)((uVar6 & 0x1f) << 1);
-          *(char *)((char *)param_1 + 7) = (char)((uVar2 & 0xffc1) >> 8);
+          *(byte *)(object + 3) = (byte)(uVar2 & 0xffc1) | (byte)((uVar6 & 0x1f) << 1);
+          *(char *)((char *)object + 7) = (char)((uVar2 & 0xffc1) >> 8);
           return false;
         }
       }
-      uVar2 = param_1[2];
+      uVar2 = object[2];
       iVar5 = ((int)(short)uVar2 & 0x3fU) - iVar5;
       iVar1 = iVar5 * 0x10000 >> 0x10;
       if (iVar1 < 1) {
         iVar5 = 0;
       }
-      *(byte *)(param_1 + 2) = ((byte)uVar2 ^ (byte)iVar5) & 0x3f ^ (byte)uVar2;
-      *(char *)((char *)param_1 + 5) = (char)(uVar2 >> 8);
+      *(byte *)(object + 2) = ((byte)uVar2 ^ (byte)iVar5) & 0x3f ^ (byte)uVar2;
+      *(char *)((char *)object + 5) = (char)(uVar2 >> 8);
     }
     else {
-      iVar5 = (uint)(byte)param_1[4] - iVar5;
+      iVar5 = (uint)(byte)object[4] - iVar5;
       iVar1 = iVar5 * 0x10000 >> 0x10;
       if (iVar1 < 1) {
         iVar5 = 0;
       }
-      *(char *)(param_1 + 4) = (char)iVar5;
+      *(char *)(object + 4) = (char)iVar5;
     }
     bVar3 = iVar1 < 1;
-    if (((bVar3) && (iVar4 == 0)) && (-1 < (short)param_4)) {
-      trigger_object_trap_or_use_action(param_2,param_1,4,param_4,param_5);
+    if (((bVar3) && (iVar4 == 0)) && (-1 < (short)tile_x)) {
+      trigger_object_trap_or_use_action(attacker,object,4,tile_x,tile_y);
     }
   }
   else {
@@ -2269,18 +2177,15 @@ undefined2 param_5;
 // was FUN_00045f9c -- validates whether an object's class/subtype (param_1, masked to 0x1ff) is a
 // valid match for equipment slot param_2: slot 9/10 or the handedness-derived "weapon hand" slot
 // (DAT_00086df8+100 bit 0, +7) always pass through to a subtype range check...
-undefined4 is_valid_equipment_slot_item(param_1,param_2)
-ushort param_1;
-short param_2;
-
+int is_valid_equipment_slot_item(ushort object_word, short slot)
 {
   int iVar1;
   undefined4 uVar2;
   
-  iVar1 = (int)param_2;
+  iVar1 = (int)slot;
   if (((((iVar1 < 0) || (4 < iVar1)) && (iVar1 != 10)) && (iVar1 != 9)) &&
-     (((iVar1 != (*(byte *)(DAT_00086df8 + 100) & 1) + 7 || ((param_1 & 0xffc0) != 0)) ||
-      (((param_1 & 0x30) < 0x20 || (((param_1 & 0xf) < 0xb || (0xf < (param_1 & 0xf))))))))) {
+     (((iVar1 != (*(byte *)(DAT_00086df8 + 100) & 1) + 7 || ((object_word & 0xffc0) != 0)) ||
+      (((object_word & 0x30) < 0x20 || (((object_word & 0xf) < 0xb || (0xf < (object_word & 0xf))))))))) {
     uVar2 = 0;
   }
   else {
@@ -2294,13 +2199,7 @@ short param_2;
 // was FUN_00046030 -- attempts to damage the player's own equipped item in slot param_1 (combat's
 // "extra stagger/sound reaction" trigger, src/combat.c), e.g. a shield or piece of armor absorbing
 // a hit...
-undefined4 damage_equipped_item_in_slot(param_1,param_2,param_3,param_4,param_5)
-undefined4 param_1;
-undefined1 param_2;
-undefined1 param_3;
-short param_4;
-int param_5;
-
+int damage_equipped_item_in_slot(int slot, byte damage, byte damage_type, short reaction_mode, int report_flag)
 {
   char *wptr_30396;
   byte bVar1;
@@ -2318,26 +2217,26 @@ int param_5;
   char acStackY_85aec [547480];
   char acStack_4d [53];
   
-  puVar5 = (undefined2 *)get_equipped_item_at_slot(param_1);
+  puVar5 = (undefined2 *)get_equipped_item_at_slot(slot);
   if (puVar5 == (undefined2 *)0x0) {
     return 0xfffffffe;
   }
-  if (param_4 != 2) {
-    if (param_4 == 0) {
+  if (reaction_mode != 2) {
+    if (reaction_mode == 0) {
       if ((CONCAT11(*(undefined1 *)((char *)puVar5 + 1),*(undefined1 *)puVar5) & 0x1f0) != 0) {
         return 0xfffffffe;
       }
     }
     else {
       iVar6 = is_valid_equipment_slot_item(CONCAT11(*(undefined1 *)((char *)puVar5 + 1),*(undefined1 *)puVar5) & 0x1ff,
-                           param_1);
+                           slot);
       if (iVar6 == 0) {
         return 0xfffffffe;
       }
     }
   }
   bVar1 = *(byte *)(puVar5 + 2);
-  iVar6 = apply_typed_damage_to_object(puVar5,0,0xffffffff,0xffffffff,param_2,param_3);
+  iVar6 = apply_typed_damage_to_object(puVar5,0,0xffffffff,-1,damage,damage_type);
   if (iVar6 == 0) {
     if ((*(byte *)(puVar5 + 2) & 0x3f) == (bVar1 & 0x3f)) {
       return 0xffffffff;
@@ -2346,7 +2245,7 @@ int param_5;
     uVar7 = 0;
   }
   else {
-    if (param_5 != 0) {
+    if (report_flag != 0) {
       sVar4 = rand_below(2);
       pDropObj = (char *)spawn_new_object(sVar4 + 0xd5,0);
       drop_object_near_target(g_player_object,pDropObj,6,0);
@@ -2381,7 +2280,7 @@ int param_5;
   ce_strcat(acStack_4d + 1,pcVar8);
   ce_strcat(acStack_4d + 1,pcVar9);
   message_scroll_print_wrapped(acStack_4d + 1);
-  redraw_backpack_slot_widget(param_1);
+  redraw_backpack_slot_widget(slot);
   return uVar7;
 }
 
@@ -2389,11 +2288,7 @@ int param_5;
 // was FUN_000542f8 -- grants the player a new active light source: fails (returns 0) if the
 // active-light count (DAT_00086df8+0x5f bits 6-9) is already at its cap; otherwise stages a new
 // slot with type param_1 and radius param_2...
-undefined4 add_active_light_source(param_1,param_2,param_3)
-uint param_1;
-uint param_2;
-char param_3;
-
+int add_active_light_source(uint light_id, uint duration, char flag)
 {
   undefined4 uVar1;
   int iVar2;
@@ -2407,23 +2302,23 @@ char param_3;
   }
   else {
     uVar5 = *(ushort *)(DAT_00086df8 + 0x5f) >> 6 & 0xf;
-    iVar2 = (uint)*(byte *)(DAT_00086df8 + uVar5 * 2 + 0x3f) * 0x100 + (param_2 & 0xff) * 0x10 +
-            (param_1 & 0xff);
+    iVar2 = (uint)*(byte *)(DAT_00086df8 + uVar5 * 2 + 0x3f) * 0x100 + (duration & 0xff) * 0x10 +
+            (light_id & 0xff);
     puVar4 = (undefined1 *)(DAT_00086df8 + (uVar5 + 0x1f) * 2);
     *puVar4 = (char)iVar2;
     puVar4[1] = (char)((uint)iVar2 >> 8);
-    if (param_3 == '\0') {
+    if (flag == '\0') {
       uVar5 = roll_dice_sum(2,3);
       uVar5 = uVar5 & 0xff;
     }
-    else if (param_3 == '\x01') {
+    else if (flag == '\x01') {
       uVar5 = 1;
     }
-    else if (param_3 == '@') {
+    else if (flag == '@') {
       uVar5 = roll_dice_sum(2,8);
       uVar5 = (uVar5 & 0xff) + 6;
     }
-    else if (param_3 == -0x80) {
+    else if (flag == -0x80) {
       uVar5 = roll_dice_sum(3,0x14);
       uVar5 = (uVar5 & 0xff) + 0x18;
     }
@@ -2450,10 +2345,7 @@ char param_3;
 // was FUN_0005448c -- default collision outcome for object param_2 when nothing else handles it
 // (param_1, the object that struck it, is unused): takes a position snapshot, and if the snapshot's
 // velocity-like field is nonzero...
-undefined4 apply_object_collision_scatter(param_1,param_2)
-ushort *param_1;
-ushort *param_2;
-
+int apply_object_collision_scatter(ushort *striker, ushort *object)
 {
   undefined2 uVar1;
   short sVar2;
@@ -2463,10 +2355,10 @@ ushort *param_2;
   undefined1 auStack_48 [0x2c];
   short local_30;
 
-  if (param_2 != 0) {
+  if (object != 0) {
     DAT_0010144c = (ushort)DAT_002046d8;
     DAT_00101454 = (ushort)DAT_002046dc;
-    build_object_placement_snapshot(param_2,auStack_48);
+    build_object_placement_snapshot(object,auStack_48);
     local_30 = *(short *)(auStack_48 + 0x18);
     iVar3 = DAT_00204874;
     if (local_30 != 0) {
@@ -2485,7 +2377,7 @@ ushort *param_2;
         iVar4 = iVar4 + 0x3f;
       }
       *(undefined2 *)(auStack_48 + 10) = (undefined2)(iVar4 >> 6);
-      sync_object_tile_position(param_2,auStack_48);
+      sync_object_tile_position(object,auStack_48);
     }
   }
   return 4;
@@ -2500,11 +2392,9 @@ ushort *param_2;
 // and that subtype's flag byte == -0x40) adjusts the damage via a skill check (+0x27) before...
 /* ARM 0x545c0 preserves the target in r8 and 0x54698 passes that address
    in r2 to apply_direct_object_hit. undefined4 truncated it on 64-bit hosts. */
-void apply_trap_type_damage_effect(param_1,param_2)
-byte * param_1;
-ushort * param_2;
-
+void apply_trap_type_damage_effect(void *trap_object_ptr, ushort *target)
 {
+  byte *trap_object = (byte *)trap_object_ptr;
   byte bVar1;
   undefined1 uVar2;
   short sVar4;
@@ -2513,10 +2403,10 @@ ushort * param_2;
   ushort uVar7;
   undefined1 uVar3;
   
-  iVar5 = (*param_1 & 0xf) * 3;
+  iVar5 = (*trap_object & 0xf) * 3;
   bVar1 = (&DAT_002027d0)[iVar5];
   uVar7 = (ushort)bVar1;
-  if ((param_1[0x12] == 1) && ((&DAT_002027d2)[iVar5] == -0x40)) {
+  if ((trap_object[0x12] == 1) && ((&DAT_002027d2)[iVar5] == 0xc0)) {  /* was `== -0x40` on an unsigned byte: never true */
     uVar6 = (*(byte *)(DAT_00086df8 + 0x27) + 0x18) * 8;
     sVar4 = roll_skill_check((uint)*(byte *)(DAT_00086df8 + 0x27),10);
     if (sVar4 == -1) {
@@ -2533,8 +2423,7 @@ ushort * param_2;
     uVar2 = DAT_002046e0;
     uVar3 = DAT_002046e4;
   }
-  apply_direct_object_hit(param_1[0x12],param_1,param_2,uVar2,uVar3,uVar7,-(&DAT_002027d2)[iVar5]);
-  return;
+  apply_direct_object_hit(trap_object[0x12],trap_object,target,uVar2,uVar3,uVar7,-(&DAT_002027d2)[iVar5]);
 }
 
 
@@ -2542,10 +2431,7 @@ ushort * param_2;
 // was FUN_000546c4 -- resolves a collision between moving object param_2 (a slot index) and
 // collision-candidate param_1 (an index into DAT_00202c38, or -1 for "the player directly"): marks
 // the candidate as processed, resolves both the candidate and param_2's own records...
-undefined4 resolve_collision_candidate_interaction(param_1,param_2)
-short param_1;
-undefined4 param_2;
-
+int resolve_collision_candidate_interaction(short candidate_index, int mover_slot)
 {
   int iVar1;
   ushort uVar2;
@@ -2560,7 +2446,7 @@ undefined4 param_2;
   uint uVar6;
   
   puVar11 = (ushort *)&DAT_00202c38;
-  iVar1 = (int)param_1;
+  iVar1 = (int)candidate_index;
   if (iVar1 != -1) {
     iVar10 = iVar1 * 6;
     uVar2 = *(ushort *)(&DAT_00202c3a + iVar10);
@@ -2572,7 +2458,7 @@ undefined4 param_2;
   }
   DAT_002046e0 = (byte)(DAT_002049c8 >> 3);
   DAT_002046e4 = (byte)(DAT_002049ca >> 3);
-  puVar4 = (ushort *)get_object_record_by_slot_index(param_2);
+  puVar4 = (ushort *)get_object_record_by_slot_index(mover_slot);
   /* HACK: get_object_record_by_slot_index legitimately returns NULL for an out-of-range/ empty slot
      (its own established contract, guarded at many other call sites this session) and this
      immediately dereferenced it unconditionally. */
@@ -2607,7 +2493,7 @@ undefined4 param_2;
     DAT_002046dc = (char)(iVar10 >> 6) + DAT_002046e4 & 0x3f;
     uVar8 = *puVar5 & 0x1ff;
     bVar9 = (&DAT_00202c97)[(short)uVar8 * 0xd] & 1;
-    if ((0xff < (short)param_2) || (0x3fff < (puVar11[iVar1 * 3 + 1] & 0xffc0))) goto LAB_000548b8;
+    if ((0xff < (short)mover_slot) || (0x3fff < (puVar11[iVar1 * 3 + 1] & 0xffc0))) goto LAB_000548b8;
     if (((uVar2 & 0x1c0) != 0x40) && ((*(byte *)((char *)puVar4 + 0x15) & 0x80) != 0)) {
       return 2;
     }

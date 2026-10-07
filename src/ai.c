@@ -182,14 +182,14 @@ int mobile_object_tick()
 
 {
   byte bVar1;
-  char *iVar2;  /* was `int` -- truncated tilemap_lookup's, then
-                   discard_misplaced_object's, real pointer returns */
+  int iVar2;
+  char *tile_rec;  /* tilemap_lookup / discard_misplaced_object pointer results */
 
   if (((char)DAT_0010190c[4] == '\0') &&
      (((&DAT_00202c97)[(*DAT_0010190c & 0x1ff) * 0xd] & 0xc) < 0xc)) {
-    iVar2 = (char *)tilemap_lookup(DAT_0010190c[0xb] >> 10,(DAT_0010190c[0xb] & 0x3f0) >> 4);
-    iVar2 = (char *)discard_misplaced_object(iVar2 + 2,DAT_0010190c,0);
-    if (iVar2 == 0) {
+    tile_rec = (char *)tilemap_lookup(DAT_0010190c[0xb] >> 10,(DAT_0010190c[0xb] & 0x3f0) >> 4);
+    tile_rec = (char *)discard_misplaced_object(tile_rec + 2,DAT_0010190c,0);
+    if (tile_rec == 0) {
       return 0;
     }
     *(undefined1 *)(DAT_0010190c + 4) = 1;
@@ -214,15 +214,7 @@ int mobile_object_tick()
 
 
 // was FUN_0002cb14.
-undefined4 creature_find_path_to_tile(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
-undefined4 param_1;
-char param_2;
-undefined1 param_3;
-char param_4;
-char param_5;
-char param_6;
-undefined1 param_7;
-
+int creature_find_path_to_tile(int start_x, char start_y, byte size_class, char goal_x, char goal_y, char goal_sub_x, byte goal_sub_y)
 {
   char cVar1;
   uint uVar2;
@@ -261,14 +253,14 @@ undefined1 param_7;
   uint local_3c;
   uint local_38;
   
-  DAT_00101450 = param_7;
+  DAT_00101450 = goal_sub_y;
   local_54 = &DAT_001014e0;
   local_4c = &DAT_00101460;
   local_5b = 0;
   ce_memset(&DAT_0023cf08,0,0x5000);
-  cVar1 = (char)param_1;
+  cVar1 = (char)start_x;
   uVar11 = (uint)cVar1;
-  local_48 = (uint)param_4;
+  local_48 = (uint)goal_x;
   uVar2 = uVar11;
   if ((int)local_48 <= (int)uVar11) {
     uVar2 = local_48;
@@ -278,8 +270,8 @@ undefined1 param_7;
     iVar7 = 1;
   }
   local_58 = (char)iVar7;
-  local_50 = (uint)param_2;
-  local_44 = (uint)param_5;
+  local_50 = (uint)start_y;
+  local_44 = (uint)goal_y;
   uVar16 = 0;
   uVar2 = local_50;
   if ((int)local_44 <= (int)local_50) {
@@ -310,7 +302,7 @@ undefined1 param_7;
   local_57 = (char)iVar7;
   iVar7 = (local_50 + uVar11 * 0x40) * 5;
   (&DAT_0023cf08)[iVar7] = cVar1;
-  (&DAT_0023cf0a)[iVar7] = param_3;
+  (&DAT_0023cf0a)[iVar7] = size_class;
   (&DAT_0023cf0c)[iVar7] = 0;
   do {
     uVar5 = (undefined1)((int)(char)(&DAT_000853b0)[uVar16 * 2] + (int)cVar1);
@@ -320,13 +312,13 @@ undefined1 param_7;
     uVar2 = iVar7 * 0x1000000 >> 0x18;
     iVar8 = (uVar2 + uVar11 * 0x40) * 5;
     local_5c = 0;
-    iVar7 = tile_pair_los_blocked(0,0,param_1,param_2,uVar5,uVar6,*(undefined2 *)(DAT_00101438 + 4),
-                         *(undefined2 *)(DAT_00101438 + 6),param_3,&DAT_0023cf0a + iVar8,&local_5c);
+    iVar7 = tile_pair_los_blocked(0,0,start_x,start_y,uVar5,uVar6,*(undefined2 *)(DAT_00101438 + 4),
+                         *(undefined2 *)(DAT_00101438 + 6),size_class,&DAT_0023cf0a + iVar8,&local_5c);
     if (iVar7 != 0) {
       if ((uVar11 == local_48) && (uVar2 == local_44)) {
         DAT_0010142c = 1;
         DAT_00101740 = cVar1;
-        DAT_00101741 = param_2;
+        DAT_00101741 = start_y;
         DAT_00101743 = 0;
         DAT_00101744 = 0;
         DAT_00101746 = 0;
@@ -335,7 +327,7 @@ undefined1 param_7;
         return 1;
       }
       (&DAT_0023cf08)[iVar8] = cVar1;
-      (&DAT_0023cf09)[iVar8] = param_2;
+      (&DAT_0023cf09)[iVar8] = start_y;
       (&DAT_0023cf0c)[iVar8] = 1;
       uVar11 = (uint)local_5b;
       (&DAT_0023cf0b)[iVar8] = local_5c << 1 | (&DAT_0023cf0b)[iVar8] & 1;
@@ -385,8 +377,8 @@ undefined1 param_7;
             if ((iVar9 != 0) &&
                ((bVar20 ||
                 (((byte)(&DAT_0023cf0c)[iVar18] < (byte)(&DAT_0023cf0c)[iVar19] &&
-                 (uVar13 = (uint)local_59 - (int)param_6, uVar16 = (int)uVar13 >> 0x1f,
-                 uVar12 = (uint)(byte)(&DAT_0023cf0a)[iVar19] - (int)param_6,
+                 (uVar13 = (uint)local_59 - (int)goal_sub_x, uVar16 = (int)uVar13 >> 0x1f,
+                 uVar12 = (uint)(byte)(&DAT_0023cf0a)[iVar19] - (int)goal_sub_x,
                  uVar3 = (int)uVar12 >> 0x1f,
                  (int)((uVar13 ^ uVar16) - uVar16) < (int)((uVar12 ^ uVar3) - uVar3))))))) {
               (&DAT_0023cf08)[iVar19] = cVar1;
@@ -395,10 +387,7 @@ undefined1 param_7;
               (&DAT_0023cf0c)[iVar19] = local_5a + 1;
               (&DAT_0023cf0b)[iVar19] = local_5c << 1 | (&DAT_0023cf0b)[iVar19] & 1;
               bVar14 = (&DAT_0023cf0b)[iVar18];
-              puVar10 = (undefined1 *)(uint)bVar14;
-              if (bVar20) {
-                puVar10 = local_4c;
-              }
+              puVar10 = local_4c;  /* only used when bVar20 (was `(undefined1 *)(uint)bVar14` otherwise, never read) */
               (&DAT_0023cf0b)[iVar18] = ((byte)DAT_00101440 ^ bVar14) & 1 ^ bVar14;
               if (bVar20) {
                 uVar16 = (uint)local_5b;
@@ -413,7 +402,7 @@ undefined1 param_7;
                                         *(undefined2 *)(DAT_00101438 + 6),(&DAT_0023cf0a)[iVar19],
                                         &DAT_0023cf0a + iVar19,&local_5c), uVar11 = local_38,
                  bVar14 = local_5b, iVar15 != 0)) {
-                reconstruct_path_from_bfs(local_5a,param_4,param_5);
+                reconstruct_path_from_bfs(local_5a,goal_x,goal_y);
                 return 1;
               }
             }
@@ -446,11 +435,7 @@ undefined1 param_7;
    cluster this session (see [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is `ushort *`,
    so every bare `DAT_0010190c + N` throughout this function was scaling N by 2. */
 // was FUN_0002e58c
-void npc_walk_toward_tile(param_1,param_2,param_3)
-uint param_1;
-char param_2;
-undefined1 param_3;
-
+void npc_walk_toward_tile(uint goal, char goal_target, byte attitude)
 {
   int uw_ord2005_rem_17 = 0; int uw_ord2005_rem_18 = 0; int uw_ord2005_rem_19 = 0;
   int iVar1;
@@ -458,7 +443,8 @@ undefined1 param_3;
   ushort uVar3;
   undefined1 uVar4;
   short sVar5;
-  char *iVar6;
+  int iVar6;
+  char *npc_bytes;
   undefined4 uVar7;
   int extraout_r1;
   int extraout_r1_00;
@@ -474,14 +460,14 @@ undefined1 param_3;
   /* Dropped arguments: the real call (0x2e5c0) is made with r0/r1/r2 still holding this function's
      own three incoming parameters (the prologue spills all three, `stmdb sp!,{r0,r1,r2}`), so the
      destination y and the third value were whatever this port's ABI left in those registers... */
-  npc_set_walk_target(param_1,param_2,param_3);
+  npc_set_walk_target(goal,goal_target,attitude);
   if (((*(byte *)((char *)DAT_0010190c + 0x18) & 0x20) != 0) &&
      ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) != 0)) {
     DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (*(byte *)((char *)DAT_0010190c + 0x16) & 0xf));
     *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0x7f;
   }
-  iVar1 = ((int)(char)param_1 - (int)DAT_00101918) * 0x1000000 >> 0x18;
-  iVar6 = ((int)param_2 - (int)DAT_001013f8) * 0x1000000;
+  iVar1 = ((int)(char)goal - (int)DAT_00101918) * 0x1000000 >> 0x18;
+  iVar6 = ((int)goal_target - (int)DAT_001013f8) * 0x1000000;
   iVar2 = (int)(iVar6) >> 0x18;
   if ((iVar1 == 0) && ((char)((uint)iVar6 >> 0x18) == '\0')) {
     if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) != 0) {
@@ -521,10 +507,10 @@ LAB_0002e6fc:
         if (((uVar3 & 0x1c0) == 0x40) && ((uVar3 & 0x1ff) != 0x7f)) {
           if (((*(byte *)((char *)DAT_0010190c + 0xb) & 0xf) == 5) &&
              ((*(byte *)((char *)DAT_00101904 + 0xb) & 0xf) == 5)) {
-            param_1 = param_1 & 0xff;
+            goal = goal & 0xff;
             goto LAB_0002e998;
           }
-          param_1 = param_1 & 0xff;
+          goal = goal & 0xff;
         }
         if ((((uVar3 & 0x1f0) == 0x140) && (7 < (uVar3 & 0xf))) &&
            ((*(byte *)(DAT_00101404 + 10) & 0x80) != 0)) {
@@ -583,11 +569,11 @@ LAB_0002ed50:
       bVar9 = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
     }
     *(byte *)((char *)DAT_0010190c + 0x13) = bVar9;
-    iVar6 = DAT_0010190c;
+    npc_bytes = (char *)DAT_0010190c;
     uVar3 = *(ushort *)((char *)DAT_0010190c + 0xb);
     uw_ord2005_rem_18 = ((int)((uVar3 >> 0xc) + 1)) % (4);
     uVar8 = uVar3 & 0xfff;
-    *(char *)(iVar6 + 0xb) = (char)uVar8;
+    *(char *)(npc_bytes + 0xb) = (char)uVar8;
     *(byte *)((char *)DAT_0010190c + 0xc) =
          (byte)(uVar8 >> 8) | (byte)(((uw_ord2005_rem_18 & 0xf) << 0xc) >> 8);
     *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
@@ -602,7 +588,7 @@ LAB_0002ed50:
     *(char *)((char *)DAT_0010190c + 3) = (char)(uVar8 >> 8);
     *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
     if ((*(byte *)(DAT_00101404 + 10) & 0x80) != 0) {
-      set_npc_altitude_state(param_1,param_2);
+      set_npc_altitude_state(goal,goal_target);
     }
     goto LAB_0002ed50;
   }
@@ -614,7 +600,7 @@ LAB_0002ed50:
   }
   else {
     if ((local_3c == 0) &&
-       (sVar5 = try_direct_line_walk(DAT_00101918,DAT_001013f8,param_1 & 0xff,param_2), sVar5 == 1)) {
+       (sVar5 = try_direct_line_walk(DAT_00101918,DAT_001013f8,goal & 0xff,goal_target), sVar5 == 1)) {
       *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) | 0x80;
       uVar8 = compute_movement_heading(iVar1,iVar2);
       *(char *)((char *)DAT_0010190c + 9) = (char)((uVar8 & 0xff) << 5);
@@ -629,8 +615,8 @@ LAB_0002ed50:
     iVar6 = pop_pending_path_cache_slot(local_40);
     if (iVar6 != 0) {
       uVar4 = compute_pathfind_search_radius();
-      iVar6 = creature_find_path_to_tile(DAT_00101918,DAT_001013f8,*(byte *)((char *)DAT_0010190c + 2) >> 3 & 0xf,param_1,
-                           param_2,param_3,uVar4);
+      iVar6 = creature_find_path_to_tile(DAT_00101918,DAT_001013f8,*(byte *)((char *)DAT_0010190c + 2) >> 3 & 0xf,goal,
+                           goal_target,attitude,uVar4);
       if (iVar6 != 0) {
         DAT_000853b8 = DAT_000853b8 & ~(ushort)(1 << (uint)local_40[0]);
         save_walk_path_to_cache_slot(&DAT_00101568 + (uint)local_40[0] * 0x1c);
@@ -649,7 +635,6 @@ LAB_0002ed50:
   *(byte *)((char *)DAT_0010190c + 0x18) = bVar9;
 LAB_0002ee74:
   npc_idle_behavior_tick();
-  return;
 }
 
 
@@ -657,7 +642,7 @@ LAB_0002ee74:
 
 // was FUN_00032d38. Per-object per-tick AI/movement processor for class-0x40 (NPC/monster) objects,
 // dispatched from tick_mobile_objects.
-undefined4 npc_ai_tick()
+int npc_ai_tick()
 
 {
   undefined1 uVar1;
@@ -667,7 +652,9 @@ undefined4 npc_ai_tick()
   /* Was `int`, truncating the real 64-bit pointers this variable holds
      (get_object_record_by_slot_index(1) and tilemap_lookup() both return real pointers, and the two
      dereferences below and the object_list_unlink(iVar5+2,...) call both need the full address)... */
-  intptr_t iVar5;
+  int iVar5;
+  char *player_rec;
+  char *tile_pos;
   int iVar6;
   undefined4 uVar7;
   byte extraout_r1;
@@ -687,15 +674,15 @@ undefined4 npc_ai_tick()
   DAT_00101404 = &DAT_001007d0 + ((byte)*DAT_0010190c & 0x3f) * 0x30;
   DAT_00101918 = *(byte *)((char *)DAT_0010190c + 0x17) >> 2;
   DAT_001013f8 = (byte)(DAT_0010190c[0xb] >> 4) & 0x3f;
-  iVar5 = get_object_record_by_slot_index(1);
+  player_rec = get_object_record_by_slot_index(1);
   puVar11 = DAT_0010190c;
   if (((100 < ((((int)(char)DAT_00101918 - (int)DAT_00101938) * 0x10000 >> 0x10) *
                (((int)(char)DAT_00101918 - (int)DAT_00101938) * 0x10000 >> 0x10) +
               (((int)(char)DAT_001013f8 - (int)DAT_0010193c) * 0x10000 >> 0x10) *
               (((int)(char)DAT_001013f8 - (int)DAT_0010193c) * 0x10000 >> 0x10)) * 0x10000 >> 0x10)
       && (iVar6 = (int)(char)DAT_001013f8 -
-                  (int)(char)((byte)(*(ushort *)(iVar5 + 0x16) >> 4) & 0x3f),
-         iVar5 = (int)(char)DAT_00101918 - (int)(char)(byte)(*(ushort *)(iVar5 + 0x16) >> 10),
+                  (int)(char)((byte)(*(ushort *)(player_rec + 0x16) >> 4) & 0x3f),
+         iVar5 = (int)(char)DAT_00101918 - (int)(char)(byte)(*(ushort *)(player_rec + 0x16) >> 10),
          100 < (iVar5 * iVar5 + iVar6 * iVar6) * 0x10000 >> 0x10)) &&
      ((*(byte *)((char *)DAT_0010190c + 0xb) & 0xf) != 3)) {
     bVar3 = (byte)DAT_0010190c[5];
@@ -826,8 +813,8 @@ LAB_00033830:
       DAT_00101454 = (undefined2)((DAT_0010190c[0xb] & 0x3f0) >> 4);
       /* ARM 0x3343c..0x33470 passes the dead NPC's tile x/y in r0/r1.
          Dropping these arguments leaves its final frame in the old tile list. */
-      iVar5 = tilemap_lookup(DAT_0010144c,DAT_00101454);
-      object_list_unlink(iVar5 + 2,DAT_0010190c);
+      tile_pos = tilemap_lookup(DAT_0010144c,DAT_00101454);
+      object_list_unlink(tile_pos + 2,DAT_0010190c);
       spawn_creature_death_loot(DAT_0010190c);
       drop_monster_loot(DAT_0010190c,(byte)DAT_00101404[8] >> 5,(byte)DAT_00101404[10] >> 2 & 7);
       drop_creature_inventory_on_death(DAT_0010190c);
@@ -914,15 +901,13 @@ LAB_00033860:
 
 
 // was FUN_000349bc.
-void tick_mobile_objects(param_1)
-char param_1;
-
+void tick_mobile_objects(char elapsed)
 {
   int iVar1;
   byte *pbVar2;
 
   DAT_0010190c = (ushort *)0x0;
-  DAT_00101928 = DAT_00101948 + param_1 & 0xf;
+  DAT_00101928 = DAT_00101948 + elapsed & 0xf;
   pbVar2 = DAT_002046c0;
   if (DAT_002046c0 < DAT_002046c8) {
     do {
@@ -946,19 +931,16 @@ LAB_00034a98:
     }
   }
   DAT_00101948 = DAT_00101928;
-  return;
 }
 
 
 
 
 // was FUN_00049404
-void build_creature_look_text(param_1,param_2)
-ushort * param_1;
-char *param_2;   /* was undefined4 -- the caller's stack description buffer (acStack_7c);
+/* was undefined4 -- the caller's stack description buffer (acStack_7c);
    ce_strcat/message_scroll_print_wrapped write through it, so truncating it crashed a right-click
    "look" at a creature (the "vitality is N out of N" path). */
-
+void build_creature_look_text(ushort *creature, char *out_text)
 {
   byte bVar1;
   char cVar2;
@@ -972,13 +954,13 @@ char *param_2;   /* was undefined4 -- the caller's stack description buffer (acS
   char *pcVar_desc;
   undefined1 *puVar8;
 
-  pcVar3 = (char *)get_message_string(*param_1 & 0x1ff | 0x800);
-  bVar1 = (byte)param_1[0xd];
+  pcVar3 = (char *)get_message_string(*creature & 0x1ff | 0x800);
+  bVar1 = (byte)creature[0xd];
   if ((pcVar3 == (char *)0x0) || (*pcVar3 == '\0')) {
     pcVar3 = (char *)0x0;
   }
   if (((0xef < bVar1) && (bVar1 != 0xff)) ||
-     (pcVar4 = (char *)get_message_string((byte)((byte)param_1[7] >> 6) + 0x60 | 0xa00),
+     (pcVar4 = (char *)get_message_string((byte)((byte)creature[7] >> 6) + 0x60 | 0xa00),
       pcVar4 == (char *)0x0 || *pcVar4 == '\0'))
   {
     pcVar4 = (char *)0x0;
@@ -998,14 +980,14 @@ char *param_2;   /* was undefined4 -- the caller's stack description buffer (acS
       else {
         puVar8 = &DAT_00085248;
       }
-      ce_strcat(param_2,puVar8);
-      ce_strcat(param_2,pcVar4);
-      ce_strcat(param_2,&DAT_00085240);
+      ce_strcat(out_text,puVar8);
+      ce_strcat(out_text,pcVar4);
+      ce_strcat(out_text,&DAT_00085240);
     }
     if ((pcVar5 == (char *)0x0) || (iVar6 = _isctype((int)*pcVar5,1), iVar6 != 0)) {
       pcVar_desc = (char *)format_object_display_name(pcVar3,pcVar4 == (char *)0x0,0);
       if (pcVar_desc != (char *)0x0) {
-        ce_strcat(param_2,pcVar_desc);
+        ce_strcat(out_text,pcVar_desc);
       }
     }
   }
@@ -1014,19 +996,18 @@ char *param_2;   /* was undefined4 -- the caller's stack description buffer (acS
     if (pcVar3 != (char *)0x0) {
       iVar6 = _isctype((int)*pcVar5,1);
       if (iVar6 != 0) {
-        ce_strcat(param_2,s_named_00085d18);
+        ce_strcat(out_text,s_named_00085d18);
       }
       uVar7 = 0;
     }
     pcVar_desc = (char *)format_object_display_name(pcVar5,uVar7,0);
     if (pcVar_desc != (char *)0x0) {
-      ce_strcat(param_2,pcVar_desc);
+      ce_strcat(out_text,pcVar_desc);
     }
   }
-  ce_strcat(param_2,&DAT_00084f20);
+  ce_strcat(out_text,&DAT_00084f20);
   /* DAT_00084f20 already supplies the original period and newline. */
-  message_scroll_print_wrapped(param_2);
-  return;
+  message_scroll_print_wrapped(out_text);
 }
 
 
@@ -1035,13 +1016,12 @@ char *param_2;   /* was undefined4 -- the caller's stack description buffer (acS
 // was FUN_00052c5c -- disassembly-confirmed real math, not a bug: with param_1=10
 // (discard_misplaced_object's only caller value) this computes `rand_below(10) < (10 +
 // rand_below(3))`, and since rand_below(10) maxes at 9 while the threshold is always >=10...
-undefined4 roll_object_destroy_chance(param_1,param_2)
-short param_1;
-char *param_2;  /* was `int` -- truncated the real object-record pointer (dereferenced via casts, passed to
-   resolve_object_link and object_exceeds_size_threshold), latent until those calls started actually
-   using their arguments */
-
+/* was `int` -- truncated the real object-record pointer (dereferenced via casts, passed to
+   resolve_object_link and object_exceeds_size_threshold), latent until those calls started
+   actually using their arguments */
+int roll_object_destroy_chance(short base_chance, void *object_ptr)
 {
+  char *object = (char *)object_ptr;
   short sVar1;
   int iVar2;
   /* Was `undefined4 uVar3` -- truncated resolve_object_link's real pointer return before forwarding
@@ -1049,16 +1029,16 @@ char *param_2;  /* was `int` -- truncated the real object-record pointer (derefe
      drop-into-world path's other fixes. */
   char *pcVar3;
 
-  if (param_2 != 0) {
-    if (param_1 != 0) {
+  if (object != 0) {
+    if (base_chance != 0) {
       sVar1 = rand_below(3);
-      param_1 = param_1 + sVar1;
+      base_chance = base_chance + sVar1;
     }
-    DAT_002046b0 = param_1;
-    iVar2 = object_exceeds_size_threshold(param_2);
+    DAT_002046b0 = base_chance;
+    iVar2 = object_exceeds_size_threshold(object);
     if (iVar2 == 0) {
-      if (((*(byte *)(param_2 + 1) & 0x80) == 0) && ((*(ushort *)(param_2 + 6) & 0xffc0) != 0)) {
-        pcVar3 = (char *)resolve_object_link((ushort *)(param_2 + 6)); /* confirmed via ARM disassembly, 0x52ce8 */
+      if (((*(byte *)(object + 1) & 0x80) == 0) && ((*(ushort *)(object + 6) & 0xffc0) != 0)) {
+        pcVar3 = (char *)resolve_object_link((ushort *)(object + 6)); /* confirmed via ARM disassembly, 0x52ce8 */
         iVar2 = walk_object_tree(pcVar3,object_exceeds_size_threshold);
         if (iVar2 != 0) {
           return 0;
@@ -1077,11 +1057,9 @@ char *param_2;  /* was `int` -- truncated the real object-record pointer (derefe
 
 
 // was FUN_00054f6c.
-undefined4 sync_object_tile_position(param_1,param_2)
-ushort * param_1;
-ushort * param_2;
-
+int sync_object_tile_position(ushort *object, void *position_ptr)
 {
+  ushort *position = (ushort *)position_ptr;
   int uw_ord2005_rem_118 = 0;
   ushort uVar1;
   undefined1 uVar2;
@@ -1090,7 +1068,9 @@ ushort * param_2;
   /* Was `int`, truncating the real 64-bit pointers this variable holds from tilemap_lookup() and
      settle_mobile_to_immobile() (both real pointer returns) -- same class of bug fixed several
      times elsewhere this session... */
-  intptr_t iVar5;
+  int iVar5;
+  void *tile_cell;
+  ushort *settled;
   undefined4 uVar6;
   int extraout_r1;
   uint uVar7;
@@ -1099,100 +1079,100 @@ ushort * param_2;
   bool bVar10;
   bool bVar11;
   
-  if (((short)*param_2 >> 8 != DAT_0010144c) || ((short)param_2[1] >> 8 != DAT_00101454)) {
+  if (((short)*position >> 8 != DAT_0010144c) || ((short)position[1] >> 8 != DAT_00101454)) {
     /* Both tilemap_lookup() calls below were dropped-argument (K&R, relying on register-content
        reuse) -- unlike the many other such call sites in this file that legitimately reuse
        whatever's still in r0/r1 from an immediately preceding, equivalent computation... */
-    iVar5 = tilemap_lookup(DAT_0010144c,DAT_00101454);
-    if (iVar5 != 0) {
-      object_list_unlink(iVar5 + 2,param_1);
+    tile_cell = tilemap_lookup(DAT_0010144c,DAT_00101454);
+    if (tile_cell != 0) {
+      object_list_unlink((char *)tile_cell + 2,object);
     }
-    DAT_0010144c = (ushort)(char)(*param_2 >> 8);
-    DAT_00101454 = (short)(char)(param_2[1] >> 8);
-    iVar5 = tilemap_lookup(DAT_0010144c,DAT_00101454);
-    if (iVar5 != 0) {
-      object_list_insert_head(iVar5 + 2,param_1);
+    DAT_0010144c = (ushort)(char)(*position >> 8);
+    DAT_00101454 = (short)(char)(position[1] >> 8);
+    tile_cell = tilemap_lookup(DAT_0010144c,DAT_00101454);
+    if (tile_cell != 0) {
+      object_list_insert_head((char *)tile_cell + 2,object);
     }
   }
-  uVar7 = (uint)param_1[1];
-  bVar9 = (byte)((int)(((int)(short)param_2[2] & 0x3f8U) << 0x10) >> 0x13);
-  *(byte *)(param_1 + 1) = (byte)(uVar7 & 0xff80) | bVar9;
-  *(char *)((char *)param_1 + 3) = (char)((uVar7 & 0xff80) >> 8);
-  bVar3 = (byte)((uint)(((int)(short)(*param_2 & 0xe0) >> 5) << 0xd) >> 8);
-  *(byte *)(param_1 + 1) = (byte)(uVar7 & 0x1f80) | bVar9;
-  *(byte *)((char *)param_1 + 3) = (byte)((uVar7 & 0x1f80) >> 8) | bVar3;
-  uVar1 = param_2[1];
-  *(byte *)(param_1 + 1) = (byte)(uVar7 & 0x380) | bVar9;
-  *(byte *)((char *)param_1 + 3) =
+  uVar7 = (uint)object[1];
+  bVar9 = (byte)((int)(((int)(short)position[2] & 0x3f8U) << 0x10) >> 0x13);
+  *(byte *)(object + 1) = (byte)(uVar7 & 0xff80) | bVar9;
+  *(char *)((char *)object + 3) = (char)((uVar7 & 0xff80) >> 8);
+  bVar3 = (byte)((uint)(((int)(short)(*position & 0xe0) >> 5) << 0xd) >> 8);
+  *(byte *)(object + 1) = (byte)(uVar7 & 0x1f80) | bVar9;
+  *(byte *)((char *)object + 3) = (byte)((uVar7 & 0x1f80) >> 8) | bVar3;
+  uVar1 = position[1];
+  *(byte *)(object + 1) = (byte)(uVar7 & 0x380) | bVar9;
+  *(byte *)((char *)object + 3) =
        (byte)((uVar7 & 0x380) >> 8) | bVar3 |
        (byte)((uint)(((int)(short)(uVar1 & 0xe0) >> 5) << 10) >> 8);
-  if (param_1 < DAT_002046c4) {
-    *(byte *)(param_1 + 4) = (byte)param_2[0xf];
+  if ((char *)object < DAT_002046c4) {
+    *(byte *)(object + 4) = (byte)position[0xf];
   }
   else {
-    uVar1 = param_1[2];
-    *(byte *)(param_1 + 2) = (byte)param_2[0xf] & 0x3f | (byte)(uVar1 & 0xffc0);
-    *(char *)((char *)param_1 + 5) = (char)((uVar1 & 0xffc0) >> 8);
+    uVar1 = object[2];
+    *(byte *)(object + 2) = (byte)position[0xf] & 0x3f | (byte)(uVar1 & 0xffc0);
+    *(char *)((char *)object + 5) = (char)((uVar1 & 0xffc0) >> 8);
   }
-  uVar1 = *(ushort *)((char *)param_2 + 0x29);
+  uVar1 = *(ushort *)((char *)position + 0x29);
   if (0x100 < uVar1) {
-    if ((*param_1 & 0x1c0) != 0x40) {
-      uVar2 = ordint_divmod(0x32,(short)(*(ushort *)(&DAT_00202c91 + (*param_1 & 0x1ff) * 0xd) >> 4)
+    if ((*object & 0x1c0) != 0x40) {
+      uVar2 = ordint_divmod(0x32,(short)(*(ushort *)(&DAT_00202c91 + (*object & 0x1ff) * 0xd) >> 4)
                                 + -600).quot;
-      play_sound_effect_at_object(0xf,param_1,uVar2);
+      play_sound_effect_at_object(0xf,object,uVar2);
     }
-    apply_typed_damage_to_object(param_1,0,(int)(short)DAT_0010144c,(int)DAT_00101454,(char)(uVar1 >> 8),0);
+    apply_typed_damage_to_object(object,0,(int)(short)DAT_0010144c,(int)DAT_00101454,(char)(uVar1 >> 8),0);
   }
-  if (param_1 < DAT_002046c4) {
-    *(byte *)(param_1 + 4) = (byte)param_2[0xf];
+  if ((char *)object < DAT_002046c4) {
+    *(byte *)(object + 4) = (byte)position[0xf];
   }
   else {
-    uVar1 = param_1[2];
-    *(byte *)(param_1 + 2) = (byte)param_2[0xf] & 0x3f | (byte)(uVar1 & 0xffc0);
-    *(char *)((char *)param_1 + 5) = (char)((uVar1 & 0xffc0) >> 8);
+    uVar1 = object[2];
+    *(byte *)(object + 2) = (byte)position[0xf] & 0x3f | (byte)(uVar1 & 0xffc0);
+    *(char *)((char *)object + 5) = (char)((uVar1 & 0xffc0) >> 8);
   }
-  if ((param_2[0x14] & 4) != 0) {
+  if ((position[0x14] & 4) != 0) {
     uVar6 = ce_rand();
     uw_ord2005_rem_118 = ((int)(uVar6)) % (5);
     if (uw_ord2005_rem_118 == 0) {
-      apply_typed_damage_to_object(param_1,0,(int)(short)DAT_0010144c,(int)DAT_00101454,1,8);
+      apply_typed_damage_to_object(object,0,(int)(short)DAT_0010144c,(int)DAT_00101454,1,8);
     }
   }
-  if ((*param_1 & 0x1c0) != 0x40) {
-    if (DAT_002046c4 < param_1) {
-      if ((param_2[10] != 0 || param_2[8] != 0) || param_2[5] != 0) {
-        param_1 = (ushort *)reallocate_object_to_arena(param_1);
+  if ((*object & 0x1c0) != 0x40) {
+    if (DAT_002046c4 < (char *)object) {
+      if ((position[10] != 0 || position[8] != 0) || position[5] != 0) {
+        object = (ushort *)reallocate_object_to_arena(object);
       }
     }
-    else if ((param_2[10] == 0 && param_2[8] == 0) && param_2[5] == 0) {
-      *(byte *)(param_1 + 5) =
-           (byte)param_1[5] & 0x8f | ((&DAT_000868c0)[(byte)param_2[0x14]] & 7) << 4;
-      iVar5 = settle_mobile_to_immobile(param_1);
-      if (iVar5 == 0) {
+    else if ((position[10] == 0 && position[8] == 0) && position[5] == 0) {
+      *(byte *)(object + 5) =
+           (byte)object[5] & 0x8f | ((&DAT_000868c0)[(byte)position[0x14]] & 7) << 4;
+      settled = settle_mobile_to_immobile(object);
+      if (settled == 0) {
         return 0;
       }
-      param_1 = (ushort *)settle_dropped_object(iVar5,(int)(short)DAT_0010144c,(int)DAT_00101454,0);
-      if (param_1 == (ushort *)0x0) {
+      object = (ushort *)settle_dropped_object(settled,(int)(short)DAT_0010144c,(int)DAT_00101454,0);
+      if (object == (ushort *)0x0) {
         return 0;
       }
-      if (DAT_002046c4 <= param_1) goto LAB_0005559c;
-      randomize_settled_snapshot_position(param_2);
+      if (DAT_002046c4 <= (char *)object) goto LAB_0005559c;
+      randomize_settled_snapshot_position(position);
     }
   }
-  if (param_1 < DAT_002046c4) {
-    uVar1 = param_1[0xb];
-    *(char *)((char *)param_1 + 9) = (char)((ushort)*(undefined2 *)((char *)param_2 + 0x21) >> 8);
+  if ((char *)object < DAT_002046c4) {
+    uVar1 = object[0xb];
+    *(char *)((char *)object + 9) = (char)((ushort)*(undefined2 *)((char *)position + 0x21) >> 8);
     uVar8 = uVar1 & 0x3ff;
     uVar7 = (DAT_0010144c & 0x3f) << 10;
-    *(char *)(param_1 + 0xb) = (char)uVar8;
-    *(byte *)((char *)param_1 + 0x17) = (byte)(uVar8 >> 8) | (byte)(uVar7 >> 8);
+    *(char *)(object + 0xb) = (char)uVar8;
+    *(byte *)((char *)object + 0x17) = (byte)(uVar8 >> 8) | (byte)(uVar7 >> 8);
     uVar7 = uVar1 & 0xf | uVar7 | ((int)DAT_00101454 & 0x3fU) << 4;
-    *(char *)(param_1 + 0xb) = (char)uVar7;
-    *(char *)((char *)param_1 + 0x17) = (char)(uVar7 >> 8);
-    bVar11 = SBORROW4((int)(short)param_2[8],-4);
-    bVar9 = ((short)param_2[8] == -4) << 7 | *(byte *)((char *)param_1 + 0x13) & 0x7f;
-    *(byte *)((char *)param_1 + 0x13) = bVar9;
-    iVar5 = (int)(short)param_2[5];
+    *(char *)(object + 0xb) = (char)uVar7;
+    *(char *)((char *)object + 0x17) = (char)(uVar7 >> 8);
+    bVar11 = SBORROW4((int)(short)position[8],-4);
+    bVar9 = ((short)position[8] == -4) << 7 | *(byte *)((char *)object + 0x13) & 0x7f;
+    *(byte *)((char *)object + 0x13) = bVar9;
+    iVar5 = (int)(short)position[5];
     if (iVar5 < 0) {
       iVar5 = iVar5 + 0x3f;
     }
@@ -1210,29 +1190,29 @@ ushort * param_2;
     if (!bVar10 && (iVar5 < 0 || iVar5 + -0x1f < 0) == bVar11) {
       sVar4 = 0x1f;
     }
-    *(byte *)(param_1 + 10) = (byte)((int)sVar4 << 3) | (byte)param_1[10] & 7;
-    bVar3 = ordint_divmod(0x2f,(int)(short)param_2[10]).quot;
-    *(byte *)((char *)param_1 + 0x13) = (bVar3 ^ bVar9) & 0x7f ^ bVar9;
-    *(byte *)(param_1 + 5) =
-         (byte)param_1[5] & 0x8f | ((&DAT_000868c0)[(byte)param_2[0x14]] & 7) << 4;
-    if ((CONCAT11(*(undefined1 *)((char *)param_1 + 1),(char)*param_1) & 0x1c0) != 0x40) {
-      uVar1 = *param_2;
-      *(char *)((char *)param_1 + 0xb) = (char)uVar1;
-      *(char *)(param_1 + 6) = (char)(uVar1 >> 8);
-      uVar1 = param_2[1];
-      *(char *)((char *)param_1 + 0xd) = (char)uVar1;
-      *(char *)(param_1 + 7) = (char)(uVar1 >> 8);
-      uVar1 = param_2[2];
-      *(char *)((char *)param_1 + 0xf) = (char)uVar1;
-      *(char *)(param_1 + 8) = (char)(uVar1 >> 8);
+    *(byte *)(object + 10) = (byte)((int)sVar4 << 3) | (byte)object[10] & 7;
+    bVar3 = ordint_divmod(0x2f,(int)(short)position[10]).quot;
+    *(byte *)((char *)object + 0x13) = (bVar3 ^ bVar9) & 0x7f ^ bVar9;
+    *(byte *)(object + 5) =
+         (byte)object[5] & 0x8f | ((&DAT_000868c0)[(byte)position[0x14]] & 7) << 4;
+    if ((CONCAT11(*(undefined1 *)((char *)object + 1),(char)*object) & 0x1c0) != 0x40) {
+      uVar1 = *position;
+      *(char *)((char *)object + 0xb) = (char)uVar1;
+      *(char *)(object + 6) = (char)(uVar1 >> 8);
+      uVar1 = position[1];
+      *(char *)((char *)object + 0xd) = (char)uVar1;
+      *(char *)(object + 7) = (char)(uVar1 >> 8);
+      uVar1 = position[2];
+      *(char *)((char *)object + 0xf) = (char)uVar1;
+      *(char *)(object + 8) = (char)(uVar1 >> 8);
     }
     return 1;
   }
 LAB_0005559c:
-  if ((*param_1 & 0x1c0) == 0x140) {
-    uVar7 = param_1[1] & 0xfc7f | ((int)*(short *)((char *)param_2 + 0x21) >> 0xd & 7U) << 7;
-    *(char *)(param_1 + 1) = (char)uVar7;
-    *(char *)((char *)param_1 + 3) = (char)(uVar7 >> 8);
+  if ((*object & 0x1c0) == 0x140) {
+    uVar7 = object[1] & 0xfc7f | ((int)*(short *)((char *)position + 0x21) >> 0xd & 7U) << 7;
+    *(char *)(object + 1) = (char)uVar7;
+    *(char *)((char *)object + 3) = (char)(uVar7 >> 8);
   }
   return 0;
 }
@@ -1241,9 +1221,7 @@ LAB_0005559c:
 
 
 // was FUN_0005596c.
-ushort *settle_mobile_to_immobile(param_1)
-ushort * param_1;
-
+ushort *settle_mobile_to_immobile(ushort *object)
 {
   ushort uVar1;
   undefined2 uVar2;
@@ -1264,11 +1242,11 @@ ushort * param_1;
   byte local_2c;
   
   bVar3 = true;
-  bVar13 = (byte)(&DAT_00202c98)[(*param_1 & 0x1ff) * 0xd] >> 1 & 0xf;
-  bVar5 = (byte)param_1[5] & 0x70;
+  bVar13 = (byte)(&DAT_00202c98)[(*object & 0x1ff) * 0xd] >> 1 & 0xf;
+  bVar5 = (byte)object[5] & 0x70;
   if (bVar5 == 0x10) {
     bVar13 = 8;
-    spawn_scheduled_effect_object(param_1,6,3,0,0,DAT_0010144c,DAT_00101454);
+    spawn_scheduled_effect_object(object,6,3,0,0,DAT_0010144c,DAT_00101454);
   }
   else if ((((bVar5 == 0x20) && (bVar13 == 10)) && (DAT_00201b68 == 8)) &&
           ((uVar11 = (int)((int)DAT_0010144c - 0x20U) >> 0x1f,
@@ -1290,17 +1268,17 @@ ushort * param_1;
         set_pending_update_flags(0x400);
       }
       else {
-        uVar11 = *param_1 & 0xffc2 | 0x1c2;
-        *(byte *)param_1 = (byte)uVar11;
-        *(byte *)((char *)param_1 + 1) = (byte)(uVar11 >> 8);
+        uVar11 = *object & 0xffc2 | 0x1c2;
+        *(byte *)object = (byte)uVar11;
+        *(byte *)((char *)object + 1) = (byte)(uVar11 >> 8);
         if (*(byte *)(DAT_00086df8 + 0x6d) < 9) {
           iVar8 = 8;
           do {
             bVar4 = ce_rand();
-            uVar1 = param_1[1];
+            uVar1 = object[1];
             bVar5 = (byte)uVar1;
-            *(byte *)(param_1 + 1) = ((bVar4 & 7) + bVar5 + 4 ^ bVar5) & 0x7f ^ bVar5;
-            *(byte *)((char *)param_1 + 3) = (byte)(uVar1 >> 8);
+            *(byte *)(object + 1) = ((bVar4 & 7) + bVar5 + 4 ^ bVar5) & 0x7f ^ bVar5;
+            *(byte *)((char *)object + 3) = (byte)(uVar1 >> 8);
             uVar6 = ce_rand();
             uVar7 = ce_rand();
             /* Was `ordint_divmod(3,uVar6); ... extraout_r1_00` / same for uVar7/extraout_r1 -- the
@@ -1309,7 +1287,7 @@ ushort * param_1;
             extraout_r1_00 = (short)ordint_divmod(3,uVar6).rem;
             iVar10 = (int)DAT_00101454;
             extraout_r1 = (short)ordint_divmod(3,uVar7).rem;
-            spawn_effect_debris_burst(param_1,(int)DAT_0010144c + (int)extraout_r1_00 + -1,
+            spawn_effect_debris_burst(object,(int)DAT_0010144c + (int)extraout_r1_00 + -1,
                          iVar10 + extraout_r1 + -1);
             iVar8 = (iVar8 + -1) * 0x10000 >> 0x10;
           } while ((int)(uint)*(byte *)(DAT_00086df8 + 0x6d) <= iVar8);
@@ -1319,7 +1297,7 @@ ushort * param_1;
   }
   if (((bVar13 != 0) && (bVar13 < 9)) &&
      ((bVar5 = ce_rand(), (bVar5 & 7) < bVar13 &&
-      (iVar8 = roll_object_destroy_chance(10,param_1), iVar8 != 0)))) {
+      (iVar8 = roll_object_destroy_chance(10,object), iVar8 != 0)))) {
     bVar3 = false;
   }
   if (DAT_00201b68 == 9) {
@@ -1331,24 +1309,24 @@ ushort * param_1;
   /* Off-map landing tile (a projectile carried past the map edge -- sync_object_tile_position
      already skipped its own unlink/insert on the same NULL). */
   if (pbTile == (char *)0x0) {
-    discard_misplaced_object((char *)0x0,param_1,1);
+    discard_misplaced_object((char *)0x0,object,1);
     return (ushort *)0x0;
   }
   pbTile = pbTile + 2;
   if ((bVar3) && (puVar9 = (ushort *)alloc_object_slot(0), puVar9 != (ushort *)0x0)) {
-    *(byte *)puVar9 = (byte)*param_1;
-    *(byte *)((char *)puVar9 + 1) = *(byte *)((char *)param_1 + 1);
-    *(byte *)(puVar9 + 1) = (byte)param_1[1];
-    *(byte *)((char *)puVar9 + 3) = *(byte *)((char *)param_1 + 3);
-    *(byte *)(puVar9 + 2) = (byte)param_1[2];
-    *(byte *)((char *)puVar9 + 5) = *(byte *)((char *)param_1 + 5);
-    *(byte *)(puVar9 + 3) = (byte)param_1[3];
-    *(byte *)((char *)puVar9 + 7) = *(byte *)((char *)param_1 + 7);
-    *(byte *)(param_1 + 3) = (byte)param_1[3] & 0x3f;
-    *(byte *)((char *)param_1 + 7) = 0;
+    *(byte *)puVar9 = (byte)*object;
+    *(byte *)((char *)puVar9 + 1) = *(byte *)((char *)object + 1);
+    *(byte *)(puVar9 + 1) = (byte)object[1];
+    *(byte *)((char *)puVar9 + 3) = *(byte *)((char *)object + 3);
+    *(byte *)(puVar9 + 2) = (byte)object[2];
+    *(byte *)((char *)puVar9 + 5) = *(byte *)((char *)object + 5);
+    *(byte *)(puVar9 + 3) = (byte)object[3];
+    *(byte *)((char *)puVar9 + 7) = *(byte *)((char *)object + 7);
+    *(byte *)(object + 3) = (byte)object[3] & 0x3f;
+    *(byte *)((char *)object + 7) = 0;
     uVar1 = *puVar9;
     if ((uVar1 & 0x1c0) == 0x1c0) {
-      scheduler_relink_entry(puVar9,param_1);
+      scheduler_relink_entry(puVar9,object);
     }
     else if ((((uVar1 & 0x1f0) == 0x90) && (3 < (uVar1 & 0xf))) && ((uVar1 & 0xf) < 7)) {
       bVar5 = (byte)uVar1;
@@ -1357,13 +1335,13 @@ ushort * param_1;
       set_ambient_bias_without_light(0);
     }
     uVar1 = puVar9[2];
-    *(byte *)(puVar9 + 2) = (byte)param_1[4] & 0x3f | (byte)(uVar1 & 0xffc0);
+    *(byte *)(puVar9 + 2) = (byte)object[4] & 0x3f | (byte)(uVar1 & 0xffc0);
     *(byte *)((char *)puVar9 + 5) = (byte)((uVar1 & 0xffc0) >> 8);
     uVar12 = (uint)CONCAT11(*(byte *)((char *)puVar9 + 1),(byte)*puVar9);
     uVar11 = uVar12 & 0x1c0;
     if (((uVar11 != 0x140) && (uVar11 != 0x180)) &&
        (((&DAT_00202c9a)[(uVar12 & 0x1ff) * 0xd] & 3) != 2)) {
-      uVar11 = puVar9[1] & 0xfc7f | ((byte)param_1[0xd] & 7) << 7;
+      uVar11 = puVar9[1] & 0xfc7f | ((byte)object[0xd] & 7) << 7;
       *(byte *)(puVar9 + 1) = (byte)uVar11;
       *(byte *)((char *)puVar9 + 3) = (byte)(uVar11 >> 8);
     }
@@ -1372,14 +1350,14 @@ ushort * param_1;
     puVar9 = (ushort *)0x0;
   }
   if (bVar13 == 9) {
-    if ((*param_1 & 0x1c0) == 0x40) {
+    if ((*object & 0x1c0) == 0x40) {
       local_2c = 0;
     }
     else {
-      local_2c = (byte)param_1[9];
+      local_2c = (byte)object[9];
     }
   }
-  discard_misplaced_object(pbTile,param_1,1);
+  discard_misplaced_object(pbTile,object,1);
   if (puVar9 != (ushort *)0x0) {
     object_list_insert_head(pbTile,puVar9);
   }
@@ -1398,12 +1376,10 @@ ushort * param_1;
 // was FUN_0007931c -- empties a dead creature's inventory into the world, capping the number of
 // items dropped via a per-monster-class value (DAT_001007d9, indexed by the creature's type,
 // 0x30-byte stride -- see g_monster_max_stats_table's own comment for this same table).
-void drop_creature_inventory_on_death(param_1)
-byte * param_1;
-
+void drop_creature_inventory_on_death(void *creature_ptr)
 {
-  empty_container_into_world(param_1,(&DAT_001007d9)[(*param_1 & 0x3f) * 0x30]);
-  return;
+  byte *creature = (byte *)creature_ptr;
+  empty_container_into_world(creature,(&DAT_001007d9)[(*creature & 0x3f) * 0x30]);
 }
 
 
@@ -1412,12 +1388,11 @@ byte * param_1;
 
 // was FUN_00079350 -- rolls a chance (based on g_despawn_creature_ record's own drop-rate byte,
 // offset +0x26, high nibble) to spawn a treasure item on a dying/despawning creature: on a hit...
-void spawn_creature_treasure_drop(param_1)
-char *param_1;  /* was `int` -- truncated the real object pointer spawn_creature_death_loot
-                   passes in (on this 64-bit build), corrupting the address
-                   handed to object_list_insert_head(param_1 + 6, ...) below */
-
+/* was `int` -- truncated the real object pointer spawn_creature_death_loot passes in (on this
+   64-bit build), corrupting the address handed to object_list_insert_head(param_1 + 6, ...) below */
+void spawn_creature_treasure_drop(void *creature_ptr)
 {
+  char *creature = (char *)creature_ptr;
   int uw_ord2005_rem_159 = 0;
   int iVar1;
   uint uVar2;
@@ -1482,10 +1457,9 @@ char *param_1;  /* was `int` -- truncated the real object pointer spawn_creature
       pObj = (char *)spawn_new_object((short)cVar4 + 0xa0,0);
       *(byte *)(pObj + 6) = *(byte *)(pObj + 6) & 0x3f | (byte)((uVar2 & 0x3ff) << 6);
       *(char *)(pObj + 7) = (char)((uVar2 << 0x16) >> 0x18);
-      object_list_insert_head(param_1 + 6,pObj);
+      object_list_insert_head(creature + 6,pObj);
     }
   }
-  return;
 }
 
 
@@ -1495,10 +1469,10 @@ char *param_1;  /* was `int` -- truncated the real object pointer spawn_creature
 // was FUN_0007955c -- second creature-death drop roll: chance from g_despawn_creature_record's
 // offset +0x27 low nibble; on a hit, spawns a single fixed-type item (high nibble + 0xb0) and links
 // it into param_1's object chain.
-void spawn_creature_special_item_drop(param_1)
-char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_treasure_drop */
-
+/* was `int` -- same pointer-truncation bug as spawn_creature_treasure_drop */
+void spawn_creature_special_item_drop(void *creature_ptr)
 {
+  char *creature = (char *)creature_ptr;
   int uw_ord2005_rem_160 = 0;
   byte bVar1;
   undefined4 uVar2;
@@ -1511,19 +1485,18 @@ char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_tr
   uw_ord2005_rem_160 = ((int)(uVar2)) % (0x10);
   if (uw_ord2005_rem_160 < (int)(bVar1 & 0xf)) {
     pObj = (char *)spawn_new_object((bVar1 >> 4) + 0xb0,0);
-    object_list_insert_head(param_1 + 6,pObj);
+    object_list_insert_head(creature + 6,pObj);
   }
-  return;
 }
 
 
 
 // was FUN_000795cc -- third creature-death drop roll: iterates 2 equipment-slot flag bytes
 // (g_despawn_creature_record offsets +0x20/+0x21), and for each with bit 0 set...
-void spawn_creature_equipment_drop(param_1)
-char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_treasure_drop */
-
+/* was `int` -- same pointer-truncation bug as spawn_creature_treasure_drop */
+void spawn_creature_equipment_drop(void *creature_ptr)
 {
+  char *creature = (char *)creature_ptr;
   int uw_ord2005_rem_161 = 0; int uw_ord2005_rem_162 = 0; int uw_ord2005_rem_163 = 0;
   undefined2 uVar1;
   byte bVar2;
@@ -1561,7 +1534,7 @@ char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_tr
       pbVar4[4] = (bVar2 ^ bVar6) & 0x3f ^ bVar2;
       pbVar4[5] = (byte)((ushort)uVar1 >> 8);
       if ((*pbVar4 & 0x30) == 0x10) {
-        if ((&DAT_002027d2)[(*pbVar4 & 0xf) * 3] == -0x40) {
+        if ((&DAT_002027d2)[(*pbVar4 & 0xf) * 3] == 0xc0) {  /* byte value 0xc0 (was compared against -0x40, never true for an unsigned byte) */
           uVar5 = ce_rand();
           uw_ord2005_rem_163 = ((int)(uVar5)) % (8);
           uVar7 = (uw_ord2005_rem_163 & 0xffff) + 4;
@@ -1569,11 +1542,10 @@ char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_tr
           pbVar4[7] = (byte)(uVar7 >> 2);
         }
       }
-      object_list_insert_head(param_1 + 6,pbVar4);
+      object_list_insert_head(creature + 6,pbVar4);
     }
     uVar8 = uVar8 + 1 & 0xff;
   } while (uVar8 < 2);
-  return;
 }
 
 
@@ -1583,10 +1555,10 @@ char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_tr
 // was FUN_00079784 -- fourth creature-death drop roll: iterates 2 item slots
 // (g_despawn_creature_record offsets +0x22/+0x24, each a packed ushort: item id in the high 12
 // bits, drop-chance nibble in the low 4), rolling a d16 chance per slot; on a hit...
-void spawn_creature_misc_item_drop(param_1)
-char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_treasure_drop */
-
+/* was `int` -- same pointer-truncation bug as spawn_creature_treasure_drop */
+void spawn_creature_misc_item_drop(void *creature_ptr)
 {
+  char *creature = (char *)creature_ptr;
   int uw_ord2005_rem_164 = 0; int uw_ord2005_rem_165 = 0; int uw_ord2005_rem_166 = 0;
   ushort uVar1;
   undefined2 uVar2;
@@ -1628,11 +1600,10 @@ char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_tr
       bVar3 = (byte)uVar2;
       *(byte *)(iVar6 + 4) = (bVar3 ^ bVar7) & 0x3f ^ bVar3;
       *(char *)(iVar6 + 5) = (char)((ushort)uVar2 >> 8);
-      object_list_insert_head(param_1 + 6,iVar6);
+      object_list_insert_head(creature + 6,iVar6);
     }
     uVar8 = uVar8 + 1 & 0xff;
   } while (uVar8 < 2);
-  return;
 }
 
 
@@ -1642,39 +1613,31 @@ char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_tr
 // was FUN_000798c4 -- the creature death-loot orchestrator, gated on a "already dropped" flag
 // (param_1[7] bit 0x10, set at the end): points g_despawn_creature_record at this creature's own
 // per-class record in the same table as g_monster_max_stats_table...
-void spawn_creature_death_loot(param_1)
-ushort * param_1;
-
+void spawn_creature_death_loot(ushort *creature)
 {
   undefined2 uVar1;
 
-  if ((param_1[7] & 0x10) == 0) {
+  if ((creature[7] & 0x10) == 0) {
     g_despawn_creature_record = &DAT_001007d0 +
-                   (((int)(short)*param_1 & 0xfU) + (short)((*param_1 & 0x30) >> 4) * 0x10) * 0x30;
+                   (((int)(short)*creature & 0xfU) + (short)((*creature & 0x30) >> 4) * 0x10) * 0x30;
     if (getenv("UW_DEBUG_LOOT"))
-      fprintf(stderr, "[loot] spawn_creature_death_loot param_1=%p *param_1=0x%x (id=0x%x)\n",
-              (void *)param_1, (unsigned)*param_1, (unsigned)(*param_1 & 0x1ff));
-    spawn_creature_treasure_drop(param_1);
-    spawn_creature_special_item_drop(param_1);
-    spawn_creature_equipment_drop(param_1);
-    spawn_creature_misc_item_drop(param_1);
-    uVar1 = *(undefined2 *)((char *)param_1 + 0xd);
-    *(char *)((char *)param_1 + 0xd) = (char)uVar1;
-    *(byte *)(param_1 + 7) = (byte)((ushort)uVar1 >> 8) | 0x10;
+      fprintf(stderr, "[loot] spawn_creature_death_loot creature=%p *creature=0x%x (id=0x%x)\n",
+              (void *)creature, (unsigned)*creature, (unsigned)(*creature & 0x1ff));
+    spawn_creature_treasure_drop(creature);
+    spawn_creature_special_item_drop(creature);
+    spawn_creature_equipment_drop(creature);
+    spawn_creature_misc_item_drop(creature);
+    uVar1 = *(undefined2 *)((char *)creature + 0xd);
+    *(char *)((char *)creature + 0xd) = (char)uVar1;
+    *(byte *)(creature + 7) = (byte)((ushort)uVar1 >> 8) | 0x10;
   }
-  return;
 }
 
 
 // was FUN_000816e0 -- morphs a trap/hazard object (class id 0x14 or 0x15) into its "active"
 // counterpart (0x1c2 or 0x1c5 respectively -- 0x1c2 is the same spell-effect id
 // cast_area_spell_effect spawns), schedules it (type 4, delay 0)...
-undefined4 activate_area_hazard_object(param_1,param_2,param_3,param_4)
-ushort * param_1;
-uint param_2;
-undefined4 param_3;
-undefined4 param_4;
-
+int activate_area_hazard_object(ushort *hazard, uint tile_x, int tile_y, int damage)
 {
   int iVar1;
   ushort uVar2;
@@ -1688,7 +1651,7 @@ undefined4 param_4;
   local_24[1] = 0x15;
   local_24[2] = 0x1c2;
   local_24[3] = 0x1c5;
-  uVar2 = *param_1;
+  uVar2 = *hazard;
   uVar6 = 0;
   do {
     if ((int)(short)local_24[uVar6] == (uVar2 & 0x1ff)) break;
@@ -1697,15 +1660,15 @@ undefined4 param_4;
   iVar1 = (int)(short)uVar6;
   if (iVar1 < 2) {
     uVar5 = (local_24[iVar1 + 2] ^ uVar2) & 0x1ff ^ (uint)uVar2;
-    *(char *)param_1 = (char)uVar5;
-    *(char *)((char *)param_1 + 1) = (char)(uVar5 >> 8);
-    uVar4 = encode_object_slot_index(param_1);
-    sVar3 = scheduler_add_entry(uVar4,4,0,param_2 & 0xff,(char)param_3);
+    *(char *)hazard = (char)uVar5;
+    *(char *)((char *)hazard + 1) = (char)(uVar5 >> 8);
+    uVar4 = encode_object_slot_index(hazard);
+    sVar3 = scheduler_add_entry(uVar4,4,0,tile_x & 0xff,(char)tile_y);
     if (sVar3 != -1) {
       if (iVar1 == 0) {
-        spawn_effect_debris_burst(param_1,param_2,param_3);
+        spawn_effect_debris_burst(hazard,tile_x,tile_y);
       }
-      damage_all_objects_at_tile(param_2,param_3,(uVar6 & 0xff) + 1,param_4);
+      damage_all_objects_at_tile(tile_x,tile_y,(uVar6 & 0xff) + 1,damage);
       return 1;
     }
   }
@@ -1719,12 +1682,9 @@ undefined4 param_4;
 // was FUN_0002b258 -- drops a dead monster's loot: if param_2 (a gold-category nibble from the
 // monster's own template data) is nonzero, spawns a gold-pile object (0xd8+category) at the
 // corpse's own tile; if param_3 (a treasure-category nibble) is nonzero...
-void drop_monster_loot(param_1,param_2,param_3)
-byte * param_1;
-ushort param_2;
-ushort param_3;
-
+void drop_monster_loot(void *monster_ptr, ushort gold_nibble, ushort item_nibble)
 {
+  byte *monster = (byte *)monster_ptr;
   int uw_ord2005_rem_12 = 0;
   byte bVar1;
   byte bVar2;
@@ -1739,20 +1699,20 @@ ushort param_3;
                        spawn_new_object's real object pointer in both of
                        this function's drop branches */
 
-  iVar4 = (char *)tilemap_lookup(*(ushort *)(param_1 + 0x16) >> 10,(*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4)
+  iVar4 = (char *)tilemap_lookup(*(ushort *)(monster + 0x16) >> 10,(*(ushort *)(monster + 0x16) & 0x3f0) >> 4)
   ;
-  if (((param_2 & 0xff) != 0) &&
-     (pDropObj = (char *)spawn_new_object((short)(param_2 & 0xff) + 0xd8,0), pDropObj != NULL)) {
-    uVar6 = (*(ushort *)(pDropObj + 2) ^ *(ushort *)(param_1 + 2)) & 0x1fff ^
-            (uint)*(ushort *)(param_1 + 2);
+  if (((gold_nibble & 0xff) != 0) &&
+     (pDropObj = (char *)spawn_new_object((short)(gold_nibble & 0xff) + 0xd8,0), pDropObj != NULL)) {
+    uVar6 = (*(ushort *)(pDropObj + 2) ^ *(ushort *)(monster + 2)) & 0x1fff ^
+            (uint)*(ushort *)(monster + 2);
     bVar1 = (byte)uVar6;
     *(byte *)(pDropObj + 2) = bVar1;
     bVar2 = (byte)(uVar6 >> 8);
     *(byte *)(pDropObj + 3) = bVar2;
-    bVar2 = (param_1[3] ^ bVar2) & 0x1c ^ bVar2;
+    bVar2 = (monster[3] ^ bVar2) & 0x1c ^ bVar2;
     *(byte *)(pDropObj + 2) = bVar1;
     *(byte *)(pDropObj + 3) = bVar2;
-    *(byte *)(pDropObj + 2) = (param_1[2] ^ bVar1) & 0x7f ^ bVar1;
+    *(byte *)(pDropObj + 2) = (monster[2] ^ bVar1) & 0x7f ^ bVar1;
     *(byte *)(pDropObj + 3) = bVar2;
     uVar6 = CONCAT11(*(undefined1 *)(pDropObj + 5),*(undefined1 *)(pDropObj + 4)) & 0xffe8;
     *(byte *)(pDropObj + 4) = (byte)uVar6 | 0x28;
@@ -1760,41 +1720,36 @@ ushort param_3;
     object_list_insert_head(iVar4 + 2,pDropObj);
     settle_dropped_object(pDropObj,(int)DAT_0010144c,(int)DAT_00101454,1);
   }
-  if ((param_3 & 0xff) != 0) {
+  if ((item_nibble & 0xff) != 0) {
     uVar7 = ce_rand();
     uw_ord2005_rem_12 = ((int)(uVar7)) % (0x10);
     if ((uw_ord2005_rem_12 < 7) &&
-       (pDropObj = (char *)spawn_new_object((short)(param_3 & 0xff) + 0xc0,0), pDropObj != NULL)) {
+       (pDropObj = (char *)spawn_new_object((short)(item_nibble & 0xff) + 0xc0,0), pDropObj != NULL)) {
       uVar3 = *(undefined2 *)(pDropObj + 6);
       bVar1 = (byte)uVar3;
-      *(byte *)(pDropObj + 6) = (*param_1 ^ bVar1) & 0x3f ^ bVar1;
+      *(byte *)(pDropObj + 6) = (*monster ^ bVar1) & 0x3f ^ bVar1;
       *(char *)(pDropObj + 7) = (char)((ushort)uVar3 >> 8);
-      drop_object_near_target(param_1,pDropObj,4,0);
+      drop_object_near_target(monster,pDropObj,4,0);
     }
   }
-  return;
 }
 
 
 // was FUN_0002d110 -- reconstructs an NPC's walk path from creature_find_path_to_tile's BFS
 // parent-pointer scratch arrays (&DAT_0023cf08-family), walking backward from the found tile...
-void reconstruct_path_from_bfs(param_1,param_2,param_3)
-byte param_1;
-undefined1 param_2;
-undefined1 param_3;
-
+void reconstruct_path_from_bfs(byte step_count, byte goal_x, byte goal_y)
 {
   int iVar1;
   uint uVar2;
   int iVar3;
   
-  DAT_0010142c = param_1 + 1;
-  (&DAT_00101740)[(param_1 + 1) * 7] = param_2;
-  (&DAT_00101748)[(uint)param_1 * 7] = param_3;
+  DAT_0010142c = step_count + 1;
+  (&DAT_00101740)[(step_count + 1) * 7] = goal_x;
+  (&DAT_00101748)[(uint)step_count * 7] = goal_y;
   DAT_00101743 = 0;
   DAT_00101744 = 0;
   DAT_00101746 = 0;
-  for (uVar2 = (uint)(byte)(param_1 + 1); uVar2 != 0; uVar2 = uVar2 + 0xff & 0xff) {
+  for (uVar2 = (uint)(byte)(step_count + 1); uVar2 != 0; uVar2 = uVar2 + 0xff & 0xff) {
     iVar1 = uVar2 * 7;
     iVar3 = ((uint)(byte)(&DAT_00101741)[iVar1] + (uint)(byte)(&DAT_00101740)[iVar1] * 0x40) * 5;
     (&DAT_00101740)[iVar1 - 7] = (&DAT_0023cf08)[iVar3];
@@ -1804,7 +1759,6 @@ undefined1 param_3;
     *(undefined1 *)((intptr_t)&DAT_00101744 + iVar1 + 1) = 0;
     (&DAT_00101746)[iVar1] = 0;
   }
-  return;
 }
 
 
@@ -1812,12 +1766,7 @@ undefined1 param_3;
 // was FUN_0002d1e0 -- attempts a direct straight-line walk from tile (param_1,param_2) toward tile
 // (param_3,param_4): sets up a Bresenham-style line-walk state (DAT_00101740/etc), stepping through
 // can_step_between_tiles-checked tiles via record_line_walk_step.
-int try_direct_line_walk(param_1,param_2,param_3,param_4)
-byte param_1;
-byte param_2;
-short param_3;
-short param_4;
-
+int try_direct_line_walk(byte start_x, byte start_y, short goal_x, short goal_y)
 {
   int iVar1;
   char cVar2;
@@ -1838,21 +1787,21 @@ short param_4;
   uint local_2c;
   uint local_28;
   
-  local_2c = (uint)param_3;
+  local_2c = (uint)goal_x;
   local_31 = 0x40;
-  local_28 = (uint)param_4;
-  iVar7 = (int)(char)param_4 - (int)(char)param_2;
-  local_34 = param_2;
-  local_33 = param_1;
-  /* Dropped both arguments -- was `tilemap_lookup()`. param_1/param_2 are this line-walk's starting
+  local_28 = (uint)goal_y;
+  iVar7 = (int)(char)goal_y - (int)(char)start_y;
+  local_34 = start_y;
+  local_33 = start_x;
+  /* Dropped both arguments -- was `tilemap_lookup()`. start_x/start_y are this line-walk's starting
      tile (just stashed into local_33/local_34 above, and into DAT_00101740/DAT_00101741 a few lines
      below as the walk's "current position" state)... */
-  pbVar4 = (byte *)tilemap_lookup(param_1,param_2);
+  pbVar4 = (byte *)tilemap_lookup(start_x,start_y);
   if (pbVar4 == 0) {
     DAT_00101450 = 0;
     return -1;
   }
-  iVar5 = ((int)(char)param_3 - (int)(char)param_1) * 0x1000000;
+  iVar5 = ((int)(char)goal_x - (int)(char)start_x) * 0x1000000;
   iVar1 = iVar5 >> 0x18;
   if (iVar1 == 0) {
     iVar5 = iVar7 * 0x1000000;
@@ -1904,8 +1853,8 @@ LAB_0002d340:
   *pbVar9 = *pbVar9 + cVar6;
   uVar10 = (uint)local_34;
   uVar8 = (uint)local_33;
-  DAT_00101740 = param_1;
-  DAT_00101741 = param_2;
+  DAT_00101740 = start_x;
+  DAT_00101741 = start_y;
   iVar5 = record_line_walk_step(uVar8,uVar10);
   while( true ) {
     if (iVar5 == 0) {
@@ -1941,14 +1890,7 @@ LAB_0002d340:
 
 // was FUN_0002d4e8 -- checks line-of-sight between two fine-grained (sub-tile) positions, walking a
 // Bresenham-style line and testing each crossed tile boundary via can_step_between_tiles...
-undefined4 check_fine_line_of_sight(param_1,param_2,param_3,param_4,param_5,param_6)
-uint param_1;
-uint param_2;
-uint param_3;
-short param_4;
-short param_5;
-short param_6;
-
+int check_fine_line_of_sight(uint from_x, uint from_y, uint from_z, short to_x, short to_y, short to_z)
 {
   short sVar1;
   int iVar2;
@@ -1979,20 +1921,20 @@ short param_6;
   byte *local_2c;
   int local_28;
   
-  uVar9 = (uint)(short)param_1;
-  iVar7 = ((int)param_4 - uVar9) * 0x10000;
+  uVar9 = (uint)(short)from_x;
+  iVar7 = ((int)to_x - uVar9) * 0x10000;
   iVar3 = iVar7 >> 0x10;
-  uVar10 = (uint)(short)param_2;
-  iVar2 = ((int)param_5 - uVar10) * 0x10000;
-  local_28 = (int)(short)param_3;
-  local_32 = (short)((uint)((param_6 - local_28) * 0x10000) >> 0x10);
-  local_34 = (byte)(param_4 >> 3);
-  uVar13 = (short)param_1 >> 3;
+  uVar10 = (uint)(short)from_y;
+  iVar2 = ((int)to_y - uVar10) * 0x10000;
+  local_28 = (int)(short)from_z;
+  local_32 = (short)((uint)((to_z - local_28) * 0x10000) >> 0x10);
+  local_34 = (byte)(to_x >> 3);
+  uVar13 = (short)from_x >> 3;
   uVar14 = uVar13 & 0xff;
   local_3b = (byte)uVar13;
-  iVar8 = (int)param_5 >> 3;
+  iVar8 = (int)to_y >> 3;
   local_33 = (byte)iVar8;
-  uVar13 = (short)param_2 >> 3;
+  uVar13 = (short)from_y >> 3;
   if (iVar3 == 0) {
     iVar8 = (iVar2 >> 0x10) << 0x10;
   }
@@ -2028,7 +1970,7 @@ short param_6;
 LAB_0002d824:
       uVar5 = uVar5 & 0xff;
       iVar7 = uVar9 * uVar5;
-      param_1 = param_2;
+      from_x = from_y;
     }
     else {
       local_2c = &local_3c;
@@ -2053,7 +1995,7 @@ LAB_0002d768:
     if (iVar7 < 0) {
       iVar7 = iVar7 + 7;
     }
-    uVar9 = (iVar7 >> 3 & 0xffU) + (param_1 & 7) * 0x10;
+    uVar9 = (iVar7 >> 3 & 0xffU) + (from_x & 7) * 0x10;
   }
   else {
     if (iVar3 < iVar8) {
@@ -2099,14 +2041,14 @@ LAB_0002d6c0:
 LAB_0002d808:
       uVar5 = uVar5 & 0xff;
       iVar7 = uVar9 * uVar5;
-      param_1 = param_2;
+      from_x = from_y;
     }
     if (iVar7 < 0) {
       iVar7 = iVar7 + 7;
     }
-    uVar9 = (iVar7 >> 3 & 0xffU) + (param_1 & 7) * -0x10 + 0x70;
+    uVar9 = (iVar7 >> 3 & 0xffU) + (from_x & 7) * -0x10 + 0x70;
   }
-  param_3 = param_3 & 0xff;
+  from_z = from_z & 0xff;
   local_35 = 0;
   while( true ) {
     bVar4 = local_36;
@@ -2117,12 +2059,12 @@ LAB_0002d808:
       *local_30 = local_3a + *local_30;
       uVar11 = (ushort)local_3c;
       uVar13 = (ushort)local_3b;
-      iVar7 = can_step_between_tiles(local_37,bVar4,uVar14,uVar12,local_3b,local_3c,(char)param_3);
+      iVar7 = can_step_between_tiles(local_37,bVar4,uVar14,uVar12,local_3b,local_3c,(char)from_z);
       if (iVar7 == 0) {
         return 0;
       }
       if ((uVar13 == local_34) && (uVar11 == local_33)) {
-        uVar6 = can_step_between_tiles(uVar14,uVar12,uVar13,uVar11,0,0,(char)param_3);
+        uVar6 = can_step_between_tiles(uVar14,uVar12,uVar13,uVar11,0,0,(char)from_z);
         return uVar6;
       }
       local_37 = (byte)uVar14;
@@ -2135,14 +2077,14 @@ LAB_0002d808:
     }
     if (local_38 != '\0') {
       iVar7 = ordint_divmod(local_38,(int)local_32 * (uint)local_35).quot;
-      param_3 = local_28 + iVar7 & 0xff;
+      from_z = local_28 + iVar7 & 0xff;
     }
     uVar12 = (ushort)local_3c;
     uVar14 = (ushort)local_3b;
-    iVar7 = can_step_between_tiles(local_37,local_36,uVar13,uVar11,local_3b,local_3c,(char)param_3);
+    iVar7 = can_step_between_tiles(local_37,local_36,uVar13,uVar11,local_3b,local_3c,(char)from_z);
     if (iVar7 == 0) break;
     if ((uVar14 == local_34) && (uVar12 == local_33)) {
-      uVar6 = can_step_between_tiles(uVar13,uVar11,uVar14,uVar12,0,0,(char)param_3);
+      uVar6 = can_step_between_tiles(uVar13,uVar11,uVar14,uVar12,0,0,(char)from_z);
       return uVar6;
     }
     local_37 = (byte)uVar13;
@@ -2156,10 +2098,7 @@ LAB_0002d808:
 // was FUN_0002d9f4 -- records the next waypoint (param_1,param_2) into try_direct_line_walk's own
 // step-array state (DAT_00101740/41), then validates line-of-sight for that step via
 // tile_pair_los_blocked...
-undefined4 record_line_walk_step(param_1,param_2)
-undefined1 param_1;
-undefined1 param_2;
-
+int record_line_walk_step(byte x, byte y)
 {
   uint uVar1;
   int iVar2;
@@ -2168,8 +2107,8 @@ undefined1 param_2;
   
   DAT_00101450 = 0;
   iVar2 = (uint)DAT_0010142c * 7;
-  (&DAT_00101740)[iVar2] = param_1;
-  (&DAT_00101741)[iVar2] = param_2;
+  (&DAT_00101740)[iVar2] = x;
+  (&DAT_00101741)[iVar2] = y;
   uVar3 = DAT_0010142c + 1;
   uVar1 = uVar3 & 0xff;
   DAT_0010142c = (byte)uVar3;
@@ -2202,9 +2141,7 @@ undefined1 param_2;
 // was FUN_0002db4c -- pops the lowest set bit (0-15) from DAT_000853b8, the pending "path cache
 // slot needs recompute" bitmask (set per-NPC via `1 << (record's own byte 0xb & 0xf)` slot index),
 // outputting it via *param_1. Returns 1 if a pending slot was found, 0 if the mask is empty.
-undefined4 pop_pending_path_cache_slot(param_1)
-undefined1 * param_1;
-
+int pop_pending_path_cache_slot(byte *out_slot)
 {
   uint uVar1;
 
@@ -2212,7 +2149,7 @@ undefined1 * param_1;
     uVar1 = 0;
     do {
       if (((uint)DAT_000853b8 & 1 << uVar1) != 0) {
-        *param_1 = (char)uVar1;
+        *out_slot = (char)uVar1;
         return 1;
       }
       uVar1 = uVar1 + 1 & 0xff;
@@ -2248,9 +2185,7 @@ void reset_npc_path_cache()
 // was FUN_0002dbf4 -- serializes the just-computed walk path (DAT_00101740/41 start, DAT_0010142c
 // step count, and the per-step direction arrays try_direct_line_walk/record_line_walk_step filled)
 // into a compact bitfield cache record at param_1...
-void save_walk_path_to_cache_slot(param_1)
-undefined1 * param_1;
-
+void save_walk_path_to_cache_slot(byte *record)
 {
   uint uVar1;
   int iVar2;
@@ -2259,10 +2194,10 @@ undefined1 * param_1;
   uint uVar5;
   
   uVar5 = 0;
-  param_1[2] = param_1[2] & 0x80;
-  *param_1 = DAT_00101740;
-  param_1[1] = DAT_00101741;
-  param_1[3] = DAT_0010142c;
+  record[2] = record[2] & 0x80;
+  *record = DAT_00101740;
+  record[1] = DAT_00101741;
+  record[3] = DAT_0010142c;
   uVar1 = 0;
   if (DAT_0010142c != 0) {
     uVar4 = 0;
@@ -2278,7 +2213,7 @@ undefined1 * param_1;
                                  (uint)(byte)(&DAT_00101748)[iVar2]] & 3) << ((uVar1 & 0x7f) << 1));
         uVar1 = uVar1 + 1 & 0xff;
       } while (uVar1 < 4);
-      param_1[(uVar4 >> 2) + 4] = (char)iVar3;
+      record[(uVar4 >> 2) + 4] = (char)iVar3;
       uVar5 = uVar5 + 4;
       uVar1 = (uint)DAT_0010142c;
       uVar4 = uVar5 & 0xff;
@@ -2294,21 +2229,18 @@ undefined1 * param_1;
         iVar3 = iVar3 + (((byte)(&DAT_0010174a)[(uVar4 + uVar1) * 7] & 1) << uVar4);
         uVar4 = uVar4 + 1 & 0xff;
       } while (uVar4 < 8);
-      param_1[(uVar1 >> 3) + 0x14] = (char)iVar3;
+      record[(uVar1 >> 3) + 0x14] = (char)iVar3;
       uVar5 = uVar5 + 8;
       uVar1 = uVar5 & 0xff;
     } while (uVar1 < DAT_0010142c);
   }
-  return;
 }
 
 
 // was FUN_0002dd4c -- advances a cached NPC walk path (the 28-byte per-slot record
 // save_walk_path_to_cache_slot writes, keyed on the current step index at param_1[2]&0x7f vs the
 // total step count at param_1[3]) by one step...
-undefined4 advance_cached_path_step(param_1)
-char * param_1;
-
+int advance_cached_path_step(char *record)
 {
   int uw_ord2005_rem_14 = 0; int uw_ord2005_rem_15 = 0;
   int iVar1;
@@ -2319,24 +2251,24 @@ char * param_1;
   uint extraout_r1_00;
   byte bVar5;
   
-  bVar2 = param_1[2];
+  bVar2 = record[2];
   bVar5 = bVar2 & 0x7f;
-  if (bVar5 < (byte)param_1[3]) {
-    bVar3 = param_1[(bVar2 >> 2 & 0x1f) + 4];
+  if (bVar5 < (byte)record[3]) {
+    bVar3 = record[(bVar2 >> 2 & 0x1f) + 4];
     uw_ord2005_rem_14 = ((int)(bVar5)) % (4);
     iVar1 = (short)(bVar3 >> ((uw_ord2005_rem_14 & 0x7f) << 1) & 3) * 2;
-    *param_1 = *param_1 + (&DAT_000853b0)[iVar1];
-    param_1[1] = param_1[1] + (&DAT_000853b1)[iVar1];
-    bVar3 = param_1[(bVar2 >> 3 & 0xf) + 0x14];
+    *record = *record + (&DAT_000853b0)[iVar1];
+    record[1] = record[1] + (&DAT_000853b1)[iVar1];
+    bVar3 = record[(bVar2 >> 3 & 0xf) + 0x14];
     uw_ord2005_rem_15 = ((int)(bVar5)) % (8);
     if ((bVar3 >> (uw_ord2005_rem_15 & 0xff) & 1) == 0) {
-      param_1[2] = bVar5;
+      record[2] = bVar5;
     }
     else {
-      param_1[2] = bVar2 | 0x80;
+      record[2] = bVar2 | 0x80;
     }
-    bVar2 = param_1[2];
-    param_1[2] = (bVar2 + 1 ^ bVar2) & 0x7f ^ bVar2;
+    bVar2 = record[2];
+    record[2] = (bVar2 + 1 ^ bVar2) & 0x7f ^ bVar2;
     uVar4 = 1;
   }
   else {
@@ -2350,15 +2282,7 @@ char * param_1;
 // was FUN_0002de40 -- checks whether an NPC's current tile position matches its cached path's
 // expected position for this tick. param_1 is the cache record's own "blocked" flag (param_1[2]>>7
 // at the call site); if clear...
-undefined4 check_path_cache_position_match(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
-int param_1;
-short param_2;
-short param_3;
-short param_4;
-short param_5;
-short param_6;
-short param_7;
-
+int check_path_cache_position_match(int cache_flag, short tile_x, short tile_y, short sub_x, short sub_y, short expected_sub_x, short expected_sub_y)
 {
   int iVar1;
   int iVar2;
@@ -2370,52 +2294,52 @@ short param_7;
   bool bVar8;
   bool bVar9;
   
-  if (param_1 == 0) {
-    iVar1 = (int)param_4;
+  if (cache_flag == 0) {
+    iVar1 = (int)sub_x;
     bVar9 = SBORROW4(iVar1,6);
     iVar7 = iVar1 + -6;
     bVar8 = iVar1 == 6;
     sVar5 = 0;
     if (5 < iVar1) {
-      iVar2 = (int)param_2;
-      iVar3 = (int)param_6;
+      iVar2 = (int)tile_x;
+      iVar3 = (int)expected_sub_x;
       bVar9 = SBORROW4(iVar3,iVar2);
       iVar7 = iVar3 - iVar2;
       bVar8 = iVar3 == iVar2;
-      sVar5 = param_2;
+      sVar5 = tile_x;
     }
     if (bVar8 || iVar7 < 0 != bVar9) {
-      sVar4 = param_2;
-      if ((iVar1 < 2) && (sVar5 = param_2, param_6 < param_2)) {
-        sVar4 = param_2 + -1;
+      sVar4 = tile_x;
+      if ((iVar1 < 2) && (sVar5 = tile_x, expected_sub_x < tile_x)) {
+        sVar4 = tile_x + -1;
       }
     }
     else {
       sVar4 = sVar5 + 1;
     }
-    param_2 = sVar4;
-    iVar7 = (int)param_5;
+    tile_x = sVar4;
+    iVar7 = (int)sub_y;
     bVar9 = SBORROW4(iVar7,6);
     iVar1 = iVar7 + -6;
     bVar8 = iVar7 == 6;
     if (5 < iVar7) {
-      iVar2 = (int)param_3;
-      iVar3 = (int)param_7;
+      iVar2 = (int)tile_y;
+      iVar3 = (int)expected_sub_y;
       bVar9 = SBORROW4(iVar3,iVar2);
       iVar1 = iVar3 - iVar2;
       bVar8 = iVar3 == iVar2;
-      sVar5 = param_3;
+      sVar5 = tile_y;
     }
     if (bVar8 || iVar1 < 0 != bVar9) {
-      if ((iVar7 < 2) && (param_7 < param_3)) {
-        param_3 = param_3 + -1;
+      if ((iVar7 < 2) && (expected_sub_y < tile_y)) {
+        tile_y = tile_y + -1;
       }
     }
     else {
-      param_3 = sVar5 + 1;
+      tile_y = sVar5 + 1;
     }
   }
-  if ((param_2 != param_6) || (uVar6 = 1, param_3 != param_7)) {
+  if ((tile_x != expected_sub_x) || (uVar6 = 1, tile_y != expected_sub_y)) {
     uVar6 = 0;
   }
   return uVar6;
@@ -2425,9 +2349,7 @@ short param_7;
 // was FUN_0002df2c -- the top-level "walk via cached path" driver: checks the cache slot's position
 // match (check_path_cache_position_match) and advances it a step if valid
 // (advance_cached_path_step); if the path isn't blocked...
-undefined4 walk_using_cached_path(param_1)
-byte * param_1;
-
+int walk_using_cached_path(byte *cache_record)
 {
   byte bVar1;
   byte bVar2;
@@ -2438,19 +2360,19 @@ byte * param_1;
   int iVar8;
   byte bVar4;
   
-  bVar1 = *param_1;
-  bVar2 = param_1[1];
-  iVar5 = check_path_cache_position_match(param_1[2] >> 7,DAT_00101918,DAT_001013f8,DAT_00101910 & 7,DAT_0010141c & 7,
+  bVar1 = *cache_record;
+  bVar2 = cache_record[1];
+  iVar5 = check_path_cache_position_match(cache_record[2] >> 7,DAT_00101918,DAT_001013f8,DAT_00101910 & 7,DAT_0010141c & 7,
                        bVar1,bVar2);
   bVar3 = DAT_00101918;
   bVar4 = DAT_001013f8;
-  if ((iVar5 == 0) || (iVar5 = advance_cached_path_step(param_1), bVar3 = bVar1, bVar4 = bVar2, iVar5 != 0)) {
-    if ((param_1[2] & 0x80) == 0) {
+  if ((iVar5 == 0) || (iVar5 = advance_cached_path_step(cache_record), bVar3 = bVar1, bVar4 = bVar2, iVar5 != 0)) {
+    if ((cache_record[2] & 0x80) == 0) {
       if ((*(byte *)(DAT_00101404 + 10) & 0x80) != 0) {
         set_npc_altitude_state(*(ushort *)((char *)DAT_0010190c + 0xf) & 0x3f,
                      *(ushort *)((char *)DAT_0010190c + 0xf) >> 6 & 0x3f);
       }
-      uVar7 = (uint)*param_1;
+      uVar7 = (uint)*cache_record;
       iVar5 = uVar7 * 8;
       if (bVar3 == uVar7) {
         iVar5 = iVar5 + 4;
@@ -2458,7 +2380,7 @@ byte * param_1;
       else if (uVar7 < bVar3) {
         iVar5 = iVar5 + 7;
       }
-      uVar7 = (uint)param_1[1];
+      uVar7 = (uint)cache_record[1];
       iVar8 = uVar7 * 8;
       if (bVar4 == uVar7) {
         iVar8 = iVar8 + 4;
@@ -2475,7 +2397,7 @@ byte * param_1;
       *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
     }
     else {
-      handle_blocked_cached_path(param_1);
+      handle_blocked_cached_path(cache_record);
     }
     uVar6 = 1;
   }
@@ -2489,9 +2411,7 @@ byte * param_1;
 
 // was FUN_0002e104 -- handles a blocked/exhausted cached path: if the NPC is close (<3 tiles) to
 // the cache's own tracked endpoint, takes one more direction-table-driven step past it...
-void handle_blocked_cached_path(param_1)
-byte * param_1;
-
+void handle_blocked_cached_path(byte *cache_record)
 {
   int uw_ord2005_rem_16 = 0;
   int iVar1;
@@ -2503,7 +2423,7 @@ byte * param_1;
   uint uVar6;
   uint uVar7;
   
-  uVar7 = (uint)*param_1;
+  uVar7 = (uint)*cache_record;
   iVar1 = uVar7 * 8;
   uVar3 = iVar1 - 2;
   if (DAT_00101918 == uVar7) {
@@ -2512,7 +2432,7 @@ byte * param_1;
   else if (uVar7 < DAT_00101918) {
     uVar3 = iVar1 + 9;
   }
-  uVar6 = (uint)param_1[1];
+  uVar6 = (uint)cache_record[1];
   iVar1 = uVar6 * 8;
   uVar5 = iVar1 - 2;
   if (DAT_001013f8 == uVar6) {
@@ -2525,8 +2445,8 @@ byte * param_1;
   uVar3 = (uVar5 & 0xffff) - (uint)DAT_0010141c;
   if ((int)(((uVar3 ^ (int)uVar3 >> 0x1f) - ((int)uVar3 >> 0x1f)) +
            ((uVar4 ^ (int)uVar4 >> 0x1f) - ((int)uVar4 >> 0x1f))) < 3) {
-    bVar2 = param_1[(param_1[2] >> 2 & 0x1f) + 4];
-    uw_ord2005_rem_16 = ((int)(param_1[2] & 0x7f)) % (4);
+    bVar2 = cache_record[(cache_record[2] >> 2 & 0x1f) + 4];
+    uw_ord2005_rem_16 = ((int)(cache_record[2] & 0x7f)) % (4);
     iVar1 = (short)(bVar2 >> ((uw_ord2005_rem_16 & 0x7f) << 1) & 3) * 2;
     uVar3 = compute_movement_heading(((int)(char)(&DAT_000853b0)[iVar1] + uVar7 & 0xff) -
                          (uint)(*(ushort *)((char *)DAT_0010190c + 0x16) >> 10),
@@ -2550,7 +2470,6 @@ byte * param_1;
     *(char *)((char *)DAT_0010190c + 3) = (char)(uVar3 >> 8);
     *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
   }
-  return;
 }
 
 
@@ -2558,10 +2477,7 @@ byte * param_1;
 // was FUN_0002e3b4 -- computes an 8-way movement heading (0-7) from a relative (param_1,param_2)
 // delta, used by walk_using_cached_path/ handle_blocked_cached_path to steer an NPC's
 // facing/movement byte 9.
-undefined4 compute_movement_heading(param_1,param_2)
-int param_1;
-int param_2;
-
+int compute_movement_heading(int dx, int dy)
 {
   int iVar1;
   int iVar2;
@@ -2569,10 +2485,10 @@ int param_2;
   int iVar4;
   undefined4 uVar5;
   
-  iVar1 = (int)(char)param_2;
-  iVar2 = (param_2 << 0x19) >> 0x18;
-  iVar3 = (param_1 << 0x19) >> 0x18;
-  iVar4 = (int)(char)param_1;
+  iVar1 = (int)(char)dy;
+  iVar2 = (dy << 0x19) >> 0x18;
+  iVar3 = (dx << 0x19) >> 0x18;
+  iVar4 = (int)(char)dx;
   if (iVar3 < iVar1) {
     if (-iVar2 < iVar4) {
       uVar5 = 0;
@@ -2606,10 +2522,7 @@ int param_2;
 // was FUN_0002ee80 -- sets a flying/levitating NPC's vertical movement/animation state (packed into
 // the top bits of record byte 0x14): compares its current altitude (byte 2 & 0x7f) against the
 // target tile (param_1,param_2)'s own ceiling-derived height...
-void set_npc_altitude_state(param_1,param_2)
-undefined1 param_1;
-undefined1 param_2;
-
+void set_npc_altitude_state(byte tile_x, byte tile_y)
 {
   int uw_ord2005_rem_20 = 0;
   char cVar1;
@@ -2620,7 +2533,7 @@ undefined1 param_2;
   uint uVar5;
   
   if (DAT_00101914 == 0) {
-    pbVar2 = (byte *)tilemap_lookup(param_1,param_2);
+    pbVar2 = (byte *)tilemap_lookup(tile_x,tile_y);
     uVar5 = *(byte *)((char *)DAT_0010190c + 2) & 0x7f;
     uVar3 = (uint)(*pbVar2 >> 4) * 8 + 0x14;
     if (0x78 < uVar3) {
@@ -2641,17 +2554,15 @@ undefined1 param_2;
     }
     *(byte *)((char *)DAT_0010190c + 0x14) = cVar1 << 3 | *(byte *)((char *)DAT_0010190c + 0x14) & 7;
   }
-  return;
 }
 
 
 // was FUN_0002efa0 -- an NPC's "arrived at destination tile" reaction: if a "use on arrival" flag
 // is set in its stat template (byte 0x2e), uses the object it arrived on; if that object is a
 // specific combinable-ingredient-shaped category (0x140) with a low sub-id...
-void npc_arrival_interaction(param_1)
-ushort * param_1;
-
+void npc_arrival_interaction(void *npc_ptr)
 {
+  ushort *npc = (ushort *)npc_ptr;
   int uw_ord2005_rem_21 = 0; int uw_ord2005_rem_22 = 0;
   undefined4 uVar1;
   undefined1 extraout_r1;
@@ -2659,18 +2570,18 @@ ushort * param_1;
   int extraout_r1_01;
   undefined1 uVar2;
   
-  if ((*param_1 & 7) != 7) {
+  if ((*npc & 7) != 7) {
     if (*(char *)(DAT_00101404 + 0x2e) != '\0') {
       DAT_002020a0 = (ushort)DAT_00101424;
       DAT_002020a4 = (ushort)DAT_00101428;
-      use_object_on_target(DAT_0010190c,param_1,0);
+      use_object_on_target(DAT_0010190c,npc,0);
     }
-    if (((*param_1 & 0x1f0) == 0x140) && ((*param_1 & 0xf) < 8)) {
+    if (((*npc & 0x1f0) == 0x140) && ((*npc & 0xf) < 8)) {
       if (*(char *)(DAT_00101404 + 0x2e) != '\0') {
         uVar1 = ce_rand();
         uw_ord2005_rem_21 = ((int)(uVar1)) % (2);
         if (uw_ord2005_rem_21 != 0) {
-          check_object_combination(DAT_0010190c,param_1,
+          check_object_combination(DAT_0010190c,npc,
                        (int)((uint)*(byte *)(DAT_00101404 + 0x2e) * -0x10000) >> 0x10);
           return;
         }
@@ -2684,11 +2595,10 @@ ushort * param_1;
            fabricated-remainder bug fixed throughout this session (this port's ordint_divmod never
            populates extraout_r1). ordint_divmod(divisor,dividend).quot here divides the... */
         uw_ord2005_rem_21 = (int)uVar1 % (int)(uint)(*(byte *)(DAT_00101404 + 0x14));
-        apply_typed_damage_to_object(param_1,DAT_0010190c,DAT_00101424,DAT_00101428,uw_ord2005_rem_21,uVar2);
+        apply_typed_damage_to_object(npc,DAT_0010190c,DAT_00101424,DAT_00101428,uw_ord2005_rem_21,uVar2);
       }
     }
   }
-  return;
 }
 
 
@@ -2697,11 +2607,7 @@ ushort * param_1;
 // calls this): if not already at the given wander tile (param_1,param_2)...
 /* Real arity is 3: the ARM prologue (0x30878) just spills r0-r3 (`push {r0-r3}`), and the lone caller
    (0x30358) leaves r3 as a stale `ands` result. Ghidra's param_4 was that spilled-but-unused r3. */
-void npc_wander_reposition(param_1,param_2,param_3)
-uint param_1;
-uint param_2;
-uint param_3;
-
+void npc_wander_reposition(uint saved_a, uint saved_b, uint saved_c)
 {
   int uw_ord2005_rem_57 = 0; int uw_ord2005_rem_58 = 0;
   uint uVar1;
@@ -2714,11 +2620,11 @@ uint param_3;
   uint local_c;
   uint uStack_8;
   
-  local_10 = param_1;
-  local_c = param_2;
-  uStack_8 = param_3;
-  if (((param_1 & 0xff) != (*(ushort *)((char *)DAT_0010190c + 0xf) & 0x3f)) ||
-     ((param_2 & 0xff) != (*(ushort *)((char *)DAT_0010190c + 0xf) & 0xfc0) >> 6)) {
+  local_10 = saved_a;
+  local_c = saved_b;
+  uStack_8 = saved_c;
+  if (((saved_a & 0xff) != (*(ushort *)((char *)DAT_0010190c + 0xf) & 0x3f)) ||
+     ((saved_b & 0xff) != (*(ushort *)((char *)DAT_0010190c + 0xf) & 0xfc0) >> 6)) {
     uVar3 = ce_rand();
     uw_ord2005_rem_57 = ((int)(uVar3)) % (8);
     if (uw_ord2005_rem_57 == 0) {
@@ -2746,12 +2652,12 @@ LAB_00030984:
   }
 LAB_000309a0:
   if (((((local_10 & 0xff) != (uint)DAT_00101918) || ((char)local_c != DAT_001013f8)) ||
-      (uVar1 = (int)DAT_0010140c - (int)DAT_00101420 >> 0x1f,
+      (uVar1 = ((int)DAT_0010140c - (int)DAT_00101420) >> 0x1f,
       3 < (int)(((int)DAT_0010140c - (int)DAT_00101420 ^ uVar1) - uVar1))) &&
-     ((((param_3 = param_3 & 0xff, 1 < param_3 && (param_3 * param_3 < (uint)DAT_00101900)) ||
-       ((param_3 * param_3 * 0x40 < DAT_00101728 ||
-        ((param_3 < 2 &&
-         (uVar1 = (int)DAT_0010140c - (int)DAT_00101420 >> 0x1f,
+     ((((saved_c = saved_c & 0xff, 1 < saved_c && (saved_c * saved_c < (uint)DAT_00101900)) ||
+       ((saved_c * saved_c * 0x40 < DAT_00101728 ||
+        ((saved_c < 2 &&
+         (uVar1 = ((int)DAT_0010140c - (int)DAT_00101420) >> 0x1f,
          3 < (int)(((int)DAT_0010140c - (int)DAT_00101420 ^ uVar1) - uVar1))))))) &&
       /* Dropped third argument: at the real call (0x30a6c) r2 still holds
          DAT_00101420 from the `ldrb r2,[r5]` that fed the
@@ -2761,7 +2667,6 @@ LAB_000309a0:
     npc_clear_special_goal();
     *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) & 0xfd;
   }
-  return;
 }
 
 
@@ -2814,11 +2719,10 @@ void npc_react_to_nearby_player()
 // was FUN_00032180 -- checks the NPC's proximity to its current wander/goal tile against two
 // stat-template-derived radii (byte 0x1e's two nibbles, each multiplied against a per-monster-class
 // table entry): outputs the goal tile itself via param_1/param_2...
-undefined4 detect_npc_wander_proximity(param_1,param_2)
-char * param_1;
-char * param_2;
-
+int detect_npc_wander_proximity(void *out_near_ptr, void *out_far_ptr)
 {
+  char *out_near = (char *)out_near_ptr;
+  char *out_far = (char *)out_far_ptr;
   int uw_ord2005_rem_86 = 0;
   int iVar1;
   int iVar2;
@@ -2834,8 +2738,8 @@ char * param_2;
   int deltaX;
   int deltaY;
 
-  *param_1 = DAT_00101408;
-  *param_2 = DAT_00101410;
+  *out_near = DAT_00101408;
+  *out_far = DAT_00101410;
   iVar1 = ((int)DAT_00101408 - (int)DAT_00101918) * 0x1000000 >> 0x18;
   iVar2 = ((int)DAT_00101410 - (int)DAT_001013f8) * 0x1000000 >> 0x18;
   deltaX = iVar1;
@@ -2886,10 +2790,7 @@ LAB_000323ac:
 // was FUN_0003298c -- computes a vertical aim/pitch offset toward the tracked target: derives it
 // from the height difference between the NPC and target scaled by distance
 // (integer_sqrt(DAT_00101728)), clamped to [-0xf,0xf]...
-int compute_vertical_aim_offset(param_1,param_2)
-short param_1;
-int param_2;
-
+int compute_vertical_aim_offset(short has_target, int target)
 {
   byte bVar1;
   byte bVar2;
@@ -2919,11 +2820,11 @@ int param_2;
     if ((short)iVar5 < -0xf) {
       iVar5 = -0xf;
     }
-    if ((param_2 == 0) || (param_1 == 0)) {
+    if ((target == 0) || (has_target == 0)) {
       iVar5 = iVar5 << 0x18;
     }
     else {
-      iVar6 = ordint_divmod((int)param_1,(uint)uVar3 * 3).quot;
+      iVar6 = ordint_divmod((int)has_target,(uint)uVar3 * 3).quot;
       iVar5 = (iVar6 + (short)iVar5) * 0x1000000;
     }
   }
@@ -2934,19 +2835,17 @@ int param_2;
 // was FUN_00032aa4 -- the per-tick NPC AI setup step: stashes the current NPC object into
 // DAT_0010190c and computes the whole derived-state fan-out virtually every other function in this
 // NPC AI cluster reads -- its own stat template pointer (DAT_00101404)...
-void setup_npc_ai_tick_state(param_1)
-ushort * param_1;
-
+void setup_npc_ai_tick_state(ushort *npc)
 {
   byte bVar1;
   uint uVar2;
   int iVar3;
   
-  DAT_0010190c = param_1;
-  /* Was a dropped argument -- was `encode_object_slot_index();` with no args. param_1 (just stashed
+  DAT_0010190c = npc;
+  /* Was a dropped argument -- was `encode_object_slot_index();` with no args. npc (just stashed
      above as DAT_0010190c, the "current NPC" this whole per-tick setup is for) is the obvious
      intended argument. */
-  DAT_00101738 = encode_object_slot_index(param_1);
+  DAT_00101738 = encode_object_slot_index(npc);
   iVar3 = ((byte)*DAT_0010190c & 0x3f) * 0x30;
   DAT_00101404 = &DAT_001007d0 + iVar3;
   DAT_00101918 = *(byte *)((char *)DAT_0010190c + 0x17) >> 2;
@@ -2966,18 +2865,17 @@ ushort * param_1;
   if (((&DAT_001007da)[iVar3] & 0x80) == 0) {
     if (((&DAT_001007da)[iVar3] & 0x40) == 0) {
       DAT_0010172c = &DAT_002048c0;
-      DAT_00101438 = (undefined2 *)&DAT_00204980;
+      DAT_00101438 = (char *)&DAT_00204980;
     }
     else {
       DAT_0010172c = (undefined2 *)&DAT_00204950;
-      DAT_00101438 = &DAT_002049b0;
+      DAT_00101438 = (char *)&DAT_002049b0;
     }
   }
   else {
     DAT_0010172c = (undefined2 *)&DAT_002048f0;
-    DAT_00101438 = &DAT_00204990;
+    DAT_00101438 = (char *)&DAT_00204990;
   }
-  return;
 }
 
 
@@ -2994,7 +2892,8 @@ void npc_ai_default_tick()
   char cVar4;
   uint uVar5;
   undefined4 uVar6;
-  char *iVar7;
+  int iVar7;
+  char *npc_rec;
   ushort *puVar8;
   undefined1 extraout_r1;
   undefined1 uVar9;
@@ -3083,7 +2982,7 @@ LAB_000339fc:
       if ((cVar4 != '\0') &&
          (((cVar4 == '\x01' && ((*(byte *)((char *)DAT_0010190c + 0x19) & 0x40) == 0)) ||
           (((*(byte *)((char *)DAT_0010190c + 0x19) & 0x40) != 0 ||
-           (iVar7 = get_object_record_by_slot_index(cVar4), (iVar7 != 0) && (*(byte *)(iVar7 + 0x19) & 0x40) != 0)))))) {
+           (npc_rec = get_object_record_by_slot_index(cVar4), (npc_rec != 0) && (*(byte *)(npc_rec + 0x19) & 0x40) != 0)))))) {
         if ((uint)*(byte *)((char *)DAT_0010190c + 0x12) != (*(ushort *)((char *)DAT_0010190c + 0xb) >> 4 & 0xff)) {
           uVar11 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xf00f |
                    (uint)*(byte *)((char *)DAT_0010190c + 0x12) << 4;
@@ -3187,10 +3086,10 @@ LAB_00033e9c:
   case 0xb:
     *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
     uVar6 = ce_rand();
-    iVar7 = DAT_0010190c;
+    npc_rec = (char *)DAT_0010190c;
     bVar10 = *(byte *)((char *)DAT_0010190c + 0x13);
     uw_ord2005_rem_93 = ((int)(uVar6)) % (2);
-    *(byte *)(iVar7 + 0x13) = (uw_ord2005_rem_93 ^ bVar10) & 0x7f ^ bVar10;
+    *(byte *)(npc_rec + 0x13) = (uw_ord2005_rem_93 ^ bVar10) & 0x7f ^ bVar10;
     uVar6 = ce_rand();
     uw_ord2005_rem_94 = ((int)(uVar6)) % (0x100);
     *(undefined1 *)((char *)DAT_0010190c + 9) = uw_ord2005_rem_94;
@@ -3198,11 +3097,11 @@ LAB_00033e9c:
     uw_ord2005_rem_95 = ((int)(uVar6)) % (3);
     *(byte *)((char *)DAT_0010190c + 0x14) =
          *(byte *)((char *)DAT_0010190c + 0x14) & 7 ^ (uw_ord2005_rem_95 + '\x0f') * '\b';
-    iVar7 = DAT_0010190c;
+    npc_rec = (char *)DAT_0010190c;
     uVar2 = *(ushort *)((char *)DAT_0010190c + 0xb);
     uw_ord2005_rem_96 = ((int)((uVar2 >> 0xc) + 1)) % (4);
     uVar11 = uVar2 & 0xfff;
-    *(char *)(iVar7 + 0xb) = (char)uVar11;
+    *(char *)(npc_rec + 0xb) = (char)uVar11;
     *(byte *)((char *)DAT_0010190c + 0xc) =
          (byte)(uVar11 >> 8) | (byte)(((uw_ord2005_rem_96 & 0xf) << 0xc) >> 8);
     *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) | 0x40;
@@ -3213,7 +3112,7 @@ LAB_00033e9c:
   default:
     *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) | 7;
   }
-  iVar7 = DAT_0010190c;
+  npc_rec = (char *)DAT_0010190c;
   /* HACK: same ushort-vs-byte pointer-arithmetic scaling bug as process_visible_tile_cell's sibling
      npc_notice_and_idle_tick (fixed earlier this session) -- DAT_0010190c is `ushort *`, so bare
      `DAT_0010190c + 2` scales to byte offset 4... */
@@ -3236,11 +3135,11 @@ LAB_00033e9c:
     uVar11 = uVar11 & 0xff;
   }
   uVar5 = uVar2 & 0xfc7f | (uVar11 & 0xffe0) << 2;
-  *(char *)(iVar7 + 2) = (char)uVar5;
+  *(char *)(npc_rec + 2) = (char)uVar5;
   *(char *)((char *)DAT_0010190c + 3) = (char)(uVar5 >> 8);
   *(byte *)((char *)DAT_0010190c + 0x18) =
        (*(byte *)((char *)DAT_0010190c + 0x18) ^ (byte)uVar11) & 0x1f ^ *(byte *)((char *)DAT_0010190c + 0x18);
-  iVar7 = DAT_0010190c;
+  npc_rec = (char *)DAT_0010190c;
   /* Was `if (DAT_00101430 == 0)` -- an inverted condition, confirmed via real disassembly (`cmp
      r0,#0x0; beq 0x326a4`, where r0 is DAT_00101430 and 0x326a4 is the simple "just copy
      DAT_00101458" branch this decompile currently has as the ELSE)... */
@@ -3255,7 +3154,7 @@ LAB_00033e9c:
     uVar5 = (uint)DAT_00101458;
     uVar11 = ((bVar10 - uVar5) + 0x100) & 0xff;
     if ((uVar11 < 0x20) || (0xe0 < uVar11)) {
-      *(byte *)(iVar7 + 9) = bVar10;
+      *(byte *)(npc_rec + 9) = bVar10;
       return;
     }
     if (uVar11 < 0x40) {
@@ -3263,12 +3162,12 @@ LAB_00033e9c:
     }
     else {
       if (uVar11 < 0xc1) {
-        *(byte *)(iVar7 + 0x13) = bVar1 & 0x80;
+        *(byte *)(npc_rec + 0x13) = bVar1 & 0x80;
         goto LAB_00032690;
       }
       uVar9 = (uVar5 + 0xe0) & 0xff;
     }
-    *(undefined1 *)(iVar7 + 9) = uVar9;
+    *(undefined1 *)(npc_rec + 9) = uVar9;
   }
   else {
 LAB_00032690:
@@ -3281,7 +3180,7 @@ LAB_00032690:
 // was FUN_00034044 -- refreshes the whole "delta to tracked target" state every function in this
 // NPC AI cluster reads: looks up the target object from the NPC's own goal-target slot (byte 0xb's
 // high nibble), and if it's valid and alive...
-undefined4 refresh_npc_target_delta()
+int refresh_npc_target_delta()
 
 {
   undefined4 uVar1;
@@ -3320,31 +3219,26 @@ undefined4 refresh_npc_target_delta()
 // was FUN_00034270 -- an NPC morale/flee-shaped check: param_1 is a stat-template byte (byte 4),
 // param_2 the NPC's own current HP (byte 8); if param_2 falls outside a band scaled off param_1,
 // returns 0 outright.
-undefined4 check_npc_morale_flee(param_1,param_2,param_3,param_4)
-uint param_1;
-uint param_2;
-uint param_3;
-uint param_4;
-
+int check_npc_morale_flee(uint morale_stat, uint current_hp, uint hp_margin, uint flee_threshold)
 {
   int uw_ord2005_rem_97 = 0;
   undefined4 uVar1;
   int iVar2;
   int extraout_r1;
   
-  param_1 = param_1 & 0xff;
-  param_2 = param_2 & 0xff;
-  if (((uint)((int)(param_1 * 3) >> 2) < param_2) || (param_2 < param_1 >> 3)) {
+  morale_stat = morale_stat & 0xff;
+  current_hp = current_hp & 0xff;
+  if (((uint)((int)(morale_stat * 3) >> 2) < current_hp) || (current_hp < morale_stat >> 3)) {
 LAB_000342b0:
     uVar1 = 0;
   }
   else {
-    if ((param_4 & 0xff) <= param_1 >> 1) {
-      if (param_1 == 0) goto LAB_000342b0;
+    if ((flee_threshold & 0xff) <= morale_stat >> 1) {
+      if (morale_stat == 0) goto LAB_000342b0;
       uVar1 = ce_rand();
       uw_ord2005_rem_97 = ((int)(uVar1)) % (4);
-      iVar2 = ordint_divmod(param_1,param_2 << 4).quot;
-      if ((int)(0xf - (param_3 & 0xff)) < (int)(uw_ord2005_rem_97 + iVar2 & 0xffffU)) {
+      iVar2 = ordint_divmod(morale_stat,current_hp << 4).quot;
+      if ((int)(0xf - (hp_margin & 0xff)) < (int)(uw_ord2005_rem_97 + iVar2 & 0xffffU)) {
         return 0;
       }
     }
@@ -3378,22 +3272,20 @@ int compute_pathfind_search_radius()
 // npc_ai_default_tick's own goal-0xc branch reads to drop loot and free the slot): allowed
 // unconditionally if byte 0x1a is 0 (a "not immortal/scripted" marker)...
 /* ARM 0x345bc..0x3462c uses the full object pointer with byte offsets. */
-undefined4 initiate_npc_death(param_1)
-char *param_1;
-
+int initiate_npc_death(char *npc)
 {
   int iVar1;
   undefined4 uVar2;
   uint uVar3;
 
-  if ((*(char *)(param_1 + 0x1a) == '\0') || (iVar1 = resolve_unique_npc_special_behavior(param_1,0), iVar1 != 0)) {
+  if ((*(char *)(npc + 0x1a) == '\0') || (iVar1 = resolve_unique_npc_special_behavior(npc,0), iVar1 != 0)) {
     uVar2 = 1;
-    *(byte *)(param_1 + 0x15) = *(byte *)(param_1 + 0x15) & 0xcc | 0xc;
-    uVar3 = CONCAT11(*(undefined1 *)(param_1 + 0xc),*(undefined1 *)(param_1 + 0xb)) & 0xfff;
-    *(char *)(param_1 + 0xb) = (char)uVar3;
-    *(char *)(param_1 + 0xc) = (char)(uVar3 >> 8);
-    *(byte *)(param_1 + 0x14) = *(byte *)(param_1 + 0x14) & 0xfc | 4;
-    *(undefined1 *)(param_1 + 8) = 0;
+    *(byte *)(npc + 0x15) = *(byte *)(npc + 0x15) & 0xcc | 0xc;
+    uVar3 = CONCAT11(*(undefined1 *)(npc + 0xc),*(undefined1 *)(npc + 0xb)) & 0xfff;
+    *(char *)(npc + 0xb) = (char)uVar3;
+    *(char *)(npc + 0xc) = (char)(uVar3 >> 8);
+    *(byte *)(npc + 0x14) = *(byte *)(npc + 0x14) & 0xfc | 4;
+    *(undefined1 *)(npc + 8) = 0;
   }
   else {
     uVar2 = 0;
@@ -3407,14 +3299,13 @@ char *param_1;
 // in goal 0xc (dead) or initiate_npc_death() refuses the transition; otherwise plays a positional
 // death sound (only for goal-category 1 NPCs) and returns 1.
 /* ARM 0x34638..0x34648 uses the full object pointer with byte offsets. */
-undefined4 handle_monster_death(param_1)
-char *param_1;
-
+int handle_monster_death(void *npc_ptr)
 {
+  char *npc = (char *)npc_ptr;
   int iVar1;
   undefined4 uVar2;
 
-  if (((*(byte *)(param_1 + 0x15) & 0x3f) == 0xc) || (iVar1 = initiate_npc_death(param_1), iVar1 == 0)) {
+  if (((*(byte *)(npc + 0x15) & 0x3f) == 0xc) || (iVar1 = initiate_npc_death(npc), iVar1 == 0)) {
     uVar2 = 0;
   }
   else {
@@ -3430,19 +3321,15 @@ char *param_1;
 // was FUN_00034ac4 -- calls npc_set_goal(param_2,param_3) as if param_1 were the "current NPC"
 // (DAT_0010190c), temporarily swapping that context pointer in and restoring the caller's own value
 // afterward.
-void npc_set_goal_for_object(param_1,param_2,param_3)
-char *param_1;
-undefined4 param_2;
-undefined4 param_3;
-
+void npc_set_goal_for_object(void *npc_ptr, int goal, int goal_target)
 {
-  char *uVar1;
+  ushort *npc = (ushort *)npc_ptr;
+  ushort *saved_npc;
 
-  uVar1 = DAT_0010190c;
-  DAT_0010190c = param_1;
-  npc_set_goal(param_2,param_3);
-  DAT_0010190c = uVar1;
-  return;
+  saved_npc = DAT_0010190c;
+  DAT_0010190c = npc;
+  npc_set_goal(goal,goal_target);
+  DAT_0010190c = saved_npc;
 }
 
 
@@ -3458,7 +3345,7 @@ void randomize_active_npc_flags()
   uint extraout_r1;
   int extraout_r1_00;
   byte *pbVar2;
-  int iVar3;
+  char *iVar3;
   
   pbVar2 = DAT_002046c0;
   if (DAT_002046c0 < DAT_002046c8) {
@@ -3482,35 +3369,31 @@ void randomize_active_npc_flags()
 // was FUN_00034ba8 -- looks up a within-tile entry-point offset (written to *param_2/*param_3, x/y
 // in 1/8-tile units) based on the destination tile's type nibble (param_1, from tilemap_lookup's
 // low 4 type bits).
-undefined4 resolve_tile_entry_offset(param_1,param_2,param_3)
-char param_1;
-undefined1 * param_2;
-undefined1 * param_3;
-
+int resolve_tile_entry_offset(char tile_type, byte *out_x, byte *out_y)
 {
   undefined1 uVar1;
 
-  if (param_1 == '\0') {
+  if (tile_type == '\0') {
     return 0;
   }
-  if (param_1 == '\x02') {
+  if (tile_type == '\x02') {
 LAB_00034bf0:
-    *param_2 = 6;
-    *param_3 = 1;
+    *out_x = 6;
+    *out_y = 1;
   }
   else {
-    if (param_1 == '\x03') {
+    if (tile_type == '\x03') {
       uVar1 = 1;
     }
-    else if (param_1 == '\x04') {
+    else if (tile_type == '\x04') {
       uVar1 = 6;
     }
     else {
-      if (param_1 == '\x05') goto LAB_00034bf0;
+      if (tile_type == '\x05') goto LAB_00034bf0;
       uVar1 = 4;
     }
-    *param_2 = uVar1;
-    *param_3 = uVar1;
+    *out_x = uVar1;
+    *out_y = uVar1;
   }
   return 1;
 }
@@ -3519,11 +3402,7 @@ LAB_00034bf0:
 // was FUN_00034c10 -- per-tick movement/animation step for an active NPC (class 0x40), called by
 // advance_mobile_objects.
 
-void npc_movement_tick(param_1,param_2)
-ushort * param_1;
-char *param_2; // was `int` -- truncated advance_mobile_objects's real stack-buffer
-// pointer (acStack_58, a char[64] scratch record) on this 64-bit host.
-
+void npc_movement_tick(ushort *npc_object, char *scratch)
 {
   int uw_ord2005_rem_100 = 0;
   byte bVar1;
@@ -3542,44 +3421,44 @@ char *param_2; // was `int` -- truncated advance_mobile_objects's real stack-buf
   byte local_2b [3];
   char *local_28;  /* was `int` -- truncated tilemap_lookup's real `void *` return */
 
-  iVar6 = ((byte)*param_1 & 0x3f) * 0x30;
-  uVar9 = (uint)(param_1[0xb] >> 10);
-  uVar11 = param_1[0xb] >> 4 & 0x3f;
+  iVar6 = ((byte)*npc_object & 0x3f) * 0x30;
+  uVar9 = (uint)(npc_object[0xb] >> 10);
+  uVar11 = npc_object[0xb] >> 4 & 0x3f;
   local_28 = (char *)tilemap_lookup(uVar9,uVar11);
   if (getenv("UW_DEBUG_NPC_TICK"))
     fprintf(stderr, "[npc-tick] obj=%p class=0x%x tile=(%u,%u) target=(%u,%u)\n",
-            (void *)param_1, (unsigned)(*param_1 & 0x1ff), uVar9, uVar11,
-            (unsigned)((byte)param_1[2] & 0x3f), (unsigned)(param_1[3] & 0x3f));
-  if ((param_1[7] & 1) != 0) {
-    unlink_and_free_object(local_28 + 2,param_1);
+            (void *)npc_object, (unsigned)(*npc_object & 0x1ff), uVar9, uVar11,
+            (unsigned)((byte)npc_object[2] & 0x3f), (unsigned)(npc_object[3] & 0x3f));
+  if ((npc_object[7] & 1) != 0) {
+    unlink_and_free_object(local_28 + 2,npc_object);
     return;
   }
-  *(byte *)((char *)param_1 + 0x19) = *(byte *)((char *)param_1 + 0x19) & 0xc;
+  *(byte *)((char *)npc_object + 0x19) = *(byte *)((char *)npc_object + 0x19) & 0xc;
   uVar2 = ce_rand();
   uw_ord2005_rem_100 = ((int)(uVar2)) % (8);
-  uVar8 = param_1[1] & 0xfc7f | (uw_ord2005_rem_100 & 7) << 7;
-  *(byte *)(param_1 + 1) = (byte)uVar8;
-  *(byte *)((char *)param_1 + 3) = (byte)(uVar8 >> 8);
-  if (((uint)(byte)param_1[4] < (uint)(byte)(&g_monster_max_stats_table)[iVar6]) && ((param_1[7] & 2) == 0)) {
-    *(byte *)(param_1 + 4) =
-         (byte)((int)((uint)(byte)param_1[4] + (uint)(byte)(&g_monster_max_stats_table)[iVar6]) >> 1);
+  uVar8 = npc_object[1] & 0xfc7f | (uw_ord2005_rem_100 & 7) << 7;
+  *(byte *)(npc_object + 1) = (byte)uVar8;
+  *(byte *)((char *)npc_object + 3) = (byte)(uVar8 >> 8);
+  if (((uint)(byte)npc_object[4] < (uint)(byte)(&g_monster_max_stats_table)[iVar6]) && ((npc_object[7] & 2) == 0)) {
+    *(byte *)(npc_object + 4) =
+         (byte)((int)((uint)(byte)npc_object[4] + (uint)(byte)(&g_monster_max_stats_table)[iVar6]) >> 1);
   }
-  if ((param_1[5] & 0x80) == 0) {
-    bVar1 = (byte)param_1[7] >> 6;
+  if ((npc_object[5] & 0x80) == 0) {
+    bVar1 = (byte)npc_object[7] >> 6;
     if (bVar1 == 0) {
-      pcVar3 = (char *)(param_2 + (uint)(byte)(&DAT_001007d9)[iVar6]);
+      pcVar3 = (char *)(scratch + (uint)(byte)(&DAT_001007d9)[iVar6]);
       cVar7 = *pcVar3 + -1;
     }
     else {
       if (bVar1 != 3) goto LAB_00034db4;
-      pcVar3 = (char *)(param_2 + (uint)(byte)(&DAT_001007d9)[iVar6]);
+      pcVar3 = (char *)(scratch + (uint)(byte)(&DAT_001007d9)[iVar6]);
       cVar7 = *pcVar3 + '\x01';
     }
     *pcVar3 = cVar7;
   }
 LAB_00034db4:
-  uVar10 = (byte)param_1[2] & 0x3f;
-  uVar8 = param_1[3] & 0x3f;
+  uVar10 = (byte)npc_object[2] & 0x3f;
+  uVar8 = npc_object[3] & 0x3f;
   puVar4 = (ushort *)tilemap_lookup(uVar10,uVar8);
   if (((uVar9 != uVar10) || (uVar11 != uVar8)) &&
      (iVar5 = resolve_tile_entry_offset(*puVar4 & 0xf,&local_2c,local_2b), iVar5 != 0)) {
@@ -3589,56 +3468,53 @@ LAB_00034db4:
     else {
       uVar9 = (int)(((byte)((byte)*puVar4 >> 4) + 0x10) * 8) >> 1;
     }
-    uVar2 = encode_object_slot_index(param_1);
-    iVar6 = check_object_placement_clearance(*param_1 & 0x1ff,uVar2,
+    uVar2 = encode_object_slot_index(npc_object);
+    iVar6 = check_object_placement_clearance(*npc_object & 0x1ff,uVar2,
                          (int)(((uint)local_2c + uVar10 * 8) * 0x10000) >> 0x10,
                          (int)(((uint)local_2b[0] + uVar8 * 8) * 0x10000) >> 0x10,(short)uVar9,
                          (byte)(&DAT_001007da)[iVar6] >> 7,8);
     if (iVar6 != 0) {
-      object_list_unlink(local_28 + 2,param_1);
-      object_list_insert_head(puVar4 + 1,param_1);
+      object_list_unlink(local_28 + 2,npc_object);
+      object_list_insert_head(puVar4 + 1,npc_object);
       uVar8 = uVar8 | uVar10 << 6;
-      *(byte *)(param_1 + 0xb) = (byte)param_1[0xb] & 0xf | (byte)(uVar8 << 4);
-      *(byte *)((char *)param_1 + 0x17) = (byte)((uVar8 << 0x14) >> 0x18);
+      *(byte *)(npc_object + 0xb) = (byte)npc_object[0xb] & 0xf | (byte)(uVar8 << 4);
+      *(byte *)((char *)npc_object + 0x17) = (byte)((uVar8 << 0x14) >> 0x18);
       uVar9 = uVar9 | (local_2b[0] & 7 | (local_2c & 7) << 3) << 10 |
-              CONCAT11(*(byte *)((char *)param_1 + 3),(byte)param_1[1]) & 0x380;
-      *(byte *)(param_1 + 1) = (byte)uVar9;
-      *(byte *)((char *)param_1 + 3) = (byte)(uVar9 >> 8);
+              CONCAT11(*(byte *)((char *)npc_object + 3),(byte)npc_object[1]) & 0x380;
+      *(byte *)(npc_object + 1) = (byte)uVar9;
+      *(byte *)((char *)npc_object + 3) = (byte)(uVar9 >> 8);
     }
   }
-  return;
 }
 
 
 
 // was FUN_00034fa4 -- per-tick settle step for a non-NPC active mobile object (thrown/dropped
 // items, projectiles, etc).
-undefined4 settle_misplaced_mobile_object(param_1)
-int param_1;
-
+int settle_misplaced_mobile_object(char *object)
 {
   byte bVar1;
   byte bVar2;
   byte bVar3;
   byte *pbVar4;
-  int iVar5;
+  char *iVar5;
   int iVar6;
   uint uVar7;
   byte *pbVar8;
 
-  bVar3 = *(byte *)(param_1 + 0x17) >> 2;
+  bVar3 = *(byte *)(object + 0x17) >> 2;
   DAT_0010144c = (ushort)bVar3;
-  bVar1 = *(byte *)(param_1 + 3);
-  uVar7 = (*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4;
+  bVar1 = *(byte *)(object + 3);
+  uVar7 = (*(ushort *)(object + 0x16) & 0x3f0) >> 4;
   DAT_00101454 = (undefined2)uVar7;
-  bVar2 = *(byte *)(param_1 + 3);
+  bVar2 = *(byte *)(object + 3);
   pbVar4 = (byte *)tilemap_lookup(DAT_0010144c,DAT_00101454);
   pbVar8 = pbVar4 + 2;
-  iVar5 = discard_misplaced_object(pbVar8,param_1,0);
-  if ((iVar5 != 0) && (iVar5 = settle_mobile_to_immobile(param_1), iVar5 != 0)) {
+  iVar5 = (char *)discard_misplaced_object(pbVar8,(ushort *)object,0);
+  if ((iVar5 != 0) && (iVar5 = (char *)settle_mobile_to_immobile((ushort *)object), iVar5 != 0)) {
     object_list_unlink(pbVar8,iVar5);
     DAT_00202c84 = 1;
-    iVar6 = find_object_placement(iVar5,(uint)(bVar1 >> 5) + (uint)bVar3 * 8,
+    iVar6 = find_object_placement((ushort *)iVar5,(uint)(bVar1 >> 5) + (uint)bVar3 * 8,
                          ((bVar2 & 0x1c) >> 2) + uVar7 * 8,(uint)(*pbVar4 >> 4) << 3,6);
     if (iVar6 == 0) {
       uVar7 = *(ushort *)(iVar5 + 2) & 0xff80;
@@ -3677,7 +3553,7 @@ void advance_mobile_objects()
         npc_movement_tick(puVar1,acStack_58);
       }
       else {
-        iVar5 = settle_misplaced_mobile_object(puVar1);
+        iVar5 = settle_misplaced_mobile_object((char *)puVar1);
         if (iVar5 != 0) {
           pbVar7 = pbVar7 + -1;
         }
@@ -3718,11 +3594,7 @@ void advance_mobile_objects()
 // was FUN_00035394 -- scan_area_ahead_of_object callback used while the player rests: for an
 // eligible non-player NPC (param_3, not currently fleeing/special per byte 7's top bits) within its
 // stat-template's perception range of the player...
-undefined4 spawn_rest_interrupt_monster_callback(param_1,param_2,param_3)
-undefined4 param_1;
-undefined4 param_2;
-ushort * param_3;
-
+int spawn_rest_interrupt_monster_callback(int scan_x, int scan_y, ushort *object)
 {
   int uw_ord2005_rem_101 = 0;
   byte bVar1;
@@ -3741,7 +3613,7 @@ ushort * param_3;
   uint uVar12;
   int iVar13;
   bool bVar14;
-  undefined8 uVar15;
+  void *tile_ptr;
   undefined2 in_stack_ffffffcc;
   undefined1 uVar16;
   undefined4 in_stack_ffffffd0;
@@ -3749,12 +3621,12 @@ ushort * param_3;
   byte local_27 [3];
   
   uVar16 = (undefined1)((ushort)in_stack_ffffffcc >> 8);
-  sVar5 = encode_object_slot_index(param_3);
-  if ((sVar5 != 1) && ((param_3[7] & 0xc0) == 0)) {
+  sVar5 = encode_object_slot_index(object);
+  if ((sVar5 != 1) && ((object[7] & 0xc0) == 0)) {
     uVar6 = ce_rand();
     uw_ord2005_rem_101 = ((int)(uVar6)) % (2);
     if (uw_ord2005_rem_101 != 0) {
-      setup_npc_ai_tick_state(param_3);
+      setup_npc_ai_tick_state(object);
       uVar4 = *(ushort *)((char *)g_player_object + 0x16);
       iVar13 = (uint)DAT_001013f8 - ((uVar4 & 0x3f0) >> 4);
       iVar11 = (uint)DAT_00101918 - (uint)(uVar4 >> 10);
@@ -3773,13 +3645,10 @@ ushort * param_3;
           uVar12 = 0;
           do {
             iVar11 = uVar12 * 7;
-            uVar15 = tilemap_lookup((&DAT_00101740)[iVar11],(&DAT_00101741)[iVar11]);
-            uVar9 = (uint)((ulonglong)uVar15 >> 0x20);
-            for (puVar7 = (ushort *)((char *)uVar15 + 2); (*puVar7 & 0xffc0) != 0; puVar7 = puVar7 + 2)
+            tile_ptr = tilemap_lookup((&DAT_00101740)[iVar11],(&DAT_00101741)[iVar11]);
+            for (puVar7 = (ushort *)((char *)tile_ptr + 2); (*puVar7 & 0xffc0) != 0; puVar7 = puVar7 + 2)
             {
-              uVar15 = resolve_object_link(puVar7);
-              uVar9 = (uint)((ulonglong)uVar15 >> 0x20);
-              puVar7 = (ushort *)uVar15;
+              puVar7 = (ushort *)resolve_object_link(puVar7);
               if ((((*puVar7 & 0x1c0) == 0x180) && ((*puVar7 & 0x30) == 0x20)) &&
                  ((puVar7[3] & 0xffc0) != 0)) {
                 puVar8 = (ushort *)resolve_object_link(puVar7 + 3);
@@ -3807,8 +3676,8 @@ ushort * param_3;
         iVar11 = resolve_tile_entry_offset(*puVar7 & 0xf,&local_28,local_27);
         if (iVar11 != 0) {
           bVar3 = (&DAT_0023cf0a)[((int)(short)(ushort)bVar1 + (short)(ushort)bVar2 * 0x40) * 5];
-          uVar6 = encode_object_slot_index(param_3);
-          iVar11 = check_object_placement_clearance(*param_3 & 0x1ff,uVar6,
+          uVar6 = encode_object_slot_index(object);
+          iVar11 = check_object_placement_clearance(*object & 0x1ff,uVar6,
                                 (int)(((uint)local_28 + (short)(ushort)bVar2 * 8) * 0x10000) >> 0x10
                                 ,(int)(((uint)local_27[0] + (short)(ushort)bVar1 * 8) * 0x10000) >>
                                  0x10,(ushort)((uint)bVar3 << 3) & 0xff,
@@ -3818,16 +3687,16 @@ ushort * param_3;
                int arithmetic) -- truncated tilemap_lookup's real
                `void *` return */
             char *_tile11 = (char *)tilemap_lookup(DAT_00101918,DAT_001013f8);
-            object_list_unlink(_tile11 + 2,param_3);
-            object_list_insert_head(puVar7 + 1,param_3);
+            object_list_unlink(_tile11 + 2,object);
+            object_list_insert_head(puVar7 + 1,object);
             uVar9 = bVar1 & 0x3f | (uint)bVar2 << 6;
-            *(byte *)(param_3 + 0xb) = (byte)param_3[0xb] & 0xf | (byte)(uVar9 << 4);
-            *(char *)((char *)param_3 + 0x17) = (char)(uVar9 >> 4);
+            *(byte *)(object + 0xb) = (byte)object[0xb] & 0xf | (byte)(uVar9 << 4);
+            *(char *)((char *)object + 0x17) = (char)(uVar9 >> 4);
             uVar9 = (uint)bVar3 << 3 & 0x7f | (local_27[0] & 7 | (local_28 & 7) << 3) << 10 |
-                    CONCAT11(*(undefined1 *)((char *)param_3 + 3),(char)param_3[1]) & 0x380;
-            *(char *)(param_3 + 1) = (char)uVar9;
-            *(char *)((char *)param_3 + 3) = (char)(uVar9 >> 8);
-            *(byte *)((char *)param_3 + 0x19) = *(byte *)((char *)param_3 + 0x19) | 1;
+                    CONCAT11(*(undefined1 *)((char *)object + 3),(char)object[1]) & 0x380;
+            *(char *)(object + 1) = (char)uVar9;
+            *(char *)((char *)object + 3) = (char)(uVar9 >> 8);
+            *(byte *)((char *)object + 0x19) = *(byte *)((char *)object + 0x19) | 1;
             npc_set_walk_target(*(ushort *)((char *)g_player_object + 0x16) >> 10,
                          *(ushort *)((char *)g_player_object + 0x16) >> 4 & 0x3f,
                          *(byte *)((char *)g_player_object + 2) >> 3 & 0xf);
@@ -3846,7 +3715,7 @@ ushort * param_3;
 // was FUN_00035894 -- scans nearby NPCs via spawn_rest_interrupt_monster_callback and reports
 // whether one teleported in to interrupt the player's rest. handle_rest_action checks this once
 // resting begins to decide whether to run the "peaceful rest" or "interrupted rest" branch.
-undefined4 check_rest_interrupted_by_monster()
+int check_rest_interrupted_by_monster()
 
 {
   DAT_00101950 = 0;
@@ -3909,11 +3778,7 @@ void clear_last_attacker_record()
 // was FUN_00035a18 -- scan_area_for_matching_objects callback used by emit_noise_alert: for a
 // candidate NPC (param_3) whose class matches the current noise type (DAT_0010195c) and is either
 // awake or the noise is loud enough to wake it...
-undefined4 alert_npc_to_noise_callback(param_1,param_2,param_3)
-int param_1;
-int param_2;
-ushort * param_3;
-
+int alert_npc_to_noise_callback(int scan_x, int scan_y, ushort *npc)
 {
   ushort uVar1;
   ushort uVar2;
@@ -3931,14 +3796,14 @@ ushort * param_3;
   int iVar12;
   undefined1 auStack_74 [80];
   
-  iVar10 = (*param_3 & 0x3f) * 0x30;
+  iVar10 = (*npc & 0x3f) * 0x30;
   if (((((&DAT_001007d9)[iVar10] == (DAT_0010195c & 0x1f)) &&
-       (((param_3[5] & 0x80) == 0 || ((DAT_0010195c & 0x20) != 0)))) &&
-      ((DAT_0010195c != 0x20 || ((param_3[5] & 0x80) != 0)))) &&
+       (((npc[5] & 0x80) == 0 || ((DAT_0010195c & 0x20) != 0)))) &&
+      ((DAT_0010195c != 0x20 || ((npc[5] & 0x80) != 0)))) &&
      ((DAT_0010195c != 0xd || (*(byte *)(DAT_00086df8 + 0x69) < 3)))) {
-    uVar1 = param_3[1];
-    iVar3 = (uint)(uVar1 >> 0xd) + param_1 * 8;
-    iVar5 = ((uVar1 & 0x1c00) >> 10) + param_2 * 8;
+    uVar1 = npc[1];
+    iVar3 = (uint)(uVar1 >> 0xd) + scan_x * 8;
+    iVar5 = ((uVar1 & 0x1c00) >> 10) + scan_y * 8;
     uVar2 = DAT_00101958[1];
     iVar7 = (uint)(uVar2 >> 0xd) + DAT_002020a0 * 8;
     iVar9 = ((uVar2 & 0x1c00) >> 10) + DAT_002020a4 * 8;
@@ -3956,18 +3821,18 @@ ushort * param_3;
          (int)((uint)((byte)(&DAT_001007ee)[iVar10] >> 4) *
               (uint)((byte)(&DAT_001007ee)[iVar10] >> 4))) &&
        (iVar10 = check_fine_line_of_sight(iVar3,iVar5,
-                              (uint)(byte)(&DAT_00202c90)[(*param_3 & 0x1ff) * 0xd] + (uVar1 & 0x7f)
+                              (uint)(byte)(&DAT_00202c90)[(*npc & 0x1ff) * 0xd] + (uVar1 & 0x7f)
                               ,iVar7,(short)iVar9,
                               (ushort)(byte)(&DAT_00202c90)[(*DAT_00101958 & 0x1ff) * 0xd] +
                               (uVar2 & 0x7f) + 0xc), iVar10 != 0)) {
-      uVar8 = (*(ushort *)((char *)param_3 + 0xd) >> 0xe) - 1;
+      uVar8 = (*(ushort *)((char *)npc + 0xd) >> 0xe) - 1;
       if ((int)(uVar8 * 0x10000) >> 0x10 < 0) {
         uVar8 = 0;
       }
-      uVar6 = *(ushort *)((char *)param_3 + 0xd) & 0x3fff;
-      *(char *)((char *)param_3 + 0xd) = (char)uVar6;
-      *(byte *)(param_3 + 7) = (byte)(uVar6 >> 8) | (byte)(((uVar8 & 3) << 0xe) >> 8);
-      build_object_display_name(auStack_74,param_3,1,0);
+      uVar6 = *(ushort *)((char *)npc + 0xd) & 0x3fff;
+      *(char *)((char *)npc + 0xd) = (char)uVar6;
+      *(byte *)(npc + 7) = (byte)(uVar6 >> 8) | (byte)(((uVar8 & 3) << 0xe) >> 8);
+      build_object_display_name(auStack_74,npc,1,0);
       uVar4 = get_message_string(uVar8 + 0xe1 | 0x200);
       ce_strcat(auStack_74,uVar4);
       message_scroll_print_wrapped(auStack_74);
@@ -3982,78 +3847,72 @@ ushort * param_3;
 // was FUN_00035cb0 -- makes noise at object param_1 (e.g. a trap triggering, a loud action):
 // resolves the noise type/volume to use (param_2, or if 0 and the object is a container, a
 // class-specific field off the object itself), and if nonzero...
-void emit_noise_alert(param_1,param_2)
-ushort * param_1;
-byte param_2;
-
+void emit_noise_alert(ushort *source, byte noise_type)
 {
   byte bVar1;
   uint uVar2;
 
   DAT_0010195c = 0;
-  bVar1 = param_2;
-  if ((param_2 == 0) &&
-     (bVar1 = DAT_0010195c, g_object_type_props[*param_1 & 0x1ff].is_container)) {
-    bVar1 = (byte)param_1[3] & 0x3f;
+  bVar1 = noise_type;
+  if ((noise_type == 0) &&
+     (bVar1 = DAT_0010195c, g_object_type_props[*source & 0x1ff].is_container)) {
+    bVar1 = (byte)source[3] & 0x3f;
   }
   DAT_0010195c = bVar1;
   if (DAT_0010195c != 0) {
-    DAT_00101958 = param_1;
+    DAT_00101958 = source;
     scan_area_for_matching_objects(0x14,0,alert_npc_to_noise_callback,0,(char)DAT_002020a0 + -7,(char)DAT_002020a4 + -7,0xf,0xf);
-    if ((param_1[3] & 0x1f) < 0x1c) {
-      uVar2 = param_1[3] & 0xffc0;
-      *(char *)(param_1 + 3) = (char)uVar2;
-      *(char *)((char *)param_1 + 7) = (char)(uVar2 >> 8);
+    if ((source[3] & 0x1f) < 0x1c) {
+      uVar2 = source[3] & 0xffc0;
+      *(char *)(source + 3) = (char)uVar2;
+      *(char *)((char *)source + 7) = (char)(uVar2 >> 8);
     }
   }
-  return;
 }
 
 
 // was FUN_0003a73c -- special-behavior dispatcher for "unique" NPCs, keyed by their own byte 0x1a
 // (a per-record special-event code, 0 meaning "ordinary, no special handling").
-undefined4 resolve_unique_npc_special_behavior(param_1,param_2)
-char *param_1;
-int param_2;
-
+int resolve_unique_npc_special_behavior(void *npc_ptr, int event_mode)
 {
+  char *npc = (char *)npc_ptr;
   char cVar1;
   uint uVar2;
 
-  cVar1 = *(char *)(param_1 + 0x1a);
+  cVar1 = *(char *)(npc + 0x1a);
   if (cVar1 == '\v') {
-    if (param_2 == 0) {
-      attempt_talk_interaction(param_1);
-      *(undefined1 *)(param_1 + 8) = 0x3c;
+    if (event_mode == 0) {
+      attempt_talk_interaction(npc);
+      *(undefined1 *)(npc + 8) = 0x3c;
       return 0;
     }
   }
   else if (cVar1 == '\x16') {
-    if (param_2 == 0) {
-      if ((*(byte *)(param_1 + 10) & 0x70) == 0) {
-        *(byte *)(param_1 + 10) = *(byte *)(param_1 + 10) & 0x9f | 0x10;
+    if (event_mode == 0) {
+      if ((*(byte *)(npc + 10) & 0x70) == 0) {
+        *(byte *)(npc + 10) = *(byte *)(npc + 10) & 0x9f | 0x10;
         grant_experience_points(500);
       }
-      *(undefined1 *)(param_1 + 0x12) = 0;
+      *(undefined1 *)(npc + 0x12) = 0;
       cancel_weapon_swing();
-      *(byte *)(param_1 + 0x15) = *(byte *)(param_1 + 0x15) & 0xe0 | 0x20;
-      uVar2 = CONCAT11(*(undefined1 *)(param_1 + 0xc),*(undefined1 *)(param_1 + 0xb)) & 0xfff;
-      *(char *)(param_1 + 0xb) = (char)uVar2;
-      *(char *)(param_1 + 0xc) = (char)(uVar2 >> 8);
-      attempt_talk_interaction(param_1);
+      *(byte *)(npc + 0x15) = *(byte *)(npc + 0x15) & 0xe0 | 0x20;
+      uVar2 = CONCAT11(*(undefined1 *)(npc + 0xc),*(undefined1 *)(npc + 0xb)) & 0xfff;
+      *(char *)(npc + 0xb) = (char)uVar2;
+      *(char *)(npc + 0xc) = (char)(uVar2 >> 8);
+      attempt_talk_interaction(npc);
       return 0;
     }
   }
   else {
     if (cVar1 == '\x18') {
-      if (param_2 == 0) {
+      if (event_mode == 0) {
         return 1;
       }
       uVar2 = *(uint *)(DAT_00086df8 + 0x65) | 0x40;
     }
     else {
       if (cVar1 == '\x1b') {
-        if (param_2 == 0) {
+        if (event_mode == 0) {
           return 1;
         }
         uVar2 = *(ushort *)(DAT_00086df8 + 0x61) & 0xfbff;
@@ -4062,7 +3921,7 @@ int param_2;
         return 1;
       }
       if (cVar1 == 'n') {
-        if (param_2 == 0) {
+        if (event_mode == 0) {
           return 1;
         }
         uVar2 = *(uint *)(DAT_00086df8 + 0x65) | 0x10;
@@ -4072,13 +3931,13 @@ int param_2;
           if (cVar1 != -0x19) {
             return 1;
           }
-          if (param_2 == 0) {
+          if (event_mode == 0) {
             return 1;
           }
           trigger_quest_milestone_cleanup_event();
           return 1;
         }
-        if (param_2 == 0) {
+        if (event_mode == 0) {
           return 1;
         }
         uVar2 = *(uint *)(DAT_00086df8 + 0x65) | 0x800;
@@ -4095,9 +3954,7 @@ int param_2;
 
 // was FUN_00040160 -- called during the bitmap-loading stage of game startup (uw.c, right after
 // every HUD bitmap resource load succeeds) with param_1=1.
-undefined4 load_critter_association_tables(param_1)
-int param_1;
-
+int load_critter_association_tables(int file_handle)
 {
   int uw_ord2005_rem_112 = 0;
   char *wptr_26821;
@@ -4144,7 +4001,7 @@ int param_1;
     iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
   } while (iVar8 < 0x80);
   clear_ambient_sound_target();
-  if (param_1 != 0) {
+  if (file_handle != 0) {
     /* Was pointed at the placeholder stack0xffdc3230 scalar (from an earlier undeclared-identifier
        pass) instead of the real 260-byte path buffer acStack_128 that both copy loops below (and
        the ce_strcat/open_file_for_read calls right after) actually operate on. */
@@ -4189,15 +4046,15 @@ int param_1;
           pcVar4 = pcVar4 + 1;
         } while (cVar2 != '\0');
         ce_strcat(acStack_128,&DAT_00085908);
-        puVar6 = (undefined1 *)open_file_for_read(acStack_128);
+        file_handle = open_file_for_read(acStack_128);
         iVar7 = extraout_r2;
-        if (puVar6 != (undefined1 *)0xffffffff) {
-          iVar7 = read_file_handle(puVar6,&local_130,2);
+        if (file_handle != -1) {
+          iVar7 = read_file_handle(file_handle,&local_130,2);
           uVar9 = 0xa0;
           if (iVar7 == 2) {
             uVar9 = (ushort)local_12f + (ushort)local_130;
           }
-          puVar6 = (undefined1 *)CloseHandle(puVar6);
+          CloseHandle(file_handle);
           iVar7 = extraout_r2_00;
         }
         if (iVar5 < 3) {
@@ -4244,51 +4101,42 @@ void flush_pending_critter_resource_slots()
 // was FUN_0004a510 -- NPC-side ranged/thrown weapon launch (the counterpart to the player's
 // fire_ranged_weapon): given the attacker object (param_1), weapon type (param_2), and ammo quality
 // (param_3)...
-void spawn_npc_thrown_weapon(param_1,param_2,param_3)
-char *param_1;
-short param_2;
-undefined2 param_3;
-
+void spawn_npc_thrown_weapon(void *attacker_ptr, short launch_offset, short launch_flags)
 {
-  DAT_00202a38 = param_2 + 0x10;
-  DAT_00202a4c = (ushort)(*(byte *)(param_1 + 0x17) >> 2);
-  DAT_00202a50 = (undefined2)((*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4);
+  char *attacker = (char *)attacker_ptr;
+  DAT_00202a38 = launch_offset + 0x10;
+  DAT_00202a4c = (ushort)(*(byte *)(attacker + 0x17) >> 2);
+  DAT_00202a50 = (undefined2)((*(ushort *)(attacker + 0x16) & 0x3f0) >> 4);
   DAT_00202a54 = 1;
   DAT_00202a40 = 0;
-  DAT_00202a44 = param_1;
-  DAT_00202a48 = param_3;
+  DAT_00202a44 = (ushort *)attacker;
+  DAT_00202a48 = launch_flags;
   spawn_object_near_player();
-  return;
 }
 
 
 // was npc_set_walk_target -- write an NPC's goal (byte 0xf bits 0-5), goal target
 // (bits 6-11) and attitude (byte 0xd bits 4-7), flagging the change in byte 0x18
 // was FUN_0002e454
-void npc_set_walk_target(param_1,param_2,param_3)
-byte param_1;
-uint param_2;
-byte param_3;
-
+void npc_set_walk_target(byte goal, uint goal_target, byte attitude)
 {
   ushort uVar1;
   uint uVar2;
   
   uVar1 = *(ushort *)((char *)DAT_0010190c + 0xf);
-  if ((((uint)param_1 != (uVar1 & 0x3f)) || ((param_2 & 0xff) != (uVar1 & 0xfc0) >> 6)) ||
-     (param_3 != *(byte *)((char *)DAT_0010190c + 0xd) >> 4)) {
-    *(byte *)((char *)DAT_0010190c + 0xf) = ((byte)uVar1 ^ param_1) & 0x3f ^ (byte)uVar1;
+  if ((((uint)goal != (uVar1 & 0x3f)) || ((goal_target & 0xff) != (uVar1 & 0xfc0) >> 6)) ||
+     (attitude != *(byte *)((char *)DAT_0010190c + 0xd) >> 4)) {
+    *(byte *)((char *)DAT_0010190c + 0xf) = ((byte)uVar1 ^ goal) & 0x3f ^ (byte)uVar1;
     *(char *)((char *)DAT_0010190c + 0x10) = (char)(uVar1 >> 8);
-    uVar2 = *(ushort *)((char *)DAT_0010190c + 0xf) & 0xf03f | (param_2 & 0x3f) << 6;
+    uVar2 = *(ushort *)((char *)DAT_0010190c + 0xf) & 0xf03f | (goal_target & 0x3f) << 6;
     *(char *)((char *)DAT_0010190c + 0xf) = (char)uVar2;
     *(char *)((char *)DAT_0010190c + 0x10) = (char)(uVar2 >> 8);
     uVar2 = *(ushort *)((char *)DAT_0010190c + 0xd) & 0xff0f;
-    *(byte *)((char *)DAT_0010190c + 0xd) = (byte)uVar2 | param_3 << 4;
+    *(byte *)((char *)DAT_0010190c + 0xd) = (byte)uVar2 | attitude << 4;
     *(char *)((char *)DAT_0010190c + 0xe) = (char)(uVar2 >> 8);
     *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) | 0x20;
     *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xbf;
   }
-  return;
 }
 
 
@@ -4356,7 +4204,7 @@ void npc_idle_behavior_tick()
     if (DAT_0010140c < 0xf) {
       if (DAT_0010140c < (byte)((*pbVar2 >> 4) + 2)) {
         uVar3 = ce_rand();
-        iVar9 = DAT_0010190c;
+        iVar9 = (char *)DAT_0010190c;
         bVar5 = *(byte *)((char *)DAT_0010190c + 0x14);
         uw_ord2005_rem_24 = ((int)(uVar3)) % (3);
         *(byte *)(iVar9 + 0x14) = ~bVar5 & 7 ^ (char)((uw_ord2005_rem_24 & 0xff) << 3) + 0x87U;
@@ -4400,7 +4248,7 @@ LAB_0002f390:
     if ((DAT_00101924 != 0) && (DAT_00101430 == 0)) {
       uVar3 = ce_rand();
       uw_ord2005_rem_29 = ((int)(uVar3)) % (2);
-      iVar9 = DAT_0010190c;
+      iVar9 = (char *)DAT_0010190c;
       uw_ord2005_rem_30 = ((int)((uint)*(byte *)((char *)DAT_0010190c + 9) + uw_ord2005_rem_29 * 0x80 + 0xc0)) % (0x100);
       *(byte *)(iVar9 + 9) = (byte)uw_ord2005_rem_30;
       uVar7 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uw_ord2005_rem_30 & 0xe0) << 2;
@@ -4417,7 +4265,7 @@ LAB_0002f390:
     uw_ord2005_rem_31 = ((int)(uVar3)) % (0x40);
     if ((uw_ord2005_rem_31 & 0xff) < (bVar5 & 0xf) + 8) {
       uVar3 = ce_rand();
-      iVar9 = DAT_0010190c;
+      iVar9 = (char *)DAT_0010190c;
       bVar5 = *(byte *)((char *)DAT_0010190c + 9);
       uw_ord2005_rem_32 = ((int)(uVar3)) % (0x40);
       uw_ord2005_rem_33 = ((int)(uw_ord2005_rem_32 + (uint)bVar5 + 0xe0)) % (0x100);
@@ -4425,11 +4273,11 @@ LAB_0002f390:
     }
     else {
       uVar7 = (uint)*(byte *)((char *)DAT_0010190c + 9);
-      iVar9 = DAT_0010190c;
+      iVar9 = (char *)DAT_0010190c;
     }
     if (DAT_00101430 == 0) {
       uVar7 = adjust_heading_away_from_player(uVar7,10);
-      iVar9 = DAT_0010190c;
+      iVar9 = (char *)DAT_0010190c;
     }
     *(byte *)(iVar9 + 9) = (byte)uVar7;
     uVar8 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar7 & 0xe0) << 2;
@@ -4445,7 +4293,7 @@ LAB_0002f6cc:
     uw_ord2005_rem_34 = ((int)(uVar3)) % (0x80);
     if ((uw_ord2005_rem_34 & 0xff) < (*(byte *)(DAT_00101404 + 0x1f) & 0xf)) {
       uVar3 = ce_rand();
-      iVar9 = DAT_0010190c;
+      iVar9 = (char *)DAT_0010190c;
       bVar5 = *(byte *)((char *)DAT_0010190c + 9);
       uw_ord2005_rem_35 = ((int)(uVar3)) % (0x40);
       uw_ord2005_rem_36 = ((int)(uw_ord2005_rem_35 + (uint)bVar5 + 0xe0)) % (0x100);
@@ -4465,7 +4313,7 @@ LAB_0002f6cc:
     *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfe | 6;
     uVar3 = ce_rand();
     uw_ord2005_rem_37 = ((int)(uVar3)) % (2);
-    iVar9 = DAT_0010190c;
+    iVar9 = (char *)DAT_0010190c;
     if (uw_ord2005_rem_37 == 0) goto LAB_0002f810;
     uVar1 = *(ushort *)((char *)DAT_0010190c + 0xb);
     uw_ord2005_rem_38 = ((int)((uVar1 >> 0xc) + 1)) % (4);
@@ -4477,7 +4325,7 @@ LAB_0002f6cc:
          (*(byte *)((char *)DAT_0010190c + 0x13) ^ *(byte *)(DAT_00101404 + 0xb)) & 0x7f ^
          *(byte *)((char *)DAT_0010190c + 0x13);
     *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
-    iVar9 = DAT_0010190c;
+    iVar9 = (char *)DAT_0010190c;
     uVar1 = *(ushort *)((char *)DAT_0010190c + 0xb);
     uw_ord2005_rem_39 = ((int)((uVar1 >> 0xc) + 1)) % (4);
     uVar7 = uw_ord2005_rem_39;
@@ -4631,7 +4479,7 @@ LAB_0002fe88:
   *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xe0 | 0x20;
   uVar4 = ce_rand();
   uw_ord2005_rem_44 = ((int)(uVar4)) % (2);
-  iVar2 = DAT_0010190c;
+  iVar2 = (char *)DAT_0010190c;
   if (uw_ord2005_rem_44 != 0) {
     /* HACK: this is the real frame-cycle step (advance this idle critter's animation frame,
        wrapping 0..3 -- see uVar5>>0xc, the upper nibble of raw byte 0xc, matching
@@ -4686,7 +4534,7 @@ void npc_wander_return_home_exact_tick()
       *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xe0 | 0x20;
       uVar3 = ce_rand();
       uw_ord2005_rem_84 = ((int)(uVar3)) % (2);
-      iVar2 = DAT_0010190c;
+      iVar2 = (char *)DAT_0010190c;
       if (uw_ord2005_rem_84 != 0) {
         uVar1 = *(ushort *)((char *)DAT_0010190c + 0xb);
         uw_ord2005_rem_85 = ((int)((uVar1 >> 0xc) + 1)) % (4);
@@ -4741,10 +4589,7 @@ void npc_wander_return_home_exact_tick()
    cluster this session (see [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is `ushort *`,
    so every bare `DAT_0010190c + N` here was scaling N by 2. */
 // was FUN_000343d8
-void npc_set_goal(param_1,param_2)
-byte param_1;
-uint param_2;
-
+void npc_set_goal(byte goal, uint goal_target)
 {
   undefined2 uVar1;
   byte bVar2;
@@ -4757,12 +4602,11 @@ uint param_2;
     *(char *)((char *)DAT_0010190c + 0xe) = (char)((ushort)uVar1 >> 8);
   }
   uVar3 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xfff0;
-  *(byte *)((char *)DAT_0010190c + 0xb) = param_1 & 0xf | (byte)uVar3;
+  *(byte *)((char *)DAT_0010190c + 0xb) = goal & 0xf | (byte)uVar3;
   *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar3 >> 8);
-  uVar3 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xf00f | (param_2 & 0xff) << 4;
+  uVar3 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xf00f | (goal_target & 0xff) << 4;
   *(char *)((char *)DAT_0010190c + 0xb) = (char)uVar3;
   *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar3 >> 8);
-  return;
 }
 
 
@@ -4809,16 +4653,13 @@ void npc_clear_special_goal()
 
 
 // was FUN_0003495c.
-undefined4 object_tick_is_due(param_1,param_2)
-short param_1;
-undefined4 param_2;
-
+int object_tick_is_due(short period, int phase)
 {
   int iVar1;
   undefined4 uVar2;
   int iVar3;
   
-  iVar1 = (int)param_1;
+  iVar1 = (int)period;
   iVar3 = (int)DAT_00101928;
   if (((iVar1 < iVar3) && (iVar3 <= iVar1 + 4)) ||
      ((iVar1 < iVar3 + 0x10 && ((DAT_00101948 <= iVar1 && (iVar3 < DAT_00101948)))))) {
@@ -4832,19 +4673,7 @@ undefined4 param_2;
 
 
 // was FUN_0002bdac.
-undefined4 tile_pair_los_blocked(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8,param_9,param_10,param_11)
-byte param_1;
-byte param_2;
-byte param_3;
-byte param_4;
-byte param_5;
-byte param_6;
-ushort param_7;
-ushort param_8;
-byte param_9;
-byte * param_10;
-byte * param_11;
-
+int tile_pair_los_blocked(byte tile_a_x, byte tile_a_y, byte tile_b_x, byte tile_b_y, byte tile_c_x, byte tile_c_y, ushort block_mask, ushort wall_mask, byte span, byte *out_a, byte *out_b)
 {
   int uw_ord2005_rem_13 = 0;
   bool bVar1;
@@ -4874,10 +4703,10 @@ byte * param_11;
   DAT_00101440 = 0;
   bVar6 = false;
   bVar1 = false;
-  puVar7 = (ushort *)tilemap_lookup(param_3,param_4);
-  pbVar8 = (byte *)tilemap_lookup(param_1,param_2);
-  uVar18 = (uint)param_5;
-  puVar9 = (ushort *)tilemap_lookup(uVar18,param_6);
+  puVar7 = (ushort *)tilemap_lookup(tile_b_x,tile_b_y);
+  pbVar8 = (byte *)tilemap_lookup(tile_a_x,tile_a_y);
+  uVar18 = (uint)tile_c_x;
+  puVar9 = (ushort *)tilemap_lookup(uVar18,tile_c_y);
   /* Added NULL guards: tilemap_lookup legitimately returns NULL for an out-of-range tile coordinate
      (its own documented contract), and all three results here were dereferenced unconditionally. */
   if ((puVar7 == (ushort *)0x0) || (pbVar8 == (byte *)0x0) || (puVar9 == (ushort *)0x0)) {
@@ -4888,10 +4717,10 @@ byte * param_11;
   bVar3 = (byte)uVar11;
   uVar4 = (ushort)(&DAT_0023ae40)[*puVar7 >> 10 & 0xf] >> 4;
   uVar2 = (&DAT_0023ae40)[*puVar9 >> 10 & 0xf];
-  uVar15 = (uint)param_1;
+  uVar15 = (uint)tile_a_x;
   if (uVar15 == 0) {
-    uVar20 = (uint)param_3;
-    *param_10 = param_9;
+    uVar20 = (uint)tile_b_x;
+    *out_a = span;
     uVar15 = (uint)(byte)((byte)*puVar9 >> 4);
     if ((uVar20 < uVar18) && (((&DAT_000878d0)[uVar11] & 2) != 0)) {
       return 0;
@@ -4899,8 +4728,8 @@ byte * param_11;
     if ((uVar18 < uVar20) && (((&DAT_000878d0)[uVar11] & 4) != 0)) {
       return 0;
     }
-    uVar16 = (uint)param_6;
-    uVar12 = (uint)param_4;
+    uVar16 = (uint)tile_c_y;
+    uVar12 = (uint)tile_b_y;
     if ((uVar12 < uVar16) && (((&DAT_000878d0)[uVar11] & 8) != 0)) {
       return 0;
     }
@@ -4919,7 +4748,7 @@ byte * param_11;
     if ((uVar16 < uVar12) && (((&DAT_000878d0)[uVar19] & 8) != 0)) {
       return 0;
     }
-    if ((param_7 & 0x1000) == 0) {
+    if ((block_mask & 0x1000) == 0) {
       return 1;
     }
     if (((5 < uVar11) && (uVar11 < 10)) &&
@@ -4927,14 +4756,14 @@ byte * param_11;
                         [(byte)(&DAT_000853c4)[((uVar18 - uVar20) * 3 - uVar12) + uVar16]])) {
       uVar15 = uVar15 + 1;
     }
-    if (uVar15 <= param_9 + 1) {
+    if (uVar15 <= span + 1) {
       return 1;
     }
     return 0;
   }
   if (uVar18 == 0) {
-    *param_10 = param_9;
-    if ((param_7 & 0x1000) == 0) {
+    *out_a = span;
+    if ((block_mask & 0x1000) == 0) {
       return 1;
     }
     uVar11 = 0;
@@ -4958,9 +4787,9 @@ byte * param_11;
       uVar11 = uVar15;
     }
     if (uVar11 + 1 < (uint)(*pbVar8 >> 4)) {
-      *param_10 = (byte)uVar11;
-      uVar11 = ((*param_11 - uVar11) + (uint)param_9) - 1;
-      *param_11 = (byte)uVar11;
+      *out_a = (byte)uVar11;
+      uVar11 = ((*out_b - uVar11) + (uint)span) - 1;
+      *out_b = (byte)uVar11;
       if ((uint)DAT_00101450 < (uVar11 & 0xff)) {
         return 0;
       }
@@ -4969,21 +4798,21 @@ byte * param_11;
       return 1;
     }
     uVar11 = 8 << (uVar4 & 0xff);
-    if ((param_7 & uVar11) != 0) {
+    if ((block_mask & uVar11) != 0) {
       return 0;
     }
-    if ((uVar11 & param_8) == 0) {
+    if ((uVar11 & wall_mask) == 0) {
       return 1;
     }
-    bVar3 = *param_11;
-    *param_11 = bVar3 + 2;
+    bVar3 = *out_b;
+    *out_b = bVar3 + 2;
     if ((byte)(bVar3 + 2) <= DAT_00101450) {
       return 1;
     }
     return 0;
   }
-  *param_10 = param_9;
-  uVar20 = (uint)param_3;
+  *out_a = span;
+  uVar20 = (uint)tile_b_x;
   if (uVar20 < uVar18) {
     if (((&DAT_000878d0)[uVar11] & 2) != 0) {
       return 0;
@@ -5002,14 +4831,14 @@ LAB_0002c220:
       bVar21 = ((&DAT_000878d0)[uVar19] & 2) == 0;
       goto LAB_0002c220;
     }
-    if (param_6 >= param_4 && param_6 != param_4) {
+    if (tile_c_y >= tile_b_y && tile_c_y != tile_b_y) {
       if (((&DAT_000878d0)[uVar11] & 8) != 0) {
         return 0;
       }
       bVar21 = ((&DAT_000878d0)[uVar19] & 0x10) == 0;
       goto LAB_0002c220;
     }
-    if (param_6 < param_4) {
+    if (tile_c_y < tile_b_y) {
       if (((&DAT_000878d0)[uVar11] & 0x10) != 0) {
         return 0;
       }
@@ -5043,20 +4872,20 @@ LAB_0002c220:
     uVar14 = uVar14 >> 10 & 7;
     if (!bVar1) {
       if (uVar15 < uVar20) {
-        if (param_4 < param_6) {
+        if (tile_b_y < tile_c_y) {
           uVar11 = 0;
         }
         else {
-          if (param_4 != param_6) {
+          if (tile_b_y != tile_c_y) {
             uVar11 = 2;
           }
-          if (param_4 <= param_6) {
+          if (tile_b_y <= tile_c_y) {
             uVar11 = 1;
           }
         }
       }
       else if (uVar15 == uVar20) {
-        if (param_2 < param_4) {
+        if (tile_a_y < tile_b_y) {
           if (uVar20 < uVar18) {
             uVar11 = 8;
           }
@@ -5079,14 +4908,14 @@ LAB_0002c220:
           }
         }
       }
-      else if (param_4 < param_6) {
+      else if (tile_b_y < tile_c_y) {
         uVar11 = 3;
       }
       else {
-        if (param_4 != param_6) {
+        if (tile_b_y != tile_c_y) {
           uVar11 = 5;
         }
-        if (param_4 <= param_6) {
+        if (tile_b_y <= tile_c_y) {
           uVar11 = 4;
         }
       }
@@ -5165,9 +4994,9 @@ switchD_0002c458_default:
     puVar_link2 = puVar10 + 2;
     uVar14 = puVar10[2];
   }
-  uVar11 = (uint)param_7;
-  if ((param_7 & 0x1000) == 0) {
-    *param_10 = 0x10 - (char)((int)(DAT_00101730 + 3) >> 2);
+  uVar11 = (uint)block_mask;
+  if ((block_mask & 0x1000) == 0) {
+    *out_a = 0x10 - (char)((int)(DAT_00101730 + 3) >> 2);
     return 1;
   }
   uVar15 = (byte)*puVar7 & 0xf0;
@@ -5182,12 +5011,12 @@ switchD_0002c458_default:
   uVar15 = uVar15 >> 4;
   bVar17 = (byte)uVar15;
   uVar12 = uVar19 >> 4;
-  if (uVar19 >> 4 < (uint)param_9) {
-    uVar12 = (uint)param_9;
+  if (uVar19 >> 4 < (uint)span) {
+    uVar12 = (uint)span;
   }
   if (((5 < bVar3) && (bVar3 < 10)) &&
      (bVar3 != (&DAT_000853cc)
-               [(byte)(&DAT_000853c4)[((uVar18 - uVar20) * 3 - (uint)param_4) + (uint)param_6]])) {
+               [(byte)(&DAT_000853c4)[((uVar18 - uVar20) * 3 - (uint)tile_b_y) + (uint)tile_c_y]])) {
     uVar15 = uVar15 + 1;
   }
   uVar18 = uVar12;
@@ -5203,10 +5032,10 @@ switchD_0002c458_default:
       if (uVar18 < uVar15) {
         uVar18 = uVar15;
       }
-      *param_10 = (byte)uVar18;
+      *out_a = (byte)uVar18;
       bVar6 = true;
-      uVar18 = ((*param_11 - uVar18) + uVar12) - 1;
-      *param_11 = (byte)uVar18;
+      uVar18 = ((*out_b - uVar18) + uVar12) - 1;
+      *out_b = (byte)uVar18;
       if ((uint)DAT_00101450 < (uVar18 & 0xff)) {
         return 0;
       }
@@ -5233,8 +5062,8 @@ LAB_0002c778:
     if ((uVar11 & uVar15) != 0) {
       return 0;
     }
-    if (((uVar15 & param_8) != 0) &&
-       (bVar3 = *param_11, *param_11 = bVar3 + 2, DAT_00101450 < (byte)(bVar3 + 2))) {
+    if (((uVar15 & wall_mask) != 0) &&
+       (bVar3 = *out_b, *out_b = bVar3 + 2, DAT_00101450 < (byte)(bVar3 + 2))) {
       return 0;
     }
   }
@@ -5242,22 +5071,22 @@ LAB_0002c778:
     if ((uVar11 & 8 << (uVar4 & 0xff)) != 0) {
       return 0;
     }
-    if (((8 << (uVar2 >> 4 & 0xff) & (uint)param_8) != 0) &&
-       (bVar3 = *param_11, *param_11 = bVar3 + 2, DAT_00101450 <= (byte)(bVar3 + 2))) {
+    if (((8 << (uVar2 >> 4 & 0xff) & (uint)wall_mask) != 0) &&
+       (bVar3 = *out_b, *out_b = bVar3 + 2, DAT_00101450 <= (byte)(bVar3 + 2))) {
       return 0;
     }
     if (uVar12 <= local_50 + 1) {
 LAB_0002c8cc:
-      *param_10 = bVar17;
+      *out_a = bVar17;
       return 1;
     }
-    *param_10 = (byte)uVar12;
+    *out_a = (byte)uVar12;
     if (uVar12 < uVar15) {
       return 0;
     }
   }
   if (((*(byte *)(DAT_00101404 + 10) & 0x20) != 0) &&
-     (bVar3 = *param_11, *param_11 = bVar3 + 1, (byte)(bVar3 + 1) < DAT_00101450)) {
+     (bVar3 = *out_b, *out_b = bVar3 + 1, (byte)(bVar3 + 1) < DAT_00101450)) {
     DAT_00101440 = 1;
     return 1;
   }
@@ -5266,10 +5095,7 @@ LAB_0002c8cc:
 
 
 // was FUN_00054a00.
-void build_object_placement_snapshot(param_1,param_2)
-ushort * param_1;
-byte * param_2;
-
+void build_object_placement_snapshot(ushort *object, byte *snapshot)
 {
   ushort uVar1;
   undefined2 uVar2;
@@ -5281,124 +5107,123 @@ byte * param_2;
   bool bVar8;
   
   bVar8 = true;
-  iVar5 = (*param_1 & 0x1ff) * 0xd;
-  uVar2 = encode_object_slot_index(param_1);
-  param_2[0x23] = (byte)uVar2;
-  param_2[0x24] = (byte)((ushort)uVar2 >> 8);
+  iVar5 = (*object & 0x1ff) * 0xd;
+  uVar2 = encode_object_slot_index(object);
+  snapshot[0x23] = (byte)uVar2;
+  snapshot[0x24] = (byte)((ushort)uVar2 >> 8);
   uVar1 = *(ushort *)(&DAT_00202c91 + iVar5);
-  param_2[0x18] = (byte)(uVar1 >> 4);
-  param_2[0x19] = (byte)(uVar1 >> 0xc);
-  param_2[0x1a] = (byte)(&DAT_00202c97)[iVar5] >> 4 & 1;
-  param_2[0x1b] = 0;
-  param_2[0x1c] = 0;
-  param_2[0x1d] = 0;
-  param_2[0x16] = (byte)(*(ushort *)(&DAT_00202c97 + iVar5) >> 5) & 0xf;
+  snapshot[0x18] = (byte)(uVar1 >> 4);
+  snapshot[0x19] = (byte)(uVar1 >> 0xc);
+  snapshot[0x1a] = (byte)(&DAT_00202c97)[iVar5] >> 4 & 1;
+  snapshot[0x1b] = 0;
+  snapshot[0x1c] = 0;
+  snapshot[0x1d] = 0;
+  snapshot[0x16] = (byte)(*(ushort *)(&DAT_00202c97 + iVar5) >> 5) & 0xf;
   bVar6 = (&DAT_00202c99)[iVar5];
-  param_2[0x20] = 0;
-  param_2[0x1f] = bVar6;
-  uVar1 = param_1[1];
-  param_2[0x27] = 0;
-  param_2[0x21] = 0;
-  param_2[0x22] = (byte)((((int)(short)uVar1 & 0xffffff80U) << 6) >> 8);
-  param_2[0x25] = (&DAT_00202c91)[iVar5] & 7;
-  param_2[0x26] = (&DAT_00202c90)[iVar5];
-  *param_2 = *(byte *)((char *)param_1 + 3) >> 5;
-  param_2[1] = 0;
-  param_2[2] = (byte)((*(byte *)((char *)param_1 + 3) & 0x1c) >> 2);
-  param_2[3] = 0;
-  param_2[4] = (byte)param_1[1] & 0x7f;
-  param_2[5] = 0;
-  if (param_1 < DAT_002046c4) {
-    iVar7 = (int)*(short *)param_2 + ((param_1[0xb] & 0xfc00) >> 7);
-    *param_2 = (byte)iVar7;
-    param_2[1] = (byte)((uint)iVar7 >> 8);
-    iVar7 = (int)CONCAT11(param_2[3],param_2[2]) + ((param_1[0xb] & 0x3f0) >> 1);
-    param_2[2] = (byte)iVar7;
-    param_2[3] = (byte)((uint)iVar7 >> 8);
-    bVar6 = *(byte *)((char *)param_1 + 9);
-    param_2[0x21] = 0;
-    param_2[0x22] = bVar6;
-    param_2[0x28] = (byte)(1 << ((byte)((byte)param_1[5] >> 4) & 7));
-    iVar7 = ((byte)((byte)param_1[10] >> 3) - 0x10) * 0x40;
-    param_2[10] = (byte)iVar7;
-    param_2[0xb] = (byte)((uint)iVar7 >> 8);
-    iVar7 = (uint)(*(byte *)((char *)param_1 + 0x13) >> 7) * -4;
-    param_2[0x10] = (byte)iVar7;
-    param_2[0x11] = (byte)((uint)iVar7 >> 8);
-    param_2[0x1e] = (byte)param_1[4];
-    bVar8 = (*param_1 & 0x1c0) == 0x40;
+  snapshot[0x20] = 0;
+  snapshot[0x1f] = bVar6;
+  uVar1 = object[1];
+  snapshot[0x27] = 0;
+  snapshot[0x21] = 0;
+  snapshot[0x22] = (byte)((((int)(short)uVar1 & 0xffffff80U) << 6) >> 8);
+  snapshot[0x25] = (&DAT_00202c91)[iVar5] & 7;
+  snapshot[0x26] = (&DAT_00202c90)[iVar5];
+  *snapshot = *(byte *)((char *)object + 3) >> 5;
+  snapshot[1] = 0;
+  snapshot[2] = (byte)((*(byte *)((char *)object + 3) & 0x1c) >> 2);
+  snapshot[3] = 0;
+  snapshot[4] = (byte)object[1] & 0x7f;
+  snapshot[5] = 0;
+  if ((char *)object < DAT_002046c4) {
+    iVar7 = (int)*(short *)snapshot + ((object[0xb] & 0xfc00) >> 7);
+    *snapshot = (byte)iVar7;
+    snapshot[1] = (byte)((uint)iVar7 >> 8);
+    iVar7 = (int)CONCAT11(snapshot[3],snapshot[2]) + ((object[0xb] & 0x3f0) >> 1);
+    snapshot[2] = (byte)iVar7;
+    snapshot[3] = (byte)((uint)iVar7 >> 8);
+    bVar6 = *(byte *)((char *)object + 9);
+    snapshot[0x21] = 0;
+    snapshot[0x22] = bVar6;
+    snapshot[0x28] = (byte)(1 << ((byte)((byte)object[5] >> 4) & 7));
+    iVar7 = ((byte)((byte)object[10] >> 3) - 0x10) * 0x40;
+    snapshot[10] = (byte)iVar7;
+    snapshot[0xb] = (byte)((uint)iVar7 >> 8);
+    iVar7 = (uint)(*(byte *)((char *)object + 0x13) >> 7) * -4;
+    snapshot[0x10] = (byte)iVar7;
+    snapshot[0x11] = (byte)((uint)iVar7 >> 8);
+    snapshot[0x1e] = (byte)object[4];
+    bVar8 = (*object & 0x1c0) == 0x40;
     if (!bVar8) {
-      uVar2 = *(undefined2 *)((char *)param_1 + 0xb);
-      *param_2 = (byte)uVar2;
-      param_2[1] = (byte)((ushort)uVar2 >> 8);
-      uVar2 = *(undefined2 *)((char *)param_1 + 0xd);
-      param_2[2] = (byte)uVar2;
-      param_2[3] = (byte)((ushort)uVar2 >> 8);
-      uVar2 = *(undefined2 *)((char *)param_1 + 0xf);
-      param_2[4] = (byte)uVar2;
-      param_2[5] = (byte)((ushort)uVar2 >> 8);
+      uVar2 = *(undefined2 *)((char *)object + 0xb);
+      *snapshot = (byte)uVar2;
+      snapshot[1] = (byte)((ushort)uVar2 >> 8);
+      uVar2 = *(undefined2 *)((char *)object + 0xd);
+      snapshot[2] = (byte)uVar2;
+      snapshot[3] = (byte)((ushort)uVar2 >> 8);
+      uVar2 = *(undefined2 *)((char *)object + 0xf);
+      snapshot[4] = (byte)uVar2;
+      snapshot[5] = (byte)((ushort)uVar2 >> 8);
     }
-    uVar4 = *(byte *)((char *)param_1 + 0x13) & 0x7f;
-    param_2[0x14] = (byte)uVar4;
-    param_2[0x15] = 0;
+    uVar4 = *(byte *)((char *)object + 0x13) & 0x7f;
+    snapshot[0x14] = (byte)uVar4;
+    snapshot[0x15] = 0;
     if (getenv("UW_DEBUG_NPC_SPEED"))
-      fprintf(stderr, "[npc-speed] obj=%p byte13&0x7f=%d class0x40=%d\n", (void *)param_1,
-              (int)uVar4, (int)((*param_1 & 0x1c0) == 0x40));
-    if ((((*param_1 & 0x1c0) == 0x40) ||
-        (*(short *)(param_2 + 0x10) != 0 || *(short *)(param_2 + 10) != 0)) ||
+      fprintf(stderr, "[npc-speed] obj=%p byte13&0x7f=%d class0x40=%d\n", (void *)object,
+              (int)uVar4, (int)((*object & 0x1c0) == 0x40));
+    if ((((*object & 0x1c0) == 0x40) ||
+        (*(short *)(snapshot + 0x10) != 0 || *(short *)(snapshot + 10) != 0)) ||
        (((&DAT_00202c93)[iVar5] & 8) != 0)) {
-      param_2[0x14] = (byte)(uVar4 * 0x2f);
-      param_2[0x15] = (byte)(uVar4 * 0x2f >> 8);
+      snapshot[0x14] = (byte)(uVar4 * 0x2f);
+      snapshot[0x15] = (byte)(uVar4 * 0x2f >> 8);
       if (getenv("UW_DEBUG_NPC_SPEED"))
-        fprintf(stderr, "[npc-speed] obj=%p -> final speed=%d\n", (void *)param_1, (int)(short)(uVar4 * 0x2f));
-      if ((*param_1 & 0x1c0) == 0x40) {
-        param_2[0x27] = 8;
+        fprintf(stderr, "[npc-speed] obj=%p -> final speed=%d\n", (void *)object, (int)(short)(uVar4 * 0x2f));
+      if ((*object & 0x1c0) == 0x40) {
+        snapshot[0x27] = 8;
       }
     }
     else {
-      if ((*(int *)(param_2 + 0x1a) + 1) * 2 < (int)(short)uVar4) {
-        iVar5 = (*(byte *)((char *)param_1 + 0x13) & 0x7f) *
-                ((short)*(int *)(param_2 + 0x1a) * 4 + 0x29);
-        param_2[0x14] = (byte)iVar5;
+      if ((*(int *)(snapshot + 0x1a) + 1) * 2 < (int)(short)uVar4) {
+        iVar5 = (*(byte *)((char *)object + 0x13) & 0x7f) *
+                ((short)*(int *)(snapshot + 0x1a) * 4 + 0x29);
+        snapshot[0x14] = (byte)iVar5;
         bVar6 = (byte)((uint)iVar5 >> 8);
       }
       else {
-        param_2[0x14] = 0;
+        snapshot[0x14] = 0;
         bVar6 = 0;
       }
-      param_2[0x15] = bVar6;
+      snapshot[0x15] = bVar6;
     }
   }
   else {
-    param_2[10] = 0;
-    param_2[0xb] = 0;
-    param_2[0x10] = 0;
-    param_2[0x11] = 0;
-    param_2[0x14] = 0;
-    param_2[0x15] = 0;
-    param_2[0x1e] = (byte)param_1[2] & 0x3f;
-    iVar5 = (int)CONCAT11(param_2[1],*param_2) + DAT_0010144c * 8;
-    *param_2 = (byte)iVar5;
-    param_2[1] = (byte)((uint)iVar5 >> 8);
-    iVar5 = (int)CONCAT11(param_2[3],param_2[2]) + DAT_00101454 * 8;
-    param_2[2] = (byte)iVar5;
-    param_2[3] = (byte)((uint)iVar5 >> 8);
+    snapshot[10] = 0;
+    snapshot[0xb] = 0;
+    snapshot[0x10] = 0;
+    snapshot[0x11] = 0;
+    snapshot[0x14] = 0;
+    snapshot[0x15] = 0;
+    snapshot[0x1e] = (byte)object[2] & 0x3f;
+    iVar5 = (int)CONCAT11(snapshot[1],*snapshot) + DAT_0010144c * 8;
+    *snapshot = (byte)iVar5;
+    snapshot[1] = (byte)((uint)iVar5 >> 8);
+    iVar5 = (int)CONCAT11(snapshot[3],snapshot[2]) + DAT_00101454 * 8;
+    snapshot[2] = (byte)iVar5;
+    snapshot[3] = (byte)((uint)iVar5 >> 8);
   }
   if (bVar8) {
     sVar3 = ce_rand();
-    iVar5 = ((int)sVar3 & 0x1fU) + *(short *)param_2 * 0x20;
-    *param_2 = (byte)iVar5;
-    param_2[1] = (byte)((uint)iVar5 >> 8);
+    iVar5 = ((int)sVar3 & 0x1fU) + *(short *)snapshot * 0x20;
+    *snapshot = (byte)iVar5;
+    snapshot[1] = (byte)((uint)iVar5 >> 8);
     sVar3 = ce_rand();
-    iVar5 = ((int)sVar3 & 0x1fU) + *(short *)(param_2 + 2) * 0x20;
-    param_2[2] = (byte)iVar5;
-    param_2[3] = (byte)((uint)iVar5 >> 8);
+    iVar5 = ((int)sVar3 & 0x1fU) + *(short *)(snapshot + 2) * 0x20;
+    snapshot[2] = (byte)iVar5;
+    snapshot[3] = (byte)((uint)iVar5 >> 8);
     sVar3 = ce_rand();
-    iVar5 = ((int)sVar3 & 7U) + *(short *)(param_2 + 4) * 8;
-    param_2[4] = (byte)iVar5;
-    param_2[5] = (byte)((uint)iVar5 >> 8);
+    iVar5 = ((int)sVar3 & 7U) + *(short *)(snapshot + 4) * 8;
+    snapshot[4] = (byte)iVar5;
+    snapshot[5] = (byte)((uint)iVar5 >> 8);
   }
-  param_2[0x29] = 0;
-  param_2[0x2a] = 0;
-  return;
+  snapshot[0x29] = 0;
+  snapshot[0x2a] = 0;
 }

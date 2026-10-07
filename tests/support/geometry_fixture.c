@@ -16,8 +16,7 @@ undefined4 DAT_00084610=100;
 int geometry_triangles, geometry_surface_ids[1024];
 undefined4 geometry_last_triangle[15];
 
-void raster_triangle(int stride, void *buffer, undefined4 *vertices, int surface,
-                     int width, int size, intptr_t texture, int *clip)
+void raster_triangle(int stride, void *buffer, uint *vertices, int surface, int width, int size, char *texture, int *clip)
 {
     (void)stride; (void)buffer; (void)width; (void)size; (void)texture; (void)clip;
     TEST_ASSERT_LESS_THAN_INT(1024, geometry_triangles);
@@ -28,7 +27,7 @@ void debug_framebuffer_dump(const char *tag) { (void)tag; }
 void uw_debug_dump_3d_face(const char *tag) { (void)tag; }
 int uw_debug_3d_frame_dump_finish(void) { return -1; }
 const char *uw_debug_3d_frame_dump_last_dir(void) { return ""; }
-int message_scroll_print_wrapped(void) { TEST_FAIL_MESSAGE("Unexpected debug message"); return 0; }
+int message_scroll_print_wrapped(char *text) { (void)text; TEST_FAIL_MESSAGE("Unexpected debug message"); return 0; }
 
 void geometry_fixture_reset(void)
 {
@@ -57,6 +56,6 @@ void geometry_fixture_render(void)
 {
     geometry_triangles=0;
     near_clip_visible_tiles(0,0);
-    near_clip_visible_tiles((intptr_t)DAT_000a85d0_backing,1);
+    near_clip_visible_tiles(DAT_000a85d0_backing,1);
     render_visible_tile_list();
 }

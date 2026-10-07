@@ -39,22 +39,20 @@ bool g_new_game_entry_pause_pending = false;
 // bank 0, redraw dungeon, fade in)
 // was FUN_0003bd50
 void enter_dungeon_view()
-
 {
-  char stack0xffdc2f3c_buf [256];
-  char *stack0xffdc2f3c_ptr;
-  char cVar1;
-  char *pcVar2;
-  int iVar3;
-  char acStack_41c [264];
-  undefined1 auStack_314 [768];
-  
+  char *path_cursor;
+  char path_char;
+  char *install_dir;
+  int loaded;
+  char main_byt_path[264];
+  undefined1 saved_palette[768];
+
   decrement_cursor_hide_depth();
   dirty_rect_union(0,200,0,0x140);
   unregister_game_view_interact_zones();
   configure_dungeon_viewport(0x34,0x14,0xab,0x70);
-  ce_memmove(auStack_314,&DAT_00088d98,0x300);
-  fade_out(g_uw_framebuffer,auStack_314,0);
+  ce_memmove(saved_palette,&DAT_00088d98,0x300);
+  fade_out(g_uw_framebuffer,saved_palette,0);
   if (g_new_game_entry_pause_pending) {
     g_new_game_entry_pause_pending = false;
     /* Intentional deviation: hold the black screen for 0.5 seconds after
@@ -62,22 +60,23 @@ void enter_dungeon_view()
        level loads and returns from other views do not get this pause. */
     Sleep(500);
   }
-  load_pals_bank(0,auStack_314);
+  load_pals_bank(0,saved_palette);
   /* load_pals_bank loads PALS.DAT bank 0 (the 3D dungeon-view palette -- cf. set_palette_bank(0) at
-     the game-mode switch) into the local auStack_314 and installs it, but leaves the global
+     the game-mode switch) into the local saved_palette and installs it, but leaves the global
      DAT_00088d98 holding whatever bank the main menu last loaded (bank 2). */
-  ce_memmove(&DAT_00088d98,auStack_314,0x300);
-  ce_memset(acStack_41c,0,0x104);
-  pcVar2 = &DAT_0023cca8;
-    stack0xffdc2f3c_ptr = acStack_41c;
+  ce_memmove(&DAT_00088d98,saved_palette,0x300);
+  ce_memset(main_byt_path,0,0x104);
+  install_dir = &DAT_0023cca8;
+  path_cursor = main_byt_path;
   do {
-    cVar1 = *pcVar2;
-    *stack0xffdc2f3c_ptr = cVar1; stack0xffdc2f3c_ptr = stack0xffdc2f3c_ptr + 1;
-    pcVar2 = pcVar2 + 1;
-  } while (cVar1 != '\0');
-  ce_strcat(acStack_41c,s__DATA_main_byt_000857a8);
-  iVar3 = blit_fullscreen_bitmap_file(0xffffffff,acStack_41c,0);
-  if (iVar3 == 0) {
+    path_char = *install_dir;
+    *path_cursor = path_char;
+    path_cursor = path_cursor + 1;
+    install_dir = install_dir + 1;
+  } while (path_char != '\0');
+  ce_strcat(main_byt_path,s__DATA_main_byt_000857a8);
+  loaded = blit_fullscreen_bitmap_file(0xffffffff,main_byt_path,0);
+  if (loaded == 0) {
     report_fatal_error_and_exit(0x300b);
   }
   enter_dungeon_view_hud_init();
@@ -86,16 +85,14 @@ void enter_dungeon_view()
   full_dungeon_redraw();
   weapon_overlay_and_full_redraw();
   cursor_show_idle_tick();
-  fade_in(g_uw_framebuffer,auStack_314,0);
-  return;
+  fade_in(g_uw_framebuffer,saved_palette,0);
 }
 
 
 
 
 // was FUN_00049960
-undefined4 init_level_object_arena()
-
+int init_level_object_arena()
 {
   if (DAT_002029cc == 0) {
     /* Widened by 0x3a bytes: 28 backpack/equipment slots * 2 bytes (0x38) plus
@@ -114,37 +111,34 @@ undefined4 init_level_object_arena()
 
 
 // was FUN_000499c0
-int load_level_object_table(param_1,param_2)
-undefined1 * param_1;
-int param_2;
-
+int load_level_object_table(byte *archive_handle, int level_number)
 {
-  short sVar2;
-  char *iVar3;
-  short *psVar7;
-  undefined1 auStack_20 [16];
+  short objects_loaded;
+  char *arena;
+  short *magic_marker;
+  byte archive[16];
 
-  if (param_1 == NULL) {
-    if (!open_level_archive(auStack_20, s__SAVE0_lev_ark_000842fc)) return 0;
+  if (archive_handle == NULL) {
+    if (!open_level_archive(archive, s__SAVE0_lev_ark_000842fc)) return 0;
   }
   else {
     /* The archive handle is a 16-byte record. Ghidra's pointer-as-loop-
      * counter copy only copied 15 bytes and required int/pointer casts. */
-    memcpy(auStack_20, param_1, sizeof(auStack_20));
+    memcpy(archive, archive_handle, sizeof(archive));
   }
-  iVar3 = DAT_002029cc;
-  psVar7 = (short *)(DAT_002029cc + 0x7c06);
-  *psVar7 = 0;
-  read_archive_entry(auStack_20,param_2 + -1,DAT_002029cc);
-  if (*psVar7 == 0x7577) {
-    DAT_002046a8 = DAT_002046a4 + *(short *)(iVar3 + 0x7c02) * 2;
-    DAT_0020469c = DAT_002046bc + *(short *)(iVar3 + 0x7c04) * 2;
-    DAT_002046c8 = DAT_002046c0 + *(short *)(iVar3 + 0x7c00);
+  arena = DAT_002029cc;
+  magic_marker = (short *)(DAT_002029cc + 0x7c06);
+  *magic_marker = 0;
+  read_archive_entry(archive,level_number + -1,DAT_002029cc);
+  if (*magic_marker == 0x7577) {
+    DAT_002046a8 = DAT_002046a4 + *(short *)(arena + 0x7c02) * 2;
+    DAT_0020469c = DAT_002046bc + *(short *)(arena + 0x7c04) * 2;
+    DAT_002046c8 = DAT_002046c0 + *(short *)(arena + 0x7c00);
     DAT_002029d0 = 0;
     /* Debug tool (UW_DEBUG_DUMP_TMAP): dump this level's 64x64 tile map
        right after a real load, magic marker and all -- see gx_stub.h's
        comment. */
-    uw_debug_dump_tmap(param_2, (unsigned char *)iVar3);
+    uw_debug_dump_tmap(level_number, (unsigned char *)arena);
     /* Diagnostic (UW_DEBUG_BAG_TRACE): scan for a type-0x8f (rune bag) object's tile linkage
        IMMEDIATELY after the raw level block lands in the arena, before any other code
        (chargen-completion, HUD init, etc.) gets a chance to touch it... */
@@ -183,11 +177,11 @@ int param_2;
   else {
     report_fatal_error_and_exit(3);
   }
-  sVar2 = scheduler_load(auStack_20,param_2);
-  if (param_1 == (undefined1 *)0x0) {
-    close_level_archive(auStack_20);
+  objects_loaded = scheduler_load(archive,level_number);
+  if (archive_handle == (undefined1 *)0x0) {
+    close_level_archive(archive);
   }
-  return (int)sVar2;
+  return (int)objects_loaded;
 }
 
 
@@ -195,23 +189,20 @@ int param_2;
 
 // was FUN_00052960
 void reset_level_object_arena()
-
 {
-  undefined2 *puVar1;
-  char *iVar2;
-  int iVar3;
-  
-  iVar3 = 0;
-  iVar2 = DAT_002029cc;
+  char *free_list_cursor;
+  char *tile_record = DAT_002029cc;
+  int index = 0;
+
   do {
-    *(byte *)(iVar2 + 2) = *(byte *)(iVar2 + 2) & 0x3f;
-    *(undefined1 *)(iVar2 + 3) = 0;
-    iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
-    iVar2 = iVar2 + 4;
-  } while (iVar3 < 0x1000);
+    *(byte *)(tile_record + 2) = *(byte *)(tile_record + 2) & 0x3f;
+    *(undefined1 *)(tile_record + 3) = 0;
+    index = (index + 1) * 0x10000 >> 0x10;
+    tile_record = tile_record + 4;
+  } while (index < 0x1000);
   DAT_002046b8 = DAT_002029cc + 0x4000;
   DAT_002046c4 = DAT_002029cc + 0x5b00;
-  puVar1 = (undefined2 *)(DAT_002029cc + 0x7300);
+  free_list_cursor = (DAT_002029cc + 0x7300);
   DAT_002046a8 = DAT_002029cc + 0x74fa;
   DAT_002046bc = DAT_002029cc + 0x74fc;
   DAT_0020469c = DAT_002029cc + 0x7afa;
@@ -221,15 +212,15 @@ void reset_level_object_arena()
   /* g_scheduler_table lives in this same arena buffer too, right after g_backpack_slot_table's own
      0x3a-byte reservation -- see DAT_00250778's own comment for the full explanation... */
   g_scheduler_table = DAT_002029cc + 0x7c08 + 0x3a;
-  iVar3 = 2;
+  index = 2;
   DAT_002046a0 = DAT_0020469c;
-  DAT_002046a4 = puVar1;
+  DAT_002046a4 = free_list_cursor;
   DAT_002046ac = DAT_002046a8;
   do {
-    *puVar1 = (short)iVar3;
-    iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
-    puVar1 = puVar1 + 1;
-  } while (iVar3 < 0x400);
+    *free_list_cursor = (short)index;
+    index = (index + 1) * 0x10000 >> 0x10;
+    free_list_cursor = free_list_cursor + 1;
+  } while (index < 0x400);
   if (g_player_object != 0) {
     *(byte *)((char *)g_player_object + 4) = *(byte *)((char *)g_player_object + 4) & 0x3f;
     *(undefined1 *)((char *)g_player_object + 5) = 0;
@@ -240,45 +231,37 @@ void reset_level_object_arena()
   g_scheduler_count = 0;
   DAT_002046c0 = DAT_002046a0 + 2;
   DAT_002046c8 = DAT_002046a0 + 2;
-  return;
 }
 
 
 
 
 // was FUN_0006bc28
-int load_level(param_1)
-undefined4 param_1;
-
+int load_level(int level_number)
 {
-  short sVar1;
-  int iVar2;
-  undefined1 auStack_1c [16];
-  
+  int result;
+  byte archive[16];
+
   write_player_save_record(0);
   if (-1 < DAT_00202080) {
     DAT_00202080 = -1;
   }
-  iVar2 = open_level_archive(auStack_1c,s__SAVE0_lev_ark_000842fc);
-  if (iVar2 == 0) {
-    iVar2 = 0;
+  if (open_level_archive(archive,s__SAVE0_lev_ark_000842fc) == 0) {
+    return 0;
   }
-  else {
-    sVar1 = load_level_object_table(auStack_1c,param_1);
-    iVar2 = (int)sVar1;
-    load_player_save_record(0);
-    if (0 < iVar2) {
-      load_level_texture_ids(auStack_1c,param_1);
-      clear_automap_reveal_buffer();
-      reset_npc_path_cache();
-      clear_last_attacker_record();
-      if (iVar2 == 1) {
-        load_automap_reveal_from_archive(auStack_1c,param_1);
-      }
+  result = (int)(short)load_level_object_table(archive,level_number);
+  load_player_save_record(0);
+  if (0 < result) {
+    load_level_texture_ids(archive,level_number);
+    clear_automap_reveal_buffer();
+    reset_npc_path_cache();
+    clear_last_attacker_record();
+    if (result == 1) {
+      load_automap_reveal_from_archive(archive,level_number);
     }
-    close_level_archive(auStack_1c);
   }
-  return iVar2;
+  close_level_archive(archive);
+  return result;
 }
 
 
@@ -290,14 +273,10 @@ undefined4 param_1;
 // was FUN_0006c79c -- level-transition entry point: cancels any held cursor item (same "drop what
 // you're holding" guard as elsewhere), snapshots the leaving level's special per-level state
 // (save_or_restore_level_special_state(param_1, 1)), commits the leaving level to its save slot...
-int transition_to_level(param_1,param_2)
-undefined4 param_1;
-undefined4 param_2;
-
+int transition_to_level(int from_level, int to_level)
 {
-  short sVar1;
-  int iVar2;
-  int iVar3;
+  int committed;
+  int result;
 
   cancel_weapon_swing();
   if ((g_cursor_holding_state == 2) && (g_selected_object != 0)) {
@@ -305,20 +284,16 @@ undefined4 param_2;
     g_selected_object = 0;
     pop_cursor_icon(3);
   }
-  save_or_restore_level_special_state(param_1,1);
-  iVar2 = commit_level_to_save_slot(param_1);
-  iVar3 = 0;
-  if (iVar2 != 0) {
-    sVar1 = load_level(param_2);
-    iVar3 = (int)sVar1;
-    if (iVar3 == 0) {
-      iVar3 = 0;
-    }
-    else {
-      save_or_restore_level_special_state(param_2,0);
+  save_or_restore_level_special_state(from_level,1);
+  committed = commit_level_to_save_slot(from_level);
+  result = 0;
+  if (committed != 0) {
+    result = (int)(short)load_level(to_level);
+    if (result != 0) {
+      save_or_restore_level_special_state(to_level,0);
     }
   }
-  return iVar3;
+  return result;
 }
 
 
@@ -329,41 +304,38 @@ undefined4 param_2;
 // was FUN_0006c834 -- saves (param_2==1) or restores (param_2==0) a leaving/entering level's
 // special transient per-level state, called from transition_to_level around
 // commit_level_to_save_slot/load_level.
-void save_or_restore_level_special_state(param_1,param_2)
-short param_1;
-short param_2;
-
+void save_or_restore_level_special_state(short level_number, short mode)
 {
-  if (((*(byte *)(DAT_00086df8 + 0x60) & 0x10) == 0) || (param_2 != 0)) {
-    if (param_2 == 0) {
+  if (((*(byte *)(DAT_00086df8 + 0x60) & 0x10) == 0) || (mode != 0)) {
+    if (mode == 0) {
       clear_last_attacker_record();
     }
-    else if (param_2 == 1) {
+    else if (mode == 1) {
       advance_mobile_objects();
     }
-    if (param_1 == 7) {
+    if (level_number == 7) {
       if ((*(byte *)(DAT_00086df8 + 0x60) & 0x20) == 0) {
-        if (param_2 == 0) {
+        if (mode == 0) {
           *(undefined1 *)(DAT_00086df8 + 0xb0) = *(undefined1 *)(DAT_00086df8 + 0x38);
           *(undefined1 *)(DAT_00086df8 + 0x38) = 0;
           *(undefined1 *)(DAT_00086df8 + 0x37) = 0;
           update_level7_floor_hazard_state(*(byte *)(DAT_00086df8 + 0x62) >> 4 & 1);
         }
-        else if (param_2 == 1) {
+        else if (mode == 1) {
           *(undefined1 *)(DAT_00086df8 + 0x38) = *(undefined1 *)(DAT_00086df8 + 0xb0);
           *(byte *)(DAT_00086df8 + 0x37) = *(byte *)(DAT_00086df8 + 0xb0) >> 2;
         }
       }
     }
-    else if (param_1 == 9) {
-      if (param_2 == 0) {
+    else if (level_number == 9) {
+      if (mode == 0) {
         *(char *)(DAT_00086df8 + 0xb0) = (char)DAT_00086b20;
         DAT_00086b20 = 0;
       }
-      else if (param_2 == 1) {
+      else if (mode == 1) {
         DAT_00086b20 = (uint)*(byte *)(DAT_00086df8 + 0xb0);
       }
-      else if (param_2 == 3) {
+      else if (mode == 3) {
         DAT_00086b20 = 0;
       }
     }
@@ -371,7 +343,6 @@ short param_2;
   else {
     reset_level_arena_and_invalidate(0);
   }
-  return;
 }
 
 
@@ -381,117 +352,100 @@ short param_2;
 
 // was FUN_0007129c -- rolls for and triggers one of several as-yet- untriggered special per-level
 // dialog/effect ids (tracked as bits in the 16-bit DAT_00086df8+0x6e mask): picks a candidate id...
-undefined4 trigger_random_level_special_event(param_1)
-short param_1;
-
+int trigger_random_level_special_event(short chance_scale)
 {
   int uw_ord2005_rem_143 = 0;
-  undefined4 uVar1;
-  short extraout_r1;
-  int extraout_r1_00;
-  uint uVar2;
-  int iVar3;
-  
-  iVar3 = -1;
-  uVar2 = (uint)*(short *)(DAT_00086df8 + 0x6e);
-  if ((uVar2 & 1) == 1) {
-    if ((DAT_00201b68 < 2) || ((uVar2 & 2) == 2)) {
-      if ((uVar2 & 4) == 4) {
-        iVar3 = 2;
+  undefined4 random_value;
+  int divmod_remainder;
+  uint triggered_mask = (uint)*(short *)(DAT_00086df8 + 0x6e);
+  int event_id = -1;
+  uint clock_now;
+
+  if ((triggered_mask & 1) == 1) {
+    if ((DAT_00201b68 < 2) || ((triggered_mask & 2) == 2)) {
+      if ((triggered_mask & 4) == 4) {
+        event_id = 2;
       }
-      else if ((uVar2 & 8) == 8) {
-        iVar3 = 3;
+      else if ((triggered_mask & 8) == 8) {
+        event_id = 3;
       }
     }
     else {
-      iVar3 = 1;
+      event_id = 1;
     }
   }
   else {
-    iVar3 = 0;
+    event_id = 0;
   }
-  if ((short)iVar3 < 0) {
-    uVar1 = ce_rand();
-    extraout_r1_00 = ordint_divmod((param_1 + 1) * 4,uVar1).rem;
-    if (extraout_r1_00 == 0) {
-      uVar1 = ce_rand();
-      uw_ord2005_rem_143 = ((int)(uVar1)) % (6);
-      iVar3 = uw_ord2005_rem_143 + 4;
-      if ((uVar2 & 1 << (iVar3 * 0x10000 >> 0x10 & 0xffU)) != 0) {
-        iVar3 = -1;
+  if ((short)event_id < 0) {
+    random_value = ce_rand();
+    divmod_remainder = ordint_divmod((chance_scale + 1) * 4, random_value).rem;
+    if (divmod_remainder == 0) {
+      random_value = ce_rand();
+      uw_ord2005_rem_143 = ((int)(random_value)) % (6);
+      event_id = uw_ord2005_rem_143 + 4;
+      if ((triggered_mask & 1 << (event_id * 0x10000 >> 0x10 & 0xffU)) != 0) {
+        event_id = -1;
       }
     }
   }
-  if (((short)iVar3 < 0) || ((*(byte *)(DAT_00086df8 + 0x62) & 8) != 0)) {
-    iVar3 = read_realtime_clock_units();
+  if (((short)event_id < 0) || ((*(byte *)(DAT_00086df8 + 0x62) & 8) != 0)) {
+    /* Nothing triggered: just burn a short delay. */
+    event_id = read_realtime_clock_units();
     do {
-      uVar2 = read_realtime_clock_units();
-    } while (uVar2 < iVar3 + 0x180U);
-    uVar1 = 0;
+      clock_now = read_realtime_clock_units();
+    } while (clock_now < event_id + 0x180U);
+    return 0;
   }
-  else {
-    display_book_or_scroll_page(iVar3 + 0x18);
-    uVar2 = (uint)*(ushort *)(DAT_00086df8 + 0x6e) ^ 1 << ((int)(short)iVar3 & 0xffU) & 0xffffU;
-    *(char *)(DAT_00086df8 + 0x6e) = (char)uVar2;
-    *(char *)(DAT_00086df8 + 0x6f) = (char)(uVar2 >> 8);
-    uVar1 = 1;
-  }
-  return uVar1;
+  display_book_or_scroll_page(event_id + 0x18);
+  triggered_mask = (uint)*(ushort *)(DAT_00086df8 + 0x6e) ^ 1 << ((int)(short)event_id & 0xffU) & 0xffffU;
+  *(char *)(DAT_00086df8 + 0x6e) = (char)triggered_mask;
+  *(char *)(DAT_00086df8 + 0x6f) = (char)(triggered_mask >> 8);
+  return 1;
 }
 
 
 // was FUN_000396a0 -- teleports object param_1 to tile (param_2,param_3) on level param_4.
 // Confirmed as the "teleporter trap" handler (dispatch_trap_type_effect's case 1, teleporting the
 // current trigger object DAT_0024cff4 to a trap-record-specified tile/level).
-undefined4 teleport_object_to_level_tile(param_1,param_2,param_3,param_4)
-char *param_1;
-int param_2;
-int param_3;
-short param_4;
-
+int teleport_object_to_level_tile(void *object_ptr, int tile_x, int tile_y, short level_number)
 {
-  short sVar1;
-  int iVar2;
-  undefined4 uVar3;
-  short local_1c;
-  short local_1a;
+  ushort *object = (ushort *)object_ptr;
+  short current_level = DAT_00201b68;
+  int placed;
+  short placed_x;
+  short placed_y;
 
-  sVar1 = DAT_00201b68;
-  if ((param_4 == DAT_00201b68) || (param_1 == g_player_object)) {
-    if (((param_4 == 0) || (param_4 == DAT_00201b68)) &&
-       (((short)param_2 != 0x3f && ((short)param_3 != 0x3f)))) {
-      iVar2 = find_placement_via_tile_flood_fill(param_1,param_2,param_3,&local_1c,&local_1a,0);
-      if (iVar2 == 0) goto LAB_00039784;
-      param_2 = (int)local_1c;
-      param_3 = (int)local_1a;
-      param_4 = sVar1;
-    }
-    if (param_1 == g_player_object) {
-      DAT_00201c90 = (undefined2)param_2;
-      DAT_00201c8c = (undefined2)param_3;
-      DAT_00201c7c = param_4;
-      set_pending_update_flags(0x20);
-    }
-    uVar3 = 0x10;
+  if ((level_number != DAT_00201b68) && (object != g_player_object)) {
+    return 2;
   }
-  else {
-LAB_00039784:
-    uVar3 = 2;
+  if (((level_number == 0) || (level_number == DAT_00201b68)) &&
+     (((short)tile_x != 0x3f && ((short)tile_y != 0x3f)))) {
+    placed = find_placement_via_tile_flood_fill(object, tile_x, tile_y, &placed_x, &placed_y, 0);
+    if (placed == 0) {
+      return 2;
+    }
+    tile_x = (int)placed_x;
+    tile_y = (int)placed_y;
+    level_number = current_level;
   }
-  return uVar3;
+  if (object == g_player_object) {
+    DAT_00201c90 = (undefined2)tile_x;
+    DAT_00201c8c = (undefined2)tile_y;
+    DAT_00201c7c = level_number;
+    set_pending_update_flags(0x20);
+  }
+  return 0x10;
 }
 
 
 // was FUN_0003bc1c -- hard-resets the level object arena (reset_level_object_arena), flushes a
 // redraw, and invalidates DAT_00202080 (a loaded-level data marker).
-void reset_level_arena_and_invalidate(param_1)
-undefined4 param_1;
-
+void reset_level_arena_and_invalidate(int reserved)
 {
   reset_level_object_arena();
   set_pending_update_flags(2);
   DAT_00202080 = 0xffff;
-  return;
 }
 
 
@@ -499,10 +453,8 @@ undefined4 param_1;
 // allocated, without clearing the pointer itself (callers are
 // expected to overwrite it right after, e.g. on loading a new level).
 void free_level_tile_arena()
-
 {
   if (DAT_002029cc != 0) {
     LocalFree(DAT_002029cc);
   }
-  return;
 }

@@ -77,7 +77,6 @@ char *DAT_002029cc;
 
 // was FUN_00016354
 void enter_automap_screen()
-
 {
   if (DAT_000bbefc == 0) {
     register_key_binding(0x1b,1,2,change_game_mode);
@@ -93,7 +92,6 @@ void enter_automap_screen()
   push_cursor_icon(0x1078);
   cursor_show_idle_tick();
   DAT_000b99c4 = 0;
-  return;
 }
 
 
@@ -101,7 +99,6 @@ void enter_automap_screen()
 
 // was FUN_0001651c
 void exit_automap_screen()
-
 {
   int iVar1;
   undefined1 auStack_1c [16];
@@ -120,7 +117,6 @@ void exit_automap_screen()
   DAT_000bbef4 = 0;
   reset_cursor_confine_rect();
   cursor_show_idle_tick();
-  return;
 }
 
 
@@ -128,7 +124,6 @@ void exit_automap_screen()
 
 // was FUN_000165d0
 void draw_automap_tiles()
-
 {
   char cVar1;
   int iVar2;
@@ -179,17 +174,12 @@ void draw_automap_tiles()
     } while (iVar6 < 0x3f);
     local_3c = (local_3c + 1) * 0x10000 >> 0x10;
   } while (local_3c < 0x3f);
-  return;
 }
 
 
 
 // was FUN_000167d4
-undefined4 draw_automap_cell_edge(param_1,param_2,param_3)
-short param_1;
-int param_2;
-int param_3;
-
+int draw_automap_cell_edge(short edge, int x, int y)
 {
   byte bVar1;
   int iVar2;
@@ -199,23 +189,23 @@ int param_3;
   int iVar6;
   int iVar7;
   
-  iVar6 = param_2 * 3;
-  iVar2 = param_3 * 3;
+  iVar6 = x * 3;
+  iVar2 = y * 3;
   iVar3 = iVar6 + 7;
   iVar7 = iVar2 + 4;
-  if (param_1 == 0) {
-    param_3 = param_3 + 1;
+  if (edge == 0) {
+    y = y + 1;
   }
-  else if (param_1 == 1) {
-    param_2 = param_2 + 1;
+  else if (edge == 1) {
+    x = x + 1;
   }
-  else if (param_1 == 2) {
-    param_3 = param_3 + -1;
+  else if (edge == 2) {
+    y = y + -1;
   }
-  else if (param_1 == 3) {
-    param_2 = param_2 + -1;
+  else if (edge == 3) {
+    x = x + -1;
   }
-  bVar1 = (&DAT_000b99d0)[(short)param_3 * 0x40 + (int)(short)param_2] & 0xf;
+  bVar1 = (&DAT_000b99d0)[(short)y * 0x40 + (int)(short)x] & 0xf;
   if ((bVar1 != 0) && (bVar1 < 10)) {
     return 0;
   }
@@ -227,7 +217,7 @@ int param_3;
     uVar4 = 6;
     uVar5 = 2;
   }
-  if (param_1 == 0) {
+  if (edge == 0) {
     iVar7 = iVar2 + 8;
 LAB_000168f8:
     iVar2 = 0;
@@ -237,12 +227,12 @@ LAB_000168f8:
     } while (iVar2 < 3);
   }
   else {
-    if (param_1 == 1) {
+    if (edge == 1) {
       iVar3 = iVar6 + 0xb;
     }
     else {
-      if (param_1 == 2) goto LAB_000168f8;
-      if (param_1 != 3) {
+      if (edge == 2) goto LAB_000168f8;
+      if (edge != 3) {
         return 1;
       }
     }
@@ -259,11 +249,7 @@ LAB_000168f8:
 
 
 // was FUN_00016948
-void draw_automap_cell(param_1,param_2,param_3)
-int param_1;
-int param_2;
-int param_3;
-
+void draw_automap_cell(int cell_type, int tile_x, int tile_y)
 {
   byte bVar1;
   byte bVar2;
@@ -281,21 +267,21 @@ int param_3;
   uint uVar12;
   uint uVar13;
   
-  if ((short)param_1 != 0) {
-    if (5 < (short)param_1) {
-      param_1 = 1;
+  if ((short)cell_type != 0) {
+    if (5 < (short)cell_type) {
+      cell_type = 1;
     }
-    bVar1 = (byte)(&DAT_000b99d0)[(short)param_3 * 0x40 + (int)(short)param_2] >> 4 & 3;
-    bVar2 = (byte)(&DAT_000b99d0)[(short)param_3 * 0x40 + (int)(short)param_2] >> 4 & 0xfc;
-    iVar11 = param_3 * 3 + 4;
-    iVar10 = param_2 * 3 + 7;
+    bVar1 = (byte)(&DAT_000b99d0)[(short)tile_y * 0x40 + (int)(short)tile_x] >> 4 & 3;
+    bVar2 = (byte)(&DAT_000b99d0)[(short)tile_y * 0x40 + (int)(short)tile_x] >> 4 & 0xfc;
+    iVar11 = tile_y * 3 + 4;
+    iVar10 = tile_x * 3 + 7;
     uVar9 = 0;
     uVar13 = 0;
     do {
       uVar8 = 0;
       uVar12 = 0;
       do {
-        if ((&DAT_000842c0)[(((param_1 + -1) * 0x10000 >> 0x10) * 3 + uVar12) * 3 + uVar13] ==
+        if ((&DAT_000842c0)[(((cell_type + -1) * 0x10000 >> 0x10) * 3 + uVar12) * 3 + uVar13] ==
             '\x01') {
           if (bVar1 == 0) {
             /* ARM 0x16a20..0x16acc retains DOS floor tint (2,3). */
@@ -317,7 +303,7 @@ int param_3;
           g_automap_tint_bitmap[(199 - iVar11 - (short)uVar8) * 320 +
                                iVar10 + (short)uVar9] = (byte)iVar5;
         }
-        else if ((&DAT_000842c0)[(((param_1 + -1) * 0x10000 >> 0x10) * 3 + uVar12) * 3 + uVar13] ==
+        else if ((&DAT_000842c0)[(((cell_type + -1) * 0x10000 >> 0x10) * 3 + uVar12) * 3 + uVar13] ==
                  '\x02') {
           uVar7 = 2;
           uVar4 = 6;
@@ -334,7 +320,7 @@ LAB_00016b00:
       uVar13 = uVar13 + 1 & 0xffff;
     } while (uVar13 < 3);
     if (bVar2 == 4) {
-      draw_automap_door_edge((int)(short)param_2,(int)(short)param_3,iVar10,iVar11);
+      draw_automap_door_edge((int)(short)tile_x,(int)(short)tile_y,iVar10,iVar11);
     }
     else if (bVar2 == 8) {
       uVar9 = 0;
@@ -369,34 +355,28 @@ LAB_00016b00:
       } while ((uVar9 & 0xffff) < 3);
     }
   }
-  return;
 }
 
 
 
 // was FUN_00016c70
-void draw_automap_door_edge(param_1,param_2,param_3,param_4)
-short param_1;
-short param_2;
-int param_3;
-int param_4;
-
+void draw_automap_door_edge(short tile_x, short tile_y, int pixel_x, int pixel_y)
 {
   int iVar1;
   int iVar2;
   
-  param_4 = param_4 + 1;
-  param_3 = param_3 + 1;
-  darken_pixel(param_3,param_4,6,3);
+  pixel_y = pixel_y + 1;
+  pixel_x = pixel_x + 1;
+  darken_pixel(pixel_x,pixel_y,6,3);
   iVar2 = 0;
   DAT_000ba9d4 = '\0';
   while( true ) {
     if ((((&DAT_000b99d0)
-          [(int)param_1 + ((int)param_2 + (int)(char)(&DAT_000842f4)[iVar2]) * 0x40 +
+          [(int)tile_x + ((int)tile_y + (int)(char)(&DAT_000842f4)[iVar2]) * 0x40 +
            (int)(char)(&DAT_000842f8)[iVar2]] & 0xf) == 1) ||
        (((&DAT_000b99d0)
-         [(((int)param_2 - (int)(char)(&DAT_000842f4)[iVar2]) * 0x40 -
-          (int)(char)(&DAT_000842f8)[iVar2]) + (int)param_1] & 0xf) == 1)) break;
+         [(((int)tile_y - (int)(char)(&DAT_000842f4)[iVar2]) * 0x40 -
+          (int)(char)(&DAT_000842f8)[iVar2]) + (int)tile_x] & 0xf) == 1)) break;
     iVar1 = (iVar2 + 1) * 0x1000000;
     iVar2 = iVar1 >> 0x18;
     DAT_000ba9d4 = (char)((uint)iVar1 >> 0x18);
@@ -404,11 +384,10 @@ int param_4;
       return;
     }
   }
-  darken_pixel(param_3 + (char)(&DAT_000842f4)[(char)iVar2],
-               param_4 + (char)(&DAT_000842f8)[(char)iVar2],6,3);
-  darken_pixel(param_3 - (char)(&DAT_000842f4)[DAT_000ba9d4],
-               param_4 - (char)(&DAT_000842f8)[DAT_000ba9d4],6,3);
-  return;
+  darken_pixel(pixel_x + (char)(&DAT_000842f4)[(char)iVar2],
+               pixel_y + (char)(&DAT_000842f8)[(char)iVar2],6,3);
+  darken_pixel(pixel_x - (char)(&DAT_000842f4)[DAT_000ba9d4],
+               pixel_y - (char)(&DAT_000842f8)[DAT_000ba9d4],6,3);
 }
 
 
@@ -417,9 +396,7 @@ int param_4;
 // was FUN_00017908
 /* uVar3 was `undefined4` (4 bytes), truncating ce_malloc's real 64-bit malloc'd pointer on this
    host -- same pointer-truncation pattern fixed repeatedly this session. */
-void draw_automap_screen(param_1)
-undefined4 param_1;
-
+void draw_automap_screen(int level_number)
 {
   char stack0xffdc323c_buf [256];
   char *stack0xffdc323c_ptr;
@@ -454,17 +431,17 @@ undefined4 param_1;
     g_automap_tint_bitmap = uVar3;
     draw_automap_tiles();
     g_automap_tint_bitmap = NULL;
-    iVar5 = (int)(short)param_1;
+    iVar5 = (int)(short)level_number;
     if ((iVar5 == DAT_00201b68) && (iVar5 != 9)) {
       g_blit_transparent_mode = 1;
       draw_sprite_by_id(0x103f,((*(ushort *)((char *)g_player_object + 0x16) >> 10) + 2) * 3,
                    (((*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4) + 3) * -3 + 200,5,8);
       g_blit_transparent_mode = 0;
     }
-    DAT_000ba9d0 = (short)param_1;
+    DAT_000ba9d0 = (short)level_number;
     set_palette_bank(1);
     screen_backup_save();
-    load_automap_notes_from_archive(param_1);
+    load_automap_notes_from_archive(level_number);
     *g_draw_color_index = 0x2d;
     *DAT_00084298 = 0x2d;
     select_active_font(s_fontbig_sys_0008432c);
@@ -480,13 +457,12 @@ undefined4 param_1;
   DAT_000bbef4 = 1;
   cursor_show_idle_tick();
   LocalFree(uVar3);
-  return;
 }
 
 
 /* Reveal every walkable tile of the current level's automap in a single pass -- no ring-walk, no
    dungeon redraw. */
-void automap_reveal_all_tiles(void)
+void automap_reveal_all_tiles()
 {
   int x;
   int y;
@@ -514,33 +490,27 @@ void automap_reveal_all_tiles(void)
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
 // was FUN_00016940
-void darken_pixel(param_1,param_2,param_3,param_4)
-uint param_1;
-int param_2;
-int param_3;
-int param_4;
-
+void darken_pixel(uint x, int y, int amount, int divisor)
 {
   ushort *puVar1;
 
   puVar1 = (ushort *)
            ((g_uw_framebuffer) +
-           ((200U - param_2 & 0xffff) * 0x140 + (param_1 & 0xffff)) * 2);
+           ((200U - y & 0xffff) * 0x140 + (x & 0xffff)) * 2);
   /* Restore the DOS palette tint using the shade arguments still passed by ARM callers; ARM
      replaced this with fixed RGB565 halving. The original takes two random draws, discarding the
      first result. ce_rand uses host rand(), so mask to DOS/WinCE's 15-bit range. */
-  int step = 0x7fff / param_4;
+  int step = 0x7fff / divisor;
   (void)ce_rand();
   int roll = (ce_rand() & 0x7fff) / step;
   /* The map bitmap is blitted at screen row 1, whereas darken_pixel's
      coordinates are measured upwards from row 200. Keep the indexed
      pixel updated too, so overlapping strokes tint cumulatively. */
   byte *index = g_automap_tint_bitmap +
-      (199 - param_2) * 320 + (param_1 & 0xffff);
-  *index = (byte)(*index + param_3 + roll);
+      (199 - y) * 320 + (x & 0xffff);
+  *index = (byte)(*index + amount + roll);
   *puVar1 = (&g_palette_rgb565)[*index];
   debug_framebuffer_dump("darken_pixel");
-  return;
 }
 
 
@@ -549,10 +519,7 @@ int param_4;
 
 // was FUN_00016434 -- writes the DAT_000b99d0 automap-reveal buffer (64x64 grid, one nibble/byte
 // per tile -- see automap.c's readers) to archive entry param_2+0x1a.
-undefined4 save_automap_reveal_to_archive(param_1,param_2)
-undefined1 * param_1;
-int param_2;
-
+int save_automap_reveal_to_archive(byte *archive, int level_number)
 {
   bool bVar1;
   int iVar2;
@@ -562,7 +529,7 @@ int param_2;
   undefined1 *puVar6;
   undefined1 auStack_1c [16];
   
-  if (param_1 == (undefined1 *)0x0) {
+  if (archive == (undefined1 *)0x0) {
     iVar2 = open_level_archive(auStack_1c,s__SAVE0_lev_ark_000842fc);
     if (iVar2 == 0) {
       return 0;
@@ -570,7 +537,7 @@ int param_2;
   }
   else {
     iVar2 = 0xf;
-    puVar4 = param_1;
+    puVar4 = archive;
     puVar6 = auStack_1c;
     do {
       iVar3 = iVar2 + -1;
@@ -581,8 +548,8 @@ int param_2;
       puVar6 = puVar6 + 1;
     } while (iVar3 != 0 && bVar1);
   }
-  iVar2 = write_archive_entry(auStack_1c,param_2 + 0x1a,&DAT_000b99d0,0x1000);
-  if (param_1 == (undefined1 *)0x0) {
+  iVar2 = write_archive_entry(auStack_1c,level_number + 0x1a,&DAT_000b99d0,0x1000);
+  if (archive == (undefined1 *)0x0) {
     close_level_archive(auStack_1c);
   }
   else {
@@ -590,11 +557,11 @@ int param_2;
     puVar4 = auStack_1c;
     do {
       iVar5 = iVar3 + -1;
-      *param_1 = *puVar4;
+      *archive = *puVar4;
       bVar1 = 0 < iVar3;
       iVar3 = iVar5;
       puVar4 = puVar4 + 1;
-      param_1 = param_1 + 1;
+      archive = archive + 1;
     } while (iVar5 != 0 && bVar1);
   }
   if (iVar2 == 0) {
@@ -608,17 +575,13 @@ int param_2;
 // was FUN_000164e4 -- reads archive entry param_2+0x1a back into the
 // DAT_000b99d0 automap-reveal buffer (the read-side counterpart to
 // save_automap_reveal_to_archive).
-undefined4 load_automap_reveal_from_archive(param_1,param_2)
-/* .ark handle-struct pointer -- was `undefined4`, truncating it before
-   read_archive_entry. */
-undefined1 * param_1;
-int param_2;
-
+/* .ark handle-struct pointer -- was `undefined4`, truncating it before read_archive_entry. */
+int load_automap_reveal_from_archive(byte *archive, int level_number)
 {
   short sVar1;
   undefined4 uVar2;
   
-  sVar1 = read_archive_entry(param_1,param_2 + 0x1a,&DAT_000b99d0);
+  sVar1 = read_archive_entry(archive,level_number + 0x1a,&DAT_000b99d0);
   if ((sVar1 == 0) || (uVar2 = 0, sVar1 == 0x1000)) {
     uVar2 = 1;
   }
@@ -629,10 +592,8 @@ int param_2;
 
 // was FUN_000165bc
 void clear_automap_reveal_buffer()
-
 {
   ce_memset(&DAT_000b99d0,0,0x1000);
-  return;
 }
 
 
@@ -641,12 +602,7 @@ void clear_automap_reveal_buffer()
 // was FUN_00016d7c -- given two note-button label records (param_1, param_2) and a click point
 // (param_3,param_4), measures each label's rendered text-box distance to the click and returns
 // whichever pointer is closer (used by handle_automap_note_click's hit-testing).
-char *pick_closer_note_label(param_1,param_2,param_3,param_4)
-char * param_1;
-char * param_2;
-short param_3;
-short param_4;
-
+char *pick_closer_note_label(char *label_a, char *label_b, short click_x, short click_y)
 {
   uint uVar1;
   uint uVar2;
@@ -662,11 +618,11 @@ short param_4;
   uint uVar12;
   char acStack_50 [52];
   
-  pcVar7 = param_2;
-  if ((param_1 != (char *)0x0) && (pcVar7 = param_1, param_2 != (char *)0x0)) {
+  pcVar7 = label_b;
+  if ((label_a != (char *)0x0) && (pcVar7 = label_a, label_b != (char *)0x0)) {
     do {
       cVar5 = *pcVar7;
-      acStack_50[pcVar7 - param_1] = cVar5;
+      acStack_50[pcVar7 - label_a] = cVar5;
       pcVar7 = pcVar7 + 1;
     } while (cVar5 != '\0');
     sVar6 = measure_text_width(acStack_50);
@@ -674,14 +630,14 @@ short param_4;
     if (iVar8 < 0) {
       iVar8 = iVar8 + 1;
     }
-    uVar9 = ((iVar8 >> 1) - (int)param_3) + (int)*(short *)(param_1 + 0x32);
+    uVar9 = ((iVar8 >> 1) - (int)click_x) + (int)*(short *)(label_a + 0x32);
     uVar1 = (int)uVar9 >> 0x1f;
-    uVar10 = ((int)param_4 - (int)*(short *)(param_1 + 0x34)) + 0xca;
+    uVar10 = ((int)click_y - (int)*(short *)(label_a + 0x34)) + 0xca;
     uVar2 = (int)uVar10 >> 0x1f;
-    pcVar7 = param_2;
+    pcVar7 = label_b;
     do {
       cVar5 = *pcVar7;
-      acStack_50[pcVar7 - param_2] = cVar5;
+      acStack_50[pcVar7 - label_b] = cVar5;
       pcVar7 = pcVar7 + 1;
     } while (cVar5 != '\0');
     sVar6 = measure_text_width(acStack_50);
@@ -689,16 +645,16 @@ short param_4;
     if (iVar8 < 0) {
       iVar8 = iVar8 + 1;
     }
-    uVar11 = ((iVar8 >> 1) - (int)param_3) + (int)*(short *)(param_2 + 0x32);
+    uVar11 = ((iVar8 >> 1) - (int)click_x) + (int)*(short *)(label_b + 0x32);
     uVar3 = (int)uVar11 >> 0x1f;
-    uVar12 = ((int)param_4 - (int)*(short *)(param_2 + 0x34)) + 0xca;
+    uVar12 = ((int)click_y - (int)*(short *)(label_b + 0x34)) + 0xca;
     uVar4 = (int)uVar12 >> 0x1f;
-    pcVar7 = param_2;
+    pcVar7 = label_b;
     if (((int)(((uVar12 ^ uVar4) - uVar4) * 0x10000) >> 0x10 <=
          (int)(short)(((uVar10 ^ uVar2) - uVar2) * 0x10000 >> 0x10)) &&
        ((int)(short)(((uVar9 ^ uVar1) - uVar1) * 0x10000 >> 0x10) <=
         (int)(((uVar11 ^ uVar3) - uVar3) * 0x10000) >> 0x10)) {
-      pcVar7 = param_1;
+      pcVar7 = label_a;
     }
   }
   return pcVar7;
@@ -710,7 +666,6 @@ short param_4;
 // area vs. UI chrome), places, edits, or removes a note into the DAT_000ba9d8 note-text array, and
 // can invoke switch_automap_level_display for the level-page navigation arrows.
 void handle_automap_note_click()
-
 {
   char cVar1;
   short sVar2;
@@ -951,7 +906,6 @@ LAB_00017404:
 // was FUN_0001765c -- redraws every stored automap note (DAT_000bbef0
 // count of DAT_000ba9d8 records) as text at its saved screen position.
 void draw_automap_notes()
-
 {
   char *wptr_5780;
   char *wptr_5787;
@@ -995,7 +949,6 @@ void draw_automap_notes()
     } while (iVar7 < sVar6);
   }
   select_active_font(s_font5x6p_sys_0008430c);
-  return;
 }
 
 
@@ -1003,9 +956,7 @@ void draw_automap_notes()
 // was FUN_00017768 -- compacts out any deleted (negative-length) note
 // records, then writes the remaining DAT_000ba9d8 note array to archive
 // entry param_1+0x23.
-void save_automap_notes_to_archive(param_1)
-int param_1;
-
+void save_automap_notes_to_archive(int level_number)
 {
   short sVar1;
   int iVar2;
@@ -1038,11 +989,10 @@ int param_1;
     /* A zero-length entry also persists deletion of the last note. */
     iVar2 = open_level_archive(auStack_2c,s__SAVE0_lev_ark_000842fc);
     if (iVar2 != 0) {
-      write_archive_entry(auStack_2c,param_1 + 0x23,&DAT_000ba9d8,(uint)(DAT_000bbef0 * 0x360000) >> 0x10);
+      write_archive_entry(auStack_2c,level_number + 0x23,&DAT_000ba9d8,(uint)(DAT_000bbef0 * 0x360000) >> 0x10);
       close_level_archive(auStack_2c);
     }
   }
-  return;
 }
 
 
@@ -1050,9 +1000,7 @@ int param_1;
 // was FUN_0001786c -- reads archive entry param_1+0x23 back into the
 // DAT_000ba9d8 note array (the read-side counterpart to
 // save_automap_notes_to_archive), then redraws them.
-void load_automap_notes_from_archive(param_1)
-int param_1;
-
+void load_automap_notes_from_archive(int level_number)
 {
   undefined2 uVar1;
   int iVar2;
@@ -1062,13 +1010,12 @@ int param_1;
   DAT_000b99c8 = 0;
   iVar2 = open_level_archive(auStack_20,s__SAVE0_lev_ark_000842fc);
   if (iVar2 != 0) {
-    uVar1 = read_archive_entry(auStack_20,param_1 + 0x23,&DAT_000ba9d8);
+    uVar1 = read_archive_entry(auStack_20,level_number + 0x23,&DAT_000ba9d8);
     DAT_000b99c8 = orduint_divmod(0x36,uVar1).quot;
     DAT_000bbef0 = DAT_000b99c8;
     draw_automap_notes();
     close_level_archive(auStack_20);
   }
-  return;
 }
 
 
@@ -1076,22 +1023,19 @@ int param_1;
 // was FUN_00017b38 -- switches which level's automap page is on screen: saves the current level's
 // notes, clears the reveal buffer, loads the new level's reveal state (if a real dungeon level,
 // param_1<9), then draws it.
-void switch_automap_level_display(param_1)
-undefined4 param_1;
-
+void switch_automap_level_display(int level_number)
 {
   int iVar1;
   undefined1 auStack_18 [16];
   
   save_automap_notes_to_archive((int)DAT_000ba9d0);
   clear_automap_reveal_buffer();
-  if (((short)param_1 < 9) &&
+  if (((short)level_number < 9) &&
      (iVar1 = open_level_archive(auStack_18,s__SAVE0_lev_ark_000842fc), iVar1 != 0)) {
-    load_automap_reveal_from_archive(auStack_18,param_1);
+    load_automap_reveal_from_archive(auStack_18,level_number);
     close_level_archive(auStack_18);
   }
-  draw_automap_screen(param_1);
-  return;
+  draw_automap_screen(level_number);
 }
 
 
@@ -1099,10 +1043,7 @@ undefined4 param_1;
 // was FUN_0007edec -- always returns 0 and does nothing else; both confirmed callers
 // (src/automap.c's note-text composition, when the wrapped line buffer overflows its 46-char limit
 // or a word doesn't fit) pass literal args (300,10) that this decompiled signature takes no...
-undefined4 debug_noop_overflow_hook(param_1,param_2)
-undefined4 param_1;
-undefined4 param_2;
-
+int debug_noop_overflow_hook(int limit, int word_count)
 {
   return 0;
 }

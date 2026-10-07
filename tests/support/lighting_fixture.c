@@ -4,7 +4,7 @@
 /* Exercise light toggling, equipment selection, real shading data and pixels.
    Inventory/UI services are fixtures; the game functions stay in their files. */
 char *DAT_00086df8, *DAT_0023be74, *DAT_0024fa2c, *DAT_0023cca0;
-byte *g_scratch_object_ptr;
+ushort *g_scratch_object_ptr;
 char *g_selected_object;
 undefined1 DAT_00086da8, DAT_00202800_backing[256];
 undefined1 DAT_0023b039_backing[4096];
@@ -24,47 +24,47 @@ ushort lights[4][4], *slots[11];
 byte light_records[32];
 int rebuilds, message;
 int g_ambient_bias_reduction;
-void *get_equipped_item_at_slot(int slot) { return slots[slot]; }
+void *get_equipped_item_at_slot(short slot) { return slots[slot]; }
 void *get_scanned_object_class_effect_ptr(void)
 {
-    return light_records + (*(ushort *)g_scratch_object_ptr & 15) * 2;
+    return light_records + (*g_scratch_object_ptr & 15) * 2;
 }
-int compute_object_weight(void) { return 0; }
-void request_weapon_swing_graphic(int category) {}
+int compute_object_weight(ushort *object) { (void)object; return 0; }
+void request_weapon_swing_graphic(char category) {}
 void reset_player_derived_state(void) {}
-undefined4 is_valid_equipment_slot_item(int id, int slot) { return 0; }
-undefined4 resolve_object_variant_or_special_link(ushort *o, byte *a, byte *b, int *c) { return 0; }
-void clear_object_pending_special_flag(ushort *o) {}
-undefined4 apply_equipped_item_effect(int effect, int level, ushort *flags, int slot)
+int is_valid_equipment_slot_item(ushort id, short slot) { return 0; }
+int resolve_object_variant_or_special_link(void *o, void *a, void *b, void *c) { return 0; }
+void clear_object_pending_special_flag(void *o) {}
+int apply_equipped_item_effect(byte effect, byte level, ushort *flags, int slot)
 {
     /* Fixture for the intrinsic light effect, independent of physical lamps. */
     TEST_ASSERT_EQUAL_INT(0, effect);
     if ((byte)player[99] >> 4 < level) player[99] = level << 4;
     return 0;
 }
-void apply_equipment_effect_penalties(int flags) {}
+void apply_equipment_effect_penalties(uint flags) {}
 void update_screen_flicker_effect(int active) {}
 void force_locomotion_state_refresh(void) {}
-void apply_movement_mode_profile(int mode) {}
-int find_or_assign_object_widget(ushort *object) { return 5; }
+void apply_movement_mode_profile(byte mode) {}
+int find_or_assign_object_widget(void *object) { return 5; }
 void decrement_object_count(ushort *object) { TEST_FAIL_MESSAGE("Unexpected auto-equip"); }
-undefined4 place_object_in_backpack_slot(ushort *object, int slot) { return 1; }
+int place_object_in_backpack_slot(ushort *object, short slot) { return 1; }
 void redraw_container_icon_slot(void) {}
-void redraw_backpack_slot_widget(int slot) {}
-void print_scroll_message_by_id(int id) { message = id; }
-void set_pending_update_flags(int mode) { rebuilds++; }
+void redraw_backpack_slot_widget(short slot) {}
+void print_scroll_message_by_id(uint id) { message = id; }
+void set_pending_update_flags(ushort mode) { rebuilds++; }
 /* Use real platform file I/O, including Windows path translation. */
-undefined4 open_file_for_read(const char *path)
+int open_file_for_read(const char *path)
 {
     const char *prefix = (char *)DAT_0023cca8_backing;
     if (*prefix) TEST_ASSERT_EQUAL_MEMORY(prefix, path, strlen(prefix));
     return uw_file_open_read(path);
 }
-undefined4 read_file_handle(int h, void *buf, unsigned n) { return uw_file_read(h, buf, n); }
-undefined4 seek_file_handle(int h, int offset, int whence) { return uw_file_seek(h, offset, whence); }
+int read_file_handle(int h, void *buf, unsigned n) { return uw_file_read(h, buf, n); }
+int seek_file_handle(int h, int offset, int whence) { return uw_file_seek(h, offset, whence); }
 long CloseHandle(int h) { return uw_file_close(h); }
 void *ce_memset(void *p, int value, unsigned n) { return memset(p, value, n); }
-char *ce_strcat(char *p, const char *s) { return strcat(p, s); }
+char *ce_strcat(char *p, char *s) { return strcat(p, s); }
 void lighting_fixture_reset(void)
 {
     setenv("UW_DATA_DIR", UW_TEST_DATA_DIR, 1);
@@ -116,8 +116,8 @@ void lighting_draw_span(int reciprocal_w, int x, int y, int count, int clip_left
     left[0x28/4] = x << 14;
     left[0x30/4] = reciprocal_w;
     right[0x28/4] = (x + count) << 14;
-    raster_textured_span(320, (intptr_t)framebuffer, (intptr_t)gradients,
-                        (intptr_t)left, (intptr_t)right, 1, 1, 0, clip, 88);
+    raster_textured_span(320, (char *)framebuffer, (char *)gradients,
+                        (char *)left, (char *)right, 1, 1, 0, clip, 88);
     memcpy(pixels, framebuffer + y * 320 + x, count * sizeof *pixels);
 }
 ushort lighting_draw_texel(int reciprocal_w, int x, int y)

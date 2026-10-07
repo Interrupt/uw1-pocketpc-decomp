@@ -1,5 +1,7 @@
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
-
+add_compile_options(-Wno-pointer-sign)
+# unity is a PUBLIC dependency of several diamond-shaped static test libraries; the duplicate is harmless.
+add_link_options(-Wl,-no_warn_duplicate_libraries)
 add_custom_target(unit_tests)
 add_library(unity STATIC "${PROJECT_SOURCE_DIR}/third_party/unity/src/unity.c")
 target_include_directories(unity PUBLIC "${PROJECT_SOURCE_DIR}/third_party/unity/src")
@@ -23,8 +25,6 @@ endfunction()
 
 function(uw_configure_test_target target)
   target_include_directories(${target} PUBLIC "${PROJECT_SOURCE_DIR}")
-  target_compile_options(${target} PRIVATE -Wno-deprecated-non-prototype
-    -Wno-int-conversion -Wno-pointer-to-int-cast)
   target_link_libraries(${target} PUBLIC unity)
 endfunction()
 
@@ -887,3 +887,9 @@ add_fixture_game_unit_test(sleep
   src/tmap.c:tilemap_lookup)
 target_sources(uw_test_sleep PRIVATE support/special_use_fixture.c)
 target_compile_definitions(uw_test_sleep PRIVATE UW_TEST_FULL_REST)
+
+# These fixtures own very large globals (a whole level's tile map, visibility ring buffers, ...).
+# As tentative (common) definitions ld caps their alignment and warns, so give them real storage.
+foreach(suite new_game traps visibility_walk)
+  target_compile_options(uw_test_${suite} PRIVATE -fno-common)
+endforeach()

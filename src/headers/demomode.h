@@ -5,17 +5,17 @@
 #define DEMOMODE_H
 
 /* Call once after SDL is initialized. No-op if UW_DEMO_FILE isn't set. */
-void demomode_init(void);
+void demomode_init();
 
 /* Call every time real events are pumped (uw_pump_events). Injects the
  * next queued input once its delay has elapsed; no-op once the file is
  * exhausted or if demo mode was never activated. */
-void demomode_pump(void);
+void demomode_pump();
 
 /* 1 while a demo file is still being played back (activated and not yet
  * exhausted/aborted), 0 otherwise. Lets the real event loop know a
  * physical keypress can be used to interrupt playback. */
-int demomode_active(void);
+int demomode_active();
 
 /* Stop demo playback immediately: drop any in-progress HOLD/TYPE/WAIT, release a still-held key,
    close the file, and hand control back to the live keyboard/mouse. Does NOT exit the process

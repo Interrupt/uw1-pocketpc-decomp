@@ -38,7 +38,7 @@ long ce_rand(void)
     rng_state = rng_state * 1664525u + 1013904223u;
     return (rng_state >> 1) & 0x7fffffff;
 }
-int roll_dice_sum(int count, int sides)
+int roll_dice_sum(int count, short sides)
 {
     int sum = 0;
     while (count--) sum += 1 + ce_rand() % sides;
@@ -49,7 +49,7 @@ byte *uw_load_critter_page_cached(int page, int tier)
     TEST_ASSERT_EQUAL_INT(0, page); /* Goblin variants share page 0. */
     return tier == 0 ? page_header : NULL;
 }
-undefined4 decode_critter_sprite_page(int page, int tier, int direction, int palette, int frame)
+int decode_critter_sprite_page(int page, int tier, short direction, short palette, short frame)
 {
     TEST_ASSERT_EQUAL_INT(0, page);
     palette_used = palette;
@@ -62,45 +62,45 @@ void *alloc_object_slot(int mobile)
     drops[spawned] = (ushort *)(DAT_002046c4 + (1000 - spawned - 256) * 8);
     return drops[spawned++];
 }
-void *tilemap_lookup(int x, int y)
+void *tilemap_lookup(short x, short y)
 {
     TEST_ASSERT_EQUAL_INT(36, x);
     TEST_ASSERT_EQUAL_INT(28, y);
     return (byte *)arena + (y * 64 + x) * 4;
 }
-void *resolve_object_link(ushort *link)
-{
+void *resolve_object_link(void *link_)
+{ ushort *link = (ushort *)link_;
     unsigned slot = *link >> 6;
     return !slot ? NULL : slot < 256 ? DAT_002046b8 + slot * 27
         : DAT_002046c4 + (slot - 256) * 8;
 }
-undefined4 object_ptr_in_arena(void) { return 1; }
+int object_ptr_in_arena(void *object) { (void)object; return 1; }
 void record_placement(ushort *object)
 {
     TEST_ASSERT_LESS_THAN_UINT(16, placed);
     types[placed++] = object[0] & 0x1ff;
     TEST_ASSERT_NOT_EQUAL(0x157, object[0] & 0x1ff); /* Shrine */
 }
-ushort *settle_dropped_object(ushort *object, int x, int y, int mode)
+ushort *settle_dropped_object(void *object, short x, short y, int mode)
 { record_placement(object); return object; }
-undefined4 drop_object_near_target(void *target, ushort *object, int distance, int mode)
+int drop_object_near_target(void *target, void *object, short distance, uint mode)
 { record_placement(object); return 1; }
-undefined4 place_object_in_world(int x, int y, int z, ushort *object, int distance, int mode)
+int place_object_in_world(uint x, uint y, int z, void *object, short distance, int mode)
 { record_placement(object); return 1; }
 
 void free_object_slot(void *object) {}
-undefined4 check_object_drop_height(void *object, void *source) { return 1; }
-int encode_object_slot_index(void) { return 225; }
-undefined4 play_sound_effect_at_object(int sound, void *object, int mode) { return 1; }
-undefined4 spawn_scheduled_effect_object(void) { return 0; }
-undefined4 roll_object_destroy_chance(void) { return 0; }
-void print_scroll_message_by_id(void) {}
-void set_pending_update_flags(void) {}
-void spawn_effect_debris_burst(void) {}
-void scheduler_relink_entry(void) {}
-void set_ambient_bias_without_light(void) {}
-undefined4 activate_area_hazard_object(void) { return 1; }
-ushort *discard_misplaced_object(void *list, void *object, int release) { return NULL; }
+int check_object_drop_height(ushort *object, ushort *source) { return 1; }
+int encode_object_slot_index(void *object) { (void)object; return 225; }
+int play_sound_effect_at_object(int sound, ushort *object, int mode) { return 1; }
+int spawn_scheduled_effect_object(ushort *source_object, int effect_group, int delay, byte animation_offset, short heading_adjust, short tile_x, short tile_y) { (void)source_object; (void)effect_group; (void)delay; (void)animation_offset; (void)heading_adjust; (void)tile_x; (void)tile_y; return 0; }
+int roll_object_destroy_chance(short base_chance, void *object) { (void)base_chance; (void)object; return 0; }
+void print_scroll_message_by_id(uint message_id) { (void)message_id;}
+void set_pending_update_flags(ushort flags) { (void)flags;}
+void spawn_effect_debris_burst(void *template, uint tile_x, int tile_y) { (void)template; (void)tile_x; (void)tile_y;}
+void scheduler_relink_entry(void *new_object, void *old_object) { (void)new_object; (void)old_object;}
+void set_ambient_bias_without_light(char light_level) { (void)light_level;}
+int activate_area_hazard_object(ushort *hazard, uint tile_x, int tile_y, int damage) { (void)hazard; (void)tile_x; (void)tile_y; (void)damage; return 1; }
+ushort *discard_misplaced_object(void *list, ushort *object, int release) { return NULL; }
 
 void creatures_fixture_reset(void)
 {

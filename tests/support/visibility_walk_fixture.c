@@ -30,7 +30,7 @@ static byte torch_effect[2];
 static int torch_equipped;
 char *DAT_00086df8 = character, *DAT_0023be74 = derived;
 char *g_selected_object;
-byte *g_scratch_object_ptr;
+ushort *g_scratch_object_ptr;
 undefined4 DAT_002020d8, DAT_0023bc98;
 /* DAT_00202800_backing's size here must track src/headers/objects.h's
    extern declaration (shrunk from 65536 to 256 by the "sizing pass"
@@ -39,7 +39,7 @@ undefined4 DAT_002020d8, DAT_0023bc98;
 undefined1 DAT_00086da8_backing[256], DAT_00202800_backing[256];
 unsigned char DAT_00085ac8_backing[16] = {5,6,7,8};
 int visibility_light_config_record, visibility_ambient_strength;
-void *get_equipped_item_at_slot(int slot)
+void *get_equipped_item_at_slot(short slot)
 {
     return torch_equipped && slot == 5 ? torch : NULL;
 }
@@ -47,21 +47,20 @@ void *get_scanned_object_class_effect_ptr(void)
 {
     return torch_effect;
 }
-int compute_object_weight(void) { return 0; }
-void request_weapon_swing_graphic(int category) {}
+int compute_object_weight(ushort *object) { (void)object; return 0; }
+void request_weapon_swing_graphic(char category) {}
 void reset_player_derived_state(void) {}
-void set_ambient_bias_with_light(int strength) {}
-void set_ambient_bias_without_light(int strength) { visibility_ambient_strength = strength; }
-undefined4 is_valid_equipment_slot_item(int item, int slot) { return 0; }
-undefined4 resolve_object_variant_or_special_link(void *object, void *type, void *level, void *result) { return 0; }
-undefined4 apply_equipped_item_effect(int type, int level, void *effects, int slot) { return 0; }
+void set_ambient_bias_with_light(char strength) {}
+void set_ambient_bias_without_light(char strength) { visibility_ambient_strength = strength; }
+int is_valid_equipment_slot_item(ushort item, short slot) { return 0; }
+int resolve_object_variant_or_special_link(void *object, void *type, void *level, void *result) { return 0; }
+int apply_equipped_item_effect(byte type, byte level, ushort *effects, int slot) { return 0; }
 void clear_object_pending_special_flag(void *object) {}
-void apply_equipment_effect_penalties(int effects) {}
+void apply_equipment_effect_penalties(uint effects) {}
 void update_screen_flicker_effect(int flicker) {}
 void force_locomotion_state_refresh(void) {}
-void apply_movement_mode_profile(int mode) {}
-void load_shading_level_config(record)
-char record;
+void apply_movement_mode_profile(byte mode) {}
+void load_shading_level_config(char record)
 {
     visibility_light_config_record = record;
     load_visibility_light_config(record);
