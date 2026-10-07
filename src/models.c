@@ -54,6 +54,13 @@ static int *DAT_000c8b00;
 // block (bounded at 0x15e=350, see the "Too many polys" error); indexes both the part-scratch
 // arrays and the final per-model output buffer's parts array.
 static int g_model_parse_part_count;
+/* Pointer-valued fields of the 0x67-byte per-PART record (see DAT_000c9dd8's comment below). The
+   original record held them in 4-byte slots at +0x00 (DAT_000c9dd8: start of this part's vertex
+   list inside DAT_000c4c38) and +0x4a (DAT_000c9e22: the part's name string inside DAT_000da480);
+   on a 64-bit host those truncated, so they live in these parallel arrays (indexed by part number)
+   instead. The 4-byte slots in the byte record are now unused. */
+static int *g_eparse_part_verts[0x160];
+static char *g_eparse_part_name[0x160];
 static int DAT_00084660;
 static int DAT_0008465c;
 static int DAT_00084670;
@@ -369,7 +376,10 @@ static undefined1 DAT_000d2ad2_backing[32768];
 #define DAT_000d2ad2 DAT_000d2ad2_backing[0]
 static undefined1 DAT_000d2ad3_backing[32768];
 #define DAT_000d2ad3 DAT_000d2ad3_backing[0]
-static undefined4 DAT_000d95d8;
+/* Was a lone `undefined4`, but ANIMATE fills it as an int array (`*piVar17++ = frame_index`, every
+   frame of every animation, up to the 0xd9768 table that follows): 0x190 bytes. */
+static int DAT_000d95d8_arr[100];
+#define DAT_000d95d8 DAT_000d95d8_arr[0]
 /* DAT_000d9768..DAT_000d977c (21 fields): same bug, same parser, same systematic-scan discovery as
    the two clusters above. */
 static undefined1 DAT_000d9768_backing[256];
@@ -2046,7 +2056,7 @@ void parse_e_model_file(char *path, byte *out_buffer, int flip_winding)
   undefined1 auStack_24c [4];
   undefined4 local_248;
   undefined4 ***pppuStack_244;
-  undefined4 ****local_240;
+  int local_240;
   int local_23c;
   undefined4 local_238;
   undefined4 local_234;
@@ -2057,21 +2067,21 @@ void parse_e_model_file(char *path, byte *out_buffer, int flip_winding)
   int local_220;
   undefined1 local_21c [4];
   undefined4 local_218;
-  intptr_t local_214;
+  int local_214;
   int local_210;
   int local_20c;
   int local_208;
   int local_204;
   undefined4 local_200;
   int local_1fc;
-  undefined4 ****local_1f8;
+  int local_1f8;
   int local_1f4;
   undefined4 local_1f0;
   undefined1 auStack_1ec [4];
   int local_1e8;
   int local_1e4;
   int local_1e0;
-  undefined4 ***local_1dc;
+  uint local_1dc;
   undefined4 local_1d8;
   undefined4 ***local_1d4;
   undefined4 local_1d0;
@@ -2375,31 +2385,22 @@ LAB_00022604:
                 (&DAT_000c9e26)[iVar10] = uVar1;
               }
               if (iVar4 < DAT_000db458) {
-                (&DAT_000c9e22)[iVar10] = (char)(uintptr_t)local_258;
-                (&DAT_000c9e23)[iVar10] = (char)((uint)(uintptr_t)local_258 >> 8);
-                (&DAT_000c9e24)[iVar10] = (char)((uint)(uintptr_t)local_258 >> 0x10);
-                (&DAT_000c9e25)[iVar10] = (char)((uint)(uintptr_t)local_258 >> 0x18);
+                g_eparse_part_name[iVar10 / 0x67] = (char *)local_258;
                 iVar4 = ce_strlen(local_258);
                 puVar16 = puVar16 + iVar4 + 1;
                 local_258 = puVar16;
               }
               else {
-                (&DAT_000c9e22)[iVar10] = 0;
-                (&DAT_000c9e23)[iVar10] = 0;
-                (&DAT_000c9e24)[iVar10] = 0;
+                g_eparse_part_name[iVar10 / 0x67] = NULL;
                 puVar16 = (undefined *)0x0;
-                (&DAT_000c9e25)[iVar10] = 0;
               }
               piVar17 = DAT_000c8b00;
               if (iVar5 == 0) {
 LAB_000218b8:
                 piVar12 = DAT_000c8b00 + 1;
-                (&DAT_000c9dd8)[iVar10] = (char)(uintptr_t)piVar12;
-                (&DAT_000c9dd9)[iVar10] = (char)((uint)(uintptr_t)piVar12 >> 8);
+                g_eparse_part_verts[iVar10 / 0x67] = (int *)piVar12;
                 iVar5 = 0;
                 DAT_000c8b00 = piVar12;
-                (&DAT_000c9dda)[iVar10] = (char)((uint)(uintptr_t)piVar12 >> 0x10);
-                (&DAT_000c9ddb)[iVar10] = (char)((uint)(uintptr_t)piVar12 >> 0x18);
                 iVar4 = ce_fscanf(local_25c,&DAT_000849a8,local_260,(uint)(uintptr_t)piVar12 >> 0x18,
                                      pppppuVar21,puVar13);
                 iVar3 = 0;
@@ -2464,10 +2465,8 @@ LAB_000218b8:
                   }
                   iVar5 = iVar5 >> 1;
                   if (iVar5 != 0) {
-                    puVar11 = (undefined4 *)
-                              ((intptr_t)*(int *)(&DAT_000c9dd8 + g_model_parse_part_count * 0x67) + iVar5 * 4);
-                    puVar8 = (undefined4 *)
-                             ((intptr_t)*(int *)(&DAT_000c9dd8 + g_model_parse_part_count * 0x67) + (iVar3 - iVar5) * 4);
+                    puVar11 = (undefined4 *)(g_eparse_part_verts[g_model_parse_part_count] + iVar5);
+                    puVar8 = (undefined4 *)(g_eparse_part_verts[g_model_parse_part_count] + (iVar3 - iVar5));
                     do {
                       iVar5 = iVar5 + -1;
                       uVar7 = puVar11[-1];
@@ -2510,10 +2509,7 @@ LAB_000218b8:
                 iVar5 = g_model_parse_part_count * 0x67;
                 piVar17 = DAT_000c8b00 + 1;
                 DAT_000c8b00 = piVar17;
-                (&DAT_000c9dd8)[iVar5] = (char)(uintptr_t)piVar17;
-                (&DAT_000c9dd9)[iVar5] = (char)((uint)(uintptr_t)piVar17 >> 8);
-                (&DAT_000c9dda)[iVar5] = (char)((uint)(uintptr_t)piVar17 >> 0x10);
-                (&DAT_000c9ddb)[iVar5] = (char)((uint)(uintptr_t)piVar17 >> 0x18);
+                g_eparse_part_verts[iVar5 / 0x67] = (int *)piVar17;
                 *piVar17 = local_1e0;
                 DAT_000c8b00 = DAT_000c8b00 + 1;
                 iVar5 = local_20c;
@@ -2569,10 +2565,7 @@ LAB_00021838:
                     *piVar17 = 1;
                     iVar5 = g_model_parse_part_count * 0x67;
                     DAT_000c8b00 = DAT_000c8b00 + 1;
-                    (&DAT_000c9dd8)[iVar5] = (char)(uintptr_t)DAT_000c8b00;
-                    (&DAT_000c9dd9)[iVar5] = (char)((uint)(uintptr_t)DAT_000c8b00 >> 8);
-                    (&DAT_000c9dda)[iVar5] = (char)((uint)(uintptr_t)DAT_000c8b00 >> 0x10);
-                    (&DAT_000c9ddb)[iVar5] = (char)((uint)(uintptr_t)DAT_000c8b00 >> 0x18);
+                    g_eparse_part_verts[iVar5 / 0x67] = (int *)DAT_000c8b00;
                     iVar5 = local_1f4;
                     goto LAB_00021838;
                   }
@@ -2618,10 +2611,7 @@ LAB_00021838:
                     iVar3 = g_model_parse_part_count * 0x67;
                     piVar17 = DAT_000c8b00 + 1;
                     DAT_000c8b00 = piVar17;
-                    (&DAT_000c9dd8)[iVar3] = (char)(uintptr_t)piVar17;
-                    (&DAT_000c9dd9)[iVar3] = (char)((uint)(uintptr_t)piVar17 >> 8);
-                    (&DAT_000c9dda)[iVar3] = (char)((uint)(uintptr_t)piVar17 >> 0x10);
-                    (&DAT_000c9ddb)[iVar3] = (char)((uint)(uintptr_t)piVar17 >> 0x18);
+                    g_eparse_part_verts[iVar3 / 0x67] = (int *)piVar17;
                     *piVar17 = local_1fc;
                     DAT_000c8b00 = DAT_000c8b00 + 1;
                     *DAT_000c8b00 = (int)(uintptr_t)local_1d4;
@@ -2684,11 +2674,7 @@ LAB_00021bec:
                 (&DAT_000c9ddd)[iVar6] = (char)((uint)iVar19 >> 8);
                 (&DAT_000c9dde)[iVar6] = (char)((uint)iVar19 >> 0x10);
                 (&DAT_000c9ddf)[iVar6] = (char)((uint)iVar19 >> 0x18);
-                uVar7 = *(undefined4 *)((char *)piVar17 + 0x4a);
-                (&DAT_000c9e22)[iVar6] = (char)uVar7;
-                (&DAT_000c9e23)[iVar6] = (char)((uint)uVar7 >> 8);
-                (&DAT_000c9e24)[iVar6] = (char)((uint)uVar7 >> 0x10);
-                (&DAT_000c9e25)[iVar6] = (char)((uint)uVar7 >> 0x18);
+                g_eparse_part_name[iVar6 / 0x67] = g_eparse_part_name[iVar10];
                 uVar7 = *(undefined4 *)((char *)piVar17 + 0x36);
                 (&DAT_000c9e0e)[iVar6] = (char)uVar7;
                 (&DAT_000c9e0f)[iVar6] = (char)((uint)uVar7 >> 8);
@@ -2696,17 +2682,13 @@ LAB_00021bec:
                 (&DAT_000c9e11)[iVar6] = (char)((uint)uVar7 >> 0x18);
                 (&DAT_000c9e28)[iVar6] = (char)piVar17[0x14];
                 (&DAT_000c9e26)[iVar6] = 0;
-                iVar5 = *piVar17;
+                piVar12 = g_eparse_part_verts[iVar10] + iVar19;
                 *DAT_000c8b00 = iVar19;
                 iVar6 = g_model_parse_part_count;
-                piVar12 = (int *)(intptr_t)(iVar5 + iVar19 * 4);
                 piVar9 = DAT_000c8b00 + 1;
                 iVar5 = g_model_parse_part_count * 0x67;
                 DAT_000c8b00 = piVar9;
-                (&DAT_000c9dd8)[iVar5] = (char)(uintptr_t)piVar9;
-                (&DAT_000c9dd9)[iVar5] = (char)((uint)(uintptr_t)piVar9 >> 8);
-                (&DAT_000c9dda)[iVar5] = (char)((uint)(uintptr_t)piVar9 >> 0x10);
-                (&DAT_000c9ddb)[iVar5] = (char)((uint)(uintptr_t)piVar9 >> 0x18);
+                g_eparse_part_verts[iVar5 / 0x67] = (int *)piVar9;
                 for (; iVar19 != 0; iVar19 = iVar19 + -1) {
                   piVar12 = piVar12 + -1;
                   *piVar9 = *piVar12;
@@ -2786,7 +2768,7 @@ LAB_0002226c:
               piVar17 = &DAT_000d95d8;
               do {
                 puVar13 = auStack_1ec;
-                pppppuVar21 = &local_1f8;
+                pppppuVar21 = (undefined4 *****)&local_1f8;
                 iVar5 = 0;
                 iVar4 = ce_fscanf(pvVar_fh,s__d__1s__d__d__1s_0008474c,&local_200,local_260,
                                      pppppuVar21,&local_1f0,puVar13);
@@ -2806,16 +2788,15 @@ LAB_0002226c:
                   (&DAT_000d9779)[iVar4] = (char)((uint)local_1f0 >> 8);
                   (&DAT_000d977a)[iVar4] = (char)((uint)local_1f0 >> 0x10);
                   (&DAT_000d977b)[iVar4] = (char)((uint)local_1f0 >> 0x18);
-                  pppppuVar21 = (undefined4 *****)local_1f8;
+                  pppppuVar21 = (undefined4 *****)(intptr_t)local_1f8;
                   uVar7 = local_1f0;
                   NKDbgPrintfW(s_anim__d___d__c__d__d___00084734,iVar3,local_200,local_260,local_1f8
                                ,local_1f0);
                   pvVar_fh = local_25c;
                   iVar4 = DAT_000db4e0 * 0x15;
-                  (&DAT_000d9770)[iVar4] = (char)(uintptr_t)piVar17;
-                  (&DAT_000d9771)[iVar4] = (char)((uint)(uintptr_t)piVar17 >> 8);
-                  (&DAT_000d9772)[iVar4] = (char)((uint)(uintptr_t)piVar17 >> 0x10);
-                  (&DAT_000d9773)[iVar4] = (char)((uint)(uintptr_t)piVar17 >> 0x18);
+                  /* The original stored the frame-list pointer (piVar17, into DAT_000d95d8) in a
+                     4-byte slot at DAT_000d9770 here; nothing in this port reads it back, and a
+                     pointer cannot live in 4 bytes, so the store is dropped. */
                   do {
                     ce_fscanf(pvVar_fh,s__d_1s_000848c8,&local_1e8,local_260,pppppuVar21,uVar7,
                                  puVar13);
@@ -2940,7 +2921,7 @@ LAB_check_clusters:
                   if (iVar5 == 0) {
                     iVar4 = ce_fscanf(pvVar_fh,s__1s__d__d__d_1s_000847e4,&local_234,&local_250,
                                          &local_238,&local_230,local_260);
-                    local_240 = (undefined4 ****)0xffffffff;
+                    local_240 = -1;
                     local_248 = 0xffffffff;
                   }
                   else {
@@ -2948,7 +2929,7 @@ LAB_check_clusters:
                                          &local_250,&local_248,&local_240,&local_238,&local_230,
                                          local_260);
                   }
-                  pppppuVar21 = (undefined4 *****)local_240;
+                  pppppuVar21 = (undefined4 *****)(intptr_t)local_240;
                   NKDbgPrintfW(s__c__d__d__d__d__d___c__000847cc,local_234,local_250,local_248,
                                local_240,local_238,local_230,(int)local_260[0]);
                   iVar10 = DAT_000db4d8 * 0x16;
