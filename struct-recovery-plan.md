@@ -32,6 +32,57 @@ Two different problems currently hide behind identical-looking
 **Don't try to structify #2.** The first job of touching any new
 `_backing` global is deciding which bucket it's in — see Step 0.
 
+## Current migration: structs-attempt-two (2026-10-07)
+
+This branch uses Coccinelle patches in `tools/coccinelle/`, with UW1-only
+reference selection and independent layout tests. The historical status below
+is retained as prior research; it does not describe the current code.
+
+* `g_player_object` is now `uw_mobile_object_t *`; player reads and byte writes
+  have begun conversion. Temporary word/byte casts and untyped caller APIs
+  remain and must not be treated as completion.
+* COMOBJ storage is now `uw_object_type_props_t g_object_type_props[512]`,
+  loaded through struct fields. Most scalar lookups use properties; the
+  historical class-relative aliases and diagnostic/fixture byte views still
+  need their final sweep. Ownership was
+  incorrectly named `is_container`; its native offset-8 bit 7 is now
+  `can_have_owner`. The 11-byte UW1 disk format expands to 13 native bytes.
+* Mobile heading/hunger padding is now explicit; the old struct placed hunger
+  at bit 5 of offset 0x18. NPC target X/Y are six-bit fields at 0x0f, and swing
+  charge occupies bits 12-15; the old tentative seven-bit height was incorrect.
+* A separate `uw_projectile_object_t` documents the alternate mobile-slot
+  layout. The non-NPC physics tick now uses it; the other users still require
+  conversion.
+* Eleven object allocation/lookup/relocation APIs return header pointers.
+  Chain searches and list insertion, append, unlink and recursive deletion
+  now use typed object receivers and named common-header fields. Link cursors
+  remain packed word pointers. Many other caller locals and API parameters
+  still use raw pointers; incompatible-pointer diagnostics expose those sites.
+* `object_core` exercises actual creation, both object arena strides, nested
+  search and list mutation against independent byte/link expectations.
+  It also runs actual nested weight traversal and stack eligibility checks.
+* Container disposal, rune insertion and stack inspection APIs are typed.
+  A function-scoped sweep exposes remaining audited header-word accesses as
+  named packed words. Locals and parameters throughout the remaining APIs
+  still require conversion; header casts alone are not the requested end state.
+* The current mobile-slot pointer is typed, with many physical byte fields
+  and NPC-only goal/status/target reads converted through Coccinelle. Context
+  setters and goal/target writers use mobile struct pointers/fields. Temporary
+  word casts still remain. `npc_state` compares actual setter results with
+  independent packed byte expectations, including unchanged target flags.
+* UW1 monster properties now use 64 packed `uw_monster_type_props_t` rows,
+  with typed current NPC template pointers. Fixed field aliases and most
+  template offsets are replaced by properties; attacks, armor, trading and
+  spell selection have dedicated Coccinelle rules. Loader tests compare all
+  3072 bytes with OBJECTS.DAT. Other class-property tables, player/despawn
+  template pointers and remaining dynamic byte accesses still need conversion.
+* `object_layout` exhaustively checks packed field reads, writes and neighbour
+  preservation. `object_semantic_patches` checks patch coverage, unrelated
+  buffers and idempotence when spatch is installed.
+
+See `tools/coccinelle/README.md` for the full remaining scope and source links.
+Do not close the full migration based on the COMOBJ/player subset alone.
+
 ## Status (updated 2026-09-29, code-cleanup-first-pass branch)
 
 Note: uw.c is now being split into src/*.c topic files in parallel

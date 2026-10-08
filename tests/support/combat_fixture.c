@@ -2,7 +2,7 @@
 #include "combat_fixture.h"
 
 /* Local service declarations; game function bodies link these mocks. */
-int encode_object_slot_index(void *object);
+int encode_object_slot_index(const uw_object_hdr_t *object);
 void refresh_experience_display(void);
 void set_pending_music_track(byte track);
 uint read_realtime_clock_units(void);
@@ -23,17 +23,23 @@ void project_position_by_heading(int heading, short distance, void *x, void *y);
 void collision_height_envelope(int mode, int collision);
 void collision_build_height_field(uint step_limit);
 void sort_collision_candidates(void);
-void * get_object_record_by_slot_index(short slot);
-int object_ptr_in_arena(void *object);
-void * spawn_new_object(uint type, int mobile);
+uw_object_hdr_t *get_object_record_by_slot_index(short slot);
+int object_ptr_in_arena(const uw_object_hdr_t *object);
+uw_object_hdr_t *spawn_new_object(uint type, int mobile);
 uint scheduler_add_entry(uint slot, int delay, byte frame, byte x, byte y);
 void * tilemap_lookup(short x, short y);
-void object_list_append_tail(void *head, void *object);
-void free_object_slot(void *object);
+void object_list_append_tail(ushort *head, uw_object_hdr_t *object);
+void free_object_slot(uw_object_hdr_t *object);
 int read_file_handle(int handle, void *destination, uint count);
 
 byte mobile_objects[256 * 27];
-undefined1 DAT_002027d0_backing[48];
+uw_ranged_type_props_t g_ranged_type_props[16];
+uw_melee_type_props_t g_melee_type_props[16];
+uw_armor_type_props_t g_armor_type_props[32];
+uw_container_type_props_t g_container_type_props[16];
+uw_light_type_props_t g_light_type_props[16];
+uw_animation_type_props_t g_animation_type_props[16];
+undefined1 DAT_00202a28_backing[256];
 byte DAT_002046d8, DAT_002046dc;
 int DAT_002046e8;
 undefined1 DAT_002046e0, DAT_002046e4;
@@ -43,7 +49,7 @@ char *DAT_002046b8 = (char *)mobile_objects;
 
 byte *DAT_00202c6c;
 
-undefined1 DAT_00202c90_backing[8192];
+uw_object_type_props_t g_object_type_props[512];
 
 undefined1 DAT_00202c38_backing[1536];
 
@@ -77,9 +83,9 @@ undefined4 DAT_001005d8;
 
 char DAT_00084f18_backing[5] = {5, 3, 1, 7, 0};
 
-undefined1 DAT_001007d0_backing[3072];
+uw_monster_type_props_t g_monster_type_props[64];
 
-undefined1 DAT_001007d4_backing[8192];
+static uw_monster_type_props_t empty_monster_template;
 
 byte player_stats[256];
 
@@ -100,11 +106,11 @@ static char character_attributes[256];
 
 ushort *expected_effect_target;
 
-ushort *g_player_object;
+uw_mobile_object_t *g_player_object;
 
-char *DAT_0023be74, *DAT_00101404;
+char *DAT_0023be74;
+uw_monster_type_props_t *DAT_00101404;
 
-undefined DAT_001007d9_backing[8192];
 
 char DAT_000853d0, DAT_0010194c;
 
@@ -120,7 +126,7 @@ ushort DAT_00101910, DAT_0010141c;
 
 uint music_track;
 
-int encode_object_slot_index(void *object)
+int encode_object_slot_index(const uw_object_hdr_t *object)
 {
     if (object == wall_effect) return 0x100;
     for (int slot = 1; slot < 256; slot++)
@@ -301,13 +307,15 @@ void try_combine_or_stow_object(void *actor, ushort *object, int stow) { (void)a
 #ifndef UW_TEST_NPC_COMBAT
 uint rand_below(int limit) { (void)limit; TEST_FAIL_MESSAGE("Unexpected random destruction"); return 0; }
 #endif
-void try_empty_container(ushort *container, int owned_by_player) { (void)container; (void)owned_by_player; TEST_FAIL_MESSAGE("Unexpected container emptying"); }
+void try_empty_container(uw_object_hdr_t *container, int owned_by_player) { (void)container; (void)owned_by_player; TEST_FAIL_MESSAGE("Unexpected container emptying"); }
 int roll_object_destroy_chance(short base_chance, void *object) { (void)base_chance; (void)object; TEST_FAIL_MESSAGE("Unexpected destroy chance"); return 0; }
 int reset_burnt_out_item_state(char *tile_link, void *object) { (void)tile_link; (void)object; TEST_FAIL_MESSAGE("Unexpected burnt item"); return 0; }
-void free_linked_object_recursive(void *link_field) { (void)link_field; TEST_FAIL_MESSAGE("Unexpected recursive cleanup"); }
-ushort * settle_dropped_object(void *object, short tile_x, short tile_y, int force) { (void)object; (void)tile_x; (void)tile_y; (void)force; TEST_FAIL_MESSAGE("Unexpected settling"); return 0; }
+void free_linked_object_recursive(ushort *link_field) { (void)link_field; TEST_FAIL_MESSAGE("Unexpected recursive cleanup"); }
+uw_object_hdr_t *settle_dropped_object(void *object, short tile_x,
+				       short tile_y, int force) { (void)object; (void)tile_x; (void)tile_y; (void)force; TEST_FAIL_MESSAGE("Unexpected settling"); return 0; }
 void adjust_door_close_animation_delay(ushort *door) { (void)door; TEST_FAIL_MESSAGE("Unexpected closing door"); }
-ushort * find_object_in_chain(void *head_, int recurse, int category, int family, short subtype)
+uw_object_hdr_t *find_object_in_chain(ushort **head_, int recurse,
+                                      int category, int family, short subtype)
 { ushort **head = (ushort **)head_;
     TEST_ASSERT_EQUAL_PTR(wall_effect+3, *head);
     TEST_ASSERT_EQUAL_INT(1, recurse);
@@ -316,7 +324,7 @@ ushort * find_object_in_chain(void *head_, int recurse, int category, int family
     TEST_ASSERT_EQUAL_INT(15, subtype);
     return (**head & 0xffc0) ? object_at(4) : NULL;
 }
-void object_list_unlink(void *head, void *object)
+void object_list_unlink(ushort *head, uw_object_hdr_t *object)
 {
     TEST_ASSERT_EQUAL_PTR(wall_effect+3, head);
     TEST_ASSERT_EQUAL_PTR(object_at(4), object);
@@ -351,7 +359,7 @@ void sort_collision_candidates(void)
     DAT_00202c6c[0x16] = 0;
 }
 
-void * get_object_record_by_slot_index(short slot)
+uw_object_hdr_t *get_object_record_by_slot_index(short slot)
 {
     if (slot == 0x100) return wall_effect;
     TEST_ASSERT_GREATER_THAN_INT(0, slot);
@@ -361,10 +369,10 @@ void * get_object_record_by_slot_index(short slot)
     return mobile_objects + slot * 27;
 }
 
-int object_ptr_in_arena(void *object)
+int object_ptr_in_arena(const uw_object_hdr_t *object)
 { TEST_ASSERT_NOT_NULL(object); return object != wall_effect; }
 
-void * spawn_new_object(uint type, int mobile)
+uw_object_hdr_t *spawn_new_object(uint type, int mobile)
 {
     TEST_ASSERT_EQUAL_HEX16(0x1cb, type);
     TEST_ASSERT_EQUAL_INT(0, mobile);
@@ -392,14 +400,14 @@ void * tilemap_lookup(short x, short y)
     return wall_tile;
 }
 
-void object_list_append_tail(void *head, void *object)
+void object_list_append_tail(ushort *head, uw_object_hdr_t *object)
 {
     TEST_ASSERT_EQUAL_PTR(wall_tile + 2, head);
     TEST_ASSERT_EQUAL_PTR(wall_effect, object);
     wall_collision++;
 }
 
-void free_object_slot(void *object)
+void free_object_slot(uw_object_hdr_t *object)
 { TEST_ASSERT_EQUAL_PTR(object_at(4), object); discarded_links++; }
 
 FILE *monster_data;
@@ -443,13 +451,13 @@ void combat_fixture_reset(void)
     DAT_00100608 = 0;
     combat_random_roll = 1;
     memset(mobile_objects, 0, sizeof(mobile_objects));
-    memset(DAT_002027d0_backing, 0, sizeof DAT_002027d0_backing);
+    memset(((byte *)g_ranged_type_props), 0, sizeof g_ranged_type_props);
     DAT_002046d8=DAT_002046dc=DAT_002046e0=DAT_002046e4=0;
     DAT_002046e8=0;
     door_triggers=door_scheduled=discarded_links=0;
     DAT_002020a0=DAT_002020a4=0;
     DAT_002046c4=(char *)wall_effect;
-    memset(DAT_00202c90_backing, 0, sizeof(DAT_00202c90_backing));
+    memset(((byte *)g_object_type_props), 0, sizeof(g_object_type_props));
     memset(DAT_00202c38_backing, 0, sizeof(DAT_00202c38_backing));
     DAT_00100610 = 1;
     DAT_00100620 = 0;
@@ -481,12 +489,12 @@ void combat_fixture_reset(void)
     DAT_0023c1d8 = DAT_0023c1dc = DAT_0023c1e0 = 0;
     DAT_0023c150 = DAT_0023c220 = DAT_0023c25c = 0;
     DAT_0023c21c = 7;
-    g_player_object = object_at(1);
+    g_player_object = (uw_mobile_object_t *)object_at(1);
     DAT_0023be74 = (char *)object_at(1);
-    DAT_00101404 = (char *)DAT_001007d4_backing;
-    memset(DAT_001007d0_backing, 0, sizeof(DAT_001007d0_backing));
-    memset(DAT_001007d4_backing, 0, sizeof(DAT_001007d4_backing));
-    memset(DAT_001007d9_backing, 0, sizeof(DAT_001007d9_backing));
+    DAT_00101404 = &empty_monster_template;
+    memset(((byte *)g_monster_type_props), 0,
+           sizeof g_monster_type_props);
+    memset(&empty_monster_template, 0, sizeof empty_monster_template);
     expected_effect_target = object_at(2);
     DAT_0023b82c = (char *)mobile_objects;
     object_at(1)[0] = 0x40;

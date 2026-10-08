@@ -1426,7 +1426,7 @@ LAB_0003c940:
         iVar7 = iVar7 + 0x1f;
       }
       iVar7 = check_object_placement_clearance(0x7f,1,(int)(short)(iVar7 >> 5),(int)(short)(iVar8 >> 5),
-                           *(byte *)((char *)g_player_object + 2) & 0x7f,uVar5 | uVar10,8);
+                           g_player_object->hdr.zpos,uVar5 | uVar10,8);
       if ((iVar7 == 0) ||
          ((((uVar10 == 0 && (uVar3 = (uint)DAT_00202c68, uVar3 != 1)) && (uVar3 != DAT_00202084)) &&
           ((uVar3 != 0x10 || (uVar5 == 0)))))) goto LAB_0003cdf8;
@@ -1442,26 +1442,25 @@ LAB_0003c940:
         DAT_00202080 = (short)iVar9;
         object_list_insert_head(DAT_002029cc + iVar7 * 4 + 2,g_player_object);
         uVar6 = DAT_00204880 & 0x3f00;
-        uVar5 = *(ushort *)((char *)g_player_object + 0x16) & 0x3ff;
-        *(char *)((char *)g_player_object + 0x16) = (char)uVar5;
-        *(byte *)((char *)g_player_object + 0x17) =
-             (byte)(uVar5 >> 8) | (byte)((uint)(((int)(short)uVar6 >> 8) << 10) >> 8);
-        uVar5 = *(ushort *)((char *)g_player_object + 0x16) & 0xfc0f |
+        uVar5 = g_player_object->tile_word & 0x3ff;
+        g_player_object->tile_word_low = (byte)(char)uVar5;
+        g_player_object->tile_word_high =
+          (byte)(uVar5 >> 8) | (byte)((uint)(((int)(short)uVar6 >> 8) << 10) >> 8);
+        uVar5 = g_player_object->tile_word & 0xfc0f |
                 ((int)(short)(DAT_00204882 & 0x3f00) >> 8) << 4;
-        *(char *)((char *)g_player_object + 0x16) = (char)uVar5;
-        *(char *)((char *)g_player_object + 0x17) = (char)(uVar5 >> 8);
+        g_player_object->tile_word = (ushort)uVar5;
         uVar5 = local_40;
       }
       uVar6 = DAT_00204880 & 0xe0;
-      uVar3 = *(ushort *)((char *)g_player_object + 2) & 0x1fff;
-      *(char *)((char *)g_player_object + 2) = (char)uVar3;
-      *(byte *)((char *)g_player_object + 3) =
-           (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar6 >> 5) << 0xd) >> 8);
+      uVar3 = g_player_object->hdr.position_word & 0x1fff;
+      g_player_object->hdr.position_word_low = (byte)(char)uVar3;
+      g_player_object->hdr.position_word_high =
+        (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar6 >> 5) << 0xd) >> 8);
       uVar6 = DAT_00204882 & 0xe0;
-      uVar3 = *(ushort *)((char *)g_player_object + 2) & 0xe3ff;
-      *(char *)((char *)g_player_object + 2) = (char)uVar3;
-      *(byte *)((char *)g_player_object + 3) =
-           (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar6 >> 5) << 10) >> 8);
+      uVar3 = g_player_object->hdr.position_word & 0xe3ff;
+      g_player_object->hdr.position_word_low = (byte)(char)uVar3;
+      g_player_object->hdr.position_word_high =
+        (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar6 >> 5) << 10) >> 8);
       if (getenv("UW_DEBUG_STEPHEIGHT"))
         fprintf(stderr, "[stepsnap] uVar10=%u uVar5=%u cur_z=%d DAT_00202c30=%d snap=%d\n",
                 uVar10, uVar5, (int)DAT_00204884, (int)DAT_00202c30,
@@ -1469,8 +1468,8 @@ LAB_0003c940:
       if (((uVar10 == 0) && (uVar5 == 0)) || (((int)DAT_00204884 >> 3) + -8 <= (int)DAT_00202c30)) {
         uVar1 = *(undefined2 *)((char *)g_player_object + 2);
         bVar2 = (byte)uVar1;
-        *(byte *)((char *)g_player_object + 2) = (bVar2 ^ (byte)DAT_00202c30) & 0x7f ^ bVar2;
-        *(char *)((char *)g_player_object + 3) = (char)((ushort)uVar1 >> 8);
+        g_player_object->hdr.position_word_low = (bVar2 ^ (byte)DAT_00202c30) & 0x7f ^ bVar2;
+        g_player_object->hdr.position_word_high = (byte)(char)((ushort)uVar1 >> 8);
         DAT_00204884 = DAT_00202c30 << 3;
       }
       else if (g_fall_accel == 0 && uVar5 == 0) {
@@ -1478,9 +1477,9 @@ LAB_0003c940:
       }
       set_locomotion_state((int)DAT_00202c68,0);
       uVar10 = read_realtime_clock_units();
-      uVar5 = *(ushort *)((char *)g_player_object + 0xb) & 0xfff;
-      *(char *)((char *)g_player_object + 0xb) = (char)uVar5;
-      *(byte *)((char *)g_player_object + 0xc) = (byte)(uVar5 >> 8) | (byte)(((uVar10 & 0xc0) << 6) >> 8);
+      uVar5 = g_player_object->goal_word & 0xfff;
+      g_player_object->goal_word_low = (byte)(char)uVar5;
+      g_player_object->goal_word_high = (byte)(uVar5 >> 8) | (byte)(((uVar10 & 0xc0) << 6) >> 8);
       saved_scratch = DAT_00202c6c;
       DAT_00202c6c = (byte *)&local_3c;
       local_32 = 1;
@@ -1496,7 +1495,7 @@ LAB_0003c940:
         iVar7 = iVar7 + 0x1f;
       }
       local_3a = (undefined2)(iVar7 >> 5);
-      local_38 = *(byte *)((char *)g_player_object + 2) & 0x7f;
+      local_38 = g_player_object->hdr.zpos;
       collision_height_envelope(0,0);
       sort_collision_candidates();
       iVar8 = (int)*(char *)(DAT_00202c6c + 0xb);
@@ -1508,7 +1507,7 @@ LAB_0003c940:
              ARM ABI, where resolve_object_link's caller apparently re-read some other value out of
              r1 right after the call (Ghidra folded it into a fake 64-bit return value, r0:r1). */
           if (uVar11 == 0) break;
-          if ((*uVar11 & 0x1ff) == 0x1a0) {
+          if ((((uw_object_hdr_t *)uVar11)->item_id) == 0x1a0) {
             /* Was followed by `iVar8 = extraout_r1;` -- same bug as the sibling fix just above in
                this function (resolve_object_link's own high-bits carry), but via a different,
                unrelated callee... */
@@ -1536,12 +1535,11 @@ LAB_0003c920:
       else {
         DAT_00201c70 = (DAT_00201c70 & 0xe000) + (ushort)(0 < direction) * 0x2000;
       }
-      uVar10 = *(ushort *)((char *)g_player_object + 2) & 0xfc7f | ((int)(short)DAT_00201c70 >> 0xd & 7U) << 7;
-      *(char *)((char *)g_player_object + 2) = (char)uVar10;
-      *(char *)((char *)g_player_object + 3) = (char)(uVar10 >> 8);
-      *(byte *)((char *)g_player_object + 0x18) =
-           ((byte)(DAT_00201c70 >> 8) ^ *(byte *)((char *)g_player_object + 0x18)) & 0x1f ^
-           *(byte *)((char *)g_player_object + 0x18);
+      uVar10 = g_player_object->hdr.position_word & 0xfc7f | ((int)(short)DAT_00201c70 >> 0xd & 7U) << 7;
+      g_player_object->hdr.position_word = (ushort)uVar10;
+      g_player_object->heading_flags =
+        ((byte)(DAT_00201c70 >> 8) ^ g_player_object->heading_flags) & 0x1f ^
+         g_player_object->heading_flags;
       saved_scratch = DAT_00202c6c;
     }
     DAT_00202c6c = saved_scratch;

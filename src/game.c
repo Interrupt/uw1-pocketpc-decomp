@@ -617,36 +617,36 @@ void reset_player_object_record()
   ushort uVar1;
 
   ce_memset(g_player_object,0,0x1b);
-  *(byte *)((char *)g_player_object + 3) = (byte)g_player_object[3] & 0x3f;
-  *(undefined1 *)((char *)g_player_object + 7) = 0;
-  *(undefined1 *)((char *)g_player_object + 0xd) = 0xfd;
-  uVar1 = *g_player_object;
-  *(char *)g_player_object = (char)(uVar1 & 0x7fff);
-  *(char *)((char *)g_player_object + 1) = (char)((uVar1 & 0x7fff) >> 8);
-  uVar1 = *g_player_object;
-  *(char *)g_player_object = (char)uVar1;
-  *(byte *)((char *)g_player_object + 1) = (byte)(uVar1 >> 8) | 0x20;
-  uVar1 = *g_player_object;
-  *(char *)g_player_object = (char)(uVar1 & 0xbfff);
-  *(char *)((char *)g_player_object + 1) = (char)((uVar1 & 0xbfff) >> 8);
-  uVar1 = g_player_object[1];
-  *(char *)((char *)g_player_object + 1) = (char)(uVar1 & 0xfc7f);
-  *(char *)((char *)g_player_object + 3) = (char)((uVar1 & 0xfc7f) >> 8);
-  *(byte *)((char *)g_player_object + 0xc) = (byte)g_player_object[0xc] & 0xe0;
-  uVar1 = g_player_object[2];
-  *(char *)((char *)g_player_object + 2) = (char)(uVar1 & 0xffc0);
-  *(char *)((char *)g_player_object + 5) = (char)((uVar1 & 0xffc0) >> 8);
-  *(byte *)((char *)g_player_object + 2) = (byte)g_player_object[2] & 0x3f;
-  *(undefined1 *)((char *)g_player_object + 5) = 0;
-  uVar1 = g_player_object[3];
-  *(char *)((char *)g_player_object + 3) = (char)(uVar1 & 0xffc0);
-  *(char *)((char *)g_player_object + 7) = (char)((uVar1 & 0xffc0) >> 8);
-  *(byte *)((char *)g_player_object + 3) = (byte)g_player_object[3] & 0x3f;
-  *(undefined1 *)((char *)g_player_object + 7) = 0;
-  *(undefined1 *)((char *)g_player_object + 0x11) = 0;
-  uVar1 = *g_player_object;
-  *(undefined1 *)g_player_object = 0x7f;
-  *(byte *)((char *)g_player_object + 1) = (byte)(uVar1 >> 8) & 0xfe;
+  g_player_object->hdr.position_word_high = g_player_object->hdr.owner;
+  g_player_object->hdr.link_word_high = 0;
+  g_player_object->status_word_low = 0xfd;
+  uVar1 = g_player_object->hdr.type_flags;
+  g_player_object->hdr.type_flags_low = (byte)(char)(uVar1 & 0x7fff);
+  g_player_object->hdr.type_flags_high = (byte)(char)((uVar1 & 0x7fff) >> 8);
+  uVar1 = g_player_object->hdr.type_flags;
+  g_player_object->hdr.type_flags_low = (byte)(char)uVar1;
+  g_player_object->hdr.type_flags_high = (byte)(uVar1 >> 8) | 0x20;
+  uVar1 = g_player_object->hdr.type_flags;
+  g_player_object->hdr.type_flags_low = (byte)(char)(uVar1 & 0xbfff);
+  g_player_object->hdr.type_flags_high = (byte)(char)((uVar1 & 0xbfff) >> 8);
+  uVar1 = g_player_object->hdr.position_word;
+  g_player_object->hdr.type_flags_high = (byte)(char)(uVar1 & 0xfc7f);
+  g_player_object->hdr.position_word_high = (byte)(char)((uVar1 & 0xfc7f) >> 8);
+  g_player_object->goal_word_high = g_player_object->heading_flags & 0xe0;
+  uVar1 = g_player_object->hdr.chain_word;
+  g_player_object->hdr.position_word_low = (byte)(char)(uVar1 & 0xffc0);
+  g_player_object->hdr.chain_word_high = (byte)(char)((uVar1 & 0xffc0) >> 8);
+  g_player_object->hdr.position_word_low = g_player_object->hdr.quality;
+  g_player_object->hdr.chain_word_high = 0;
+  uVar1 = g_player_object->hdr.link_word;
+  g_player_object->hdr.position_word_high = (byte)(char)(uVar1 & 0xffc0);
+  g_player_object->hdr.link_word_high = (byte)(char)((uVar1 & 0xffc0) >> 8);
+  g_player_object->hdr.position_word_high = g_player_object->hdr.owner;
+  g_player_object->hdr.link_word_high = 0;
+  g_player_object->recent_damage = 0;
+  uVar1 = g_player_object->hdr.type_flags;
+  g_player_object->hdr.type_flags_low = 0x7f;
+  g_player_object->hdr.type_flags_high = (byte)(uVar1 >> 8) & 0xfe;
   return;
 }
 
@@ -681,7 +681,7 @@ void init_gameplay_session()
   DAT_002048b8 = check_and_reset_landing_state;
   DAT_002048b2 = 0x1100;
   DAT_002048b0 = 0;
-  g_player_object = (ushort *)DAT_0023b82c;
+  g_player_object = (uw_mobile_object_t *)(ushort *)DAT_0023b82c;
   load_shading_level_config(0);
   DAT_0023be8c = 0;
   DAT_00086df8 = &DAT_0023bca8;
@@ -692,9 +692,9 @@ void init_gameplay_session()
      per-tick call sites of scheduler_tick... */
   DAT_000879ac = 1;
   reset_player_object_record();
-  iVar1 = (*g_player_object & 0x3f) * 0x30;
+  iVar1 = (g_player_object->hdr.type_flags & 0x3f) * 0x30;
   DAT_0023be74 = &DAT_001007d0 + iVar1;
-  g_player_object[8] = (&g_monster_max_stats_table)[iVar1];
+  ((ushort *)g_player_object)[8] = g_monster_type_props[(iVar1) / 0x30].max_hp;
   if (DAT_00201c74 == 0) {
     DAT_00201c74 = register_interned_string(DAT_00086df8,0x7d);
   }

@@ -122,14 +122,14 @@ void dispatch_object_action(ushort *object, int mode)
   if (object == (ushort *)0x0) {
     return;
   }
-  iVar9 = (*object & 0x1ff) * 0xd;
-  if (!g_object_type_props[*object & 0x1ff].has_look_description) {
-    if ((*object & 0x1f0) == 0x160) {
+  iVar9 = (((uw_object_hdr_t *)object)->item_id) * 0xd;
+  if (!g_object_type_props[((uw_object_hdr_t *)object)->item_id].has_look_description) {
+    if ((((uw_object_hdr_t *)object)->type_flags & 0x1f0) == 0x160) {
       look_at_inscribed_object(object,mode);
     }
     goto LAB_00048b58;
   }
-  if (((short)mode == 3) && (iVar5 = identify_mushroom_type(object,&DAT_00202c90 + iVar9), iVar5 != 0)) {
+  if (((short)mode == 3) && (iVar5 = identify_mushroom_type(object,&g_object_type_props[iVar9 / 0xd]), iVar5 != 0)) {
     return;
   }
   /* This copied "You see " into acStack_85978 (a wildly oversized, 547012-byte local Ghidra
@@ -144,21 +144,21 @@ void dispatch_object_action(ushort *object, int mode)
     cVar10 = acStack_ac[0];
   }
   acStack_9c[0] = '\0';
-  if ((*object & 0x1c0) == 0x40) {
+  if ((((uw_object_hdr_t *)object)->type_flags & 0x1c0) == 0x40) {
     build_creature_look_text(object,acStack_7c);
     return;
   }
   iVar5 = 0;
-  if ((object[2] & 0x3f) != 0) {
-    if (((&DAT_00202c97)[iVar9] & 0xc) == 0xc) {
+  if ((((uw_object_hdr_t *)object)->quality) != 0) {
+    if ((g_object_type_props[iVar9 / 0xd].quality_flags & 0xc) == 0xc) {
       sVar4 = 5;
     }
     else {
-      sVar4 = (object[2] >> 4 & 3) + 1;
+      sVar4 = (((uw_object_hdr_t *)object)->chain_word >> 4 & 3) + 1;
     }
     iVar5 = (int)sVar4;
   }
-  pcVar6 = (char *)get_message_string(((byte)(&DAT_00202c9b)[iVar9] & 0xf) * 6 + iVar5 | 0xa00);
+  pcVar6 = (char *)get_message_string((g_object_type_props[iVar9 / 0xd].quality_type) * 6 + iVar5 | 0xa00);
   if (pcVar6 != (char *)0x0) {
     cVar2 = *pcVar6;
     if (cVar2 != '\0') {
@@ -168,9 +168,9 @@ void dispatch_object_action(ushort *object, int mode)
     }
     mode = (int)(short)mode;
   }
-  if ((((*object & 0x8000) == 0) || (uVar3 = object[3], (uVar3 & 0x8000) != 0)) ||
-     ((uVar3 & 0xffc0) < 0x41)) {
-    if ((cVar10 != '\0') && (((&DAT_00202c9b)[iVar9] & 0xf) != 0xd)) {
+  if ((((((uw_object_hdr_t *)object)->type_flags & 0x8000) == 0) || (uVar3 = ((uw_object_hdr_t *)object)->link_word, (uVar3 & 0x8000) != 0)) ||
+      ((uVar3 & 0xffc0) < 0x41)) {
+    if ((cVar10 != '\0') && ((g_object_type_props[iVar9 / 0xd].quality_type) != 0xd)) {
       if (((cVar10 == 'a') || ((cVar10 == 'e' || (cVar10 == 'i')))) ||
          (cVar10 == 'o' || cVar10 == 'u')) {
         puVar8 = &DAT_00085244;
@@ -200,8 +200,8 @@ LAB_000489fc:
   iVar9 = ce_strlen(acStack_7c);
   build_object_display_name(acStack_7c + iVar9,object,cVar10 == '\0',uVar11);
   append_object_special_name(object,mode,acStack_7c);
-  if (((g_object_type_props[*object & 0x1ff].is_container) &&
-      (bVar1 = (byte)object[3], (bVar1 & 0x3f) != 0)) && ((bVar1 & 0x1f) < 0x1c)) {
+  if (((g_object_type_props[((uw_object_hdr_t *)object)->item_id].can_have_owner) &&
+       (bVar1 = (byte)((uw_object_hdr_t *)object)->link_word, (bVar1 & 0x3f) != 0)) && ((bVar1 & 0x1f) < 0x1c)) {
     ce_strcat(acStack_7c,s_belonging_to_00085c90);
     /* uVar11 is `undefined4` (reused as a flag above); assigning get_message_string's char* to it
        truncated the pointer -> ce_strcat (strcat) walked a wild address, crashing a right-click
@@ -404,7 +404,7 @@ bool check_object_carry_weight(ushort *object)
 {
   short sVar1;
 
-  sVar1 = calculate_object_weight(object);
+  sVar1 = calculate_object_weight((uw_object_hdr_t *)object);
   if (getenv("UW_DEBUG_WEIGHT"))
     fprintf(stderr, "[weight] objid=0x%03x item_weight=%d current_load=%u max_capacity=%u fits=%d\n",
             (int)(*object & 0x1ff), (int)sVar1, (unsigned)g_player_carry_weight, (unsigned)g_player_max_carry_weight,
@@ -442,14 +442,14 @@ void dispatch_object_action_dup(ushort *object, int mode)
   if (object == (ushort *)0x0) {
     return;
   }
-  iVar9 = (*object & 0x1ff) * 0xd;
-  if (!g_object_type_props[*object & 0x1ff].has_look_description) {
-    if ((*object & 0x1f0) == 0x160) {
+  iVar9 = (((uw_object_hdr_t *)object)->item_id) * 0xd;
+  if (!g_object_type_props[((uw_object_hdr_t *)object)->item_id].has_look_description) {
+    if ((((uw_object_hdr_t *)object)->type_flags & 0x1f0) == 0x160) {
       look_at_inscribed_object(object,mode);
     }
     goto LAB_00048b58;
   }
-  if (((short)mode == 3) && (iVar5 = identify_mushroom_type(object,&DAT_00202c90 + iVar9), iVar5 != 0)) {
+  if (((short)mode == 3) && (iVar5 = identify_mushroom_type(object,&g_object_type_props[iVar9 / 0xd]), iVar5 != 0)) {
     return;
   }
   pcVar6 = s_You_see_000858fc;
@@ -467,21 +467,21 @@ void dispatch_object_action_dup(ushort *object, int mode)
     cVar10 = local_ac[0];
   }
   local_9c[0] = '\0';
-  if ((*object & 0x1c0) == 0x40) {
+  if ((((uw_object_hdr_t *)object)->type_flags & 0x1c0) == 0x40) {
     build_creature_look_text(object,acStack_7c);
     return;
   }
   iVar5 = 0;
-  if ((object[2] & 0x3f) != 0) {
-    if (((&DAT_00202c97)[iVar9] & 0xc) == 0xc) {
+  if ((((uw_object_hdr_t *)object)->quality) != 0) {
+    if ((g_object_type_props[iVar9 / 0xd].quality_flags & 0xc) == 0xc) {
       sVar4 = 5;
     }
     else {
-      sVar4 = (object[2] >> 4 & 3) + 1;
+      sVar4 = (((uw_object_hdr_t *)object)->chain_word >> 4 & 3) + 1;
     }
     iVar5 = (int)sVar4;
   }
-  pcVar6 = (char *)get_message_string(((byte)(&DAT_00202c9b)[iVar9] & 0xf) * 6 + iVar5 | 0xa00);
+  pcVar6 = (char *)get_message_string((g_object_type_props[iVar9 / 0xd].quality_type) * 6 + iVar5 | 0xa00);
   if (pcVar6 != (char *)0x0) {
     cVar2 = *pcVar6;
     if (cVar2 != '\0') {
@@ -491,9 +491,9 @@ void dispatch_object_action_dup(ushort *object, int mode)
     }
     mode = (int)(short)mode;
   }
-  if ((((*object & 0x8000) == 0) || (uVar3 = object[3], (uVar3 & 0x8000) != 0)) ||
-     ((uVar3 & 0xffc0) < 0x41)) {
-    if ((cVar10 != '\0') && (((&DAT_00202c9b)[iVar9] & 0xf) != 0xd)) {
+  if ((((((uw_object_hdr_t *)object)->type_flags & 0x8000) == 0) || (uVar3 = ((uw_object_hdr_t *)object)->link_word, (uVar3 & 0x8000) != 0)) ||
+      ((uVar3 & 0xffc0) < 0x41)) {
+    if ((cVar10 != '\0') && ((g_object_type_props[iVar9 / 0xd].quality_type) != 0xd)) {
       if (((cVar10 == 'a') || ((cVar10 == 'e' || (cVar10 == 'i')))) ||
          (cVar10 == 'o' || cVar10 == 'u')) {
         puVar8 = &DAT_00085244;
@@ -523,8 +523,8 @@ LAB_000489fc:
   iVar9 = ce_strlen(acStack_7c);
   build_object_display_name(acStack_7c + iVar9,object,cVar10 == '\0',uVar11);
   append_object_special_name(object,mode,acStack_7c);
-  if (((g_object_type_props[*object & 0x1ff].is_container) &&
-      (bVar1 = (byte)object[3], (bVar1 & 0x3f) != 0)) && ((bVar1 & 0x1f) < 0x1c)) {
+  if (((g_object_type_props[((uw_object_hdr_t *)object)->item_id].can_have_owner) &&
+       (bVar1 = (byte)((uw_object_hdr_t *)object)->link_word, (bVar1 & 0x3f) != 0)) && ((bVar1 & 0x1f) < 0x1c)) {
     ce_strcat(acStack_7c,s_belonging_to_00085c90);
     /* uVar11 is `undefined4` (reused as a flag above); assigning get_message_string's char* to it
        truncated the pointer -> ce_strcat (strcat) walked a wild address, crashing a right-click
@@ -563,26 +563,27 @@ int check_object_drop_height(ushort *object, ushort *reference)
 #define local_2a (*(ushort *)(local_backing + 0xe))
 
   DAT_00202c6c = local_backing;
-  uVar2 = *object;
+  uVar2 = ((uw_object_hdr_t *)object)->type_flags;
   uVar3 = encode_object_slot_index(object);
   /* ARM 0x4b2d0/0x4b310: slot at byte 10, radius at byte 8.
      DAT_00202c6c is a byte pointer; Ghidra's word indices need scaling. */
   *(byte *)(DAT_00202c6c + 10) = (byte)uVar3;
   *(byte *)((char *)DAT_00202c6c + 0xb) = (byte)((ushort)uVar3 >> 8);
   iVar5 = (short)(uVar2 & 0x1ff) * 0xd;
-  *(byte *)(DAT_00202c6c + 8) = (&DAT_00202c91)[iVar5] & 7;
-  *(undefined *)((char *)DAT_00202c6c + 9) = (&DAT_00202c90)[iVar5];
+  *(byte *)(DAT_00202c6c + 8) = g_object_type_props[iVar5 / 0xd].collision_radius;
+  *(undefined *)((char *)DAT_00202c6c + 9) = g_object_type_props[iVar5 / 0xd].height;
   if (getenv("UW_DEBUG_THROW"))
     fprintf(stderr, "[throw-refine] ENTER object=%p object[0xb]=0x%x object+3byte=0x%x\n",
-            (void *)object, (unsigned)object[0xb], (unsigned)*(byte *)((char *)object + 3));
-  iVar5 = ((object[0xb] & 0xfc00) >> 7) + (uint)(*(byte *)((char *)object + 3) >> 5);
+            (void *)object, (unsigned)object[0xb],
+            (unsigned)((uw_object_hdr_t *)object)->position_word_high);
+  iVar5 = ((object[0xb] & 0xfc00) >> 7) + (uint)(((uw_object_hdr_t *)object)->position_word_high >> 5);
   *(byte *)DAT_00202c6c = (byte)iVar5;
   *(byte *)((char *)DAT_00202c6c + 1) = (byte)((uint)iVar5 >> 8);
   if (getenv("UW_DEBUG_THROW"))
     fprintf(stderr, "[throw-refine] X computed iVar5=%d (tile=%d)\n", iVar5, iVar5 >> 3);
   /* Was `DAT_00202c6c + 1` for Y's low byte -- disassembly-confirmed (0x4b288 @ 0x4b3b8: `strb
      r3,[r1,#0x2]`) the real write target is offset+2, not +1. */
-  iVar5 = ((*(byte *)((char *)object + 3) & 0x1c) >> 2) + ((object[0xb] & 0x3f0) >> 1);
+  iVar5 = (((uw_object_hdr_t *)object)->ypos) + ((object[0xb] & 0x3f0) >> 1);
   *(byte *)((char *)DAT_00202c6c + 2) = (byte)iVar5;
   *(byte *)((char *)DAT_00202c6c + 3) = (byte)((uint)iVar5 >> 8);
   if (getenv("UW_DEBUG_THROW"))
@@ -590,14 +591,15 @@ int check_object_drop_height(ushort *object, ushort *reference)
   /* Both pointer args below were `DAT_00202c6c`/`DAT_00202c6c + 1` -- the Y output must be `+2` to
      match the real Y storage (offset+2/+3, see the fix just above); `+1` is X's own high byte.
      Disassembly- confirmed (0x4b288 @ 0x4b458's `bl 0x69f2c` args). */
-  project_position_by_heading(((byte)object[0xc] & 0x1f) + ((object[1] & 0x380) >> 2),
-               ((&DAT_00202c91)[(*object & 0x1ff) * 0xd] & 7) +
-               ((&DAT_00202c91)[(*reference & 0x1ff) * 0xd] & 7) + '\x04',DAT_00202c6c,
-               DAT_00202c6c + 2);
+  project_position_by_heading(((byte)object[0xc] & 0x1f) + ((((uw_object_hdr_t *)object)->position_word & 0x380) >> 2),
+                              (g_object_type_props[(((uw_object_hdr_t *)object)->item_id)].collision_radius) +
+                              (g_object_type_props[(((uw_object_hdr_t *)reference)->item_id)].collision_radius) + '\x04',
+                              DAT_00202c6c,
+                              DAT_00202c6c + 2);
   /* Was `DAT_00202c6c + 2` -- disassembly-confirmed (0x4b288 @ 0x4b474: `strb r3,[r0,#0x4]`) the
      real target is offset+4/+5 (the same "Z" field this function's own later collision calls read
      via `*(short *)(DAT_00202c6c + 4)`), not offset+2... */
-  *(byte *)((char *)DAT_00202c6c + 4) = (byte)object[1] & 0x7f;
+  *(byte *)((char *)DAT_00202c6c + 4) = ((uw_object_hdr_t *)object)->zpos;
   *(byte *)((char *)DAT_00202c6c + 5) = 0;
   if (getenv("UW_DEBUG_THROW"))
     fprintf(stderr, "[throw-refine] pre-collision local_38[0..5]=%d,%d,%d,%d,%d,%d offset4(Z)=%d\n",
@@ -626,17 +628,18 @@ int check_object_drop_height(ushort *object, ushort *reference)
     uVar7 = uVar2 & 0xf | uVar7 | ((int)(short)(*(ushort *)(DAT_00202c6c + 2) & 0x1f8) >> 3) << 4;
     *(char *)(object + 0xb) = (char)uVar7;
     *(char *)((char *)object + 0x17) = (char)(uVar7 >> 8);
-    uVar7 = (uint)CONCAT11(*(undefined1 *)((char *)object + 3),(char)object[1]);
+    uVar7 = (uint)CONCAT11(((uw_object_hdr_t *)object)->position_word_high,
+                           (char)((uw_object_hdr_t *)object)->position_word);
     uVar6 = uVar7 & 0x1fff;
     bVar1 = (byte)((((byte)*DAT_00202c6c & 7) << 0xd) >> 8);
     *(char *)(object + 1) = (char)uVar6;
-    *(byte *)((char *)object + 3) = (byte)(uVar6 >> 8) | bVar1;
+    ((uw_object_hdr_t *)object)->position_word_high = (byte)(uVar6 >> 8) | bVar1;
     uVar2 = *(ushort *)(DAT_00202c6c + 2);
     uVar7 = uVar7 & 0x3ff;
     *(char *)(object + 1) = (char)uVar7;
     uVar4 = 1;
-    *(byte *)((char *)object + 3) =
-         (byte)(uVar7 >> 8) | bVar1 | (byte)((((byte)uVar2 & 7) << 10) >> 8);
+    ((uw_object_hdr_t *)object)->position_word_high =
+        (byte)(uVar7 >> 8) | bVar1 | (byte)((((byte)uVar2 & 7) << 10) >> 8);
   }
   else {
 LAB_0004b4d4:
@@ -667,17 +670,17 @@ int check_object_combination(void *actor_ptr, ushort *object, short count)
      (puVar4 = (ushort *)find_object_in_chain(&local_18,0,4,0,0xf), puVar4 == (ushort *)0x0)) {
     return 1;
   }
-  uVar1 = *puVar4;
+  uVar1 = ((uw_object_hdr_t *)puVar4)->type_flags;
   if ((uVar1 & 0x200) == 0) {
     if (0 < count) {
       uVar2 = *object;
       if ((((uVar2 & 0x1f0) != 0x140) || ((uVar2 & 0xf) < 8)) &&
          (((uVar2 & 0x1f0) != 0x80 || ((0xb < (uVar2 & 0xf) || ((uVar2 & 1) == 0)))))) {
-        if ((puVar4[3] >> 6 & 0x1ff) != (int)count) {
+        if ((((uw_object_hdr_t *)puVar4)->link & 0x1ff) != (int)count) {
           return 0;
         }
-        *(char *)puVar4 = (char)uVar1;
-        *(byte *)((char *)puVar4 + 1) = (byte)(uVar1 >> 8) | 2;
+        ((uw_object_hdr_t *)puVar4)->type_flags_low = (byte)(char)uVar1;
+        ((uw_object_hdr_t *)puVar4)->type_flags_high = (byte)(uVar1 >> 8) | 2;
         return 2;
       }
     }
@@ -685,26 +688,26 @@ int check_object_combination(void *actor_ptr, ushort *object, short count)
   }
   uVar6 = (uint)count;
   if ((int)uVar6 < 0) {
-    uVar5 = (byte)puVar4[1] & 0x7f;
+    uVar5 = ((uw_object_hdr_t *)puVar4)->zpos;
     if (((uVar5 != 0xe) || (0x1e < (int)-uVar6)) &&
        ((uVar5 != 0xf &&
-        (sVar3 = roll_skill_check((int)(uVar6 * -0x10000) >> 0x10,((byte)puVar4[1] & 0x7f) * 3),
-        0 < sVar3)))) {
+        (sVar3 = roll_skill_check((int)(uVar6 * -0x10000) >> 0x10,(((uw_object_hdr_t *)puVar4)->zpos) * 3),
+         0 < sVar3)))) {
 LAB_0007c130:
       trigger_object_trap_or_use_action(actor,object,6,(int)DAT_002020a0,DAT_002020a4);
-      if ((*puVar4 & 0x400) == 0) {
+      if ((((uw_object_hdr_t *)puVar4)->type_flags & 0x400) == 0) {
         object_list_unlink(local_18,puVar4);
         free_object_slot(puVar4);
       }
       else {
-        uVar6 = *puVar4 & 0xfdff;
-        *(char *)puVar4 = (char)uVar6;
-        *(char *)((char *)puVar4 + 1) = (char)(uVar6 >> 8);
+        uVar6 = ((uw_object_hdr_t *)puVar4)->type_flags & 0xfdff;
+        ((uw_object_hdr_t *)puVar4)->type_flags_low = (byte)(char)uVar6;
+        ((uw_object_hdr_t *)puVar4)->type_flags_high = (byte)(char)(uVar6 >> 8);
       }
       return 3;
     }
   }
-  else if (((0 < (int)uVar6) && ((puVar4[3] & 0x7fc0) != 0)) && ((puVar4[3] >> 6 & 0x1ff) == uVar6))
+  else if (((0 < (int)uVar6) && ((((uw_object_hdr_t *)puVar4)->link_word & 0x7fc0) != 0)) && ((((uw_object_hdr_t *)puVar4)->link & 0x1ff) == uVar6))
   goto LAB_0007c130;
   return 0;
 }
@@ -1240,7 +1243,7 @@ LAB_000749c4:
                           }
                         }
                         else if (object_class == '\0') {
-                          if ((*puVar6 & 0x1c0) == 0x40) {
+                          if ((((uw_object_hdr_t *)puVar6)->type_flags & 0x1c0) == 0x40) {
                             uVar3 = encode_object_slot_index(puVar6);
                             if (uVar3 != filter_b) goto LAB_000749c4;
                             goto LAB_000749bc;
@@ -1383,7 +1386,7 @@ void cast_summon_or_spawn_effect(void *caster, char variant)
   ushort uVar2;
   short sVar3;
   long uVar4;
-  ushort *saved_scratch;
+  uw_object_hdr_t *saved_scratch;
   byte *pbVar5;
   uint uVar6;
   undefined2 uVar7;
@@ -1470,9 +1473,9 @@ void cast_summon_or_spawn_effect(void *caster, char variant)
           uVar4 = ce_rand();
           uVar10 = ((uint)ordint_divmod(uVar6,(int)uVar4).rem & 0xffff) + uVar6 + 0x40;
           iVar8 = (uVar10 & 0xfe3f) * 0x30;
-        } while ((&g_monster_max_stats_table)[iVar8] == '\0');
-      } while ((((((&DAT_001007da)[iVar8] & 2) != 0) || ((uVar10 & 0xffff) == 0x7b)) ||
-               ((uVar10 & 0xffff) == 0x7c)) || (((&DAT_001007da)[iVar8] & 0x40) != 0));
+        } while (g_monster_type_props[(iVar8) / 0x30].max_hp == '\0');
+      } while (((((g_monster_type_props[(iVar8) / 0x30].movement_flags & 2) != 0) || ((uVar10 & 0xffff) == 0x7b)) ||
+                ((uVar10 & 0xffff) == 0x7c)) || ((g_monster_type_props[(iVar8) / 0x30].movement_flags & 0x40) != 0));
     }
     else {
       uVar10 = (uint)local_2c;
@@ -1480,7 +1483,7 @@ void cast_summon_or_spawn_effect(void *caster, char variant)
     iVar8 = check_object_placement_clearance(uVar10,0,(int)(short)local_34,(int)(short)local_32,local_30,1,8);
     if (iVar8 != 0) {
       pObj = (char *)spawn_new_object(uVar10,variant == '\x04');
-      uVar2 = *(ushort *)(pObj + 2);
+      uVar2 = ((uw_object_hdr_t *)pObj)->position_word;
       uVar6 = uVar2 & 0x1fff;
       bVar1 = (byte)(((local_34 & 7) << 0xd) >> 8);
       *(char *)(pObj + 2) = (char)uVar6;
@@ -1490,13 +1493,13 @@ void cast_summon_or_spawn_effect(void *caster, char variant)
       *(byte *)(pObj + 3) = (byte)(uVar6 >> 8) | bVar1 | (byte)(((local_32 & 7) << 10) >> 8);
       saved_scratch = g_scratch_object_ptr;
       if (variant == '\x04') {
-        g_scratch_object_ptr = (ushort *)pObj;
+        g_scratch_object_ptr = (uw_object_hdr_t *)pObj;
         init_monster_spawn_defaults();
         uVar6 = local_2e & 0x3f | (local_2c & 0x3ff) << 6;
         g_scratch_object_ptr = saved_scratch;
         *(byte *)(pObj + 0x16) = *(byte *)(pObj + 0x16) & 0xf | (byte)(uVar6 << 4);
         *(char *)(pObj + 0x17) = (char)(uVar6 >> 4);
-        if (((&DAT_001007da)[(uVar10 & 0xfe3f) * 0x30] & 0x80) != 0) {
+        if ((g_monster_type_props[(uVar10 & 0xfe3f)].movement_flags & 0x80) != 0) {
           iVar9 = local_30 + 0x80;
           if (iVar9 < 0) {
             iVar9 = local_30 + 0x81;
@@ -1514,10 +1517,10 @@ void cast_summon_or_spawn_effect(void *caster, char variant)
           *(byte *)(pObj + 0x19) = *(byte *)(pObj + 0x19) | 1;
           uVar2 = *(ushort *)(pObj + 0xf);
           uVar10 = uVar2 & 0xffc0;
-          bVar1 = *(byte *)((char *)g_player_object + 0x17) >> 2;
+          bVar1 = g_player_object->npc_xhome;
           *(byte *)(pObj + 0xf) = (byte)uVar10 | bVar1;
           *(char *)(pObj + 0x10) = (char)(uVar10 >> 8);
-          uVar10 = uVar2 & 0xf000 | (uint)bVar1 | (*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) << 2;
+          uVar10 = uVar2 & 0xf000 | (uint)bVar1 | (g_player_object->tile_word & 0x3f0) << 2;
           *(char *)(pObj + 0xf) = (char)uVar10;
           *(char *)(pObj + 0x10) = (char)(uVar10 >> 8);
         }
@@ -1568,7 +1571,7 @@ int spawn_random_variant_object_at_tile(int tile_x, int tile_y)
   uVar3 = ce_rand();
   uw_ord2005_rem_157 = ((int)(uVar3)) % (3);
   iVar4 = (char *)spawn_new_object(uw_ord2005_rem_157 + 0x154,0);
-  uVar6 = *(ushort *)(iVar4 + 2) & 0xffee;
+  uVar6 = ((uw_object_hdr_t *)iVar4)->position_word & 0xffee;
   *(byte *)(iVar4 + 2) = (byte)uVar6 | 0x6e;
   *(char *)(iVar4 + 3) = (char)(uVar6 >> 8);
   iVar5 = place_object_in_world(tile_x * 8 + 3,tile_y * 8 + 3,0x6e,iVar4,0,0);
@@ -1627,7 +1630,7 @@ void cast_detect_life_spell(short radius, int skill)
   byte local_2c [8];
   
   ce_memset(local_2c,0,8);
-  uVar2 = *(ushort *)((char *)g_player_object + 0x16);
+  uVar2 = g_player_object->tile_word;
   for (pbVar10 = DAT_002046c0; pbVar10 < DAT_002046c8; pbVar10 = pbVar10 + 1) {
     puVar5 = (ushort *)((uint)*pbVar10 * 0x1b + DAT_002046b8);
     uVar13 = (uint)*puVar5;
@@ -1640,8 +1643,8 @@ void cast_detect_life_spell(short radius, int skill)
       if ((((int)((iVar1 >> 0x18 ^ uVar6) - uVar6) < (int)radius) &&
           (iVar1 = iVar12 * 0x1000000, uVar6 = iVar1 >> 0x1f,
           (int)((iVar1 >> 0x18 ^ uVar6) - uVar6) < (int)radius)) &&
-         (sVar4 = roll_skill_check(skill,0xf - ((byte)(&DAT_001007ed)[(uVar13 & 0x3f) * 0x30] & 0xf)),
-         0 < sVar4)) {
+         (sVar4 = roll_skill_check(skill,0xf - ((byte) g_monster_type_props[(uVar13 & 0x3f)].detection_ranges & 0xf)),
+          0 < sVar4)) {
         sVar4 = compute_compass_direction(iVar8,iVar12);
         local_2c[sVar4] = local_2c[sVar4] + 1;
       }
@@ -1711,12 +1714,12 @@ void complete_pending_player_command_target(ushort *target)
   }
   else if ((short)DAT_00202094 == 4) {
     dispatch_object_action_dup(target,3);
-    uVar4 = *target & 0x1c0;
+    uVar4 = ((uw_object_hdr_t *)target)->type_flags & 0x1c0;
     if (((uVar4 != 0x140) && (uVar4 != 0x40)) &&
-       (((&DAT_00202c9a)[(*target & 0x1ff) * 0xd] & 3) != 2)) {
-      uVar1 = target[1];
+       ((g_object_type_props[(((uw_object_hdr_t *)target)->item_id)].class_flags & 3) != 2)) {
+      uVar1 = ((uw_object_hdr_t *)target)->position_word;
       *(char *)(target + 1) = (char)(uVar1 | 0x380);
-      *(char *)((char *)target + 3) = (char)((uVar1 | 0x380) >> 8);
+      ((uw_object_hdr_t *)target)->position_word_high = (byte)(char)((uVar1 | 0x380) >> 8);
     }
   }
   else if ((short)DAT_00202094 == 5) {
@@ -2251,20 +2254,20 @@ void spawn_effect_debris_burst(void *template_ptr, uint tile_x, int tile_y)
   sVar1 = (short)iVar7;
   while (-1 < iVar7 * 0x10000 >> 0x10) {
     puVar8 = (ushort *)alloc_object_slot(0);
-    *(undefined1 *)puVar8 = *template;
-    *(undefined1 *)((char *)puVar8 + 1) = template[1];
+    ((uw_object_hdr_t *)puVar8)->type_flags_low = *template;
+    ((uw_object_hdr_t *)puVar8)->type_flags_high = template[1];
     *(undefined1 *)(puVar8 + 1) = template[2];
-    *(undefined1 *)((char *)puVar8 + 3) = template[3];
+    ((uw_object_hdr_t *)puVar8)->position_word_high = template[3];
     *(undefined1 *)(puVar8 + 2) = template[4];
-    *(undefined1 *)((char *)puVar8 + 5) = template[5];
+    ((uw_object_hdr_t *)puVar8)->chain_word_high = template[5];
     *(undefined1 *)(puVar8 + 3) = template[6];
-    *(undefined1 *)((char *)puVar8 + 7) = template[7];
+    ((uw_object_hdr_t *)puVar8)->link_word_high = template[7];
     uVar9 = ce_rand();
-    uVar10 = (uint)*puVar8;
+    uVar10 = (uint)((uw_object_hdr_t *)puVar8)->type_flags;
     uVar10 = ((uVar9 & 1) + uVar10 + 1 ^ uVar10) & 0x1ff ^ uVar10;
-    *(char *)puVar8 = (char)uVar10;
-    *(char *)((char *)puVar8 + 1) = (char)(uVar10 >> 8);
-    bVar3 = *(byte *)((char *)puVar8 + 3) >> 5;
+    ((uw_object_hdr_t *)puVar8)->type_flags_low = (byte)(char)uVar10;
+    ((uw_object_hdr_t *)puVar8)->type_flags_high = (byte)(char)(uVar10 >> 8);
+    bVar3 = ((uw_object_hdr_t *)puVar8)->position_word_high >> 5;
     do {
       do {
         uVar6 = ce_rand();
@@ -2272,10 +2275,10 @@ void spawn_effect_debris_burst(void *template_ptr, uint tile_x, int tile_y)
         iVar7 = ((int)(((int)uw_ord2005_rem_171 - 2U) * 0x10000) >> 0x10) + (int)(short)(ushort)bVar3;
       } while (iVar7 < 0);
     } while (7 < iVar7);
-    uVar9 = puVar8[1] & 0x1fff ^ (((int)uw_ord2005_rem_171 - 2U & 0xffff) + (uint)bVar3 & 0xffff) << 0xd
+    uVar9 = ((uw_object_hdr_t *)puVar8)->position_word & 0x1fff ^ (((int)uw_ord2005_rem_171 - 2U & 0xffff) + (uint)bVar3 & 0xffff) << 0xd
     ;
-    *(char *)(puVar8 + 1) = (char)(puVar8[1] & 0x1fff);
-    *(char *)((char *)puVar8 + 3) = (char)(uVar9 >> 8);
+    *(char *)(puVar8 + 1) = (char)(((uw_object_hdr_t *)puVar8)->position_word & 0x1fff);
+    ((uw_object_hdr_t *)puVar8)->position_word_high = (byte)(char)(uVar9 >> 8);
     uVar9 = (uVar9 & 0x1c00) >> 10;
     do {
       do {
@@ -2284,16 +2287,16 @@ void spawn_effect_debris_burst(void *template_ptr, uint tile_x, int tile_y)
         iVar7 = ((int)(((int)uw_ord2005_rem_172 - 2U) * 0x10000) >> 0x10) + (int)(short)uVar9;
       } while (iVar7 < 0);
     } while (7 < iVar7);
-    bVar3 = (byte)(puVar8[1] >> 8);
-    *(char *)(puVar8 + 1) = (char)puVar8[1];
-    *(byte *)((char *)puVar8 + 3) =
-         (bVar3 ^ (byte)(((((int)uw_ord2005_rem_172 - 2U & 0xffff) + uVar9 & 0xffff) << 10) >> 8)) &
-         0x1c ^ bVar3;
+    bVar3 = (byte)(((uw_object_hdr_t *)puVar8)->position_word >> 8);
+    *(char *)(puVar8 + 1) = (char)((uw_object_hdr_t *)puVar8)->position_word;
+    ((uw_object_hdr_t *)puVar8)->position_word_high =
+        (bVar3 ^ (byte)(((((int)uw_ord2005_rem_172 - 2U & 0xffff) + uVar9 & 0xffff) << 10) >> 8)) &
+       0x1c ^ bVar3;
     bVar4 = ce_rand();
-    uVar2 = puVar8[1];
+    uVar2 = ((uw_object_hdr_t *)puVar8)->position_word;
     bVar3 = (byte)uVar2;
     *(byte *)(puVar8 + 1) = (((bVar4 & 0xf) + bVar3) - 8 ^ bVar3) & 0x7f ^ bVar3;
-    *(char *)((char *)puVar8 + 3) = (char)(uVar2 >> 8);
+    ((uw_object_hdr_t *)puVar8)->position_word_high = (byte)(char)(uVar2 >> 8);
     /* was folded into `int iVar7` (this function's loop counter, reused
        immediately after this for unrelated int values) -- truncated
        tilemap_lookup's real `void *` return */
@@ -2541,10 +2544,10 @@ LAB_00048e80:
       chain_item = find_object_in_chain((ushort **)&local_1c,0,4,2,0);
       bVar9 = chain_item == 0;
       if (!bVar9) {
-        bVar9 = (*(byte *)((char *)chain_item + 1) & 8) == 0;
+        bVar9 = (((uw_object_hdr_t *)chain_item)->type_flags_high & 8) == 0;
       }
       if (!bVar9) {
-        uVar8 = *(byte *)((char *)chain_item + 4) & 0x3f;
+        uVar8 = ((uw_object_hdr_t *)chain_item)->quality;
       }
       iVar2 = (int)(short)uVar8;
       if (-1 < iVar2) {
@@ -2779,13 +2782,13 @@ void describe_special_object_property(ushort *object, short mode)
 
 // was FUN_000496b0 -- called from describe_picked_terrain with a tile record (param_2): only acts
 // on special-mushroom-bearing tiles (trap-type field bits 0x1e == 0x14)...
-int identify_mushroom_type(ushort *object, char *tile)
+int identify_mushroom_type(ushort *object, const uw_object_type_props_t *properties)
 {
   ushort uVar1;
   int iVar2;
   short local_c;
   
-  if ((*(byte *)(tile + 8) & 0x1e) != 0x14) {
+  if ((properties->owner_flags & 0x1e) != 0x14) {
     return 0;
   }
   uVar1 = *object & 0x1ff;
@@ -2845,7 +2848,7 @@ bool spawn_object_near_actor(ushort *actor, short height_offset)
   ushort *puVar1; /* ARM 0x4a678 tests the returned object pointer for NULL. */
   
   DAT_00202a38 = height_offset + 0x10;
-  DAT_00202a48 = (ushort)(byte)(&DAT_002027d1)[height_offset * 3];
+  DAT_00202a48 = (ushort)(byte) g_ranged_type_props[height_offset].projectile_speed;
   DAT_00202a4c = (ushort)(*((byte *)actor + 0x17) >> 2);
   DAT_00202a50 = (ushort)((actor[11] & 0x3f0) >> 4);
   DAT_00202a54 = 1;

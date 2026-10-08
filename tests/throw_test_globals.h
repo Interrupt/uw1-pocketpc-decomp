@@ -11,13 +11,13 @@ extern ushort *thrown;
 /* Isolated storage for the original throw/physics functions. */
 extern char *DAT_00086df8;
 extern short DAT_00201b68;
-extern undefined1 DAT_00202c90_backing[8192];
-extern ushort * g_player_object;
+extern uw_object_type_props_t g_object_type_props[512];
+extern uw_mobile_object_t *g_player_object;
 extern char * DAT_002029cc;
 extern short * DAT_00085a6c;
 extern char * DAT_002046b8;
 extern char * DAT_002046c4;
-extern ushort * DAT_0010190c;
+extern uw_mobile_object_t *DAT_0010190c;
 extern byte * DAT_00202c6c;
 extern short DAT_0023beb4;
 extern undefined1 DAT_00204880_backing[128];
@@ -77,7 +77,7 @@ extern short DAT_00085890, DAT_00202074, DAT_00202078, DAT_0020207a, DAT_0020207
 #include <math.h>
 
 #ifndef DAT_002034b5
-#define DAT_002034b5 DAT_00202c90_backing[0x825] /* item 0xa0 value, loaded COMOBJ table */
+#define DAT_002034b5 ((byte *)g_object_type_props)[0x825] /* item 0xa0 value, loaded COMOBJ table */
 #endif
 
 #ifndef DAT_000868c0

@@ -32,7 +32,7 @@ static void test_cursor_throw_origin_rotates_with_player_facing(void)
     const int headings[] = {0, 64, 128, 192};
     for (int direction = 0; direction < 4; direction++) {
         setUp();
-        g_player_object[1] |= (headings[direction] & 0xe0) << 2;
+        ((ushort *)g_player_object)[1] |= (headings[direction] & 0xe0) << 2;
         short x = world_x(g_player_object), y = world_y(g_player_object);
         launch();
         if (direction == 0 || direction == 2) {

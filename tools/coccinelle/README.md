@@ -1,0 +1,264 @@
+# UW1 object conversion
+
+Reference revision: `ac72dd9155e4bd3ab76257fa5daca080f23f2bbf` of
+https://github.com/hankmorgan/UWReverseEngineering.
+
+Use the UW1 object layout in `UW-Formats/uw-formats (Underworld Adventures).txt`,
+sections 4.2 and 6.2, and `File Research/Game Object Research File.xlsx`.
+Do not substitute `CommonObjDat UW2.xlsx`, `Player_Dat (UW2).xls`, or UW2 tables.
+The research workbook includes notes about both games: verify each adopted
+field against the UW1 format and this ARM port's actual consumers.
+
+The native COMOBJ record is **13 bytes**, even though the UW1 disk row is
+11 bytes. `load_object_catalog_data` inserts a byte before monetary value
+and leaves a byte after description flags. Preserve that layout. The bit at
+native offset 8, bit 7, means *can have an owner*, not *is a container*.
+
+Object slots have an eight-byte common header. Mobile slots are 27 bytes;
+NPC state and projectile coordinates occupy overlapping bytes. Only use
+NPC fields for NPC/player slots and projectile fields for moving items.
+`object_layout` exhaustively checks extraction and writes against independent
+UW1 masks, including neighbouring bytes and native COMOBJ padding.
+
+## Semantic patches
+
+Coccinelle/spatch 1.3.3 was used for this sweep. Generated patches are checked
+in alongside their generators, so reviewers can inspect exactly what ran.
+
+```
+python3 tools/coccinelle/generate_player_rules.py
+python3 tools/coccinelle/generate_property_rules.py
+spatch --sp-file tools/coccinelle/player-fields.cocci --dir src --no-includes --in-place
+spatch --sp-file tools/coccinelle/object-properties.cocci --dir src --no-includes --in-place
+spatch --sp-file tools/coccinelle/property-fields.cocci --dir src --no-includes --in-place
+```
+
+`property-pointers.cocci` converts row-address arithmetic at proven consumers.
+Run it on each file separately: spatch accepts only one positional input file.
+Saved COMOBJ offsets at the matched `iVar*` and `_iv` access sites were checked
+to be `item_id * 13`; the patch divides the saved value rather than evaluating
+a potentially changed object ID again.
+
+`player-storage-boundaries.cocci` is the temporary migration step that keeps
+remaining byte/word arithmetic in its original units as the player global is
+retyped. Those accesses are **not converted fields**. Do not count explicit
+casts as completion. `object-weight.cocci` converts the weight function, and
+`object-weight-callers.cocci` marks its temporary typed call boundaries. Assignments were explicitly retyped once; the retained patch is idempotent.
+
+`object-returns.cocci` changes the eleven allocation, lookup and relocation APIs
+to return `uw_object_hdr_t *`, including their declarations and test doubles.
+Compiler incompatible-pointer diagnostics now identify raw-pointer receivers.
+Explicit casts hide those diagnostics, and pointer arithmetic can still compile
+with different units after retyping: inspect both before converting a caller.
+Do not silence the migration diagnostics globally.
+
+`audit_object_roles.py` uses `build/compile_commands.json` and Clang ASTs to
+identify object pointers from catalog accesses, object lookup calls and proven
+aliases. It excludes locals reused as unrelated buffers. The generated
+`object-pointer-roles.json` records the evidence and exclusions; it is an
+incomplete audit, not proof that all object accesses have been found.
+`generate_header_field_rules.py` generates function-scoped common-header read
+patches from that audit. Apply them with `apply_header_field_rules.py`; use
+`--check` to verify a second application makes no changes. These read patches
+retain explicit header casts until caller declarations and arithmetic migrate.
+
+`core-object-receivers.cocci` converts the chain/world search receivers and
+their common-header reads. `object-link-interfaces.cocci` types packed link
+and cursor parameters; `object-chain-interfaces.cocci` distinguishes those
+parameters from the object headers passed to list operations. These interface
+patches also apply to declarations and test doubles. `object-chain-storage.cocci`
+converts list writes and recursive deletion without changing traversal order.
+`spawn-object-header.cocci` replaces creation's byte stores with equivalent
+header assignments, including the original quantity/container classification.
+`object-arena-boundaries.cocci` casts the original computed byte addresses to
+header pointers at allocation and resolution boundaries. The arena globals
+themselves still need conversion.
+
+`header-words/` contains generated, function-scoped rules for remaining whole
+header words at the audited pointer roles. They expose `type_flags`,
+`position_word`, `chain_word` and `link_word`; direct signed-short aliases
+are excluded because their promotions differ. Regenerate with
+`generate_header_word_rules.py` and apply/check with
+`apply_header_field_rules.py --patch-dir tools/coccinelle/header-words`.
+These casts still require a subsequent declaration/API migration.
+
+`container-object-interfaces.cocci` types disposal, rune insertion and stack
+inspection interfaces. Container weight traversal and matching-object locals
+are covered by `core-object-receivers.cocci`. The core tests also exercise
+nested contents weights and stack eligibility using the actual game functions.
+
+`object_core` runs the real creation, link-resolution, search, insertion,
+append and unlink functions. It compares creation to independent packed byte
+values for all 512 types and checks both arena strides, nested contents,
+quantity exclusions, next-link updates and preservation of adjacent low bits.
+
+`current-mobile-object.cocci` types the current 27-byte slot pointer and
+replaces common physical byte/header accesses. `current-mobile-fields.cocci`
+reads the extended NPC fields only in NPC functions; projectile coordinate
+words are excluded. Signed byte views retain their original signedness.
+Residual word indexing uses explicit temporary word casts so retyping cannot
+change its units. `npc-context-interfaces.cocci` types the context-setting
+APIs, and `npc-state-setters.cocci` converts goal and target writes.
+`projectile-tick.cocci` gives the non-NPC physics tick its own projectile
+pointer, lifetime, pitch flags and tile coordinates.
+
+`npc_state` runs the actual setters and independently checks all 65,536
+target words, goal/target truncation, preserved animation/status bits and
+the unchanged-target path flags. It does not imply that all NPC consumers
+or the other projectile APIs have been migrated.
+
+`uw_monster_type_props_t` and `uw_monster_attack_props_t` recover the UW1
+OBJECTS.DAT critter table from `File Research/objects_dat-critters.xls` and
+the ARM consumers. There are 64 packed 48-byte rows; the loader copies exactly
+0xc00 bytes from disk offset 0x132. The last byte keeps an unknown name.
+`monster-storage.cocci` migrates the table and fixture storage; its size rules
+cover both sizeof forms and repairs byte-view sizes. Comma-separated fixture
+declarations were split explicitly because spatch did not migrate those.
+`monster-properties.cocci` replaces audited aliases and byte indexes with
+properties. `monster-template-pointer.cocci` types the current NPC template
+and preserves signed char views. `monster-table-boundaries.cocci` handles
+armor/attack selection, XP, trading words and guarded spell-slot selection.
+Unused field aliases have been removed; the base byte-address boundary still
+serves remaining raw player/despawn template pointers.
+
+Layout tests check every documented field offset, and `npc_combat` compares
+all loaded rows with the independent on-disk byte block. This is stronger
+than merely checking a few creature stats.
+
+## UW1 weapon and wearable property rows
+
+`ranged-storage.cocci` and `ranged-properties.cocci` convert the 16 three-byte
+ranged rows to `uw_ranged_type_props_t`. The UW1 research spreadsheet identifies
+bytes 0/1/2 as damage, projectile speed and an ammo/damage-type selector; ARM
+consumers confirm these uses. The selector remains unsigned storage, with the
+original explicit signed casts preserved where required. It is not named
+"durability" from the less specific DOS format description.
+
+`melee-armor-storage.cocci` and `melee-armor-properties.cocci` convert melee
+(16 rows of eight bytes) and wearable (32 rows of four bytes) storage, loaders,
+fixed field accesses and row addresses. Melee charge-field interpretations are
+still tentative in the reference. Raw attack-data interfaces that can select
+either a melee or ranged row retain temporary byte-pointer boundaries.
+
+Byte-index rules divide by the record stride only at audited alias accesses:
+all current ranged byte indices are row multiples of three. Mixed declarations
+in fixtures were explicitly split before applying storage patches. Preserve
+whole-array `sizeof` expressions before creating byte views for I/O.
+
+`npc_combat` invokes the real `load_armor_variant_tables` and compares all
+304 bytes against an independent disk read, including the final file offset.
+Layout tests verify each field offset. Synthetic semantic tests check coverage,
+unrelated-buffer exclusion, signed casts, buffer sizes and idempotence. A repeat
+sweep over both source and tests produces no further changes.
+
+## UW1 container, light and animation rows
+
+`container-light-animation-storage.cocci` and
+`container-light-animation-properties.cocci` convert container (16 * 3),
+light (16 * 2), and animation (16 * 4) tables, fixed fields and loader sizes.
+The detailed UW1 container spreadsheet establishes a two-byte acceptance mask
+at offset 1; retain the inventory code's signed-short interpretation.
+ARM light consumers and shipped data establish decay interval at byte 0 and
+brightness at byte 1, despite the general format text describing them in the
+opposite order. No lighting or decay arithmetic is changed.
+
+Animation flags occupy the first word; start frame and frame count occupy
+bytes 2 and 3. Rules repair the typed row-address form as well as the original
+byte-address form, so rule ordering cannot leave raw flag casts behind.
+Equipment handling now has typed armor/light-property locals. The generic
+class dispatcher still returns an opaque pointer because its eight branches
+return different record types; completing its consumers remains in scope.
+
+The real loaders are exercised in `npc_combat`, comparing every container,
+light and animation disk byte and final file offsets. `object_layout` checks
+sizes/offsets and all 65,536 signed acceptance-word values independently.
+Synthetic tests exercise exclusions, signed casts, scoped receiver types,
+whole-array sizes, and repeatability.
+
+`scratch-object.cocci` types the shared current-object inspection pointer and
+its saved context as common headers, replaces first-word accesses and equips
+callers directly from typed return values. The monster property lookup now
+uses a typed header local and a typed property row address.
+
+The player field generator also emits full-word rules after its narrower
+bitfield rules. These replace reads saved into temporaries and masked updates
+at the common-header, goal, status, target and tile-word offsets. For example,
+`*(ushort *)((char *)g_player_object + 0x16)` becomes
+`g_player_object->tile_word`; the x/y components remain separately named fields.
+Synthetic tests cover full-word reads and writes and exclude unrelated buffers.
+
+## Full-word and partial-byte object accesses
+
+`generate_word_access_rules.py` generates `object-word-accesses.cocci` for the
+player/current-mobile globals and `header-bytes/*.cocci` for independently
+audited common-header receivers. The rules cover full unsigned/signed word
+views, byte-pointer/index forms, word-pointer byte views, and partial writes.
+Adjacent low/high writes from the same scalar identifier become a single word
+assignment. Other partial writes retain their sequencing through named low/high
+union members. Signed reads retain their original promotion; signed writes
+preserve their low eight bits. Byte aliases do not enlarge any packed record.
+
+The current-mobile extended words are scoped to proven NPC contexts; projectile
+coordinates overlap those bytes and must retain the projectile layout. The low
+four bits of the NPC tile word are now `npc_path_slot`, confirmed by the cached
+walk-path consumers. The rule sweeps use that field for path-slot extraction.
+
+Apply the header rules with:
+
+```
+python3 tools/coccinelle/apply_header_field_rules.py \
+  --patch-dir tools/coccinelle/header-bytes
+```
+
+`object_layout` independently checks every byte/signed/unsigned view against
+all 65,536 word values and verifies that partial writes preserve neighboring
+bytes. Semantic tests cover paired writes, distinct-source partial writes,
+signed reads, index forms, NPC/projectile exclusion and repeatability. This
+extends the migration coverage; remaining object roles still require auditing.
+
+The audit also found two legacy scaling errors in
+`npc_combat_position_tick` (ARM `FUN_00031214`) and
+`npc_combat_disengage_tick` (ARM `FUN_00031a94`). A read-only Ghidra decompile
+and instruction dump confirms byte offsets +2 (position), +9 (heading),
++0xb/+0xc (goal/frame), and +0x13..0x19 (motion/animation/path flags).
+The existing ushort-pointer boundaries doubled those offsets, including writes
+past the 27-byte record. Earlier compatibility sweeps preserved that mistake.
+
+`generate_npc_combat_byte_offsets.py` generates the repair; apply it only via
+`apply_npc_combat_byte_offsets.py`, which isolates these two original function
+bodies and invokes spatch before reinserting them in place. It also corrects
+fields produced from the doubled offsets. Do not apply that context-specific
+patch globally. The runner skips already-correct contexts and is idempotent.
+The `npc_state` regression exercises all 65,536 goal words, both disengagement
+branches and random frame advancement, checking independent bytes plus guards
+around the mobile record. A second regression covers combat positioning
+across all Z values and frame nibbles, including the flight-pitch threshold,
+heading changes and preserved neighboring storage. Synthetic tests verify
+the repair leaves unrelated functions untouched.
+
+## Remaining full-goal work
+
+* Finish player packed writes, whole-word reads, local aliases and call interfaces.
+* Finish class-relative COMOBJ aliases (`DAT_002034b5`, `_DAT_002035cf`) and
+  diagnostic/fixture byte accesses. Preserve the current four-byte interpretation
+  of `_DAT_002035cf` until ARM evidence establishes whether it should be a word.
+* Type remaining common-object APIs and their callers with `uw_object_hdr_t *`.
+  `calculate_object_weight` is converted and has direct branch coverage; its
+  existing callers retain temporary explicit header casts.
+* Convert NPC and projectile consumers separately with proven pointer roles.
+* Recover and convert object movement snapshots and relevant object class records.
+* Finish mixed melee/ranged attack-data interfaces and row-relative field accesses.
+* Finish food and class-6 scalar property tables and class-dispatch interfaces.
+* Finish the player/despawn template pointers and dynamic property accesses.
+* Migrate fixtures to typed objects while retaining independent byte-layout tests.
+* Remove temporary boundaries; audit all object offsets across all source files.
+* Build the game and every unit suite after each sweep. Verify semantic-patch
+  coverage and idempotence, not only whether the resulting code compiles.
+
+No game function is moved to a different source file during this work.
+
+Checkpoint validation: game build and all 53 CTest suites pass. The latest
+AddressSanitizer pass covers 16 consumers: npc_state/npc_combat/npc_ai/creatures/
+combat/object_layout/object_core/movement/scheduler/spells/chargen/inventory/
+lighting/sleep/teleport/babl_vm. This is a checkpoint for continuing the full
+migration, not a completion claim.

@@ -11,12 +11,13 @@ ushort arena[0x4000];
 byte original_goblin[27], page_header[2];
 ushort *goblin;
 char *DAT_002046b8, *DAT_002046c4, *g_despawn_creature_record;
-undefined1 DAT_001007d0_backing[3072], DAT_00202c90_backing[8192];
+uw_monster_type_props_t g_monster_type_props[64];
+uw_object_type_props_t g_object_type_props[512];
 undefined1 DAT_0023ce70_backing[128];
-undefined1 DAT_002027d0_backing[48];
+uw_ranged_type_props_t g_ranged_type_props[16];
 short DAT_00201b68, DAT_0010144c, DAT_00101454;
 undefined2 DAT_002020a0, DAT_002020a4;
-ushort *g_player_object;
+uw_mobile_object_t *g_player_object;
 ushort *DAT_00202a44;
 char *DAT_00086df8;
 short DAT_00202a38, DAT_00202a3c, DAT_00202a40;
@@ -55,7 +56,7 @@ int decode_critter_sprite_page(int page, int tier, short direction, short palett
     palette_used = palette;
     return 1;
 }
-void *alloc_object_slot(int mobile)
+uw_object_hdr_t *alloc_object_slot(int mobile)
 {
     if (mobile) return projectile;
     TEST_ASSERT_LESS_THAN_UINT(16, spawned);
@@ -68,29 +69,30 @@ void *tilemap_lookup(short x, short y)
     TEST_ASSERT_EQUAL_INT(28, y);
     return (byte *)arena + (y * 64 + x) * 4;
 }
-void *resolve_object_link(void *link_)
+uw_object_hdr_t *resolve_object_link(ushort *link_)
 { ushort *link = (ushort *)link_;
     unsigned slot = *link >> 6;
     return !slot ? NULL : slot < 256 ? DAT_002046b8 + slot * 27
         : DAT_002046c4 + (slot - 256) * 8;
 }
-int object_ptr_in_arena(void *object) { (void)object; return 1; }
+int object_ptr_in_arena(const uw_object_hdr_t *object) { (void)object; return 1; }
 void record_placement(ushort *object)
 {
     TEST_ASSERT_LESS_THAN_UINT(16, placed);
     types[placed++] = object[0] & 0x1ff;
     TEST_ASSERT_NOT_EQUAL(0x157, object[0] & 0x1ff); /* Shrine */
 }
-ushort *settle_dropped_object(void *object, short x, short y, int mode)
+uw_object_hdr_t *settle_dropped_object(void *object, short x, short y,
+				       int mode)
 { record_placement(object); return object; }
 int drop_object_near_target(void *target, void *object, short distance, uint mode)
 { record_placement(object); return 1; }
 int place_object_in_world(uint x, uint y, int z, void *object, short distance, int mode)
 { record_placement(object); return 1; }
 
-void free_object_slot(void *object) {}
+void free_object_slot(uw_object_hdr_t *object) {}
 int check_object_drop_height(ushort *object, ushort *source) { return 1; }
-int encode_object_slot_index(void *object) { (void)object; return 225; }
+int encode_object_slot_index(const uw_object_hdr_t *object) { (void)object; return 225; }
 int play_sound_effect_at_object(int sound, ushort *object, int mode) { return 1; }
 int spawn_scheduled_effect_object(ushort *source_object, int effect_group, int delay, byte animation_offset, short heading_adjust, short tile_x, short tile_y) { (void)source_object; (void)effect_group; (void)delay; (void)animation_offset; (void)heading_adjust; (void)tile_x; (void)tile_y; return 0; }
 int roll_object_destroy_chance(short base_chance, void *object) { (void)base_chance; (void)object; return 0; }
@@ -113,9 +115,11 @@ void creatures_fixture_reset(void)
     TEST_ASSERT_NOT_NULL(goblin);
     TEST_ASSERT_EQUAL_UINT16(0x4d, goblin[0] & 0x1ff);
     memcpy(original_goblin, goblin, sizeof original_goblin);
-    read_data("DATA/OBJECTS.DAT", 2 + 0x80, DAT_002027d0_backing, 0x30);
-    read_data("DATA/OBJECTS.DAT", 2 + 0x80 + 0x30 + 0x80, DAT_001007d0_backing, 0xc00);
-    uw_test_load_object_properties(DAT_00202c90_backing, sizeof DAT_00202c90_backing);
+    read_data("DATA/OBJECTS.DAT", 2 + 0x80, ((byte *)g_ranged_type_props),
+              0x30);
+    read_data("DATA/OBJECTS.DAT", 2 + 0x80 + 0x30 + 0x80,
+              ((byte *)g_monster_type_props), 0xc00);
+    uw_test_load_object_properties(((byte *)g_object_type_props), sizeof g_object_type_props);
     read_data("CRIT/ASSOC.ANM", 0x100, DAT_0023ce70_backing, 0x80);
     read_data("CRIT/CR00PAGE.N00", 0, page_header, sizeof page_header);
     DAT_00201b68 = 1;

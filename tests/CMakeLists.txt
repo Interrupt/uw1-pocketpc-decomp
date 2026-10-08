@@ -170,6 +170,9 @@ set(UW_COMBAT_TEST_FUNCTIONS
 add_fixture_game_unit_test(combat ${UW_COMBAT_TEST_FUNCTIONS})
 # Reuse the combat fixture with real NPC attack, skill and dice calculations.
 add_game_test_library(uw_test_npc_combat ${UW_COMBAT_TEST_FUNCTIONS}
+  src/resources.c:load_armor_variant_tables
+  src/resources.c:load_light_food_effect_tables
+  src/objects.c:load_class7_variant_effect_table
   src/combat.c:resolve_npc_melee_attack src/combat.c:resolve_weapon_hit_skill_check
   src/player.c:roll_skill_check src/math.c:roll_dice_sum src/math.c:rand_below)
 target_sources(uw_test_npc_combat PRIVATE support/combat_fixture.c)
@@ -965,3 +968,25 @@ target_compile_definitions(uw_test_sleep PRIVATE UW_TEST_FULL_REST)
 foreach(suite new_game traps visibility_walk)
   target_compile_options(uw_test_${suite} PRIVATE -fno-common)
 endforeach()
+
+# Independent packing checks before object-pointer/field migrations.
+add_supported_game_unit_test(object_layout)
+find_program(UW_SPATCH_EXECUTABLE spatch)
+if(UW_SPATCH_EXECUTABLE)
+  add_test(NAME object_semantic_patches
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_object_semantic_patches.py"
+      "${UW_SPATCH_EXECUTABLE}")
+endif()
+add_game_test_library(uw_test_object_weight src/objects.c:calculate_object_weight)
+add_supported_game_unit_test(object_weight uw_test_object_weight)
+add_game_test_library(uw_test_object_core
+  src/objects.c:spawn_new_object src/objects.c:resolve_object_link
+  src/objects.c:find_object_in_chain src/objects.c:find_object_by_encoded_slot_in_chain
+  src/objects.c:object_list_insert_head src/objects.c:object_list_append_tail
+  src/objects.c:object_list_unlink src/containers.c:sum_container_weight
+  src/item_use.c:objects_can_stack)
+add_supported_game_unit_test(object_core uw_test_object_core uw_test_division)
+add_game_test_library(uw_test_npc_state src/ai.c:npc_set_goal src/ai.c:npc_set_walk_target
+  src/combat.c:npc_combat_disengage_tick src/combat.c:npc_combat_position_tick)
+add_supported_game_unit_test(npc_state uw_test_npc_state)

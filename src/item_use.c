@@ -24,7 +24,7 @@ static char s_checking_if__d_and__d_are_combin_00084f90[] = "checking if %d and 
 #define DAT_00100632 DAT_00100630_backing[1]
 
 /* ARM field view: use the parent record populated by the loader/runtime. */
-#define DAT_002035cf DAT_00202c90_backing[0x93f]
+#define DAT_002035cf ((byte *)g_object_type_props)[0x93f]
 // was DAT_0008725c -- gates weapon_swing_draw_tick's blit; temporarily cleared during full-screen
 // wipe/dissolve transitions (level loads, screen fades) so the weapon overlay doesn't glitch
 // mid-transition, then restored once the transition finishes.
@@ -45,10 +45,6 @@ static char s_Move_how_many__00085c68[] = "Move how many? ";
    leading space and trailing newline. Real bytes at 0x85c78 (ARM
    UU.exe .data): " is too full.\n". */
 static char s_is_too_full__00085c78[] = " is too full.\n";
-/* Sizing-audit pass: index is `(nibble&0xf)*3`, max 45, read as a
-   short there (max byte 46). Sized to 48; down from 256. */
-/* ARM field view: use the parent record populated by the loader/runtime. */
-#define DAT_002029f9 DAT_002029f8_backing[1]
 /* Sizing-audit pass sized this to 32 and marked its content "unrecovered" (single use,
    `ce_strcat(acStack_7c,&DAT_00085ce0)`, 0 writers). */
 undefined DAT_00085ce0_backing[32] = "...\n";
@@ -223,8 +219,8 @@ int drop_held_object_near_player(void *held_object_ptr, int force)
   ushort local_28;
   ushort local_26;
   
-  DAT_00202a4c = (ushort)(*(byte *)((char *)g_player_object + 0x17) >> 2);
-  DAT_00202a50 = (short)((g_player_object[0xb] & 0x3f0) >> 4);
+  DAT_00202a4c = (ushort)(g_player_object->npc_xhome);
+  DAT_00202a50 = (short)(g_player_object->npc_yhome);
   if (getenv("UW_DEBUG_THROW") && (*held_object & 0x1ff) == 0x80)
     fprintf(stderr, "[throw-playertile] player tile=(%d,%d) fine_pos(DAT_00204880/2/4)=(%d,%d,%d) = world(%g,%g) tile-frac(%g,%g)\n",
             (int)DAT_00202a4c, (int)DAT_00202a50,
@@ -240,25 +236,25 @@ int drop_held_object_near_player(void *held_object_ptr, int force)
     DAT_00202a48 = 0xf;
     puVar5 = (ushort *)spawn_object_near_player();
     if (puVar5 != (ushort *)0x0) {
-      uVar6 = (*puVar5 ^ *held_object) & 0x7fff ^ (uint)*held_object;
-      *(char *)puVar5 = (char)uVar6;
-      *(char *)((char *)puVar5 + 1) = (char)(uVar6 >> 8);
+      uVar6 = (((uw_object_hdr_t *)puVar5)->type_flags ^ *held_object) & 0x7fff ^ (uint)*held_object;
+      ((uw_object_hdr_t *)puVar5)->type_flags_low = (byte)(char)uVar6;
+      ((uw_object_hdr_t *)puVar5)->type_flags_high = (byte)(char)(uVar6 >> 8);
       uVar2 = held_object[3];
       bVar1 = (byte)uVar2;
-      *(byte *)(puVar5 + 3) = ((byte)puVar5[3] ^ bVar1) & 0x3f ^ bVar1;
-      *(char *)((char *)puVar5 + 7) = (char)(uVar2 >> 8);
+      *(byte *)(puVar5 + 3) = ((byte)((uw_object_hdr_t *)puVar5)->link_word ^ bVar1) & 0x3f ^ bVar1;
+      ((uw_object_hdr_t *)puVar5)->link_word_high = (byte)(char)(uVar2 >> 8);
       bVar1 = *(byte *)((char *)held_object + 1);
-      *(char *)puVar5 = (char)*puVar5;
-      *(byte *)((char *)puVar5 + 1) =
-           (bVar1 ^ *(byte *)((char *)puVar5 + 1)) & 0x1e ^ *(byte *)((char *)puVar5 + 1);
+      ((uw_object_hdr_t *)puVar5)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar5)->type_flags;
+      ((uw_object_hdr_t *)puVar5)->type_flags_high =
+          (bVar1 ^ ((uw_object_hdr_t *)puVar5)->type_flags_high) & 0x1e ^ ((uw_object_hdr_t *)puVar5)->type_flags_high;
       *(byte *)(puVar5 + 4) = (byte)held_object[2] & 0x3f;
-      *(byte *)(puVar5 + 3) = ((byte)held_object[3] ^ (byte)puVar5[3]) & 0x3f ^ (byte)puVar5[3];
-      *(undefined1 *)((char *)puVar5 + 7) = *(undefined1 *)((char *)puVar5 + 7);
+      *(byte *)(puVar5 + 3) = ((byte)held_object[3] ^ (byte)((uw_object_hdr_t *)puVar5)->link_word) & 0x3f ^ (byte)((uw_object_hdr_t *)puVar5)->link_word;
+      ((uw_object_hdr_t *)puVar5)->link_word_high = ((uw_object_hdr_t *)puVar5)->link_word_high;
       bVar1 = *(byte *)((char *)held_object + 1);
-      *(char *)puVar5 = (char)*puVar5;
-      *(byte *)((char *)puVar5 + 1) =
-           (bVar1 ^ *(byte *)((char *)puVar5 + 1)) & 0x20 ^ *(byte *)((char *)puVar5 + 1);
-      if (((*held_object & 0x1c0) != 0x140) && (((&DAT_00202c9a)[(*held_object & 0x1ff) * 0xd] & 3) != 2)) {
+      ((uw_object_hdr_t *)puVar5)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar5)->type_flags;
+      ((uw_object_hdr_t *)puVar5)->type_flags_high =
+                      (bVar1 ^ ((uw_object_hdr_t *)puVar5)->type_flags_high) & 0x20 ^ ((uw_object_hdr_t *)puVar5)->type_flags_high;
+      if (((*held_object & 0x1c0) != 0x140) && ((g_object_type_props[(*held_object & 0x1ff)].class_flags & 3) != 2)) {
         *(byte *)(puVar5 + 0xd) = (byte)(held_object[1] >> 7) & 7;
       }
       free_object_slot(held_object);
@@ -266,37 +262,40 @@ int drop_held_object_near_player(void *held_object_ptr, int force)
     }
   }
   if (held_object != (ushort *)0x0) {
-    local_28 = (ushort)(*(byte *)((char *)g_player_object + 3) >> 5) + DAT_00202a4c * 8;
-    local_26 = (short)((*(byte *)((char *)g_player_object + 3) & 0x1c) >> 2) + DAT_00202a50 * 8;
-    *(byte *)(held_object + 1) = ((byte)g_player_object[1] ^ (byte)held_object[1]) & 0x7f ^ (byte)held_object[1];
+    local_28 = (ushort)(g_player_object->hdr.xpos) + DAT_00202a4c * 8;
+    local_26 = (short)(g_player_object->hdr.ypos) + DAT_00202a50 * 8;
+    *(byte *)(held_object + 1) = ((byte) g_player_object->hdr.position_word ^ (byte)held_object[1]) & 0x7f ^ (byte)held_object[1];
     *(byte *)((char *)held_object + 3) = *(byte *)((char *)held_object + 3);
-    cVar9 = ((&DAT_00202c91)[(CONCAT11(*(byte *)((char *)held_object + 1),(byte)*held_object) & 0x1ff) * 0xd] &
-            7) + ((&DAT_00202c91)[(*g_player_object & 0x1ff) * 0xd] & 7) + '\x01';
+    cVar9 = (g_object_type_props[(CONCAT11(*(byte *)((char *)held_object + 1), (byte)*held_object) & 0x1ff)].collision_radius) + (g_object_type_props[(g_player_object->hdr.item_id)].collision_radius) + '\x01';
     if (getenv("UW_DEBUG_THROW"))
       fprintf(stderr, "[throw-heading] facing_byte(g_player_object+0x18)&0x1f=%d fine_aim((g_player_object[1]&0x380)>>2)=%d heading=%d dist(cVar9)=%d start=(%d,%d)\n",
-              (int)((byte)g_player_object[0xc] & 0x1f), (int)((g_player_object[1] & 0x380) >> 2),
-              (int)(((byte)g_player_object[0xc] & 0x1f) + ((g_player_object[1] & 0x380) >> 2)),
+              (int)(g_player_object->npc_heading),
+              (int)((g_player_object->hdr.position_word & 0x380) >> 2),
+              (int)((g_player_object->npc_heading) + ((g_player_object->hdr.position_word & 0x380) >> 2)),
               (int)cVar9, (int)local_28, (int)local_26);
-    project_position_by_heading(((byte)g_player_object[0xc] & 0x1f) + ((g_player_object[1] & 0x380) >> 2),cVar9,&local_28
-                 ,&local_26);
+    project_position_by_heading((g_player_object->npc_heading) + ((g_player_object->hdr.position_word & 0x380) >> 2),
+                                cVar9,&local_28
+                                ,&local_26);
     if (getenv("UW_DEBUG_THROW"))
       fprintf(stderr, "[throw-heading] after 1st project_position_by_heading: local_28(X)=%d local_26(Y)=%d\n",
               (int)local_28, (int)local_26);
     iVar4 = check_object_placement_clearance(*held_object & 0x1ff,0,(int)(short)local_28,(int)(short)local_26,
-                         (byte)g_player_object[1] & 0x7f,1,cVar9);
+                         g_player_object->hdr.zpos,1,cVar9);
     if (getenv("UW_DEBUG_THROW"))
       fprintf(stderr, "[throw-heading] 1st check_object_placement_clearance iVar4=%d\n", iVar4);
     if (iVar4 == 0) {
       bVar3 = true;
     }
     else {
-      project_position_by_heading(((byte)g_player_object[0xc] & 0x1f) + ((g_player_object[1] & 0x380) >> 2),3,&local_28,
-                   &local_26);
+      project_position_by_heading((g_player_object->npc_heading) + ((g_player_object->hdr.position_word & 0x380) >> 2),
+                                  3,&local_28,
+                                  &local_26);
       if (getenv("UW_DEBUG_THROW"))
         fprintf(stderr, "[throw-heading] after 2nd(retry) project_position_by_heading: local_28(X)=%d local_26(Y)=%d\n",
                 (int)local_28, (int)local_26);
       iVar4 = check_object_placement_clearance(*held_object & 0x1ff,0,(int)(short)local_28,(int)(short)local_26,
-                           (byte)g_player_object[1] & 0x7f,1,cVar9);
+                           g_player_object->hdr.zpos,1,
+                           cVar9);
       if (getenv("UW_DEBUG_THROW"))
         fprintf(stderr, "[throw-heading] 2nd check_object_placement_clearance iVar4=%d\n", iVar4);
       bVar3 = true;
@@ -605,7 +604,7 @@ LAB_0007af3c:
         if (sVar4 == -1) {
           print_scroll_message_by_id(0xf1);
           handle_rest_action(-2);
-          if (*(char *)((char *)g_player_object + 8) == '\0') goto LAB_0007b254;
+          if ((char)g_player_object->npc_hp == '\0') goto LAB_0007b254;
           print_scroll_message_by_id(0xf3);
           uVar8 = ordint_divmod(6,*(ushort *)(DAT_00086df8 + 0x61) >> 4 & 0x3f).quot;
           uVar8 = (uVar8 & 0xff) + 10;
@@ -1420,32 +1419,32 @@ void complete_use_item_scatter_spawn(short *target, int clicked, int confirmed)
         while( true ) {
           iVar6 = iVar6 * 0x10000 >> 0x10;
           if ((iVar6 < 1) || (puVar8 = (ushort *)spawn_new_object(1,0), puVar8 == (ushort *)0x0)) break;
-          *(char *)puVar8 = (char)*target;
-          *(undefined1 *)((char *)puVar8 + 1) = *(undefined1 *)((char *)target + 1);
+          ((uw_object_hdr_t *)puVar8)->type_flags_low = (byte)(char)*target;
+          ((uw_object_hdr_t *)puVar8)->type_flags_high = *(undefined1 *)((char *)target + 1);
           *(char *)(puVar8 + 1) = (char)target[1];
-          *(undefined1 *)((char *)puVar8 + 3) = *(undefined1 *)((char *)target + 3);
+          ((uw_object_hdr_t *)puVar8)->position_word_high = *(undefined1 *)((char *)target + 3);
           *(char *)(puVar8 + 2) = (char)target[2];
-          *(undefined1 *)((char *)puVar8 + 5) = *(undefined1 *)((char *)target + 5);
+          ((uw_object_hdr_t *)puVar8)->chain_word_high = *(undefined1 *)((char *)target + 5);
           *(char *)(puVar8 + 3) = (char)target[3];
-          *(undefined1 *)((char *)puVar8 + 7) = *(undefined1 *)((char *)target + 7);
+          ((uw_object_hdr_t *)puVar8)->link_word_high = *(undefined1 *)((char *)target + 7);
           sVar4 = rand_below(2);
           uVar9 = uVar11 + (int)sVar4 + 1;
           if (0x156 < (int)(uVar9 * 0x10000) >> 0x10) {
             uVar9 = 0x10;
           }
-          uVar10 = (*puVar8 ^ uVar9) & 0x1ff ^ (uint)*puVar8;
+          uVar10 = (((uw_object_hdr_t *)puVar8)->type_flags ^ uVar9) & 0x1ff ^ (uint)((uw_object_hdr_t *)puVar8)->type_flags;
           uVar1 = (undefined1)uVar10;
-          *(undefined1 *)puVar8 = uVar1;
+          ((uw_object_hdr_t *)puVar8)->type_flags_low = uVar1;
           bVar2 = (byte)(uVar10 >> 8);
-          *(byte *)((char *)puVar8 + 1) = bVar2;
+          ((uw_object_hdr_t *)puVar8)->type_flags_high = bVar2;
           if ((short)uVar9 == 0x10) {
-            *(undefined1 *)puVar8 = uVar1;
-            *(byte *)((char *)puVar8 + 1) = bVar2 | 0x80;
+            ((uw_object_hdr_t *)puVar8)->type_flags_low = uVar1;
+            ((uw_object_hdr_t *)puVar8)->type_flags_high = bVar2 | 0x80;
             uVar5 = ce_rand();
             uw_ord2005_rem_168 = ((int)(uVar5)) % (6);
             uVar9 = (uw_ord2005_rem_168 & 0xffff) + 3;
-            *(byte *)(puVar8 + 3) = (byte)puVar8[3] & 0x3f ^ (char)uVar9 * '@';
-            *(char *)((char *)puVar8 + 7) = (char)(uVar9 >> 2);
+            *(byte *)(puVar8 + 3) = ((uw_object_hdr_t *)puVar8)->owner ^ (char)uVar9 * '@';
+            ((uw_object_hdr_t *)puVar8)->link_word_high = (byte)(char)(uVar9 >> 2);
           }
           uVar3 = target[1];
           place_object_in_world((uint)(uVar3 >> 0xd) + DAT_002020a0 * 8,
@@ -1864,8 +1863,8 @@ void trigger_object_trap_or_use_action(void *actor_ptr, void *object_ptr, int ac
      (local_1c = (ushort *)(object + 6), (*local_1c & 0xffc0) != 0)) {
     puVar1 = (ushort *)find_object_in_chain(&local_1c,0,6,0xffffffff,0xffff);
     if (puVar1 != (ushort *)0x0) {
-      if ((*puVar1 & 0x30) < 0x20) {
-        if (((*puVar1 & 0x1e00) == 0) && ((short)action == 4)) {
+      if ((((uw_object_hdr_t *)puVar1)->type_flags & 0x30) < 0x20) {
+        if (((((uw_object_hdr_t *)puVar1)->type_flags & 0x1e00) == 0) && ((short)action == 4)) {
           apply_trap_or_link_effect(actor,object,puVar1,tile_x,tile_y);
           refresh_object_link_chain(local_1c,puVar1);
         }
@@ -2051,7 +2050,7 @@ int try_climb_wall()
   puVar2 = (ushort *)tilemap_lookup((int)local_6 >> 3,(int)local_8 >> 3);
   uVar1 = *puVar2;
   if ((((uVar1 & 0xf) == 0) || (((&DAT_0023ae40)[uVar1 >> 10 & 0xf] & 0xfff0) != 0x10)) ||
-     ((int)(*(byte *)((char *)g_player_object + 2) >> 3 & 0xf) <= (int)((uVar1 >> 4 & 0xf) - 1))) {
+     ((int)(g_player_object->hdr.position_word_low >> 3 & 0xf) <= (int)((uVar1 >> 4 & 0xf) - 1))) {
     uVar3 = 0x65;
   }
   else {
@@ -2202,8 +2201,8 @@ bool place_object_in_equipment_slot(ushort *equip_object, int slot)
       uVar7 = encode_object_slot_index(equip_object);
       *pbVar9 = *pbVar9 & 0x3f | (byte)((uVar7 & 0x3ff) << 6);
       (&DAT_00202951)[iVar4] = (char)((uVar7 << 0x16) >> 0x18);
-      sVar2 = calculate_object_weight(equip_object);
-      sVar3 = calculate_object_weight(puVar5);
+      sVar2 = calculate_object_weight((uw_object_hdr_t *)equip_object);
+      sVar3 = calculate_object_weight((uw_object_hdr_t *)puVar5);
       /* Legacy truncated "prev" walk -- same fix as place_object_in_backpack_slot's sibling copy
          (search "still broken for genuine container nesting"); given its own dedicated local
          (pAncestor) since `iVar4` has unrelated plain-int roles elsewhere in this function. */
@@ -2213,7 +2212,7 @@ bool place_object_in_equipment_slot(ushort *equip_object, int slot)
         *(char *)(pAncestor + 10) = (char)iVar8;
         *(char *)(pAncestor + 0xb) = (char)((uint)iVar8 >> 8);
       }
-      sVar2 = calculate_object_weight(equip_object);
+      sVar2 = calculate_object_weight((uw_object_hdr_t *)equip_object);
       g_player_carry_weight = g_player_carry_weight + sVar2;
       refresh_player_equipment_effects();
       repopulate_container_grid_slots();
@@ -2239,7 +2238,8 @@ void redraw_backpack_slot_widget(short slot)
 // was FUN_00047b38 -- checks whether two objects can be merged into one stack: same class, both
 // stackable (or both non-stacked), not in an excluded category (0xc0 bits), and -- for the "cheap
 // goods" class range 0x10-0x12 -- matching quality-family nibbles.
-int objects_can_stack(ushort *object_a, ushort *object_b)
+int objects_can_stack(const uw_object_hdr_t *object_a,
+                      const uw_object_hdr_t *object_b)
 {
   byte bVar1;
   byte bVar2;
@@ -2248,24 +2248,24 @@ int objects_can_stack(ushort *object_a, ushort *object_b)
   ushort uVar5;
   uint uVar6;
   
-  uVar3 = *object_a;
-  if ((((((*object_b ^ uVar3) & 0x1ff) == 0) &&
-       (((uVar3 & 0x8000) != 0 || ((object_a[3] & 0xffc0) == 0)))) &&
-      (((*object_b & 0x8000) != 0 || ((object_b[3] & 0xffc0) == 0)))) &&
-     ((uVar4 = object_a[3], (uVar4 & 0x8000) == 0 && (uVar5 = object_b[3], (uVar5 & 0x8000) == 0)))) {
+  uVar3 = object_a->type_flags;
+  if ((((((object_b->type_flags ^ uVar3) & 0x1ff) == 0) &&
+        (((uVar3 & 0x8000) != 0 || (object_a->link == 0)))) &&
+       ((object_b->is_quant != 0 || (object_b->link == 0)))) &&
+      ((uVar4 = object_a->link_word, (uVar4 & 0x8000) == 0 && (uVar5 = object_b->link_word, (uVar5 & 0x8000) == 0)))) {
     uVar6 = uVar3 & 0x1ff;
-    if (((((&DAT_00202c93)[uVar6 * 0xd] & 0xc0) != 0x40) &&
-        (((&DAT_00202c93)[uVar6 * 0xd] & 0xc0) != 0xc0)) &&
-       ((((uVar3 & 0x1f0) != 0x100 || (((uVar5 ^ uVar4) & 0x3f) == 0)) &&
-        ((ushort)((uVar5 >> 6) + (uVar4 >> 6)) < 999)))) {
+    if ((((g_object_type_props[uVar6].flags & 0xc0) != 0x40) &&
+         ((g_object_type_props[uVar6].flags & 0xc0) != 0xc0)) &&
+        ((((uVar3 & 0x1f0) != 0x100 || (((uVar5 ^ uVar4) & 0x3f) == 0)) &&
+          ((ushort)((uVar5 >> 6) + (uVar4 >> 6)) < 999)))) {
       if ((uVar6 < 0x10) || (0x12 < uVar6)) {
-        bVar1 = (byte)object_a[2] & 0x3f;
-        bVar2 = (byte)object_b[2] & 0x3f;
+        bVar1 = object_a->quality;
+        bVar2 = object_b->quality;
         if (((bVar1 ^ bVar2) & 0xf0) != 0) {
           return 0;
         }
-        if (((((byte)object_a[2] & 0x3f) == 0) || (((byte)object_b[2] & 0x3f) == 0)) &&
-           (bVar1 != bVar2)) {
+        if ((((object_a->quality) == 0) || ((object_b->quality) == 0)) &&
+            (bVar1 != bVar2)) {
           return 0;
         }
       }
@@ -2477,7 +2477,7 @@ int reduce_object_count(ushort *stack_object, uint amount)
 
   /* Dropped argument: calculate_object_weight dereferences its own declared stack_object immediately --
      called bare here, same idiom as this whole session's other fixes. */
-  iVar3 = calculate_object_weight(stack_object);
+  iVar3 = calculate_object_weight((uw_object_hdr_t *)stack_object);
   uVar4 = encode_object_slot_index(stack_object);
   iVar7 = 0;
   do {
@@ -2511,8 +2511,8 @@ int reduce_object_count(ushort *stack_object, uint amount)
     if (puVar5 == (undefined1 *)0x0) {
       return 0;
     }
-    if (((0 < sVar1) && ((puVar5[1] & 0x80) != 0)) && ((*(ushort *)(puVar5 + 6) & 0x8000) == 0)) {
-      uVar2 = *(ushort *)(puVar5 + 6) >> 6;
+    if (((0 < sVar1) && ((puVar5[1] & 0x80) != 0)) && ((((uw_object_hdr_t *)puVar5)->link_word & 0x8000) == 0)) {
+      uVar2 = ((uw_object_hdr_t *)puVar5)->link_word >> 6;
       if ((1 < uVar2) && (sVar1 < (short)uVar2)) {
         puVar6 = (undefined1 *)alloc_object_slot(0);
         *puVar6 = *puVar5;
@@ -2524,9 +2524,9 @@ int reduce_object_count(ushort *stack_object, uint amount)
         puVar6[6] = puVar5[6];
         puVar6[7] = puVar5[7];
         uVar9 = (amount & 0xffff) * 0x3ff + (uint)uVar2;
-        puVar6[6] = puVar6[6] & 0x3f ^ (char)uVar9 * '@';
+        puVar6[6] = ((uw_object_hdr_t *)puVar6)->owner ^ (char)uVar9 * '@';
         puVar6[7] = (char)((uVar9 & 0x3ffffff) >> 2);
-        puVar5[6] = puVar5[6] & 0x3f | (byte)((amount & 0x3ff) << 6);
+        puVar5[6] = ((uw_object_hdr_t *)puVar5)->owner | (byte)((amount & 0x3ff) << 6);
         puVar5[7] = (char)((amount << 0x16) >> 0x18);
         object_list_insert_head(puVar5 + 4,puVar6);
       }
@@ -2558,8 +2558,8 @@ ushort *extract_clicked_backpack_item(int category, int subcategory, int quality
 
   uVar1 = extract_and_refresh_slot_item(category,subcategory,quality,slot,0);
   puVar2 = (ushort *)resolve_object_link(&g_equipped_items + slot * 2);
-  if ((((puVar2 != (ushort *)0x0) && ((*puVar2 & 0x1c0) == 0x80)) && ((*puVar2 & 0x30) == 0)) &&
-     (g_current_container_record != 0)) {
+  if ((((puVar2 != (ushort *)0x0) && ((((uw_object_hdr_t *)puVar2)->type_flags & 0x1c0) == 0x80)) && ((((uw_object_hdr_t *)puVar2)->type_flags & 0x30) == 0)) &&
+      (g_current_container_record != 0)) {
     repopulate_container_grid_slots();
     refresh_container_view();
     return uVar1;
@@ -2648,7 +2648,7 @@ ushort *extract_matching_object_from_slot(int category, int subcategory, int qua
           pbVar10[7] = *(byte *)((char *)puVar3 + 7);
           uVar6 = (uint)flag;
           uVar8 = uVar6 * 0x3ff + (uint)uVar7;
-          pbVar10[6] = pbVar10[6] & 0x3f ^ (char)uVar8 * '@';
+          pbVar10[6] = ((uw_object_hdr_t *)pbVar10)->owner ^ (char)uVar8 * '@';
           pbVar10[7] = (byte)((uVar8 & 0x3ffffff) >> 2);
           *(byte *)(puVar3 + 3) = (byte)puVar3[3] & 0x3f | (byte)((uVar6 & 0x3ff) << 6);
           *(byte *)((char *)puVar3 + 7) = (byte)((uVar6 << 0x16) >> 0x18);
@@ -2667,7 +2667,7 @@ ushort *extract_matching_object_from_slot(int category, int subcategory, int qua
         (&DAT_00202951)[iVar4 * 2] = (char)(uVar7 >> 8);
       }
       object_list_unlink(local_28 + 6,puVar3);
-      iVar4 = calculate_object_weight(puVar3);
+      iVar4 = calculate_object_weight((uw_object_hdr_t *)puVar3);
       g_player_carry_weight = g_player_carry_weight - (short)iVar4;
       if (g_current_container_record == 0) {
         return puVar3;
@@ -2960,7 +2960,7 @@ int place_object_in_backpack_slot(ushort *pack_object, short slot)
     }
   }
   else {
-    iVar3 = calculate_object_weight(pack_object);
+    iVar3 = calculate_object_weight((uw_object_hdr_t *)pack_object);
     if (-1 < iVar1) {
       if (0x12 < iVar1) {
         /* Was `resolve_object_link(g_current_container_record + 8)` -- same bug, same fix, as
@@ -3017,8 +3017,8 @@ int find_or_assign_object_widget(void *object_ptr)
         return (int)cVar1;
       }
       puVar3 = (ushort *)resolve_object_link(puVar5);
-      if (((((*puVar3 & 0x8000) == 0) && (g_current_container_record == 0)) ||
-          (((*puVar3 & 0x8000) == 0 && (((*(ushort *)(g_current_container_record + 8) ^ *puVar5) & 0xffc0) != 0)))
+      if (((((((uw_object_hdr_t *)puVar3)->type_flags & 0x8000) == 0) && (g_current_container_record == 0)) ||
+           (((((uw_object_hdr_t *)puVar3)->type_flags & 0x8000) == 0 && (((*(ushort *)(g_current_container_record + 8) ^ *puVar5) & 0xffc0) != 0)))
           ) && (iVar4 = find_object_by_encoded_slot_in_chain(puVar3 + 3,1,uVar2), iVar4 != 0)) {
         return (short)cVar1 * -0x10000 >> 0x10;
       }
@@ -3051,7 +3051,7 @@ uint check_object_fits_in_slot(ushort *object, int slot)
   undefined1 *puVar10;
   ushort *puVar11;
   int iVar12;
-  char *effect_ptr;
+  uw_armor_type_props_t *effect_ptr;
   char *container_rec;
   byte *pbVar13;
   char *pcVar14;
@@ -3063,18 +3063,18 @@ uint check_object_fits_in_slot(ushort *object, int slot)
   short local_54 [2];
   int local_50;
   uint local_4c;
-  undefined *local_48;
+  const uw_object_type_props_t *local_48;
   char acStack_40 [28];
   char *_parentRec;
   undefined2 _savedLink;
 
   local_4c = (uint)(short)(*object & 0x1ff);
-  local_48 = &DAT_00202c90 + local_4c * 0xd;
+  local_48 = &g_object_type_props[local_4c];
   uVar1 = *object >> 6 & 7;
   uVar5 = ((byte)*object & 0x30) >> 4;
   bVar4 = (byte)*object & 0xf;
   iVar15 = (int)(short)slot;
-  g_scratch_object_ptr = (ushort *)object;
+  g_scratch_object_ptr = (uw_object_hdr_t *)object;
   if (iVar15 == 0x13) {
     if (g_current_container_record == 0) {
       return 0;
@@ -3110,7 +3110,7 @@ uint check_object_fits_in_slot(ushort *object, int slot)
     }
     else {
       puVar11 = (ushort *)resolve_object_link(&g_equipped_items + iVar15 * 2);
-      if ((puVar11 == (ushort *)0x0) || ((*puVar11 & 0x1f0) != 0x80)) {
+      if ((puVar11 == (ushort *)0x0) || ((((uw_object_hdr_t *)puVar11)->type_flags & 0x1f0) != 0x80)) {
         puVar11 = (ushort *)resolve_object_link(&g_current_container_link);
       }
     }
@@ -3129,24 +3129,24 @@ uint check_object_fits_in_slot(ushort *object, int slot)
     if (((byte)*object & 0x30) < 0x20) {
       return 0;
     }
-    effect_ptr = (char *)get_scanned_object_class_effect_ptr();
+    effect_ptr = (uw_armor_type_props_t *)get_scanned_object_class_effect_ptr();
     if (iVar15 == 0) {
-      bVar16 = *(char *)(effect_ptr + 3) == '\b';
+      bVar16 = (char)effect_ptr->equipment_slot == '\b';
     }
     else if (iVar15 == 1) {
-      bVar16 = *(char *)(effect_ptr + 3) == '\x01';
+      bVar16 = (char)effect_ptr->equipment_slot == '\x01';
     }
     else if (iVar15 == 2) {
-      bVar16 = *(char *)(effect_ptr + 3) == '\x04';
+      bVar16 = (char)effect_ptr->equipment_slot == '\x04';
     }
     else if (iVar15 == 3) {
-      bVar16 = *(char *)(effect_ptr + 3) == '\x03';
+      bVar16 = (char)effect_ptr->equipment_slot == '\x03';
     }
     else {
       if (iVar15 != 4) {
         return 0;
       }
-      bVar16 = *(char *)(effect_ptr + 3) == '\x05';
+      bVar16 = (char)effect_ptr->equipment_slot == '\x05';
     }
 LAB_00047a68:
     if (!bVar16) {
@@ -3161,12 +3161,12 @@ LAB_00047a68:
     if (((byte)*object & 0x30) < 0x20) {
       return 0;
     }
-    effect_ptr = (char *)get_scanned_object_class_effect_ptr();
-    bVar16 = *(char *)(effect_ptr + 3) == '\t';
+    effect_ptr = (uw_armor_type_props_t *)get_scanned_object_class_effect_ptr();
+    bVar16 = (char)effect_ptr->equipment_slot == '\t';
     goto LAB_00047a68;
   }
   if ((iVar15 == 8 - (*(byte *)(DAT_00086df8 + 100) & 1)) && ((uVar1 == 0 && (uVar5 == 0)))) {
-    if ((puVar11 != (ushort *)0x0) && ((*puVar11 & 0x1ff) == local_4c)) {
+    if ((puVar11 != (ushort *)0x0) && ((((uw_object_hdr_t *)puVar11)->item_id) == local_4c)) {
       return 0;
     }
     if ((((*object & 0x8000) != 0) && ((object[3] & 0x8000) == 0)) &&
@@ -3201,12 +3201,12 @@ LAB_00047a68:
     }
   }
   local_50 = (int)(short)uVar1;
-  if ((puVar11 == (ushort *)0x0) || ((*puVar11 & 0x1f0) != 0x80)) {
+  if ((puVar11 == (ushort *)0x0) || ((((uw_object_hdr_t *)puVar11)->type_flags & 0x1f0) != 0x80)) {
 LAB_00047a0c:
-    return (byte)local_48[3] >> 5 & 1;
+    return local_48->flags >> 5 & 1;
   }
   bVar6 = 1;
-  local_54[0] = calculate_object_weight(object);
+  local_54[0] = calculate_object_weight((uw_object_hdr_t *)object);
   container_rec = g_current_container_record;
   bVar7 = 1;
   if (0x13 < iVar15) {
@@ -3220,10 +3220,10 @@ LAB_00047a0c:
       if (pbVar13 == (byte *)0x0) {
         bVar7 = 1;
       }
-      else if (((short)(ushort)(byte)(&g_carry_weight_limit_table)[(*pbVar13 & 0xf) * 3] == 0) ||
-         (bVar7 = 0,
-         (int)*(short *)(container_rec + 10) + (int)local_54[0] <=
-         (int)(short)(ushort)(byte)(&g_carry_weight_limit_table)[(*pbVar13 & 0xf) * 3])) {
+      else if (((short)(ushort)(byte) g_container_type_props[(*pbVar13 & 0xf)].capacity == 0) ||
+               (bVar7 = 0,
+                (int)*(short *)(container_rec + 10) + (int)local_54[0] <=
+                (int)(short)(ushort)(byte) g_container_type_props[(*pbVar13 & 0xf)].capacity)) {
         bVar7 = 1;
       }
       bVar7 = bVar6 & bVar7;
@@ -3231,9 +3231,9 @@ LAB_00047a0c:
   }
   sum_container_weight(puVar11 + 3,local_54);
   uVar8 = local_4c;
-  iVar15 = ((byte)*puVar11 & 0xf) * 3;
-  if (((byte)(&g_carry_weight_limit_table)[iVar15] == 0) ||
-     (bVar7 = 0, local_54[0] <= (short)(ushort)(byte)(&g_carry_weight_limit_table)[iVar15])) {
+  iVar15 = ((byte)((uw_object_hdr_t *)puVar11)->type_flags & 0xf) * 3;
+  if (((byte) g_container_type_props[(iVar15) / 3].capacity == 0) ||
+      (bVar7 = 0, local_54[0] <= (short)(ushort)(byte) g_container_type_props[(iVar15) / 3].capacity)) {
     bVar7 = 1;
   }
   if (!(bool)(bVar7 & bVar6)) {
@@ -3252,10 +3252,9 @@ LAB_00047a0c:
     message_scroll_print_wrapped(s_is_too_full__00085c78);
     return 0;
   }
-  uVar2 = (uint)*(short *)(&DAT_002029f9 + iVar15);
-  /* DAT_002029f9 (this container-type's "specific item id required" table, alongside its sibling
-     g_carry_weight_limit_table used for the weight-capacity check just above) is loaded by
-     load_light_food_effect_tables... */
+  uVar2 = (uint)(short)g_container_type_props[(iVar15) / 3].acceptance_mask;
+  /* The signed acceptance mask shares the row with capacity;
+     load_light_food_effect_tables fills both fields from OBJECTS.DAT. */
   if ((int)uVar2 <= 0) goto LAB_00047a0c;
   if ((int)uVar2 < 0x200) {
     if ((local_4c != uVar2) && (print_scroll_message_by_id(0xf8), uVar8 != uVar2)) {
@@ -3455,7 +3454,7 @@ int handle_backpack_slot_interact(void *object_ptr, uint slot)
       *(byte *)(puVar4 + 3) = (byte)puVar4[3] & 0x3f | 0x40;
       *(undefined1 *)((char *)puVar4 + 7) = 0;
     }
-    iVar8 = (*(ushort *)(&DAT_00202c91 + (*object & 0x1ff) * 0xd) >> 4) * slot;
+    iVar8 = (g_object_type_props[(*object & 0x1ff)].unit_weight) * slot;
     container_rec = g_current_container_record;
     /* Legacy truncated "prev" walk -- same fix as
        place_object_in_backpack_slot's sibling copy (search "still
@@ -3506,9 +3505,9 @@ void handle_object_drop_target(short widget)
         /* Was missing a NULL check -- resolve_object_link legitimately returns 0 for an empty slot
            (its own link word has no object-table bits set, see its own comment), and every fresh
            character's weapon-hand slot IS empty by default (confirmed live). */
-        if ((puVar1 != 0) && (uVar3 = *puVar1 & 0x1ff,
-           ((((*puVar1 & 0x1f0) == 0) || (uVar3 == 0x18)) || (uVar3 == 0x19)) ||
-           ((uVar3 == 0x1a || (uVar3 == 0x1f))))) {
+        if ((puVar1 != 0) && (uVar3 = ((uw_object_hdr_t *)puVar1)->item_id,
+                              ((((((uw_object_hdr_t *)puVar1)->type_flags & 0x1f0) == 0) || (uVar3 == 0x18)) || (uVar3 == 0x19)) ||
+                              ((uVar3 == 0x1a || (uVar3 == 0x1f))))) {
           toggle_weapon_ready();
           goto LAB_00042a10;
         }
@@ -3576,9 +3575,10 @@ void handle_object_drop_target(short widget)
     /* Page 4 of comobj's string data is the base object-name table,
        indexed directly by id (0x800 | id) -- same lookup the
        UW_DUMP_OBJECTS_FILE census tool already uses. */
-    char *_useName = (char *)get_message_string(0x800 | (*puVar2 & 0x1ff));
+    char *_useName = (char *)get_message_string(0x800 | (((uw_object_hdr_t *)puVar2)->item_id));
     DEBUG(INFO, "[inv] use item: id=0x%03x type=0x%03x name=\"%s\"\n",
-          (unsigned)(*puVar2 & 0x1ff), (unsigned)(*puVar2 & 0x1f0),
+          (unsigned)(((uw_object_hdr_t *)puVar2)->item_id),
+          (unsigned)(((uw_object_hdr_t *)puVar2)->type_flags & 0x1f0),
           (_useName && _useName[0]) ? _useName : "(unnamed)");
     use_object_on_target(g_player_object,puVar2,1);
   }

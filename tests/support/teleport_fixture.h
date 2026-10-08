@@ -4,7 +4,7 @@
 #include "unity.h"
 #include "src/headers/level.h"
 extern ushort player[16], other_object[16];
-extern ushort *g_player_object;
+extern uw_mobile_object_t *g_player_object;
 extern short DAT_00201b68, DAT_00201c7c;
 extern undefined2 DAT_00201c90, DAT_00201c8c, g_cursor_holding_state;
 extern char *g_selected_object;

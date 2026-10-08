@@ -48,10 +48,10 @@ void release_container_reference(char *container_link)
   ushort *puVar2;
 
   puVar2 = (ushort *)get_object_record_by_slot_index(*(ushort *)(container_link + 8) >> 6);
-  uVar1 = *puVar2;
+  uVar1 = ((uw_object_hdr_t *)puVar2)->type_flags;
   if (((uVar1 & 0xf) < 0xc) && ((uVar1 & 1) != 0)) {
-    *(byte *)puVar2 = ((char)(uVar1 & 0xf) - 1U ^ (byte)uVar1) & 0xf ^ (byte)uVar1;
-    *(byte *)((char *)puVar2 + 1) = (byte)(uVar1 >> 8);
+    ((uw_object_hdr_t *)puVar2)->type_flags_low = ((char)(uVar1 & 0xf) - 1U ^ (byte)uVar1) & 0xf ^ (byte)uVar1;
+    ((uw_object_hdr_t *)puVar2)->type_flags_high = (byte)(uVar1 >> 8);
   }
 }
 
@@ -186,7 +186,7 @@ void leave_nested_container_level()
       if (getenv("UW_DEBUG_INV"))
         fprintf(stderr, "[inv] leave_nested_container_level: popped to record=%p g_current_container_link=0x%04x resolved=%p\n",
                 (void *)g_current_container_record, (unsigned)g_current_container_link, (void *)iVar1);
-      _DAT_00202978 = (_DAT_00202978 ^ *(ushort *)(iVar1 + 6)) & 0x3f ^ *(ushort *)(iVar1 + 6);
+      _DAT_00202978 = (_DAT_00202978 ^ ((uw_object_hdr_t *)iVar1)->link_word) & 0x3f ^ ((uw_object_hdr_t *)iVar1)->link_word;
       /* User QA: "the container indicator does not update to show the current container icon" after
          popping back to a parent -- this is now the real widget 20 (see DAT_00085c4c's own
          comment)... */
@@ -348,7 +348,7 @@ void open_backpack_container(short container_slot)
   puVar7 = (ushort *)resolve_object_link(puVar13);
   if (getenv("UW_DEBUG_INV"))
     fprintf(stderr, "[inv] open_backpack_container: resolve_object_link -> puVar7=%p\n", (void *)puVar7);
-  uVar3 = *puVar7;
+  uVar3 = ((uw_object_hdr_t *)puVar7)->type_flags;
   if (((uVar3 & 0x1c0) == 0x80) && ((uVar3 & 0x30) == 0)) {
     if ((uVar3 & 0xf) == 0xf) {
       set_hud_status_value(6,1);
@@ -482,7 +482,7 @@ void open_backpack_container(short container_slot)
                (&g_equipped_items)[iVar2 * 2] & 0x3f | (byte)((uVar12 & 0x3ff) << 6);
           (&DAT_00202951)[iVar2 * 2] = (char)((uVar12 << 0x16) >> 0x18);
           if (puVar15 != NULL) {
-            if ((*(byte *)((char *)puVar15 + 1) & 0x40) != 0) {
+            if ((((uw_object_hdr_t *)puVar15)->type_flags_high & 0x40) != 0) {
               iVar10 = (iVar2 + -1) * 0x10000 >> 0x10;
             }
             puVar15 = (ushort *)resolve_object_link((ushort *)((char *)puVar15 + 4));
@@ -497,10 +497,10 @@ void open_backpack_container(short container_slot)
         }
         redraw_inventory_widget_range(0xc,0x13);
         puVar7 = (ushort *)resolve_object_link(&g_current_container_link);
-        uVar3 = *puVar7;
+        uVar3 = ((uw_object_hdr_t *)puVar7)->type_flags;
         if (((uVar3 & 0xf) < 0xc) && ((uVar3 & 1) == 0)) {
-          *(byte *)puVar7 = ((char)(uVar3 & 0xf) + 1U ^ (byte)uVar3) & 0xf ^ (byte)uVar3;
-          *(byte *)((char *)puVar7 + 1) = (byte)(uVar3 >> 8);
+          ((uw_object_hdr_t *)puVar7)->type_flags_low = ((char)(uVar3 & 0xf) + 1U ^ (byte)uVar3) & 0xf ^ (byte)uVar3;
+          ((uw_object_hdr_t *)puVar7)->type_flags_high = (byte)(uVar3 >> 8);
         }
         refresh_container_view();
         /* The real "open container indicator" (widget 20, see DAT_00085c4c's own comment): point
@@ -648,7 +648,7 @@ LAB_0004386c:
       }
       local_28 = 0;
     }
-    if ((*puVar4 & 0x1ff) == 0x8f) {
+    if ((((uw_object_hdr_t *)puVar4)->item_id) == 0x8f) {
       /* Real ARM binary calls place_rune_in_bag() with 0 args here too (confirmed via Ghidra
          decompile of the real auto_place_in_container at 0x43734) -- same "leftover register"
          reliance already found 3 times this session... */
@@ -659,7 +659,7 @@ LAB_0004386c:
       }
     }
     else {
-      iVar10 = calculate_object_weight(object);
+      iVar10 = calculate_object_weight((uw_object_hdr_t *)object);
       g_player_carry_weight = g_player_carry_weight + (short)iVar10;
       /* Legacy truncated "prev" walk -- same fix as place_object_in_backpack_slot's sibling copy
          (search "still broken for genuine container nesting"). */
@@ -749,23 +749,23 @@ LAB_000439a0:
 void sum_container_weight(ushort *link_field, short *total_weight)
 {
   ushort uVar1;
-  ushort *puVar2;
+  uw_object_hdr_t *puVar2;
   
-  puVar2 = (ushort *)resolve_object_link(link_field);
+  puVar2 = resolve_object_link(link_field);
   while( true ) {
-    if (puVar2 == (ushort *)0x0) {
+    if (puVar2 == NULL) {
       return;
     }
-    if (((*puVar2 & 0x8000) == 0) || ((puVar2[3] & 0x8000) != 0)) {
+    if ((puVar2->is_quant == 0) || ((puVar2->link_word & 0x8000) != 0)) {
       uVar1 = 1;
     }
     else {
-      uVar1 = puVar2[3] >> 6;
+      uVar1 = puVar2->link;
     }
-    *total_weight = (*(ushort *)(&DAT_00202c91 + (*puVar2 & 0x1ff) * 0xd) >> 4) * uVar1 + *total_weight;
-    sum_container_weight(puVar2 + 2,total_weight);
-    if ((*puVar2 & 0x8000) != 0) break;
-    puVar2 = (ushort *)resolve_object_link(puVar2 + 3);
+    *total_weight = (g_object_type_props[(puVar2->item_id)].unit_weight) * uVar1 + *total_weight;
+    sum_container_weight(&puVar2->chain_word,total_weight);
+    if (puVar2->is_quant != 0) break;
+    puVar2 = resolve_object_link(&puVar2->link_word);
   }
 }
 
@@ -829,7 +829,7 @@ void decode_equipped_item_index(ushort *saved_index, ushort *out_link)
    discarding it in favor of a hardcoded 0, same "dropped return value" idiom already fixed for
    next_input_event elsewhere in this file. */
 // was FUN_00045054
-void *get_equipped_item_at_slot(short slot)
+uw_object_hdr_t *get_equipped_item_at_slot(short slot)
 {
   return resolve_object_link(&g_equipped_items + slot * 2);
 }
@@ -875,7 +875,7 @@ int empty_container_into_world(void *container_ptr, short clear_flag)
     uVar1 = container[1];
     while (iVar4 != 0) {
       pNextLink = resolve_object_link(iVar4 + 4);
-      if ((clear_flag != 0) && (g_object_type_props[*container & 0x1ff].is_container)) {
+      if ((clear_flag != 0) && (g_object_type_props[*container & 0x1ff].can_have_owner)) {
         uVar2 = container[3];
         bVar3 = (byte)uVar2;
         *(byte *)(container + 3) = (bVar3 ^ (byte)clear_flag) & 0x3f ^ bVar3;
@@ -896,7 +896,7 @@ int empty_container_into_world(void *container_ptr, short clear_flag)
 // was FUN_0007c84c -- thin wrapper around empty_container_into_world: empties param_1's contents,
 // and if it turns out param_1 had nothing to empty (return 0) and param_2 is non-zero (callers pass
 // whether the container belongs to the player)...
-void try_empty_container(ushort *container, int owned_by_player)
+void try_empty_container(uw_object_hdr_t *container, int owned_by_player)
 {
   char *wptr_60040;
   char cVar1;
@@ -907,8 +907,8 @@ void try_empty_container(ushort *container, int owned_by_player)
   char acStack_5c [80];
   
   bVar4 = 0;
-  if (g_object_type_props[*container & 0x1ff].is_container) {
-    bVar4 = (byte)container[3] & 0x3f;
+  if (g_object_type_props[container->item_id].can_have_owner) {
+    bVar4 = container->owner;
   }
   iVar2 = empty_container_into_world(container,bVar4);
   if ((iVar2 == 0) && (owned_by_player != 0)) {
@@ -934,15 +934,15 @@ void try_empty_container(ushort *container, int owned_by_player)
 // one at a time via find_object_in_chain's scan; if param_2 is 0...
 /* The object and matching chain entries are addresses, not 32-bit ints.
    ARM 0x37f48 adds six bytes to the object to reach its contents link. */
-int discard_container_contents(ushort *container, int remove_all)
+int discard_container_contents(uw_object_hdr_t *container, int remove_all)
 {
-  ushort *puVar1; /* ARM 0x37fcc keeps the found object address in r4. */
+  uw_object_hdr_t *puVar1; /* ARM 0x37fcc keeps the found object address in r4. */
   undefined4 uVar2;
   ushort *local_18;
 
   uVar2 = 0;
-  if (((*((byte *)container + 1) & 0x80) == 0) &&
-     (local_18 = container + 3, (*local_18 & 0xffc0) != 0)) {
+  if ((((container->is_quant << 7)) == 0) &&
+      (local_18 = &container->link_word, (*local_18 & 0xffc0) != 0)) {
     puVar1 = find_object_in_chain(&local_18,1,4,0,0xf);
     while (puVar1 != 0) {
       object_list_unlink(local_18,puVar1);
@@ -964,14 +964,14 @@ int discard_container_contents(ushort *container, int remove_all)
 // was FUN_0004479c -- called from auto_place_in_container (src/containers.c:942) when dropping an
 // item onto the rune bag (item id 0x8f): rejects anything outside the rune id range
 // (0xe8..0xe8+0x18)...
-int place_rune_in_bag(short *rune_object)
+int place_rune_in_bag(uw_object_hdr_t *rune_object)
 {
   uint uVar1;
   int iVar2;
   undefined4 uVar3;
   byte *pbVar4;   /* was folded into iVar2 (a 32-bit int) -- see below */
 
-  iVar2 = (((int)*rune_object & 0x1ffU) - 0xe8) * 0x10000;
+  iVar2 = ((rune_object->item_id) - 0xe8) * 0x10000;
   uVar1 = iVar2 >> 0x10;
   if (((int)uVar1 < 0) || (0x18 < (int)uVar1)) {
     uVar3 = 0;

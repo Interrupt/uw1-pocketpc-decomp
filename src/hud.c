@@ -4082,7 +4082,7 @@ void show_flask_value_tooltip()
         pcVar4 = pcVar4 + 1;
       } while (cVar1 != '\0');
       if (*DAT_00085a6c < 0x1e) {
-        itoa_radix(*(undefined1 *)((char *)g_player_object + 8),auStack_94,10);
+        itoa_radix(g_player_object->npc_hp,auStack_94,10);
         itoa_radix(*(undefined1 *)(DAT_0023be74 + 4),auStack_a4,10);
         if ((*(byte *)(DAT_00086df8 + 0x5f) & 0x3c) != 0) {
           sVar2 = ordint_divmod(3,(*(byte *)(DAT_00086df8 + 0x5f) >> 2 & 0xf) - 1).quot;

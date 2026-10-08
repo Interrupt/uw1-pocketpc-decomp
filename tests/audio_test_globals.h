@@ -62,5 +62,4 @@ extern undefined2 DAT_00100624;
 /* Real size (ai.c's own DAT_001007d0_backing[3072]) -- play_weapon_impact_sound
    indexes up to (0x3f*0x30)+0x10 == 3040 bytes in, so a smaller stub
    would be a genuine (fixture-only) out-of-bounds read under ASan. */
-#define DAT_001007e0 DAT_001007d0_backing[0x10]
-extern undefined1 DAT_001007d0_backing[3072];
+extern uw_monster_type_props_t g_monster_type_props[64];

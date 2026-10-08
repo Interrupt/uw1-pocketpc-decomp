@@ -632,7 +632,7 @@ void init_new_character_record(int mode)
   *(undefined1 *)(DAT_00086df8 + 0x4b) = 0;
   uVar4 = ce_rand();
   uw_ord2005_rem_1 = ((int)(uVar4)) % (6);
-  *(char *)((char *)g_player_object + 8) = (-6 - uw_ord2005_rem_1) + *(char *)(DAT_0023be74 + 4);
+  g_player_object->npc_hp = (byte)((-6 - uw_ord2005_rem_1) + *(char *)(DAT_0023be74 + 4));
   DAT_00201b68 = 1;
   refresh_player_equipment_effects();
 }
@@ -832,7 +832,7 @@ void reroll_attributes_for_class_race()
     *(byte *)(DAT_0023be74 + uw_ord2005_rem_2 + 5) = (char)uVar3 + bVar1;
   }
   recalculate_player_stats(1);
-  *(undefined1 *)((char *)g_player_object + 8) = *(undefined1 *)(DAT_0023be74 + 4);
+  g_player_object->npc_hp = *(undefined1 *)(DAT_0023be74 + 4);
 }
 
 

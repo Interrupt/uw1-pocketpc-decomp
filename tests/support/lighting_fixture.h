@@ -2,7 +2,7 @@
 #define UW_TEST_LIGHTING_FIXTURE_H
 #include "unity.h"
 #include "../lighting_test_globals.h"
-void *get_equipped_item_at_slot(short slot);
+uw_object_hdr_t *get_equipped_item_at_slot(short slot);
 void *get_scanned_object_class_effect_ptr(void);
 int compute_object_weight(ushort *object);
 void request_weapon_swing_graphic(char category);

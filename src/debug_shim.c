@@ -112,7 +112,7 @@ static void populate_debug_object_inspector(ushort *obj)
   }
   if ((id & 0x1c0) == 0x40) {
     int hp = *(byte *)((char *)obj + 8);
-    int maxhp = (&g_monster_max_stats_table)[(id & 0x3f) * 0x30];
+    int maxhp = g_monster_type_props[(id & 0x3f)].max_hp;
     snprintf(line, sizeof(line), "%d / %d", hp, maxhp);
     dbgui_field_text("hp", line);
   }

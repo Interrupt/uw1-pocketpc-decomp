@@ -427,7 +427,7 @@ static void test_barter_setup_uses_actual_npc_inventory_link(void)
     ((byte *)DAT_00100674)[14] = 0x10; /* loot already initialized */
     DAT_00100674[3] = 1; /* byte offset 6 */
     babl_items[1][0] = 0x30; /* eligible item, nonzero value */
-    *(short *)(DAT_00202c90_backing + 5 + 0x30 * 13) = 20;
+    *(short *)(((byte *)g_object_type_props) + 5 + 0x30 * 13) = 20;
     babl_builtin_setup_to_barter();
     TEST_ASSERT_EQUAL_INT(1, DAT_000bbfe8_backing[0]);
     TEST_ASSERT_EQUAL_INT(0, DAT_00100674[3]);
@@ -437,7 +437,7 @@ static void test_barter_setup_uses_actual_npc_inventory_link(void)
 static void test_barter_preferences_use_word_arrays(void)
 {
     babl_items[1][0] = 300;
-    *(short *)(DAT_00202c90_backing + 5 + 300 * 13) = 20;
+    *(short *)(((byte *)g_object_type_props) + 5 + 300 * 13) = 20;
     babl_words[10] = 300; babl_words[11] = -1;
     babl_words[20] = -1;
     short args[] = {10, 20, 0};
@@ -473,7 +473,7 @@ static void stage_offer(int player_value, int npc_value)
     (&DAT_000bbfb0)[0] = player_value;
     (&DAT_000bbfc8)[0] = npc_value;
     babl_items[1][0] = 0x30;
-    *(short *)(DAT_00202c90_backing + 5 + 0x30 * 13) = 20;
+    *(short *)(((byte *)g_object_type_props) + 5 + 0x30 * 13) = 20;
     for (int i=0; i<5; i++) babl_words[10+i] = i+1;
 }
 static void test_accepted_offer_exits_barter_branch_and_continues_dialogue(void)
@@ -567,7 +567,7 @@ static void test_barter_cache_initialization_and_invalidation_reach_offer_values
 {
     (&DAT_000bbfb0)[0] = 42;
     (&DAT_000bbfc8)[0] = 42;
-    DAT_001007d0_backing[0xe] = 4;
+    g_monster_type_props[0].trade_patience = 4;
     init_barter_ui();
     TEST_ASSERT_EQUAL_INT(24, DAT_000bc024);
     for (int i=0; i<4; i++) {
@@ -576,10 +576,10 @@ static void test_barter_cache_initialization_and_invalidation_reach_offer_values
     }
     DAT_000bbfd0_backing[0] = 1; DAT_000bbf98_backing[0] = 1;
     babl_items[1][0] = 0x30; babl_items[1][2] = 63;
-    *(short *)(DAT_00202c90_backing + 5 + 0x30*13) = 20;
+    *(short *)(((byte *)g_object_type_props) + 5 + 0x30*13) = 20;
     TEST_ASSERT_EQUAL_INT(19, sum_barter_offer_value(1, &DAT_000bbfd0,
                           &DAT_000bbf98, &DAT_000bbfb0, 0));
-    *(short *)(DAT_00202c90_backing + 5 + 0x30*13) = 40;
+    *(short *)(((byte *)g_object_type_props) + 5 + 0x30*13) = 40;
     TEST_ASSERT_EQUAL_INT(19, sum_barter_offer_value(1, &DAT_000bbfd0,
                           &DAT_000bbf98, &DAT_000bbfb0, 0)); /* cached */
     (&DAT_000bbfa8)[4] = 0xffff; /* invalidation performed when an item changes */
@@ -593,7 +593,7 @@ static void test_barter_setup_replaces_staged_item_without_losing_inventory(void
     DAT_00100674[3] = 1;
     DAT_000bbfe8_backing[0] = 2;
     babl_items[1][0] = 0x30;
-    *(short *)(DAT_00202c90_backing + 5 + 0x30*13) = 20;
+    *(short *)(((byte *)g_object_type_props) + 5 + 0x30*13) = 20;
     babl_builtin_setup_to_barter();
     TEST_ASSERT_EQUAL_INT(1, DAT_000bbfe8_backing[0]);
     TEST_ASSERT_EQUAL_INT(2, DAT_00100674[3]);

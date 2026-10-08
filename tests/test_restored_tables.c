@@ -46,8 +46,8 @@ static void test_lock_ratings_use_loaded_armor_and_accessory_records(void)
     ushort object[4]={0};
     for(int id=0; id<64; ++id) {
         object[0]=id;
-        int expected=id<16?(signed char)DAT_00202800_backing[id*8+7]:
-            id<32?-1:(signed char)DAT_00202750_backing[(id-32)*4+1];
+        int expected=id<16?(signed char)g_melee_type_props[id].durability:
+            id<32?-1:(signed char)g_armor_type_props[id-32].durability;
         TEST_ASSERT_EQUAL_INT(expected,resolve_lock_difficulty_rating(object));
     }
     object[0]=0x40;
@@ -57,7 +57,7 @@ static void test_spawn_block_scan_preserves_host_pointers_and_excludes_player(vo
 {
     ushort source[16]={0}, nearby[16]={0};
     /* ARM tests bit 0x100 of the unaligned word at +0xd: byte +0xe bit 0. */
-    source[7]=g_player_object[7]=1;
+    source[7]=((ushort *)g_player_object)[7]=1;
     restored_scan_objects[0]=source;
     restored_scan_objects[1]=g_player_object;
     restored_scan_objects[2]=nearby;

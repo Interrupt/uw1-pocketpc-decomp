@@ -44,7 +44,7 @@ undefined2 DAT_00201b60;
 short DAT_00100610;
 ushort DAT_00100620;
 undefined2 DAT_00100624;
-undefined1 DAT_001007d0_backing[3072]; /* real size, see tests/audio_test_globals.h */
+uw_monster_type_props_t g_monster_type_props[64]; /* real size, see tests/audio_test_globals.h */
 
 static unsigned char combat_flag_byte[0x60];
 static unsigned fake_clock;
@@ -87,7 +87,7 @@ void audio_fixture_reset(void)
     DAT_00100610 = 0;
     DAT_00100620 = 0;
     DAT_00100624 = 0;
-    memset(DAT_001007d0_backing, 0, sizeof DAT_001007d0_backing);
+    memset(((byte *)g_monster_type_props), 0, sizeof g_monster_type_props);
     next_object_record = 0;
     fake_clock = 0;
     next_random = 0;
@@ -130,12 +130,12 @@ long ce_rand(void) { return next_random; }
    comment in combat.c). get_equipped_item_at_slot is unreachable by
    every test in this suite (DAT_00100620 never equals 1 -- see
    audio_fixture_reset), so it stays a hard-fail guard. */
-void *get_object_record_by_slot_index(short slot_index)
+uw_object_hdr_t *get_object_record_by_slot_index(short slot_index)
 {
     (void)slot_index;
     return next_object_record;
 }
-void *get_equipped_item_at_slot(short slot)
+uw_object_hdr_t *get_equipped_item_at_slot(short slot)
 {
     (void)slot;
     TEST_FAIL_MESSAGE("Unexpected call to get_equipped_item_at_slot");

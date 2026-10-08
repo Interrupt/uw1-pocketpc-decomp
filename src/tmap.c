@@ -1804,11 +1804,11 @@ void emit_tile_features(ushort *tile)
             continue;
           }
           iVar7 = cVar8 * 4;
-          if (getenv("UW_DEBUG_OBJPOS") && puVar5 && (*puVar5 & 0x1ff) == 0x166)
+          if (getenv("UW_DEBUG_OBJPOS") && puVar5 && (((uw_object_hdr_t *)puVar5)->item_id) == 0x166)
             fprintf(stderr, "[objpos] cVar8=%d iVar7=%d bb99=%d bb9a=%d b4e4=%d b4e8=%d\n",
                     (int)cVar8, iVar7, (int)(char)(&DAT_0023bb99)[iVar7], (int)(char)(&DAT_0023bb9a)[iVar7],
                     (int)DAT_0023b4e4, (int)DAT_0023b4e8);
-          if (getenv("UW_DEBUG_DOOR_POS") && puVar5 && (*puVar5 & 0x1f0) == 0x140)
+          if (getenv("UW_DEBUG_DOOR_POS") && puVar5 && (((uw_object_hdr_t *)puVar5)->type_flags & 0x1f0) == 0x140)
             fprintf(stderr, "[doorpos] tile-grid: cVar8=%d slot_x=%d slot_z=%d b4e4(tileX)=%d b4e8(tileZ)=%d tile_origin=(%d,%d)\n",
                     (int)cVar8, (int)(char)(&DAT_0023bb99)[iVar7], (int)(char)(&DAT_0023bb9a)[iVar7],
                     (int)DAT_0023b4e4, (int)DAT_0023b4e8,
@@ -1817,13 +1817,13 @@ void emit_tile_features(ushort *tile)
                          (short)((uint)((int)DAT_0023b4e4 << 0x13) >> 0x10)) * 0x20 + 0x10;
           DAT_0023b920 = ((short)(char)(&DAT_0023bb9a)[iVar7] +
                          (short)((uint)((int)DAT_0023b4e8 << 0x13) >> 0x10)) * 0x20 + 0x10;
-          if (((*puVar5 & 0x1c0) == 0x40) || (iVar16 = object_ptr_in_arena(puVar5), iVar16 == 0)) {
-            DAT_0023b91c = ((byte)puVar5[1] & 0x7f) << 3;
+          if (((((uw_object_hdr_t *)puVar5)->type_flags & 0x1c0) == 0x40) || (iVar16 = object_ptr_in_arena(puVar5), iVar16 == 0)) {
+            DAT_0023b91c = (((uw_object_hdr_t *)puVar5)->zpos) << 3;
           }
           else {
             DAT_0023b91c = *(short *)((char *)puVar5 + 0xf);
           }
-          if (getenv("UW_DEBUG_THROW") && (*puVar5 & 0x1ff) == 0x80)
+          if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)puVar5)->item_id) == 0x80)
             fprintf(stderr, "[throw-scrz] sack DAT_0023b91c=%d cam_ref(DAT_00086e6c+0xe)=%d in_arena=%d\n",
                     (int)(short)DAT_0023b91c, (int)g_current_view->view_elevation,
                     (int)object_ptr_in_arena(puVar5));
@@ -1871,8 +1871,8 @@ void emit_tile_features(ushort *tile)
       }
       return;
     }
-    uVar10 = (uint)(short)(*puVar5 & 0x1ff);
-    if ((uVar10 == 0x164) || (((*puVar5 & 0x1f0) == 0x140 || (uVar10 == 0x1cf)))) {
+    uVar10 = (uint)(short)(((uw_object_hdr_t *)puVar5)->item_id);
+    if ((uVar10 == 0x164) || (((((uw_object_hdr_t *)puVar5)->type_flags & 0x1f0) == 0x140 || (uVar10 == 0x1cf)))) {
       uVar2 = local_34 >> 0x10;
       local_34 = CONCAT22((short)uVar2,sVar3 + (short)((uVar10 << 0x16) >> 0x10));
 LAB_0006574c:
@@ -1897,13 +1897,13 @@ LAB_000657b0:
       }
     }
     else {
-      if (((&DAT_00202c91)[uVar10 * 0xd] & 8) == 0) goto LAB_0006574c;
+      if ((((byte)g_object_type_props[uVar10].size_weight) & 8) == 0) goto LAB_0006574c;
       iVar15 = (int)local_38;
       uVar11 = 0;
       iVar7 = iVar15 * 4;
       pcVar14 = &DAT_0023bb98 + iVar7;
       resolve_billboard_corner_offset(pcVar14,puVar5);
-      uVar9 = (byte)(&DAT_00202c91)[uVar10 * 0xd] & 7;
+      uVar9 = (byte)((byte)g_object_type_props[uVar10].size_weight) & 7;
       if ((int)(char)(&DAT_0023bb9a)[iVar7] - (int)(short)uVar9 < 0) {
         uVar11 = 0x4000;
       }
@@ -2108,14 +2108,14 @@ void emit_tile_objects(ushort *tile)
       int _slot = atoi(getenv("UW_LOOK_SLOT"));
       ushort *_rec = (ushort *)(_slot < 0x100 ? (void *)((intptr_t)_slot * 0x1b + (intptr_t)DAT_002046b8)
                                                : (void *)((intptr_t)DAT_002046c4 + (intptr_t)(_slot - 0x100) * 8));
-      ushort _w0 = *_rec;
+      ushort _w0 = ((uw_object_hdr_t *)_rec)->type_flags;
       int _id = _w0 & 0x1ff;
       int _iv = _id * 0xd;
-      int _grp = (byte)(&DAT_00202c9b)[_iv] & 0xf;
-      int _qual = (byte)_rec[2] & 0x3f;
+      int _grp = g_object_type_props[_iv / 0xd].quality_type;
+      int _qual = ((uw_object_hdr_t *)_rec)->quality;
       int _off = 0;
       if (_qual != 0) {
-        _off = (((&DAT_00202c97)[_iv] & 0xc) == 0xc) ? 5 : (((byte)_rec[2] >> 4 & 3) + 1);
+        _off = ((g_object_type_props[_iv / 0xd].quality_flags & 0xc) == 0xc) ? 5 : (((byte)((uw_object_hdr_t *)_rec)->chain_word >> 4 & 3) + 1);
       }
       char *_nm = (char *)get_message_string(_grp * 6 + _off | 0xa00);
       fprintf(stderr, "[lookslot] slot=%d id=0x%03x flags=0x%04x has_lookbit=%d namegrp=%d name='%s'\n",
@@ -2139,21 +2139,21 @@ void emit_tile_objects(ushort *tile)
           while (_slot != 0 && _guard++ < 64) {
             void *_rec = _slot < 0x100 ? (void *)((intptr_t)_slot * 0x1b + (intptr_t)DAT_002046b8)
                                         : (void *)((intptr_t)DAT_002046c4 + (intptr_t)(_slot - 0x100) * 8);
-            ushort _w = *(ushort *)_rec;
+            ushort _w = ((uw_object_hdr_t *)_rec)->type_flags;
             int _id = _w & 0x1ff;
             if ((_id >= 0x160 && _id <= 0x16f) || _id == 0x140 || _id == 0x141) {
               fprintf(stderr, "[objdump] tile=(%d,%d) slot=%d id=0x%03x flags=0x%04x\n",
                       _tx, _ty, _slot, _id, (unsigned)_w);
             }
             {
-              int _rc = (&DAT_00202c9a)[_id * 0xd] & 3;
+              int _rc = g_object_type_props[_id].class_flags & 3;
               if (_rc == 1) {
                 unsigned char *_recb = (unsigned char *)_rec;
                 fprintf(stderr, "[objdump-critter] tile=(%d,%d) slot=%d id=0x%03x flags=0x%04x b6=0x%02x\n",
                         _tx, _ty, _slot, _id, (unsigned)_w, (unsigned)_recb[6]);
               }
             }
-            ushort _nextw = *(ushort *)((char *)_rec + 6);
+            ushort _nextw = ((uw_object_hdr_t *)_rec)->link_word;
             _slot = (_nextw & 0xffc0) != 0 ? _nextw >> 6 : 0;
           }
         }
@@ -2175,15 +2175,15 @@ void emit_tile_objects(ushort *tile)
           while (_slot != 0 && _guard++ < 64) {
             void *_rec = _slot < 0x100 ? (void *)((intptr_t)_slot * 0x1b + (intptr_t)DAT_002046b8)
                                         : (void *)((intptr_t)DAT_002046c4 + (intptr_t)(_slot - 0x100) * 8);
-            ushort _w = *(ushort *)_rec;
+            ushort _w = ((uw_object_hdr_t *)_rec)->type_flags;
             int _id = _w & 0x1ff;
             int _iv = _id * 0xd;
-            unsigned char *_prop = (unsigned char *)&DAT_00202c90_backing[_iv];
+            unsigned char *_prop = (unsigned char *)&((byte *)g_object_type_props)[_iv];
             fprintf(stderr, "[objdumpall] tile=(%d,%d) slot=%d id=0x%03x flags=0x%04x rc=%d prop=%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
                     _tx, _ty, _slot, _id, (unsigned)_w, _prop[0] & 3,
                     _prop[0], _prop[1], _prop[2], _prop[3], _prop[4], _prop[5], _prop[6],
                     _prop[7], _prop[8], _prop[9], _prop[0xa], _prop[0xb], _prop[0xc]);
-            ushort _nextw = *(ushort *)((char *)_rec + 6);
+            ushort _nextw = ((uw_object_hdr_t *)_rec)->link_word;
             _slot = (_nextw & 0xffc0) != 0 ? _nextw >> 6 : 0;
           }
         }
@@ -2213,14 +2213,14 @@ void emit_tile_objects(ushort *tile)
             while (_slot != 0 && _guard++ < 64) {
               ushort *_rec = _slot < 0x100 ? (ushort *)((intptr_t)_slot * 0x1b + (intptr_t)DAT_002046b8)
                                             : (ushort *)((intptr_t)DAT_002046c4 + (intptr_t)(_slot - 0x100) * 8);
-              ushort _w = _rec[0];
+              ushort _w = ((uw_object_hdr_t *)_rec)->type_flags;
               int _id = _w & 0x1ff;
 // Same field reads emit_tile_objects itself uses (not the objdumpall hook above,
               // which indexed the wrong property byte for render class -- see its own "rc=" column,
               // offset 0 instead of the real 0xa).
-              int _rc = (&DAT_00202c9a)[_id * 0xd] & 3;
-              int _heading = (_rec[1] >> 6) & 7;
-              int _quality = _rec[3] & 0x3f;
+              int _rc = g_object_type_props[_id].class_flags & 3;
+              int _heading = (((uw_object_hdr_t *)_rec)->position_word >> 6) & 7;
+              int _quality = ((uw_object_hdr_t *)_rec)->owner;
 // Page 4 of comobj's string data is the base object-name table, indexed directly by
               // id (see UW_DUMP_NAMES/this session's findings) -- not the quality-adjective group
               // table UW_LOOK_SLOT resolves via namegrp*6+offset.
@@ -2229,7 +2229,7 @@ void emit_tile_objects(ushort *tile)
                       _tx, _ty, _id, (_name && _name[0]) ? _name : "(unnamed)",
                       _rc, _heading, _quality, (unsigned)_w);
               _count++;
-              ushort _nextw = *(ushort *)((char *)_rec + 6);
+              ushort _nextw = ((uw_object_hdr_t *)_rec)->link_word;
               _slot = (_nextw & 0xffc0) != 0 ? _nextw >> 6 : 0;
             }
           }
@@ -2260,7 +2260,7 @@ void emit_tile_objects(ushort *tile)
             ushort *_rec = (ushort *)resolve_object_link(_headp);
             int _guard = 0;
             while (_rec != NULL && _guard++ < 64) {
-              ushort _w = *_rec;
+              ushort _w = ((uw_object_hdr_t *)_rec)->type_flags;
               int _id = _w & 0x1ff;
               if ((_w & 0x1c0) == 0x80) {
                 ushort *_item = (ushort *)resolve_object_link((ushort *)((char *)_rec + 6));
@@ -2268,7 +2268,7 @@ void emit_tile_objects(ushort *tile)
                 _names[0] = '\0';
                 int _n = 0, _guard2 = 0;
                 while (_item != NULL && _guard2++ < 32) {
-                  int _iid = *_item & 0x1ff;
+                  int _iid = ((uw_object_hdr_t *)_item)->item_id;
                   char *_iname = (char *)get_message_string(0x800 | _iid);
                   strncat(_names, (_iname && _iname[0]) ? _iname : "?", sizeof(_names) - strlen(_names) - 2);
                   strncat(_names, ",", sizeof(_names) - strlen(_names) - 1);
@@ -2306,11 +2306,11 @@ void emit_tile_objects(ushort *tile)
     }
   }
   uVar27 = (uint)*tile;
-  bVar1 = (&DAT_00202c9a)[(uVar27 & 0x1ff) * 0xd];
+  bVar1 = g_object_type_props[(uVar27 & 0x1ff)].class_flags;
   bVar13 = bVar1 & 3;
   if (getenv("UW_DEBUG_OBJCLASS")) {
     int _iv = (uVar27 & 0x1ff) * 0xd;
-    int _grp = (byte)(&DAT_00202c9b)[_iv] & 0xf;
+    int _grp = g_object_type_props[_iv / 0xd].quality_type;
     fprintf(stderr, "[objclass] id=0x%03x renderclass=%d prop_byte=0x%02x quality=%d heading=%d namegrp=%d scrx=%d scry=%d scrz=%d names=",
             (int)(uVar27 & 0x1ff), (int)bVar13, (int)bVar1,
             (int)((byte)tile[3] & 0x3f), (int)(tile[1] >> 6 & 7), _grp,
@@ -2636,11 +2636,11 @@ LAB_00061d34:
         _named = 1;
         int _id = uVar27 & 0x1ff;
         int _iv = _id * 0xd;
-        int _grp = (byte)(&DAT_00202c9b)[_iv] & 0xf;
+        int _grp = g_object_type_props[_iv / 0xd].quality_type;
         int _qual = (byte)tile[2] & 0x3f;
         int _off = 0;
         if (_qual != 0) {
-          _off = (((&DAT_00202c97)[_iv] & 0xc) == 0xc) ? 5 : (((byte)tile[2] >> 4 & 3) + 1);
+          _off = ((g_object_type_props[_iv / 0xd].quality_flags & 0xc) == 0xc) ? 5 : (((byte)tile[2] >> 4 & 3) + 1);
         }
         char *_nm = (char *)get_message_string(_grp * 6 + _off | 0xa00);
         fprintf(stderr, "[critter-name] id=0x%03x namegrp=%d name='%s'\n",

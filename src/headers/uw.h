@@ -89,60 +89,280 @@ typedef void *codeptr();
 
 /* Object / tile record structs. This WinCE port keeps the exact same bit-packed layout LEV.ARK uses
    on disk for its object table and tilemap, in memory, at runtime -- not just at load time. */
+/* Word unions expose named byte views for legacy partial writes. These
+ * alias the same little-endian storage; they add no bytes to disk records.
+ * Prefer semantic bitfields or whole-word assignments when possible. */
 typedef struct __attribute__((packed)) {
     /* word 0x00 */
-    unsigned short item_id    : 9;  /* object id / type, 0-0x1ff */
-    unsigned short flags_res  : 3;  /* bits 9-11: unused/unknown per wiki */
-    unsigned short enchanted  : 1;  /* bit 12 */
-    unsigned short doordir    : 1;  /* bit 13: door swing direction (doors only) */
-    unsigned short invisible  : 1;  /* bit 14 */
-    unsigned short is_quant   : 1;  /* bit 15: word3's low field is a quantity, not owner/special */
+    union {
+        ushort type_flags;
+        short type_flags_signed;
+        struct __attribute__((packed)) { byte type_flags_low, type_flags_high; }; /* packed word for copies and chain interfaces */
+        struct __attribute__((packed)) {
+            unsigned short item_id    : 9;  /* object id / type, 0-0x1ff */
+            unsigned short flags_res  : 3;  /* bits 9-11: unused/unknown per wiki */
+            unsigned short enchanted  : 1;  /* bit 12 */
+            unsigned short doordir    : 1;  /* bit 13: door swing direction (doors only) */
+            unsigned short invisible  : 1;  /* bit 14 */
+            unsigned short is_quant   : 1;  /* bit 15: word3's low field is a quantity, not owner/special */
+        };
+    };
 
     /* word 0x02 */
-    unsigned short zpos       : 7;  /* bits 0-6: object Z position, 0-127 */
-    unsigned short heading    : 3;  /* bits 7-9: heading, *45 degrees */
-    unsigned short ypos       : 3;  /* bits 10-12: sub-tile Y, 0-7 */
-    unsigned short xpos       : 3;  /* bits 13-15: sub-tile X, 0-7 */
+    union {
+        ushort position_word;
+        short position_word_signed;
+        struct __attribute__((packed)) { byte position_word_low, position_word_high; }; /* packed word for copies and chain interfaces */
+        struct __attribute__((packed)) {
+            unsigned short zpos       : 7;  /* bits 0-6: object Z position, 0-127 */
+            unsigned short heading    : 3;  /* bits 7-9: heading, *45 degrees */
+            unsigned short ypos       : 3;  /* bits 10-12: sub-tile Y, 0-7 */
+            unsigned short xpos       : 3;  /* bits 13-15: sub-tile X, 0-7 */
+        };
+    };
 
     /* word 0x04 */
-    unsigned short quality    : 6;  /* bits 0-5 */
-    unsigned short next       : 10; /* bits 6-15: next object slot index in this tile's/container's chain */
+    union {
+        ushort chain_word;
+        short chain_word_signed;
+        struct __attribute__((packed)) { byte chain_word_low, chain_word_high; }; /* packed word for copies and chain interfaces */
+        struct __attribute__((packed)) {
+            unsigned short quality    : 6;  /* bits 0-5 */
+            unsigned short next       : 10; /* bits 6-15: next object slot index in this tile's/container's chain */
+        };
+    };
 
     /* word 0x06 */
-    unsigned short owner      : 6;  /* bits 0-5: owner / special property (context-dependent) */
-    unsigned short link       : 10; /* bits 6-15: quantity / special link / "contains" chain head, see is_quant */
+    union {
+        ushort link_word;
+        short link_word_signed;
+        struct __attribute__((packed)) { byte link_word_low, link_word_high; };          /* addressable packed link for chain primitives */
+        struct __attribute__((packed)) {
+            unsigned short owner : 6; /* bits 0-5: owner / special property */
+            unsigned short link : 10; /* bits 6-15: quantity / link / contents */
+        };
+    };
 } uw_object_hdr_t;
 
 typedef struct __attribute__((packed)) {
     uw_object_hdr_t hdr;            /* 8 bytes, offset 0x00 */
 
     unsigned char  npc_hp;          /* offset 0x08 */
-    unsigned char  _unk09;          /* offset 0x09: not in the wiki's own table */
-    unsigned char  _unk0a;          /* offset 0x0a: wiki documents only bit 7 here, as "(unknown)" */
+    unsigned char  full_heading;    /* offset 0x09: 256-direction motion heading */
+    unsigned char  movement_flags;  /* offset 0x0a: motion/refresh state */
 
-    unsigned short npc_goal    : 4; /* offset 0x0b, bits 0-3 */
-    unsigned short npc_gtarg   : 8; /* bits 4-11 */
-    unsigned short _pad0b      : 4; /* bits 12-15: not in the wiki's own table */
+    union {
+        ushort goal_word;
+        short goal_word_signed;
+        struct __attribute__((packed)) { byte goal_word_low, goal_word_high; };
+        struct __attribute__((packed)) {
+            unsigned short npc_goal    : 4; /* offset 0x0b, bits 0-3 */
+            unsigned short npc_gtarg   : 8; /* bits 4-11 */
+            unsigned short npc_animation_frame : 4; /* bits 12-15 */
+        };
+    };
 
-    unsigned short npc_level    : 4; /* offset 0x0d, bits 0-3 */
-    unsigned short _pad0d       : 9; /* bits 4-12: not in the wiki's own table */
-    unsigned short npc_talkedto : 1; /* bit 13 */
-    unsigned short npc_attitude : 2; /* bits 14-15 */
+    union {
+        ushort status_word;
+        short status_word_signed;
+        struct __attribute__((packed)) { byte status_word_low, status_word_high; };
+        struct __attribute__((packed)) {
+            unsigned short npc_level    : 4; /* offset 0x0d, bits 0-3 */
+            unsigned short _pad0d       : 9; /* bits 4-12: not in the wiki's own table */
+            unsigned short npc_talkedto : 1; /* bit 13 */
+            unsigned short npc_attitude : 2; /* bits 14-15 */
+        };
+    };
 
-    unsigned short _pad0f_lo   : 6; /* offset 0x0f, bits 0-5: not in the wiki's own table */
-    unsigned short npc_height  : 7; /* bits 6-12 */
-    unsigned short _pad0f_hi   : 3; /* bits 13-15: not in the wiki's own table */
+    /* npc_set_walk_target confirms two SIX-bit coordinates. The old
+     * wiki's tentative seven-bit "npc_height" overlaps the swing field. */
+    union {
+        ushort target_word;
+        short target_word_signed;
+        struct __attribute__((packed)) { byte target_word_low, target_word_high; };
+        struct __attribute__((packed)) {
+            unsigned short npc_target_tile_x : 6; /* offset 0x0f, bits 0-5 */
+            unsigned short npc_target_tile_y : 6; /* bits 6-11 */
+            unsigned short npc_swing_charge : 4;  /* bits 12-15 */
+        };
+    };
 
-    unsigned char  _unk11_15[5];    /* offsets 0x11-0x15: entirely undocumented by the wiki */
+    byte recent_damage;           /* 0x11: damage accumulated during this tick */
+    byte damage_source;           /* 0x12: last attacker / projectile source slot */
+    byte motion_flags;            /* 0x13: speed and vertical-motion control */
+    byte attack_pitch;            /* 0x14: NPC attack state / projectile pitch */
+    byte animation_flags;         /* 0x15: animation and path state */
 
-    unsigned short _pad16_lo  : 4;  /* offset 0x16, bits 0-3: not in the wiki's own table */
-    unsigned short npc_yhome  : 6;  /* bits 4-9 */
-    unsigned short npc_xhome  : 6;  /* bits 10-15 */
+    union {
+        ushort tile_word;
+        short tile_word_signed;
+        struct __attribute__((packed)) { byte tile_word_low, tile_word_high; };
+        struct __attribute__((packed)) {
+            unsigned short npc_path_slot : 4; /* offset 0x16: cached walk-path slot */
+            unsigned short npc_yhome  : 6;  /* bits 4-9 */
+            unsigned short npc_xhome  : 6;  /* bits 10-15 */
+        };
+    };
 
-    unsigned char  npc_heading : 5; /* offset 0x18, bits 0-4 (rest of byte unused per wiki) */
-    unsigned char  npc_hunger  : 7; /* offset 0x19, bits 0-6 */
+    union {
+        byte heading_flags;       /* 0x18: includes NPC path flags in bits 5-7 */
+        struct __attribute__((packed)) {
+            byte npc_heading : 5;
+            byte _pad18 : 3;
+        };
+    };
+    union {
+        byte npc_ai_flags;        /* 0x19: notice, attack and allegiance flags */
+        struct __attribute__((packed)) {
+            byte npc_hunger : 7;  /* legacy format label; live code uses AI flags */
+            byte _pad19 : 1;
+        };
+    };
     unsigned char  npc_whoami;      /* offset 0x1a, full byte */
 } uw_mobile_object_t;  /* 0x1b (27) bytes total */
+
+/* UW1 uses the same 27-byte arena slot for thrown items and missiles.
+ * Their coordinates overlap NPC goal/level/target fields. Do not interpret
+ * those words as NPC fields when the slot contains a projectile.
+ * Reference: UWReverseEngineering/File Research/Game Object Research File.xlsx,
+ * "Object" sheet; corroborated by build_object_placement_snapshot in ai.c. */
+typedef struct __attribute__((packed)) {
+    uw_object_hdr_t hdr;           /* 0x00 */
+    byte lifetime;                /* 0x08: projectile hit points / lifetime */
+    byte heading;                 /* 0x09: full 256-direction launch heading */
+    byte movement_flags;          /* 0x0a: motion/tile state */
+    ushort precise_x;             /* 0x0b: world position, copied into snapshot */
+    ushort precise_y;             /* 0x0d */
+    ushort precise_z;             /* 0x0f */
+    byte _reserved11;
+    byte source_slot;             /* 0x12: launcher's mobile slot */
+    byte speed : 7;               /* 0x13: placement snapshot speed */
+    byte gravity_flag : 1;        /* selects vertical acceleration in snapshot */
+    union {
+        byte pitch_flags;         /* 0x14: low motion bits and five-bit launch pitch */
+        struct __attribute__((packed)) {
+            byte _reserved14_lo : 3;
+            byte pitch : 5;       /* 16 = horizontal, interpreted as (pitch-16)*64 */
+        };
+    };
+    byte animation_flags;         /* 0x15 */
+    ushort _reserved16_lo : 4;    /* 0x16 */
+    ushort tile_y : 6;
+    ushort tile_x : 6;
+    byte fine_heading : 5;        /* 0x18 */
+    byte _reserved18_hi : 3;
+    byte _reserved19;
+    byte original_heading;        /* 0x1a: restored when the item becomes static */
+} uw_projectile_object_t;
+
+/* UW1 OBJECTS.DAT container, light and animation records. The container
+ * acceptance word is documented by objects_dat-containers.xls and read
+ * as a signed short by the ARM inventory code (0xffff accepts anything).
+ * Light byte order follows ARM consumers and the shipped UW1 data:
+ * byte 0 is the decay interval, byte 1 is brightness. */
+typedef struct __attribute__((packed)) {
+    byte capacity;                 /* units of 0.1 stones, zero unlimited */
+    ushort acceptance_mask;        /* item ID or category selector */
+} uw_container_type_props_t;
+
+typedef struct __attribute__((packed)) {
+    byte decay_interval;           /* ticks per quality decrement; zero infinite */
+    byte brightness;
+} uw_light_type_props_t;
+
+typedef struct __attribute__((packed)) {
+    ushort flags;                  /* sprite/door animation behavior bits */
+    byte start_frame;
+    byte frame_count;
+} uw_animation_type_props_t;
+
+_Static_assert(sizeof(uw_container_type_props_t) == 3, "UW1 container property row");
+_Static_assert(sizeof(uw_light_type_props_t) == 2, "UW1 light property row");
+_Static_assert(sizeof(uw_animation_type_props_t) == 4, "UW1 animation property row");
+
+/* UW1 OBJECTS.DAT melee and wearable rows at disk offsets 0x02 and
+ * 0xb2. The ARM loader copies both without changing the disk layout.
+ * Charge-byte interpretations remain tentative in object_dat-melee.xls. */
+typedef struct __attribute__((packed)) {
+    byte slash_damage;
+    byte bash_damage;
+    byte stab_damage;
+    byte minimum_charge;
+    byte charge_speed;
+    byte maximum_charge;
+    byte skill;
+    byte durability;
+} uw_melee_type_props_t;
+
+typedef struct __attribute__((packed)) {
+    byte protection;
+    byte durability;
+    byte _unknown02;
+    byte equipment_slot;
+} uw_armor_type_props_t;
+
+_Static_assert(sizeof(uw_melee_type_props_t) == 8, "UW1 melee property row");
+_Static_assert(sizeof(uw_armor_type_props_t) == 4, "UW1 armor property row");
+
+/* UW1 OBJECTS.DAT ranged records: 16 rows at file offset 0x82.
+ * File Research/objects_dat-ranged.xls and the ARM consumers agree:
+ * selector is an ammo subtype for weapons and a negated damage type
+ * for projectiles, rather than the DOS documentation's durability. */
+typedef struct __attribute__((packed)) {
+    byte damage;
+    byte projectile_speed;
+    byte ammo_damage_selector;
+} uw_ranged_type_props_t;
+
+_Static_assert(sizeof(uw_ranged_type_props_t) == 3, "UW1 ranged property row");
+
+/* UW1 OBJECTS.DAT, 64 critter records at file offset 0x132. Unlike
+ * COMOBJ, ARM loads these 48-byte disk rows without adding padding.
+ * Field meanings: File Research/objects_dat-critters.xls; attack score,
+ * damage and probability order is also confirmed by combat.c. */
+typedef struct __attribute__((packed)) {
+    byte skill;
+    byte damage;
+    byte probability;
+} uw_monster_attack_props_t;
+
+typedef struct __attribute__((packed)) {
+    byte armor[4];                 /* 0x00: chest, arms, legs, head */
+    byte max_hp;                   /* 0x04 */
+    byte strength;                 /* 0x05 */
+    byte dexterity;                /* 0x06 */
+    byte intelligence;             /* 0x07 */
+    byte effects_flags;            /* 0x08: blood, fluid/remains and death sound */
+    byte race_flags;               /* 0x09 */
+    byte movement_flags;           /* 0x0a: passivity, swimming, flight, corpse */
+    byte magic_power;              /* 0x0b */
+    byte movement_speed;           /* 0x0c */
+    byte trade_level;              /* 0x0d: appraisal and conversation level */
+    byte trade_patience;           /* 0x0e */
+    byte poison_damage;            /* 0x0f */
+    byte category;                 /* 0x10 */
+    byte equipment_damage;         /* 0x11 */
+    byte defense;                  /* 0x12 */
+    uw_monster_attack_props_t attacks[3]; /* 0x13..0x1b */
+    byte morale_flags;             /* 0x1c */
+    byte detection_ranges;         /* 0x1d */
+    byte awareness_ranges;         /* 0x1e */
+    byte missile_wander_flags;     /* 0x1f */
+    byte weapon_loot[2];           /* 0x20 */
+    ushort item_loot[2];           /* 0x22 */
+    byte coin_loot;                /* 0x26 */
+    byte food_loot;                /* 0x27 */
+    ushort experience;             /* 0x28 */
+    byte spells[3];                /* 0x2a: 0xff means no spell */
+    byte spell_flags;              /* 0x2d */
+    byte door_skill;               /* 0x2e */
+    byte _unknown2f;
+} uw_monster_type_props_t;
+
+_Static_assert(sizeof(uw_monster_type_props_t) == 48, "UW1 critter property row");
+_Static_assert(sizeof(uw_object_hdr_t) == 8, "UW1 object header layout");
+_Static_assert(sizeof(uw_mobile_object_t) == 27, "UW1 mobile slot layout");
+_Static_assert(sizeof(uw_projectile_object_t) == 27, "UW1 projectile slot layout");
 
 /* 4-byte level tilemap record (wiki section 4.2). DAT_002029cc is the level's flat 64x64 array of
    these (tilemap_lookup, uw.c ~58433, is the single shared accessor behind 70+ call sites: index =
@@ -162,35 +382,47 @@ typedef struct __attribute__((packed)) {
     unsigned short obj_head     : 10; /* bits 6-15: first object slot index on this tile */
 } uw_tile_t;  /* 4 bytes total */
 
-/* 0xd (13)-byte comobj.dat per-object-type property record. DAT_00202c90_backing is the flat array
-   (base DAT_00202c90, stride 0xd), indexed by an object's type id (obj_hdr.item_id & 0x1ff). */
+/* UW1 COMOBJ.DAT: 11 bytes on disk, expanded by the ARM loader to 13
+ * bytes in memory. Disk bytes 4..10 become native bytes 5..11. */
 typedef struct __attribute__((packed)) {
-    unsigned char _unk00;        /* offset 0x00: a numeric stat (fed into ordint_divmod/roll-style calls in several places) -- not yet confirmed */
-
-    /* offsets 0x01-0x02: 16-bit little-endian packed field (read as `*(ushort*)(&DAT_00202c91 +
-       type*0xd)` at several call sites). */
-    unsigned short collision_radius : 3; /* bits 0-2 (&7): CONFIRMED -- a symmetric collision/placement half-width in eighths-of-a-tile, read identically (and always as a plain radius, never a lookup index) by collision_add_candidate_object/collision_sample_floor_height (src/collision.c), the tile-boundary-crossing check in emit_tile_features (src/tmap.c, "& 8"-gated block a few lines below), src/ai.c, src/combat.c, src/movement.c and src/object_actions.c. Independently corroborated by uw1-decomp's own from-scratch disassembly of the original DOS binary, which names the analogous player-entity field "the player's radius word" and confirms it is consumed as a plain radial distance (collision.json: "wall_rest_is_radius_determined"). */
-    unsigned short _unk01_b3        : 1; /* bit 3 (&8): confirmed used as a standalone flag gating a billboard/sprite-partition branch in src/tmap.c (`(&DAT_00202c91)[type*0xd] & 8`), not yet named */
-    unsigned short unit_weight       : 12; /* bits 4-15 (the remaining 4 bits of offset 0x01 plus all of offset 0x02): CONFIRMED -- src/objects.c's calculate_object_weight (was FUN_00046260) names this exact `>>4` value its own "per-class base weight", multiplied by quantity for stackable items or summed with container contents */
-
-    unsigned char _unk03;        /* offset 0x03: flag byte -- bits 2/3/8(0x8) individually checked at different call sites, none named yet */
-    unsigned char _unk04;        /* offset 0x04: unconfirmed */
-    unsigned short _unk05;       /* offsets 0x05-0x06: read as a 2-byte value, ==0/!=0 checked (possibly a "special/quest object" id) -- not yet confirmed */
-    unsigned char _unk07;        /* offset 0x07: flag byte -- bit 0 (0x1) and bits 2-3 (0xc, compared <3/==3) individually checked, none named yet */
-
-    unsigned char _unk08_lo5 : 5; /* offset 0x08, bits 0-4: unconfirmed */
-    unsigned char _unk08_b5  : 1; /* offset 0x08, bit 5 (0x20): confirmed used as a flag (src/interact.c) but not yet named */
-    unsigned char _unk08_b6  : 1; /* offset 0x08, bit 6: unconfirmed */
-    unsigned char is_container : 1; /* offset 0x08, bit 7 (0x80): CONFIRMED -- src/containers.c's own comment names this exact byte/mask as "DAT_00202c98's own 'container' flag-table lookup", gating container-only behavior (e.g. complete_pending_player_command_target) */
-
-    unsigned char _unk09;        /* offset 0x09: flag byte -- bits 0-1 (0x3, resistance-roll chance bits), bit 3 (0x8), and bit 7 (0x80, gates trigger_type_flagged_trap_effect) individually checked, none named yet */
-    unsigned char _unk0a;        /* offset 0x0a: 2-bit value (&3), compared "!= 2" at many call sites (item-combination gating) -- likely an enum, not yet confirmed */
-
-    unsigned char _unk0b_lo4 : 4;   /* offset 0x0b, bits 0-3 (&0xf): confirmed used as a message-id offset in dispatch_object_action, not yet named as a value field */
-    unsigned char has_look_description : 1; /* offset 0x0b, bit 4 (0x10): CONFIRMED -- this file's own comment on DAT_00202c90's re-aliasing names this exact byte/mask as "the right-click 'look' description gate" in dispatch_object_action */
-    unsigned char _unk0b_hi3 : 3;   /* offset 0x0b, bits 5-7: unconfirmed */
-
-    unsigned char _unk0c;        /* offset 0x0c: unconfirmed (last byte of the 0xd-byte stride) */
+    byte height;                 /* 0x00: collision height in packed Z units */
+    union {
+        ushort size_weight;
+        short size_weight_signed;
+        struct __attribute__((packed)) { byte size_weight_low, size_weight_high; };      /* 0x01: full packed radius/mass word */
+        struct __attribute__((packed)) {
+            ushort collision_radius : 3;
+            ushort animated : 1;
+            ushort unit_weight : 12; /* tenths of a stone */
+        };
+    };
+    byte flags;                  /* 0x03: model, magic, pickup and container flags */
+    byte _pad04;                 /* native alignment gap, not a COMOBJ.DAT byte */
+    ushort monetary_value;       /* 0x05: disk offset 4 */
+    union {
+        ushort quality_owner_flags; /* word spanning the two disk flag bytes */
+        struct __attribute__((packed)) {
+            byte quality_flags;  /* 0x07: disk offset 6 */
+            union {
+                byte owner_flags; /* 0x08: disk offset 7 */
+                struct __attribute__((packed)) {
+                    byte _owner_low : 7;
+                    byte can_have_owner : 1;
+                };
+            };
+        };
+    };
+    byte scale_flags;            /* 0x09: disk offset 8; resistance tests use its bits */
+    byte class_flags;            /* 0x0a: disk offset 9; combine/settle classification */
+    union {
+        byte description_flags;  /* 0x0b: disk offset 10 */
+        struct __attribute__((packed)) {
+            byte quality_type : 4;
+            byte has_look_description : 1;
+            byte _description_high : 3;
+        };
+    };
+    byte _pad0c;                 /* native alignment gap, not a COMOBJ.DAT byte */
 } uw_object_type_props_t;  /* 0xd (13) bytes total */
 
 /* ~0x2e-byte "current view" scratch record: the screen-space eye/ camera transform (world

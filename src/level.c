@@ -222,10 +222,10 @@ void reset_level_object_arena()
     free_list_cursor = free_list_cursor + 1;
   } while (index < 0x400);
   if (g_player_object != 0) {
-    *(byte *)((char *)g_player_object + 4) = *(byte *)((char *)g_player_object + 4) & 0x3f;
-    *(undefined1 *)((char *)g_player_object + 5) = 0;
-    *(byte *)((char *)g_player_object + 6) = *(byte *)((char *)g_player_object + 6) & 0x3f;
-    *(undefined1 *)((char *)g_player_object + 7) = 0;
+    g_player_object->hdr.chain_word_low = g_player_object->hdr.quality;
+    g_player_object->hdr.chain_word_high = 0;
+    g_player_object->hdr.link_word_low = g_player_object->hdr.owner;
+    g_player_object->hdr.link_word_high = 0;
     reset_equipment_and_container_state();
   }
   g_scheduler_count = 0;

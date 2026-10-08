@@ -434,8 +434,9 @@ void draw_automap_screen(int level_number)
     iVar5 = (int)(short)level_number;
     if ((iVar5 == DAT_00201b68) && (iVar5 != 9)) {
       g_blit_transparent_mode = 1;
-      draw_sprite_by_id(0x103f,((*(ushort *)((char *)g_player_object + 0x16) >> 10) + 2) * 3,
-                   (((*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4) + 3) * -3 + 200,5,8);
+      draw_sprite_by_id(0x103f,((g_player_object->npc_xhome) + 2) * 3,
+                        ((g_player_object->npc_yhome) + 3) * -3 + 200,
+                        5,8);
       g_blit_transparent_mode = 0;
     }
     DAT_000ba9d0 = (short)level_number;

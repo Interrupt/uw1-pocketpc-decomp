@@ -15,7 +15,7 @@ char *DAT_00086df8 = record;
 
 char *DAT_0023be74 = attributes;
 
-ushort *g_player_object = player_object;
+uw_mobile_object_t *g_player_object = (uw_mobile_object_t *)player_object;
 
 short DAT_00201b68;
 
@@ -94,7 +94,8 @@ void prepare_initial_randomness(void)
 
 /* Isolate the storage/encoding boundary while testing the real status pack
    and unpack functions. No HUD or audio initialization is needed. */
-undefined1 DAT_00204880_backing[128], DAT_00202750_backing[128];
+undefined1 DAT_00204880_backing[128];
+uw_armor_type_props_t g_armor_type_props[32];
 short DAT_00201c70;
 static byte saved_status[0xd2], saved_key;
 int is_sound_effects_enabled(void) { return 0; }
@@ -135,4 +136,4 @@ undefined4 DAT_0023bc9c, DAT_0023bc98, DAT_002020dc;
 undefined4 DAT_002020d0, DAT_002020d4, DAT_002020d8;
 short DAT_000858c4;
 void reduce_item_quality_on_use(ushort *object, char dice_count) { (void)object; (void)dice_count; TEST_FAIL_MESSAGE("Unexpected quality decay"); }
-uint calculate_object_weight(ushort *object) { return 25; }
+uint calculate_object_weight(uw_object_hdr_t *object) { return 25; }

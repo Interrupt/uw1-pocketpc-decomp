@@ -519,14 +519,14 @@ void purge_tagged_objects_from_chain(void *link_field_ptr)
   
   for (puVar1 = (ushort *)resolve_object_link(link_field); puVar1 != (ushort *)0x0; /* confirmed via ARM disassembly, 0x7deec */
       puVar1 = (ushort *)resolve_object_link(puVar1 + 2)) {
-    if (((*puVar1 & 0x1f0) == 0x1a0) && ((int)DAT_0024cfd0 == (uint)(puVar1[3] >> 6))) {
+    if (((((uw_object_hdr_t *)puVar1)->type_flags & 0x1f0) == 0x1a0) && ((int)DAT_0024cfd0 == (uint)(((uw_object_hdr_t *)puVar1)->link))) {
       object_list_unlink(link_field,puVar1);
       free_object_slot(puVar1);
-      *(byte *)(puVar1 + 3) = (byte)puVar1[3] & 0x3f;
-      *(undefined1 *)((char *)puVar1 + 7) = 0;
+      *(byte *)(puVar1 + 3) = ((uw_object_hdr_t *)puVar1)->owner;
+      ((uw_object_hdr_t *)puVar1)->link_word_high = 0;
       DAT_0024cfd8 = DAT_0024cfd8 + -1;
     }
-    if (((*puVar1 & 0x8000) == 0) && ((puVar1[3] & 0xffc0) != 0)) {
+    if (((((uw_object_hdr_t *)puVar1)->type_flags & 0x8000) == 0) && ((((uw_object_hdr_t *)puVar1)->link_word & 0xffc0) != 0)) {
       purge_tagged_objects_from_chain(puVar1 + 3); /* was called with no argument; confirmed via ARM disassembly, 0x7dfbc */
     }
   }
@@ -683,13 +683,13 @@ int target_in_range(short range_squared, void *actor_ptr, char *target)
     uVar7 = 1;
   }
   else {
-    uVar5 = *(ushort *)((char *)g_player_object + 2);
+    uVar5 = g_player_object->hdr.position_word;
     uVar6 = *(ushort *)(actor + 2);
-    iVar2 = ((((uint)(uVar6 >> 0xd) + (uint)(*(ushort *)((char *)g_player_object + 0x16) >> 10) * -8) -
-             (uint)(uVar5 >> 0xd)) + uVar8 * 8) * 0x10000;
+    iVar2 = ((((uint)(uVar6 >> 0xd) + (uint)(g_player_object->npc_xhome) * -8) -
+              (uint)(uVar5 >> 0xd)) + uVar8 * 8) * 0x10000;
     uVar8 = iVar2 >> 0x1f;
-    iVar3 = (((((uVar6 & 0x1c00) >> 10) + ((*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4) * -8) -
-             ((uVar5 & 0x1c00) >> 10)) + iVar3 * 8) * 0x10000;
+    iVar3 = (((((uVar6 & 0x1c00) >> 10) + (g_player_object->npc_yhome) * -8) -
+              ((uVar5 & 0x1c00) >> 10)) + iVar3 * 8) * 0x10000;
     uVar4 = iVar3 >> 0x1f;
     iVar2 = (int)(((iVar2 >> 0x10 ^ uVar8) - uVar8) * 0x10000) >> 0x10;
     iVar3 = (int)(((iVar3 >> 0x10 ^ uVar4) - uVar4) * 0x10000) >> 0x10;
@@ -748,9 +748,9 @@ int target_line_of_sight(short target_class, void *target_ptr)
   int iVar14;
   
   if (target_class != 0) {
-    uVar2 = *(ushort *)((char *)g_player_object + 0x16) >> 10;
+    uVar2 = g_player_object->npc_xhome;
     uVar9 = (uint)uVar2;
-    uVar10 = (*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4;
+    uVar10 = g_player_object->npc_yhome;
     /* tilemap_lookup returns a 64-bit tile-record pointer; `int iVar5`
        truncated it and the very next line dereferenced the result. Use
        the byte* local this function already has for the same call later. */
@@ -781,7 +781,7 @@ int target_line_of_sight(short target_class, void *target_ptr)
         }
       }
       iVar5 = ((DAT_0023bc94 + 1) * 0x10000 >> 0x10) << 0x13;
-      uVar2 = *(byte *)((char *)g_player_object + 2) & 0x7f;
+      uVar2 = g_player_object->hdr.zpos;
       if (iVar5 >> 0x10 < (int)(short)uVar2) {
         sVar7 = uVar2 - (short)((uint)iVar5 >> 0x10);
       }
@@ -876,22 +876,26 @@ ushort *pick_object_under_cursor(int mode)
     puVar3 = (ushort *)get_object_record_by_slot_index(iVar2);
 
     if(puVar3) {
-      DEBUG(INFO, "[pick] found slot=%u -> objid=0x%03x", uVar4, (unsigned)(*puVar3 & 0x1ff));
+      DEBUG(INFO, "[pick] found slot=%u -> objid=0x%03x", uVar4,
+            (unsigned)(((uw_object_hdr_t *)puVar3)->item_id));
       if (_pick_diag)
-        fprintf(stderr, "[pick] found slot=%u -> objid=0x%03x ptr=%p\n", uVar4, (unsigned)(*puVar3 & 0x1ff), (void *)puVar3);
+        fprintf(stderr, "[pick] found slot=%u -> objid=0x%03x ptr=%p\n", uVar4,
+                (unsigned)(((uw_object_hdr_t *)puVar3)->item_id),
+                (void *)puVar3);
     }
 
     DAT_002020a8 = DAT_002020b0 + 2;
     if (getenv("UW_DEBUG_THROW"))
       fprintf(stderr, "[pick-grab] puVar3=%p type=0x%x classbit20=%d in_arena=%d off10=0x%x off13=0x%x off14=0x%x off15=0x%x off4000=%d\n",
-              (void *)puVar3, (unsigned)(*puVar3 & 0x1ff),
-              (int)((&DAT_00202c98)[(*puVar3 & 0x1ff) * 0xd] & 0x20),
+              (void *)puVar3,
+              (unsigned)(((uw_object_hdr_t *)puVar3)->item_id),
+              (int)(g_object_type_props[(((uw_object_hdr_t *)puVar3)->item_id)].owner_flags & 0x20),
               (int)object_ptr_in_arena((char *)puVar3),
               (unsigned)*(byte *)((char *)puVar3 + 10), (unsigned)*(byte *)((char *)puVar3 + 0x13),
               (unsigned)*(byte *)((char *)puVar3 + 0x14), (unsigned)*(byte *)((char *)puVar3 + 0x15),
-              (int)((*puVar3 & 0x4000) != 0));
-    if ((((&DAT_00202c98)[(*puVar3 & 0x1ff) * 0xd] & 0x20) != 0) &&
-       (iVar2 = object_ptr_in_arena(puVar3), iVar2 == 0)) {
+              (int)((((uw_object_hdr_t *)puVar3)->type_flags & 0x4000) != 0));
+    if (((g_object_type_props[(((uw_object_hdr_t *)puVar3)->item_id)].owner_flags & 0x20) != 0) &&
+        (iVar2 = object_ptr_in_arena(puVar3), iVar2 == 0)) {
       DAT_002020ec = 1;
       return puVar3;
     }
