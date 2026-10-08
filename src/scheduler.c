@@ -133,8 +133,8 @@ void scheduler_finish_entry(int entry_slot)
     if (getenv("UW_DEBUG_DOOR"))
       fprintf(stderr, "[door] scheduler_finish_entry: FINALIZE class0xf obj0=0x%04x quality_low4=%d opening=%d\n",
               (unsigned)((uw_object_hdr_t *)puVar4)->type_flags, (int)uVar5,
-              (int)((((uw_object_hdr_t *)puVar4)->type_flags & 0x1000) == 0));
-    if ((((uw_object_hdr_t *)puVar4)->type_flags & 0x1000) == 0) {
+              (int)(((uw_object_hdr_t *)puVar4)->enchanted == 0));
+    if (((uw_object_hdr_t *)puVar4)->enchanted == 0) {
       uVar5 = uVar5 | 8;
     }
     else {
@@ -148,7 +148,7 @@ void scheduler_finish_entry(int entry_slot)
       }
       uVar6 = encode_object_slot_index(puVar4);
       iVar7 = check_object_placement_clearance(uVar5 + (uVar10 + 0x14) * 0x10,uVar6,
-                           (uint)(((uw_object_hdr_t *)puVar4)->position_word_high >> 5) + (short)DAT_0010144c * 8,
+                           (uint)(((uw_object_hdr_t *)puVar4)->xpos) + (short)DAT_0010144c * 8,
                            (((uw_object_hdr_t *)puVar4)->ypos) + (short)DAT_00101454 * 8,
                            uVar8,1,8);
       if (iVar7 == 0) {
@@ -160,7 +160,7 @@ void scheduler_finish_entry(int entry_slot)
         return;
       }
       play_positional_sound_effect(0xc,
-                                   (uint)(((uw_object_hdr_t *)puVar4)->position_word_high >> 5) + (short)DAT_0010144c * 8,
+                                   (uint)(((uw_object_hdr_t *)puVar4)->xpos) + (short)DAT_0010144c * 8,
                                    (((uw_object_hdr_t *)puVar4)->ypos) + (short)DAT_00101454 * 8,
                                    0);
     }
@@ -172,7 +172,7 @@ void scheduler_finish_entry(int entry_slot)
     uVar5 = (uVar10 ^ uVar5) & 0xf ^ uVar10;
     ((uw_object_hdr_t *)puVar4)->type_flags_low = (byte)uVar5;
     ((uw_object_hdr_t *)puVar4)->type_flags_high = (byte)(uVar10 >> 8);
-    uVar10 = ((uw_object_hdr_t *)puVar4)->link_word & 0xffc0;
+    uVar10 = ((uw_object_hdr_t *)puVar4)->link << 6;
     *(byte *)(puVar4 + 3) = (byte)uVar10;
     ((uw_object_hdr_t *)puVar4)->link_word_high = (byte)(uVar10 >> 8);
     uVar8 = (ushort)uVar5;
@@ -187,7 +187,7 @@ void scheduler_finish_entry(int entry_slot)
     if (getenv("UW_DEBUG_DOOR"))
       fprintf(stderr, "[door] scheduler_finish_entry: AFTER direction toggle, obj0=0x%04x dirbit=%d openbits=%d\n",
               (unsigned)((uw_object_hdr_t *)puVar4)->type_flags,
-              (int)((((uw_object_hdr_t *)puVar4)->type_flags & 0x1000) != 0),
+              (int)(((uw_object_hdr_t *)puVar4)->enchanted != 0),
               (int)(((uw_object_hdr_t *)puVar4)->flags_res));
   }
   if ((uVar1 & 0x20) != 0) {
@@ -360,9 +360,9 @@ LAB_00081254:
           goto LAB_00081254;
         }
         if (uVar8 == 4) {
-          int _swing_dirbit_in = (((uw_object_hdr_t *)puVar4)->type_flags & 0x1000) != 0;
+          int _swing_dirbit_in = ((uw_object_hdr_t *)puVar4)->enchanted != 0;
           int _swing_openbits_in = ((uw_object_hdr_t *)puVar4)->flags_res;
-          if ((((uw_object_hdr_t *)puVar4)->type_flags & 0x1000) != 0) {
+          if (((uw_object_hdr_t *)puVar4)->enchanted != 0) {
             elapsed = (short)elapsed * -0x10000 >> 0x10;
           }
           if ((((uw_object_hdr_t *)puVar4)->link_word & 7) == 6) {
@@ -605,7 +605,7 @@ int scheduler_advance_effect(short entry_slot, int elapsed)
   }
   uVar3 = encode_object_slot_index(puVar2);
   iVar4 = check_object_placement_clearance((uVar7 & 0x30) + (uVar7 & 0xf) + 0x140,uVar3,
-                       (uint)(((uw_object_hdr_t *)puVar2)->position_word_high >> 5) + (short)DAT_0010144c * 8,
+                       (uint)(((uw_object_hdr_t *)puVar2)->xpos) + (short)DAT_0010144c * 8,
                        (((uw_object_hdr_t *)puVar2)->ypos) + (short)DAT_00101454 * 8,
                        uVar9,1,
                        8);
@@ -632,7 +632,7 @@ int scheduler_advance_effect(short entry_slot, int elapsed)
     if (getenv("UW_DEBUG_DOOR"))
       fprintf(stderr, "[door] scheduler_advance_effect: elapsed(elapsed)=%d obj0(after settle)=0x%04x dirbit=%d openbits=%d get_delay=%d anim_type(iVar10)=%d\n",
               elapsed, (unsigned)((uw_object_hdr_t *)puVar2)->type_flags,
-              (int)((((uw_object_hdr_t *)puVar2)->type_flags & 0x1000) != 0),
+              (int)(((uw_object_hdr_t *)puVar2)->enchanted != 0),
               (int)(((uw_object_hdr_t *)puVar2)->flags_res),
               (int)iVar6, iVar10);
     iVar4 = (int)(short)iVar6;

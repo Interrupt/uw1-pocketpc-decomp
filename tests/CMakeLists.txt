@@ -977,6 +977,10 @@ if(UW_SPATCH_EXECUTABLE)
     COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_object_semantic_patches.py"
       "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME named_struct_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_named_struct_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
 endif()
 add_game_test_library(uw_test_object_weight src/objects.c:calculate_object_weight)
 add_supported_game_unit_test(object_weight uw_test_object_weight)

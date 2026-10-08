@@ -165,7 +165,7 @@ int dispatch_trap_type_effect(ushort *trap_record, int tile_x, int tile_y)
                               CONCAT22(uVar20,4),0);
       DAT_00202c84 = 0;
       if (local_30 != 0) {
-        if ((((((uw_object_hdr_t *)puVar8)->type_flags & 0x8000) == 0) && ((((uw_object_hdr_t *)puVar8)->link_word & 0xffc0) != 0)) &&
+        if (((((uw_object_hdr_t *)puVar8)->is_quant == 0) && (((uw_object_hdr_t *)puVar8)->link != 0)) &&
             (puVar9 = (undefined1 *)alloc_object_slot(0), puVar9 != (undefined1 *)0x0)) {
           puVar10 = (undefined1 *)get_object_record_by_slot_index(((uw_object_hdr_t *)puVar8)->link);
           *puVar9 = *puVar10;
@@ -179,12 +179,12 @@ int dispatch_trap_type_effect(ushort *trap_record, int tile_x, int tile_y)
           uVar14 = encode_object_slot_index(puVar9);
           *(byte *)(puVar8 + 3) = ((uw_object_hdr_t *)puVar8)->owner | (byte)((uVar14 & 0x3ff) << 6);
           ((uw_object_hdr_t *)puVar8)->link_word_high = (byte)(char)((uVar14 << 0x16) >> 0x18);
-          if ((((uw_object_hdr_t *)puVar9)->chain_word & 0xffc0) != 0) {
+          if (((uw_object_hdr_t *)puVar9)->next != 0) {
             puVar9[5] = 0;
-            puVar9[4] = (byte)((uw_object_hdr_t *)puVar9)->chain_word & 0x3f;
+            puVar9[4] = ((uw_object_hdr_t *)puVar9)->quality;
           }
-          if (((puVar9[1] & 0x80) == 0) && ((((uw_object_hdr_t *)puVar9)->link_word & 0xffc0) != 0)) {
-            puVar9[6] = (byte)((uw_object_hdr_t *)puVar9)->link_word & 0x3f;
+          if (((puVar9[1] & 0x80) == 0) && (((uw_object_hdr_t *)puVar9)->link != 0)) {
+            puVar9[6] = ((uw_object_hdr_t *)puVar9)->owner;
             puVar9[7] = 0;
           }
         }
@@ -399,7 +399,7 @@ LAB_0007d460:
          (ushort)(uVar4 >> 10 & 7 | (trap_record[3] & 0x3f | ((byte)trap_record[2] & 0x3f) << 5) << 3)) &&
        ((trap_record[3] & 0xffc0) != 0)) {
       linked_obj = resolve_object_link(trap_record + 3);
-      if ((((uw_object_hdr_t *)linked_obj)->chain_word & 0xffc0) == 0) {
+      if (((uw_object_hdr_t *)linked_obj)->next == 0) {
         return 2;
       }
       linked_obj = resolve_object_link((char *)linked_obj + 4);
@@ -1088,7 +1088,7 @@ void try_combine_shrine_markers(int unused, int tile_x, int tile_y)
   if ((char)iVar5 == '\x04') {
     pNew = (char *)spawn_new_object(0xfd,0);
     pTile = (char *)tilemap_lookup(tile_x,tile_y + 1);
-    uVar4 = ((uw_object_hdr_t *)pNew)->position_word & 0x380 | 0x6c40;
+    uVar4 = ((uw_object_hdr_t *)pNew)->heading << 7 | 0x6c40;
     *(char *)(pNew + 2) = (char)uVar4;
     *(char *)(pNew + 3) = (char)(uVar4 >> 8);
     object_list_insert_head(pTile + 2,pNew);

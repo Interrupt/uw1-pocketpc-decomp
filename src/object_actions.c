@@ -168,7 +168,7 @@ void dispatch_object_action(ushort *object, int mode)
     }
     mode = (int)(short)mode;
   }
-  if ((((((uw_object_hdr_t *)object)->type_flags & 0x8000) == 0) || (uVar3 = ((uw_object_hdr_t *)object)->link_word, (uVar3 & 0x8000) != 0)) ||
+  if (((((uw_object_hdr_t *)object)->is_quant == 0) || (uVar3 = ((uw_object_hdr_t *)object)->link_word, (uVar3 & 0x8000) != 0)) ||
       ((uVar3 & 0xffc0) < 0x41)) {
     if ((cVar10 != '\0') && ((g_object_type_props[iVar9 / 0xd].quality_type) != 0xd)) {
       if (((cVar10 == 'a') || ((cVar10 == 'e' || (cVar10 == 'i')))) ||
@@ -491,7 +491,7 @@ void dispatch_object_action_dup(ushort *object, int mode)
     }
     mode = (int)(short)mode;
   }
-  if ((((((uw_object_hdr_t *)object)->type_flags & 0x8000) == 0) || (uVar3 = ((uw_object_hdr_t *)object)->link_word, (uVar3 & 0x8000) != 0)) ||
+  if (((((uw_object_hdr_t *)object)->is_quant == 0) || (uVar3 = ((uw_object_hdr_t *)object)->link_word, (uVar3 & 0x8000) != 0)) ||
       ((uVar3 & 0xffc0) < 0x41)) {
     if ((cVar10 != '\0') && ((g_object_type_props[iVar9 / 0xd].quality_type) != 0xd)) {
       if (((cVar10 == 'a') || ((cVar10 == 'e' || (cVar10 == 'i')))) ||
@@ -576,7 +576,7 @@ int check_object_drop_height(ushort *object, ushort *reference)
     fprintf(stderr, "[throw-refine] ENTER object=%p object[0xb]=0x%x object+3byte=0x%x\n",
             (void *)object, (unsigned)object[0xb],
             (unsigned)((uw_object_hdr_t *)object)->position_word_high);
-  iVar5 = ((object[0xb] & 0xfc00) >> 7) + (uint)(((uw_object_hdr_t *)object)->position_word_high >> 5);
+  iVar5 = ((object[0xb] & 0xfc00) >> 7) + (uint)(((uw_object_hdr_t *)object)->xpos);
   *(byte *)DAT_00202c6c = (byte)iVar5;
   *(byte *)((char *)DAT_00202c6c + 1) = (byte)((uint)iVar5 >> 8);
   if (getenv("UW_DEBUG_THROW"))
@@ -591,7 +591,7 @@ int check_object_drop_height(ushort *object, ushort *reference)
   /* Both pointer args below were `DAT_00202c6c`/`DAT_00202c6c + 1` -- the Y output must be `+2` to
      match the real Y storage (offset+2/+3, see the fix just above); `+1` is X's own high byte.
      Disassembly- confirmed (0x4b288 @ 0x4b458's `bl 0x69f2c` args). */
-  project_position_by_heading(((byte)object[0xc] & 0x1f) + ((((uw_object_hdr_t *)object)->position_word & 0x380) >> 2),
+  project_position_by_heading(((byte)object[0xc] & 0x1f) + ((((uw_object_hdr_t *)object)->heading << 7) >> 2),
                               (g_object_type_props[(((uw_object_hdr_t *)object)->item_id)].collision_radius) +
                               (g_object_type_props[(((uw_object_hdr_t *)reference)->item_id)].collision_radius) + '\x04',
                               DAT_00202c6c,
@@ -1519,7 +1519,7 @@ void cast_summon_or_spawn_effect(void *caster, char variant)
           bVar1 = g_player_object->npc_xhome;
           *(byte *)(pObj + 0xf) = (byte)uVar10 | bVar1;
           *(char *)(pObj + 0x10) = (char)(uVar10 >> 8);
-          uVar10 = uVar2 & 0xf000 | (uint)bVar1 | (g_player_object->tile_word & 0x3f0) << 2;
+          uVar10 = uVar2 & 0xf000 | (uint)bVar1 | (g_player_object->npc_yhome << 4) << 2;
           *(char *)(pObj + 0xf) = (char)uVar10;
           *(char *)(pObj + 0x10) = (char)(uVar10 >> 8);
         }
@@ -2266,7 +2266,7 @@ void spawn_effect_debris_burst(void *template_ptr, uint tile_x, int tile_y)
     uVar10 = ((uVar9 & 1) + uVar10 + 1 ^ uVar10) & 0x1ff ^ uVar10;
     ((uw_object_hdr_t *)puVar8)->type_flags_low = (byte)(char)uVar10;
     ((uw_object_hdr_t *)puVar8)->type_flags_high = (byte)(char)(uVar10 >> 8);
-    bVar3 = ((uw_object_hdr_t *)puVar8)->position_word_high >> 5;
+    bVar3 = ((uw_object_hdr_t *)puVar8)->xpos;
     do {
       do {
         uVar6 = ce_rand();

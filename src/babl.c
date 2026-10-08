@@ -546,10 +546,10 @@ int babl_builtin_do_inv_create(char *args)
     ((uw_object_hdr_t *)puVar3)->chain_word_high = (byte)(char)(uVar1 >> 8);
     puVar4 = (ushort *)(*piVar2 + 6);
     while (puVar4 = (ushort *)resolve_object_link(puVar4), puVar4 != (ushort *)0x0) {
-      if (((((((uw_object_hdr_t *)puVar3)->type_flags & 0x8000) != 0) && ((*puVar4 & 0x8000) != 0)) && ((((uw_object_hdr_t *)puVar3)->link_word & 0x8000) == 0))
+      if ((((((uw_object_hdr_t *)puVar3)->is_quant != 0) && ((*puVar4 & 0x8000) != 0)) && ((((uw_object_hdr_t *)puVar3)->link_word & 0x8000) == 0))
           && ((((puVar4[3] & 0x8000) == 0 && (((*puVar4 ^ ((uw_object_hdr_t *)puVar3)->type_flags) & 0x1ff) == 0)) &&
                ((ushort)((puVar4[3] >> 6) + (((uw_object_hdr_t *)puVar3)->link)) < 999)))) {
-        iVar6 = (puVar4[3] & 0xffc0) + (((uw_object_hdr_t *)puVar3)->link_word & 0xffc0);
+        iVar6 = (puVar4[3] & 0xffc0) + (((uw_object_hdr_t *)puVar3)->link << 6);
         *(byte *)(puVar4 + 3) = (byte)iVar6 ^ (byte)puVar4[3] & 0x3f;
         *(char *)((char *)puVar4 + 7) = (char)((uint)iVar6 >> 8);
         free_object_slot(puVar3);
@@ -2829,7 +2829,7 @@ int babl_builtin_identify_inv(char *args)
     uVar9 = 1;
   }
   else {
-    uVar9 = ((uw_object_hdr_t *)iVar5)->link_word >> 6;
+    uVar9 = ((uw_object_hdr_t *)iVar5)->link;
   }
   local_74[0] = '\0';
   local_84[0] = '\0';
@@ -3861,15 +3861,15 @@ void handle_barter_slot_click(int is_player_side, int slot, void *counts, void *
       }
       obj_rec = get_object_record_by_slot_index((int)*(short *)(local_8 + (short)local_c * 2));
       if (((((*(byte *)(obj_rec + 1) & 0x80) != 0) && ((((uw_object_hdr_t *)obj_rec)->link_word & 0x8000) == 0)) &&
-           ((((uw_object_hdr_t *)obj_rec)->link_word & 0xffc0) != 0x40)) && (split_rec = prompt_split_object_stack((byte *)(intptr_t)(obj_rec)), split_rec == 0))
+           (((uw_object_hdr_t *)obj_rec)->link != 1)) && (split_rec = prompt_split_object_stack((byte *)(intptr_t)(obj_rec)), split_rec == 0))
       {
         return;
       }
       iVar3 = check_object_carry_weight((ushort *)(intptr_t)(obj_rec));
       if (iVar3 == 0) {
         if ((split_rec != 0) && (split_rec != obj_rec)) {
-          iVar3 = (((uw_object_hdr_t *)obj_rec)->link_word & 0xffc0) + (*(ushort *)(split_rec + 6) & 0xffc0);
-          *(byte *)(obj_rec + 6) = (byte)iVar3 ^ (byte)((uw_object_hdr_t *)obj_rec)->link_word & 0x3f;
+          iVar3 = (((uw_object_hdr_t *)obj_rec)->link << 6) + (*(ushort *)(split_rec + 6) & 0xffc0);
+          *(byte *)(obj_rec + 6) = (byte)iVar3 ^ ((uw_object_hdr_t *)obj_rec)->owner;
           *(char *)(obj_rec + 7) = (char)((uint)iVar3 >> 8);
           object_list_unlink((void *)(intptr_t)(obj_rec + 4),(void *)(intptr_t)(split_rec));
           free_object_slot((void *)(intptr_t)(split_rec));
@@ -4280,11 +4280,11 @@ void finalize_player_barter_items()
         puVar3 = (ushort *)resolve_object_link((char *)DAT_00100674 + 6);
         if ((((uw_object_hdr_t *)puVar2)->item_id) == 0xa1) {
           for (; puVar3 != (ushort *)0x0; puVar3 = (ushort *)resolve_object_link(puVar3 + 2)) {
-            if (((((((uw_object_hdr_t *)puVar2)->type_flags & 0x8000) != 0) && ((((uw_object_hdr_t *)puVar3)->type_flags & 0x8000) != 0)) &&
+            if ((((((uw_object_hdr_t *)puVar2)->is_quant != 0) && (((uw_object_hdr_t *)puVar3)->is_quant != 0)) &&
                  ((((uw_object_hdr_t *)puVar2)->link_word & 0x8000) == 0)) &&
                 ((((((uw_object_hdr_t *)puVar3)->link_word & 0x8000) == 0 && (((((uw_object_hdr_t *)puVar3)->type_flags ^ ((uw_object_hdr_t *)puVar2)->type_flags) & 0x1ff) == 0)) &&
                   ((ushort)((((uw_object_hdr_t *)puVar3)->link) + (((uw_object_hdr_t *)puVar2)->link)) < 999)))) {
-              iVar4 = (((uw_object_hdr_t *)puVar3)->link_word & 0xffc0) + (((uw_object_hdr_t *)puVar2)->link_word & 0xffc0);
+              iVar4 = (((uw_object_hdr_t *)puVar3)->link << 6) + (((uw_object_hdr_t *)puVar2)->link << 6);
               *(byte *)(puVar3 + 3) = (byte)iVar4 ^ ((uw_object_hdr_t *)puVar3)->owner;
               ((uw_object_hdr_t *)puVar3)->link_word_high = (byte)(char)((uint)iVar4 >> 8);
               free_object_slot(puVar2);

@@ -652,3 +652,128 @@ int main(void) {
     compile_and_run()
     transform('packed-reassembly.cocci', path)
     assert path.read_text() == result, 'packed reassembly patch is not idempotent'
+
+# Convert complete position read/modify/write sequences; retain a packed
+# temporary if the caller reads it, and preserve every neighboring field.
+with tempfile.TemporaryDirectory() as tmp:
+    path = pathlib.Path(tmp) / 'position.c'
+    recipes = [('zpos', 0, 7), ('heading', 7, 3), ('ypos', 10, 3), ('xpos', 13, 3)]
+    functions = []
+    checks = []
+    for field, shift, width in recipes:
+        mask = (1 << width) - 1
+        clear = 0xffff ^ (mask << shift)
+        for variant in ['word_live', 'split_live', 'direct', 'dead', 'overwritten', 'branch_live']:
+            insert = f'(H & {hex(mask)}) << {shift}' if shift else f'H & {hex(mask)}'
+            store = 'p->hdr.position_word = (ushort)uVar7;'
+            if variant == 'split_live':
+                store = '''p->hdr.position_word_low = (byte)(char)uVar7;
+                           p->hdr.position_word_high = (byte)(char)(uVar7 >> 8);'''
+            body = f'uVar7 = p->hdr.position_word & {hex(clear)} | {insert};\n{store}'
+            returned = 'uVar7'
+            if variant == 'direct':
+                body = f'p->hdr.position_word = p->hdr.position_word & {hex(clear)} | {insert};'
+                returned = 'p->hdr.position_word'
+            elif variant == 'dead':
+                returned = 'p->hdr.position_word'
+            elif variant == 'overwritten':
+                body += '\nuVar7 = H + 2;'
+            elif variant == 'branch_live':
+                body += '\nif (H & 1) uVar7 = H + 2;'
+            name = f'{field}_{variant}'
+            functions.append(f'''uint {name}(uw_mobile_object_t *p, uint H)
+{{
+    uint uVar7;
+    {body}
+    return {returned};
+}}
+''')
+            expected = 'H + 2' if variant == 'overwritten' else '(H & 1) ? H + 2 : expected' if variant == 'branch_live' else 'expected'
+            checks.append(f'''
+    p.hdr.position_word = (ushort)initial;
+    expected = (initial & {hex(clear)}) | ((H & {hex(mask)}) << {shift});
+    result = {name}(&p, H);
+    if (result != ({expected})) return 1;
+    if (p.hdr.position_word != expected) return 2;
+    if (p.hdr.type_flags != 0x1234 || p.hdr.chain_word != 0xabcd || p.hdr.link_word != 0x5678) return 3;
+''')
+    functions.append('''uint fine_heading(uw_mobile_object_t *p, uint H)
+{
+    uint uVar7;
+    uVar7 = p->hdr.position_word & 0xfc7f | (H & 0xe0) << 2;
+    p->hdr.position_word_low = (byte)(char)uVar7;
+    p->hdr.position_word_high = (byte)(char)(uVar7 >> 8);
+    return uVar7;
+}
+uint read_heading(uw_mobile_object_t *p)
+{
+    return (p->hdr.position_word >> 7) & 7;
+}
+uint wider_insert(uw_mobile_object_t *p, uint H)
+{
+    p->hdr.position_word = p->hdr.position_word & 0xfc7f | (H & 0x1f) << 7;
+    return p->hdr.position_word;
+}
+''')
+    checks.append('''
+    p.hdr.position_word = (ushort)initial;
+    expected = (initial & 0xfc7f) | ((H & 0xe0) << 2);
+    if (fine_heading(&p, H) != expected || p.hdr.position_word != expected) return 5;
+''')
+    path.write_text('''
+#include <stdint.h>
+typedef unsigned short ushort;
+typedef unsigned char byte;
+typedef unsigned int uint;
+typedef struct __attribute__((packed)) {
+    ushort type_flags;
+    union {
+        ushort position_word;
+        struct { byte position_word_low, position_word_high; };
+        struct { unsigned short zpos:7, heading:3, ypos:3, xpos:3; };
+    };
+    ushort chain_word, link_word;
+} uw_object_hdr_t;
+typedef struct { uw_object_hdr_t hdr; byte full_heading; } uw_mobile_object_t;
+''' + '\n'.join(functions) + '''
+int main(void) {
+    const uint values[] = {0, 1, 7, 8, 31, 32, 127, 128, 255, 256, 65535, 0xdeadbeef};
+    uw_mobile_object_t p = {0};
+    p.hdr.type_flags = 0x1234;
+    p.hdr.chain_word = 0xabcd;
+    p.hdr.link_word = 0x5678;
+    for (uint initial = 0; initial <= UINT16_MAX; ++initial) {
+        for (unsigned index = 0; index < sizeof(values)/sizeof(values[0]); ++index) {
+            uint H = values[index], expected, result;
+''' + '\n'.join(checks) + '''
+            if (read_heading(&p) != ((p.hdr.position_word >> 7) & 7)) return 4;
+        }
+    }
+    return 0;
+}
+''')
+    def compile_and_run_position():
+        executable = pathlib.Path(tmp) / 'position'
+        subprocess.run(['cc', '-std=c11', '-O2', str(path), '-o', str(executable)],
+                       check=True, capture_output=True, text=True)
+        subprocess.run([str(executable)], check=True, capture_output=True)
+    compile_and_run_position()
+    for patch in ['position-fields.cocci', 'position-dead-temporaries.cocci']:
+        transform(patch, path)
+    result = path.read_text()
+    for field, _, _ in recipes:
+        assert 'p->hdr.' + field + ' = H &' in result, result
+    assert 'p->hdr.position_word & 0xfc7f | (H & 0x1f) << 7' in result, result
+    # A return of the packed result and a conditional overwrite must stay valid.
+    from extract_functions import extract
+    for field, _, _ in recipes:
+        for live in ['word_live', 'split_live', 'branch_live']:
+            assert 'uVar7 = p->hdr.position_word;' in extract(result, field + '_' + live), result
+        for dead in ['dead', 'overwritten']:
+            assert 'uVar7 = p->hdr.position_word;' not in extract(result, field + '_' + dead), result
+    assert 'p->hdr.heading = (H >> 5) & 7;' in extract(result, 'fine_heading'), result
+    assert 'return p->hdr.heading;' in extract(result, 'read_heading'), result
+    compile_and_run_position()
+    for patch in ['position-fields.cocci', 'position-dead-temporaries.cocci']:
+        transform(patch, path)
+    assert path.read_text() == result, 'position field patches are not idempotent'

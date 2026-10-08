@@ -270,10 +270,10 @@ int drop_held_object_near_player(void *held_object_ptr, int force)
     if (getenv("UW_DEBUG_THROW"))
       fprintf(stderr, "[throw-heading] facing_byte(g_player_object+0x18)&0x1f=%d fine_aim((g_player_object[1]&0x380)>>2)=%d heading=%d dist(cVar9)=%d start=(%d,%d)\n",
               (int)(g_player_object->npc_heading),
-              (int)((g_player_object->hdr.position_word & 0x380) >> 2),
-              (int)((g_player_object->npc_heading) + ((g_player_object->hdr.position_word & 0x380) >> 2)),
+              (int)((g_player_object->hdr.heading << 7) >> 2),
+              (int)((g_player_object->npc_heading) + ((g_player_object->hdr.heading << 7) >> 2)),
               (int)cVar9, (int)local_28, (int)local_26);
-    project_position_by_heading((g_player_object->npc_heading) + ((g_player_object->hdr.position_word & 0x380) >> 2),
+    project_position_by_heading((g_player_object->npc_heading) + ((g_player_object->hdr.heading << 7) >> 2),
                                 cVar9,&local_28
                                 ,&local_26);
     if (getenv("UW_DEBUG_THROW"))
@@ -287,7 +287,7 @@ int drop_held_object_near_player(void *held_object_ptr, int force)
       bVar3 = true;
     }
     else {
-      project_position_by_heading((g_player_object->npc_heading) + ((g_player_object->hdr.position_word & 0x380) >> 2),
+      project_position_by_heading((g_player_object->npc_heading) + ((g_player_object->hdr.heading << 7) >> 2),
                                   3,&local_28,
                                   &local_26);
       if (getenv("UW_DEBUG_THROW"))
@@ -2512,7 +2512,7 @@ int reduce_object_count(ushort *stack_object, uint amount)
       return 0;
     }
     if (((0 < sVar1) && ((puVar5[1] & 0x80) != 0)) && ((((uw_object_hdr_t *)puVar5)->link_word & 0x8000) == 0)) {
-      uVar2 = ((uw_object_hdr_t *)puVar5)->link_word >> 6;
+      uVar2 = ((uw_object_hdr_t *)puVar5)->link;
       if ((1 < uVar2) && (sVar1 < (short)uVar2)) {
         puVar6 = (undefined1 *)alloc_object_slot(0);
         *puVar6 = *puVar5;
@@ -3017,8 +3017,8 @@ int find_or_assign_object_widget(void *object_ptr)
         return (int)cVar1;
       }
       puVar3 = (ushort *)resolve_object_link(puVar5);
-      if (((((((uw_object_hdr_t *)puVar3)->type_flags & 0x8000) == 0) && (g_current_container_record == 0)) ||
-           (((((uw_object_hdr_t *)puVar3)->type_flags & 0x8000) == 0 && (((*(ushort *)(g_current_container_record + 8) ^ *puVar5) & 0xffc0) != 0)))
+      if ((((((uw_object_hdr_t *)puVar3)->is_quant == 0) && (g_current_container_record == 0)) ||
+           ((((uw_object_hdr_t *)puVar3)->is_quant == 0 && (((*(ushort *)(g_current_container_record + 8) ^ *puVar5) & 0xffc0) != 0)))
           ) && (iVar4 = find_object_by_encoded_slot_in_chain(puVar3 + 3,1,uVar2), iVar4 != 0)) {
         return (short)cVar1 * -0x10000 >> 0x10;
       }

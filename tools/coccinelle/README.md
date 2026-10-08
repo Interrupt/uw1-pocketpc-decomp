@@ -281,3 +281,57 @@ outer signed casts, member and cast receivers, and container cached bytes.
 Mismatched fields/receivers, side effects, and untyped byte buffers remain
 unchanged; a second application must produce identical output. Concatenations
 that assemble separate values or update only part of a value remain valid.
+
+## Named position operations
+
+`generate_position_field_rules.py` generates `position-fields.cocci` and
+`position-dead-temporaries.cocci`. Apply them in that order. Complete
+read/modify/write sequences for `zpos`, `heading`, `ypos`, and `xpos` become
+bitfield assignments; exact field extraction masks become named reads.
+Both whole-word and matching two-byte stores are supported. Fine headings
+inserted with `(value & 0xe0) << 2` become `(value >> 5) & 7` assignments.
+Receiver and input identifiers exclude calls/increments. Wider insertion masks
+are deliberately excluded because they may also change adjacent fields.
+
+The conversion initially preserves the temporary's original packed result.
+The cleanup patch removes its reload only where a control-flow match proves it
+unused before function exit or an independent overwrite. A conservative RHS
+name filter rejects overwrites that read the temporary. Explicitly documented
+function/variable pairs cover manually audited goto-heavy NPC routines beyond
+the generic pattern's reach. Do not generalize those exceptions to other
+functions or variables without checking every path.
+
+Regression coverage compiles and executes original and converted updates for
+all 65,536 initial words and twelve input values (including out-of-range values),
+checking the changed property, preserved neighboring header fields, returned
+packed temporaries, conditional overwrites, wider-mask exclusion, and repeatability.
+
+## Documented field reads and remaining-access inventory
+
+`struct_field_catalog.py` lists the documented packed properties already
+present in `uw.h`; reserved fields and the uncertain legacy `npc_hunger` label
+are excluded. `generate_named_field_read_rules.py` generates
+`named-field-reads.cocci` from that catalog. It covers unsigned/signed word
+masks, unsigned/signed byte views, byte casts, and shifted comparisons.
+A signed high-word shift is retained unless a mask bounds the result.
+Comparisons use exact enumerated constants, so an out-of-field comparison
+value cannot accidentally become true after truncation.
+
+`named_struct_fields` compiles and executes original and transformed code
+against the actual UW1 structs for 893 read expressions and all 65,536 input
+words. It checks that candidates actually become named properties, compares
+complete output checksums, preserves signed/cross-field/reserved exceptions,
+and verifies repeatability. The independent `object_layout` suite checks the
+binary layouts separately.
+
+Run `python3 tools/coccinelle/audit_struct_property_usage.py --json
+ tools/coccinelle/struct-property-usage.json` after each sweep. The inventory
+tracks remaining named packed views and raw accesses at existing audited
+object-pointer sites. It is deliberately a work list: entries are not blanket
+exceptions, and it does not prove coverage of unrecorded aliases, tiles,
+current-view storage, or property-row pointers that still need auditing.
+
+Remaining work includes multi-field and XOR updates, paired byte stores,
+raw aliases and interfaces, scalar-temporary field extraction, and documenting
+which surviving whole-word operations are actual encoding/copy boundaries.
+The goal is not complete while these remain unreviewed.

@@ -257,7 +257,7 @@ void set_player_tile_position(uint tile_x, uint tile_y, int flag)
   g_player_object->hdr.position_word_low = (byte)(char)uVar3;
   g_player_object->hdr.position_word_high = (byte)(uVar3 >> 8) | 0xc;
   g_player_object->animation_flags = g_player_object->animation_flags & 0xec | 0x2c;
-  uVar3 = g_player_object->hdr.chain_word & 0xffc0;
+  uVar3 = g_player_object->hdr.next << 6;
   g_player_object->hdr.chain_word = (ushort)uVar3;
   g_player_object->hdr.chain_word_low = g_player_object->hdr.quality;
   g_player_object->hdr.chain_word_high = 0;
@@ -463,7 +463,7 @@ void sync_player_stats_to_hud()
   set_hud_status_value(1,*(undefined1 *)(DAT_00086df8 + 0x37));
   if (DAT_00201b68 != 9) {
     set_hud_status_value(2,(ushort)((((int)(((g_player_object->npc_heading) +
-                                             ((g_player_object->hdr.position_word & 0x380) >> 2)) * 0x10000) >>
+                                             ((g_player_object->hdr.heading << 7) >> 2)) * 0x10000) >>
                                       0x10) + 8) >> 4) & 0xf);
   }
   if ((char)g_player_object->npc_hp == '\0') {

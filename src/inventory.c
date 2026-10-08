@@ -236,7 +236,7 @@ void serialize_inventory_link_chain(byte *link_chain, byte *out_link)
     encode_equipped_item_index((ushort *)link_chain,(ushort *)out_link);
     link_chain = puVar1 + 4;
     out_link = puVar2 + 4;
-    if (((puVar1[1] & 0x80) == 0) && ((((uw_object_hdr_t *)puVar1)->link_word & 0xffc0) != 0)) {
+    if (((puVar1[1] & 0x80) == 0) && (((uw_object_hdr_t *)puVar1)->link != 0)) {
       serialize_inventory_link_chain(puVar1 + 6,puVar2 + 6);
     }
     puVar1 = (undefined1 *)resolve_object_link(link_chain);
@@ -351,7 +351,7 @@ void handle_inventory_panel_click(short slot)
             }
           }
         }
-        else if ((((uw_object_hdr_t *)puVar7)->link_word & 0xffc0) != 0x40) {
+        else if (((uw_object_hdr_t *)puVar7)->link != 1) {
           puVar10 = (ushort *)prompt_split_object_stack((byte *)puVar7);
           if (puVar10 == (ushort *)0x0) {
             return;
@@ -551,7 +551,7 @@ joined_r0x00048308:
                                 (int)(short)(&g_inv_hotspot_draw_y)[iVar6 * 7],
                                 (&g_inv_hotspot_dirty_h)[iVar6 * 0xe],
                                 (&g_inv_hotspot_dirty_w)[iVar6 * 0xe]);
-              if ((((((uw_object_hdr_t *)puVar7)->type_flags & 0x8000) != 0) && ((((uw_object_hdr_t *)puVar7)->link_word & 0x8000) == 0)) &&
+              if (((((uw_object_hdr_t *)puVar7)->is_quant != 0) && ((((uw_object_hdr_t *)puVar7)->link_word & 0x8000) == 0)) &&
                   (uVar4 = ((uw_object_hdr_t *)puVar7)->link, 1 < uVar4)) {
                 auStack_54[iVar6] = uVar4;
                 bVar5 = true;
@@ -602,7 +602,7 @@ joined_r0x00048308:
                           (int)_DAT_00085bf0,
                           (int)CONCAT11(DAT_00085bf3,DAT_00085bf2),
                           DAT_00085bf5,DAT_00085bf4);
-        if ((((((uw_object_hdr_t *)puVar7)->type_flags & 0x8000) != 0) && ((((uw_object_hdr_t *)puVar7)->link_word & 0x8000) == 0)) &&
+        if (((((uw_object_hdr_t *)puVar7)->is_quant != 0) && ((((uw_object_hdr_t *)puVar7)->link_word & 0x8000) == 0)) &&
             (uVar4 = ((uw_object_hdr_t *)puVar7)->link, 1 < uVar4)) {
           bVar5 = true;
           local_2c = uVar4;

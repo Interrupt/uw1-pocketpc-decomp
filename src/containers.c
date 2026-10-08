@@ -482,7 +482,7 @@ void open_backpack_container(short container_slot)
                (&g_equipped_items)[iVar2 * 2] & 0x3f | (byte)((uVar12 & 0x3ff) << 6);
           (&DAT_00202951)[iVar2 * 2] = (char)((uVar12 << 0x16) >> 0x18);
           if (puVar15 != NULL) {
-            if ((((uw_object_hdr_t *)puVar15)->type_flags_high & 0x40) != 0) {
+            if (((uw_object_hdr_t *)puVar15)->invisible != 0) {
               iVar10 = (iVar2 + -1) * 0x10000 >> 0x10;
             }
             puVar15 = (ushort *)resolve_object_link((ushort *)((char *)puVar15 + 4));
@@ -686,7 +686,7 @@ LAB_0004386c:
           }
           uVar7 = (uint)bVar1;
           if (bVar11) {
-            uVar7 = (uint)(ushort)(((uw_object_hdr_t *)object)->link_word >> 6);
+            uVar7 = (uint)(ushort)(((uw_object_hdr_t *)object)->link);
           }
           if (!bVar11) {
             uVar7 = 1;
@@ -698,7 +698,7 @@ LAB_0004386c:
           *(char *)((char *)puVar6 + 7) = (char)((uint)iVar10 >> 8);
           *(byte *)(puVar6 + 2) =
                (bVar1 ^ (byte)((int)(((byte)object[2] & 0x3f) +
-                                    (((uw_object_hdr_t *)puVar6)->chain_word & 0x3f)) >> 1)
+                                    (((uw_object_hdr_t *)puVar6)->quality)) >> 1)
                ) & 0x3f ^ bVar1;
           *(undefined1 *)((char *)puVar6 + 5) = *(undefined1 *)((char *)puVar6 + 5);
           free_object_slot(object);

@@ -164,10 +164,10 @@ LAB_0004b06c:
               (unsigned)(*DAT_00202a44 & 0x1ff));
     if ((((uw_object_hdr_t *)puVar6)->type_flags & 0x1c0) != 0x40) {
       sVar5 = 0;
-      iVar8 = (((uw_object_hdr_t *)puVar6)->position_word_high & 0xe0) + ((puVar6[0xb] & 0xfc00) >> 2) + 0xf;
+      iVar8 = (((uw_object_hdr_t *)puVar6)->xpos << 5) + ((puVar6[0xb] & 0xfc00) >> 2) + 0xf;
       *(char *)((char *)puVar6 + 0xb) = (char)iVar8;
       *(char *)(puVar6 + 6) = (char)((uint)iVar8 >> 8);
-      iVar8 = (((uw_object_hdr_t *)puVar6)->position_word_high & 0x1c) * 8 + (puVar6[0xb] & 0x3f0) * 0x10 + 0xf;
+      iVar8 = (((uw_object_hdr_t *)puVar6)->ypos << 2) * 8 + (puVar6[0xb] & 0x3f0) * 0x10 + 0xf;
       *(char *)((char *)puVar6 + 0xd) = (char)iVar8;
       *(char *)(puVar6 + 7) = (char)((uint)iVar8 >> 8);
       iVar8 = (((uw_object_hdr_t *)puVar6)->zpos) << 3;
@@ -458,7 +458,7 @@ uw_object_hdr_t *spawn_new_object(uint object_type, int region)
   puVar3 = alloc_object_slot(region);
   if (puVar3 != NULL) {
     puVar3->position_word = 0x6c00;
-    puVar3->type_flags = (puVar3->type_flags & 0x8000) ^ (object_type & 0x1ff);
+    puVar3->type_flags = (puVar3->is_quant << 15) ^ (object_type & 0x1ff);
     puVar3->chain_word = 0x28;
     puVar3->owner = 0;
     if (((g_object_type_props[(short)object_type].flags & 0xc0) == 0) || ((g_object_type_props[(short)object_type].flags & 0xc0) == 0x80)) {
@@ -906,11 +906,11 @@ void free_player_inventory_chain(char *link_field)
   iVar1 = resolve_object_link(link_field);
   if (iVar1 != 0) {
     if ((*(byte *)(iVar1 + 1) & 0x80) == 0) {
-      if ((((uw_object_hdr_t *)iVar1)->link_word & 0xffc0) != 0) {
+      if (((uw_object_hdr_t *)iVar1)->link != 0) {
         free_player_inventory_chain(iVar1 + 6); /* was called with no argument; confirmed via ARM disassembly, 0x44500 */
       }
     }
-    if ((((uw_object_hdr_t *)iVar1)->chain_word & 0xffc0) != 0) {
+    if (((uw_object_hdr_t *)iVar1)->next != 0) {
       free_player_inventory_chain(iVar1 + 4); /* was called with no argument; confirmed via ARM disassembly, 0x4451c */
     }
     object_list_unlink(link_field,iVar1);
@@ -1899,7 +1899,7 @@ uw_object_hdr_t *reallocate_object_to_arena(ushort *object)
     compute_object_placement_fields(puVar2,(int)DAT_0010144c,(int)DAT_00101454);
     *(byte *)(puVar2 + 4) = ((uw_object_hdr_t *)object)->quality;
     if (((((uw_object_hdr_t *)object)->type_flags & 0x1c0) != 0x140) && ((g_object_type_props[(((uw_object_hdr_t *)object)->item_id)].class_flags & 3) != 2)) {
-      *(byte *)(puVar2 + 0xd) = (byte)(((uw_object_hdr_t *)object)->position_word >> 7) & 7;
+      *(byte *)(puVar2 + 0xd) = ((uw_object_hdr_t *)object)->heading;
     }
     if ((((uw_object_hdr_t *)puVar2)->type_flags & 0x1c0) == 0x1c0) {
       scheduler_relink_entry(puVar2,object);

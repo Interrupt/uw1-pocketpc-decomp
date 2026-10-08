@@ -526,7 +526,7 @@ void purge_tagged_objects_from_chain(void *link_field_ptr)
       ((uw_object_hdr_t *)puVar1)->link_word_high = 0;
       DAT_0024cfd8 = DAT_0024cfd8 + -1;
     }
-    if (((((uw_object_hdr_t *)puVar1)->type_flags & 0x8000) == 0) && ((((uw_object_hdr_t *)puVar1)->link_word & 0xffc0) != 0)) {
+    if ((((uw_object_hdr_t *)puVar1)->is_quant == 0) && (((uw_object_hdr_t *)puVar1)->link != 0)) {
       purge_tagged_objects_from_chain(puVar1 + 3); /* was called with no argument; confirmed via ARM disassembly, 0x7dfbc */
     }
   }
@@ -893,7 +893,7 @@ ushort *pick_object_under_cursor(int mode)
               (int)object_ptr_in_arena((char *)puVar3),
               (unsigned)*(byte *)((char *)puVar3 + 10), (unsigned)*(byte *)((char *)puVar3 + 0x13),
               (unsigned)*(byte *)((char *)puVar3 + 0x14), (unsigned)*(byte *)((char *)puVar3 + 0x15),
-              (int)((((uw_object_hdr_t *)puVar3)->type_flags & 0x4000) != 0));
+              (int)(((uw_object_hdr_t *)puVar3)->invisible != 0));
     if (((g_object_type_props[(((uw_object_hdr_t *)puVar3)->item_id)].owner_flags & 0x20) != 0) &&
         (iVar2 = object_ptr_in_arena(puVar3), iVar2 == 0)) {
       DAT_002020ec = 1;

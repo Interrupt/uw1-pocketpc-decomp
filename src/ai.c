@@ -526,7 +526,7 @@ LAB_0002e6fc:
         DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 0xe0 | 0x20;
         uVar7 = ce_rand();
         uw_ord2005_rem_17 = ((int)(uVar7)) % (4);
-        if ((uw_ord2005_rem_17 != 0) && ((DAT_0010190c->status_word_high & 0xc0) == 0)) {
+        if ((uw_ord2005_rem_17 != 0) && (DAT_0010190c->npc_attitude == 0)) {
           npc_arrival_interaction(DAT_00101904);
           goto LAB_0002e998;
         }
@@ -583,9 +583,8 @@ LAB_0002ed50:
   bVar9 = DAT_0010190c->heading_flags;
   if (((bVar9 & 0x20) == 0) && ((bVar9 & 0x80) != 0)) {
     uVar8 = compute_movement_heading(iVar1,iVar2);
-    *(char *)&DAT_0010190c->full_heading = (char)((uVar8 & 0xff) << 5);
-    uVar8 = DAT_0010190c->hdr.position_word & 0xfc7f | (uVar8 & 7) << 7;
-    DAT_0010190c->hdr.position_word = (ushort)uVar8;
+    DAT_0010190c->full_heading = (byte)((uVar8 & 0xff) << 5);
+    DAT_0010190c->hdr.heading = uVar8 & 0x7;
     DAT_0010190c->heading_flags = DAT_0010190c->heading_flags & 0xe0;
     if ((DAT_00101404->movement_flags & 0x80) != 0) {
       set_npc_altitude_state(goal,goal_target);
@@ -603,9 +602,8 @@ LAB_0002ed50:
        (sVar5 = try_direct_line_walk(DAT_00101918,DAT_001013f8,goal & 0xff,goal_target), sVar5 == 1)) {
       DAT_0010190c->heading_flags = DAT_0010190c->heading_flags | 0x80;
       uVar8 = compute_movement_heading(iVar1,iVar2);
-      *(char *)&DAT_0010190c->full_heading = (char)((uVar8 & 0xff) << 5);
-      uVar8 = DAT_0010190c->hdr.position_word & 0xfc7f | (uVar8 & 7) << 7;
-      DAT_0010190c->hdr.position_word = (ushort)uVar8;
+      DAT_0010190c->full_heading = (byte)((uVar8 & 0xff) << 5);
+      DAT_0010190c->hdr.heading = uVar8 & 0x7;
       DAT_0010190c->heading_flags = DAT_0010190c->heading_flags & 0xe0;
       DAT_0010190c->heading_flags = DAT_0010190c->heading_flags & 0xbf;
       if ((DAT_0010190c->animation_flags & 0x80) == 0) goto LAB_0002ed50;
@@ -675,7 +673,7 @@ int npc_ai_tick()
   DAT_00101738 = encode_object_slot_index(DAT_0010190c);
   DAT_00101404 = &g_monster_type_props[((byte)DAT_0010190c->hdr.type_flags & 0x3f)];
   DAT_00101918 = DAT_0010190c->npc_xhome;
-  DAT_001013f8 = (byte)(DAT_0010190c->tile_word >> 4) & 0x3f;
+  DAT_001013f8 = DAT_0010190c->npc_yhome;
   player_rec = get_object_record_by_slot_index(1);
   puVar11 = DAT_0010190c;
   if (((100 < ((((int)(char)DAT_00101918 - (int)DAT_00101938) * 0x10000 >> 0x10) *
@@ -730,7 +728,7 @@ int npc_ai_tick()
   DAT_00101914 = 0;
   bVar3 = DAT_0010190c->animation_flags & 0x3f;
   if (((bVar3 != 0x2c) && (bVar3 != 0x20)) && ((DAT_0010190c->animation_flags & 0x80) != 0)) {
-    DAT_000853b8 = DAT_000853b8 | (ushort)(1 << ((byte) DAT_0010190c->tile_word & 0xf));
+    DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (DAT_0010190c->npc_path_slot));
     DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 0x7f;
   }
   if ((((DAT_0010190c->animation_flags & 0x40) == 0) ||
@@ -864,7 +862,7 @@ LAB_000337fc:
     DAT_0010190c->npc_ai_flags = DAT_0010190c->npc_ai_flags & 0xf3;
   }
   else {
-    if (((DAT_0010190c->goal_word & 0xf000) == 0) && ((uVar9 & 0xff0) == 0x10)) {
+    if ((DAT_0010190c->npc_animation_frame == 0) && ((uVar9 & 0xff0) == 0x10)) {
       bVar3 = get_current_music_track();
       if ((bVar3 < 5) || (bVar3 = get_current_music_track(), 7 < bVar3)) {
         set_pending_music_track(6);
@@ -876,7 +874,7 @@ LAB_000337fc:
     uVar7 = ce_rand();
     puVar11 = DAT_0010190c;
     bVar3 = DAT_0010190c->animation_flags;
-    uVar1 = (&DAT_000853d8)[(uint)(byte)(DAT_0010190c->target_word_high >> 4) * 2];
+    uVar1 = (&DAT_000853d8)[(uint)(byte)(DAT_0010190c->npc_swing_charge) * 2];
     /* Was `ordint_divmod(9,uVar7,*(byte*)(DAT_0010190c+0xf),ordint_divmod_exref,
        DAT_00101404[0xf]); resolve_npc_melee_attack(puVar11,(int)extraout_r1_01,uVar1,
        (bVar3&0x3f)-1);` -- badly garbled. */
@@ -2386,8 +2384,8 @@ int walk_using_cached_path(byte *cache_record)
   if ((iVar5 == 0) || (iVar5 = advance_cached_path_step(cache_record), bVar3 = bVar1, bVar4 = bVar2, iVar5 != 0)) {
     if ((cache_record[2] & 0x80) == 0) {
       if ((DAT_00101404->movement_flags & 0x80) != 0) {
-        set_npc_altitude_state(DAT_0010190c->target_word & 0x3f,
-                               DAT_0010190c->target_word >> 6 & 0x3f);
+        set_npc_altitude_state(DAT_0010190c->npc_target_tile_x,
+                               DAT_0010190c->npc_target_tile_y);
       }
       uVar7 = (uint)*cache_record;
       iVar5 = uVar7 * 8;
@@ -2407,9 +2405,8 @@ int walk_using_cached_path(byte *cache_record)
       }
       uVar7 = compute_movement_heading((int)((iVar5 - (uint)DAT_00101910) * 0x1000000) >> 0x18,
                            (int)((iVar8 - (uint)DAT_0010141c) * 0x1000000) >> 0x18);
-      *(char *)&DAT_0010190c->full_heading = (char)((uVar7 & 0xff) << 5);
-      uVar7 = DAT_0010190c->hdr.position_word & 0xfc7f | (uVar7 & 7) << 7;
-      DAT_0010190c->hdr.position_word = (ushort)uVar7;
+      DAT_0010190c->full_heading = (byte)((uVar7 & 0xff) << 5);
+      DAT_0010190c->hdr.heading = uVar7 & 0x7;
       DAT_0010190c->heading_flags = DAT_0010190c->heading_flags & 0xe0;
     }
     else {
@@ -2465,13 +2462,12 @@ void handle_blocked_cached_path(byte *cache_record)
     uw_ord2005_rem_16 = ((int)(cache_record[2] & 0x7f)) % (4);
     iVar1 = (short)(bVar2 >> ((uw_ord2005_rem_16 & 0x7f) << 1) & 3) * 2;
     uVar3 = compute_movement_heading(((int)(char)(&DAT_000853b0)[iVar1] + uVar7 & 0xff) -
-                         (uint)(DAT_0010190c->tile_word >> 10),
+                         (uint)(DAT_0010190c->npc_xhome),
                          ((int)(char)(&DAT_000853b1)[iVar1] + uVar6 & 0xff) -
-                         (DAT_0010190c->tile_word >> 4 & 0x3f));
+                         (DAT_0010190c->npc_yhome));
     DAT_00101920 = 1;
-    *(char *)&DAT_0010190c->full_heading = (char)((uVar3 & 0xff) << 5);
-    uVar3 = DAT_0010190c->hdr.position_word & 0xfc7f | (uVar3 & 7) << 7;
-    DAT_0010190c->hdr.position_word = (ushort)uVar3;
+    DAT_0010190c->full_heading = (byte)((uVar3 & 0xff) << 5);
+    DAT_0010190c->hdr.heading = uVar3 & 0x7;
     DAT_0010190c->heading_flags = DAT_0010190c->heading_flags & 0xe0;
     DAT_0010190c->attack_pitch = DAT_0010190c->attack_pitch & 0xf9 | 1;
     DAT_0010190c->attack_pitch = DAT_0010190c->attack_pitch & 7 | 0xb0;
@@ -2479,9 +2475,8 @@ void handle_blocked_cached_path(byte *cache_record)
   }
   else {
     uVar3 = compute_movement_heading((int)(uVar4 * 0x1000000) >> 0x18,(int)(uVar3 * 0x1000000) >> 0x18);
-    *(char *)&DAT_0010190c->full_heading = (char)((uVar3 & 0xff) << 5);
-    uVar3 = DAT_0010190c->hdr.position_word & 0xfc7f | (uVar3 & 7) << 7;
-    DAT_0010190c->hdr.position_word = (ushort)uVar3;
+    DAT_0010190c->full_heading = (byte)((uVar3 & 0xff) << 5);
+    DAT_0010190c->hdr.heading = uVar3 & 0x7;
     DAT_0010190c->heading_flags = DAT_0010190c->heading_flags & 0xe0;
   }
 }
@@ -2720,8 +2715,7 @@ void npc_react_to_nearby_player()
         DAT_0010190c->goal_word_high =
           (byte)(uVar4 >> 8) | (byte)(((uw_ord2005_rem_83 & 0xf) << 0xc) >> 8);
       }
-      uVar5 = DAT_0010190c->hdr.position_word & 0xfc7f | (uVar5 & 7) << 7;
-      DAT_0010190c->hdr.position_word = (ushort)uVar5;
+      DAT_0010190c->hdr.heading = uVar5 & 0x7;
       DAT_0010190c->heading_flags = DAT_0010190c->heading_flags & 0xe0;
     }
   }
@@ -3269,8 +3263,8 @@ int compute_pathfind_search_radius()
   uint uVar2;
   
   iVar1 = DAT_00101404;
-  if (((((DAT_0010190c->status_word_high & 0xc0) == 0) && (*(char *)&DAT_00101404->max_hp != '\0')) &&
-       ((DAT_0010190c->hdr.type_flags_high & 0x20) == 0)) &&
+  if ((((DAT_0010190c->npc_attitude == 0) && (*(char *)&DAT_00101404->max_hp != '\0')) &&
+       (DAT_0010190c->hdr.doordir == 0)) &&
       ((DAT_00201b68 != 6 || (*(char *)&DAT_0010190c->npc_whoami != '\x16')))) {
     uVar2 = ordint_divmod(*(char *)&DAT_00101404->max_hp,
                           (uint) DAT_0010190c->npc_hp << 2).quot;
@@ -3877,7 +3871,7 @@ void emit_noise_alert(ushort *source, byte noise_type)
     DAT_00101958 = source;
     scan_area_for_matching_objects(0x14,0,alert_npc_to_noise_callback,0,(char)DAT_002020a0 + -7,(char)DAT_002020a4 + -7,0xf,0xf);
     if ((((uw_object_hdr_t *)source)->link_word & 0x1f) < 0x1c) {
-      uVar2 = ((uw_object_hdr_t *)source)->link_word & 0xffc0;
+      uVar2 = ((uw_object_hdr_t *)source)->link << 6;
       *(char *)(source + 3) = (char)uVar2;
       ((uw_object_hdr_t *)source)->link_word_high = (byte)(char)(uVar2 >> 8);
     }
@@ -4155,7 +4149,7 @@ void npc_idle_behavior_tick()
     fprintf(stderr, "[npc-f124] ENTER obj=%p state=0x%x frame_nibble(0xc)=0x%x DAT_00101734=%d\n",
             (void *)DAT_0010190c,
             (unsigned)(DAT_0010190c->animation_flags & 0x3f),
-            (unsigned)(DAT_0010190c->goal_word_high & 0xf0) >> 4,
+            (unsigned)(DAT_0010190c->npc_animation_frame << 4) >> 4,
             (int)DAT_00101734);
   ushort uVar1;
   byte *pbVar2;
@@ -4193,7 +4187,7 @@ void npc_idle_behavior_tick()
     DAT_0010190c->attack_pitch = DAT_0010190c->attack_pitch & 0xf9 | 1;
     return;
   }
-  if ((DAT_0010190c->status_word_high & 0xc0) == 0) {
+  if (DAT_0010190c->npc_attitude == 0) {
     uVar3 = ce_rand();
     uw_ord2005_rem_23 = ((int)(uVar3)) % (2);
     if (uw_ord2005_rem_23 != 0) {
@@ -4230,7 +4224,7 @@ LAB_0002f314:
     uVar3 = ce_rand();
     uw_ord2005_rem_27 = ((int)(uVar3)) % (0x10);
     if (((uw_ord2005_rem_27 & 0xff) < (DAT_00101404->missile_wander_flags & 0xf)) &&
-        ((DAT_0010190c->goal_word_high & 0xf0) == 0x30)) {
+        (DAT_0010190c->npc_animation_frame == 3)) {
 LAB_0002f384:
       bVar5 = DAT_0010190c->animation_flags & 0xec | 0x2c;
       goto LAB_0002f390;
@@ -4240,7 +4234,7 @@ LAB_0002f384:
     uVar3 = ce_rand();
     uw_ord2005_rem_28 = ((int)(uVar3)) % (0x10);
     if (((uw_ord2005_rem_28 & 0xff) <= (DAT_00101404->missile_wander_flags & 0xf)) ||
-        ((DAT_0010190c->goal_word_high & 0xf0) != 0x30)) goto LAB_0002f384;
+        (DAT_0010190c->npc_animation_frame != 3)) goto LAB_0002f384;
     bVar5 = DAT_0010190c->animation_flags & 0xe0 | 0x20;
 LAB_0002f390:
     DAT_0010190c->animation_flags = bVar5;
@@ -4252,8 +4246,8 @@ LAB_0002f390:
       iVar9 = (char *)DAT_0010190c;
       uw_ord2005_rem_30 = ((int)((uint) DAT_0010190c->full_heading + uw_ord2005_rem_29 * 0x80 + 0xc0)) % (0x100);
       *(byte *)(iVar9 + 9) = (byte)uw_ord2005_rem_30;
-      uVar7 = DAT_0010190c->hdr.position_word & 0xfc7f | (uw_ord2005_rem_30 & 0xe0) << 2;
-      DAT_0010190c->hdr.position_word = (ushort)uVar7;
+      DAT_0010190c->hdr.heading = (uw_ord2005_rem_30 >> 5) & 7;
+      uVar7 = DAT_0010190c->hdr.position_word;
       DAT_0010190c->heading_flags =
         ((byte)uw_ord2005_rem_30 ^ DAT_0010190c->heading_flags) & 0x1f ^
          DAT_0010190c->heading_flags;
@@ -4280,8 +4274,8 @@ LAB_0002f390:
       iVar9 = (char *)DAT_0010190c;
     }
     *(byte *)(iVar9 + 9) = (byte)uVar7;
-    uVar8 = DAT_0010190c->hdr.position_word & 0xfc7f | (uVar7 & 0xe0) << 2;
-    DAT_0010190c->hdr.position_word = (ushort)uVar8;
+    DAT_0010190c->hdr.heading = (uVar7 >> 5) & 7;
+    uVar8 = DAT_0010190c->hdr.position_word;
     bVar5 = DAT_0010190c->heading_flags;
     bVar6 = bVar5 ^ (byte)uVar7;
 LAB_0002f6cc:
@@ -4297,8 +4291,8 @@ LAB_0002f6cc:
       uw_ord2005_rem_35 = ((int)(uVar3)) % (0x40);
       uw_ord2005_rem_36 = ((int)(uw_ord2005_rem_35 + (uint)bVar5 + 0xe0)) % (0x100);
       *(byte *)(iVar9 + 9) = (byte)uw_ord2005_rem_36;
-      uVar7 = DAT_0010190c->hdr.position_word & 0xfc7f | (uw_ord2005_rem_36 & 0xe0) << 2;
-      DAT_0010190c->hdr.position_word = (ushort)uVar7;
+      DAT_0010190c->hdr.heading = (uw_ord2005_rem_36 >> 5) & 7;
+      uVar7 = DAT_0010190c->hdr.position_word;
       bVar5 = DAT_0010190c->heading_flags;
       bVar6 = (byte)uw_ord2005_rem_36 ^ bVar5;
       goto LAB_0002f6cc;
@@ -4353,7 +4347,7 @@ void npc_wander_return_home_tick()
     /* HACK: same ushort-vs-byte pointer-scaling bug as the rest of this NPC-AI cluster this session
        (see [[ushort-byte-scaling-bug-npc-cluster]]) -- bare `DAT_0010190c + 0xe`/`+ 0xb` scaled to
        byte 0x1c/0x16 (the latter being this object's real tile-position field) instead of the... */
-    if (((DAT_0010190c->status_word_high & 0xc0) == 0) &&
+    if ((DAT_0010190c->npc_attitude == 0) &&
         ((DAT_0010190c->npc_goal) != 4)) {
       npc_set_goal(4,1);
       return;
@@ -4414,7 +4408,7 @@ void npc_notice_and_idle_tick()
             (void *)DAT_0010190c, (_de >> 14) & 3, (_de >> 13) & 1, _de & 0xf,
             (int)(DAT_0010190c->npc_goal));
   }
-  if ((DAT_0010190c->status_word_high & 0xc0) == 0) {
+  if (DAT_0010190c->npc_attitude == 0) {
     uVar6 = DAT_0010190c->goal_word & 0xf01f;
     DAT_0010190c->goal_word_low = (byte)uVar6 | 0x10;
     DAT_0010190c->goal_word_high = (byte)(char)(uVar6 >> 8);
@@ -4522,7 +4516,7 @@ void npc_wander_return_home_exact_tick()
   uint uVar5;
   
   if (DAT_00101734 != 0) {
-    if (((DAT_0010190c->status_word_high & 0xc0) == 0) &&
+    if ((DAT_0010190c->npc_attitude == 0) &&
         ((DAT_0010190c->npc_goal) != 4)) {
       npc_set_goal(4,1);
     }

@@ -123,8 +123,7 @@ void npc_combat_approach_tick()
         ;
       DAT_0010190c->motion_flags = DAT_0010190c->motion_flags & 0x80;
       uVar7 = compute_movement_heading((int)(char)DAT_00101444,(int)(char)DAT_00101448);
-      uVar7 = DAT_0010190c->hdr.position_word & 0xfc7f | (uVar7 & 7) << 7;
-      DAT_0010190c->hdr.position_word = (ushort)uVar7;
+      DAT_0010190c->hdr.heading = uVar7 & 0x7;
       DAT_0010190c->attack_pitch = DAT_0010190c->attack_pitch & 0xfc | 4;
     }
   }
@@ -212,7 +211,7 @@ void npc_combat_engage_close_tick()
   uVar4 = DAT_00101444 * DAT_00101444 + DAT_00101448 * DAT_00101448;
   cVar2 = DAT_0010143c - DAT_00101918;
   cVar1 = DAT_0010173c - DAT_001013f8;
-  if ((DAT_0010190c->goal_word & 0xff0) == 0x10) {
+  if (DAT_0010190c->npc_gtarg == 1) {
     uVar5 = DAT_0010190c->status_word & 0x3fff;
     DAT_0010190c->status_word = (ushort)uVar5;
   }
@@ -305,8 +304,7 @@ int npc_combat_set_stance(ushort stance_code)
      DAT_0010190c is ushort *, so cast before applying those offsets. */
   uVar4 = compute_movement_heading((int)(char)DAT_00101444,(int)(char)DAT_00101448);
   uVar9 = uVar4 & 0xff;
-  uVar4 = DAT_0010190c->hdr.position_word & 0xfc7f | (uVar4 & 7) << 7;
-  DAT_0010190c->hdr.position_word = (ushort)uVar4;
+  DAT_0010190c->hdr.heading = uVar4 & 0x7;
   DAT_0010190c->heading_flags = DAT_0010190c->heading_flags & 0xe0;
   uVar1 = (undefined1)(uVar9 << 5);
   DAT_0010190c->full_heading = uVar1;
@@ -317,7 +315,7 @@ int npc_combat_set_stance(ushort stance_code)
     if (uw_ord2005_rem_47 != 0) {
       DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 199 | 7;
       uw_ord2005_rem_48 = ((int)(uVar9 + 4)) % (8);
-      *(char *)&DAT_0010190c->full_heading = (char)(uw_ord2005_rem_48 << 5);
+      DAT_0010190c->full_heading = (byte)(uw_ord2005_rem_48 << 5);
 LAB_00030534:
       bVar8 = DAT_0010190c->motion_flags & 0x82 | 2;
       goto LAB_000305e4;
@@ -326,7 +324,7 @@ LAB_00030534:
     DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 0xc0;
     uw_ord2005_rem_49 = ((int)(uVar5)) % (2);
     uw_ord2005_rem_50 = ((int)(uVar9 + uw_ord2005_rem_49 * 4 + 6)) % (8);
-    *(char *)&DAT_0010190c->full_heading = (char)(uw_ord2005_rem_50 << 5);
+    DAT_0010190c->full_heading = (byte)(uw_ord2005_rem_50 << 5);
     iVar6_rec = (char *)DAT_0010190c;
     bVar8 = DAT_0010190c->motion_flags;
     bVar3 = ordint_divmod(3,(uint) DAT_00101404->magic_power << 1).quot;
@@ -345,7 +343,7 @@ LAB_00030534:
       uVar5 = ce_rand();
       DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 0xc0;
       uw_ord2005_rem_52 = ((int)(uVar5)) % (8);
-      *(char *)&DAT_0010190c->full_heading = (char)(uw_ord2005_rem_52 << 5);
+      DAT_0010190c->full_heading = (byte)(uw_ord2005_rem_52 << 5);
       bVar8 = DAT_0010190c->motion_flags & 0x81 | 1;
     }
     else {
@@ -442,9 +440,8 @@ void npc_combat_engage_wide_tick()
     else if (DAT_00101900 < 5) {
       uVar3 = compute_movement_heading((int)(char)DAT_00101444,(int)(char)DAT_00101448);
       DAT_0010190c->motion_flags = DAT_0010190c->motion_flags & 0x80;
-      *(char *)&DAT_0010190c->full_heading = (char)((uVar3 & 0xff) << 5);
-      uVar3 = DAT_0010190c->hdr.position_word & 0xfc7f | (uVar3 & 7) << 7;
-      DAT_0010190c->hdr.position_word = (ushort)uVar3;
+      DAT_0010190c->full_heading = (byte)((uVar3 & 0xff) << 5);
+      DAT_0010190c->hdr.heading = uVar3 & 0x7;
       DAT_0010190c->heading_flags = DAT_0010190c->heading_flags & 0xe0;
       DAT_0010190c->attack_pitch = DAT_0010190c->attack_pitch & 0xfc | 4;
       DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 0xc0;
@@ -535,10 +532,8 @@ void npc_combat_position_tick()
     uw_ord2005_rem_66 = ((int)(uVar2)) % (0x100);
     if (((int)(bVar4 >> 3 & 1) <= uw_ord2005_rem_66) && ((DAT_00101924 == 0 || (DAT_00101430 != 0)))) {
       uw_ord2005_rem_67 = ((int)((uVar1 & 0xff) + 4)) % (8);
-      *(char *)&DAT_0010190c->full_heading = (char)(uw_ord2005_rem_67 << 5);
-      uVar1 = DAT_0010190c->hdr.position_word & 0xfc7f | (uVar1 & 7) << 7;
-      DAT_0010190c->hdr.position_word_low = (byte)(char)uVar1;
-      DAT_0010190c->hdr.position_word_high = (byte)(char)(uVar1 >> 8);
+      DAT_0010190c->full_heading = (byte)(uw_ord2005_rem_67 << 5);
+      DAT_0010190c->hdr.heading = uVar1 & 0x7;
       DAT_0010190c->heading_flags = DAT_0010190c->heading_flags & 0xe0;
       DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 199 | 7;
       iVar7_rec = DAT_0010190c;
@@ -583,9 +578,7 @@ LAB_000314d0:
         iVar7_rec = DAT_0010190c;
       }
       iVar7_rec->full_heading = (byte)uVar1;
-      uVar8 = DAT_0010190c->hdr.position_word & 0xfc7f | (uVar1 & 0xe0) << 2;
-      DAT_0010190c->hdr.position_word_low = (byte)(char)uVar8;
-      DAT_0010190c->hdr.position_word_high = (byte)(char)(uVar8 >> 8);
+      DAT_0010190c->hdr.heading = (uVar1 >> 5) & 7;
       bVar4 = DAT_0010190c->heading_flags;
       bVar5 = bVar4 ^ (byte)uVar1;
     }
@@ -593,10 +586,8 @@ LAB_000314d0:
       if (DAT_00101900 < 9) {
         if ((DAT_0010190c->npc_goal) == 9) {
           DAT_0010190c->motion_flags = DAT_0010190c->motion_flags & 0x80;
-          *(char *)&DAT_0010190c->full_heading = (char)((uVar1 & 0xff) << 5);
-          uVar1 = DAT_0010190c->hdr.position_word & 0xfc7f | (uVar1 & 7) << 7;
-          DAT_0010190c->hdr.position_word_low = (byte)(char)uVar1;
-          DAT_0010190c->hdr.position_word_high = (byte)(char)(uVar1 >> 8);
+          DAT_0010190c->full_heading = (byte)((uVar1 & 0xff) << 5);
+          DAT_0010190c->hdr.heading = uVar1 & 0x7;
           DAT_0010190c->heading_flags = DAT_0010190c->heading_flags & 0xe0;
           DAT_0010190c->attack_pitch = DAT_0010190c->attack_pitch & 0xfc | 4;
           DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 0xc0;
@@ -621,9 +612,7 @@ LAB_000314d0:
       uVar1 = uw_ord2005_rem_74 + uw_ord2005_rem_75 * 0x20;
       bVar5 = (byte)uVar1;
       iVar7_rec->full_heading = bVar5;
-      uVar1 = DAT_0010190c->hdr.position_word & 0xfc7f | (uVar1 & 0xe0) << 2;
-      DAT_0010190c->hdr.position_word_low = (byte)(char)uVar1;
-      DAT_0010190c->hdr.position_word_high = (byte)(char)(uVar1 >> 8);
+      DAT_0010190c->hdr.heading = (uVar1 >> 5) & 7;
       bVar4 = DAT_0010190c->heading_flags;
       bVar5 = bVar5 ^ bVar4;
     }
@@ -713,10 +702,8 @@ void npc_combat_disengage_tick()
         DAT_0010190c->goal_word_high =
           (byte)(uVar5 >> 8) | (byte)(((uw_ord2005_rem_80 & 0xf) << 0xc) >> 8);
       }
-      *(char *)&DAT_0010190c->full_heading = (char)((uVar7 & 0xff) << 5);
-      uVar5 = DAT_0010190c->hdr.position_word & 0xfc7f | (uVar7 & 7) << 7;
-      DAT_0010190c->hdr.position_word_low = (byte)(char)uVar5;
-      DAT_0010190c->hdr.position_word_high = (byte)(char)(uVar5 >> 8);
+      DAT_0010190c->full_heading = (byte)((uVar7 & 0xff) << 5);
+      DAT_0010190c->hdr.heading = uVar7 & 0x7;
       DAT_0010190c->heading_flags = DAT_0010190c->heading_flags & 0xe0;
       if (uVar6 < 0x90) {
         uw_ord2005_rem_81 = ((int)((((uw_mobile_object_t *)g_player_object)->hdr.heading - (uVar7 & 0xff)) + 8)) % (8);
@@ -831,7 +818,7 @@ int find_nearest_hit_target(short *screen_pos)
         }
         uVar8 = (int)(short)(iVar5 >> 6) + (((int)screen_pos[1] << 0x10) >> 0x13) & 0x3f;
         DAT_00100604 = (ushort)uVar8;
-        iVar5 = (int)(((uVar7 * -8 - (uint)(((uw_object_hdr_t *)puVar6)->position_word_high >> 5)) +
+        iVar5 = (int)(((uVar7 * -8 - (uint)(((uw_object_hdr_t *)puVar6)->xpos)) +
                        (int)(short)((uVar3 >> 7 & 0x1f8) + (ushort)(bVar1 >> 5))) * 0x10000) >> 0x10;
         iVar12 = (int)(((uVar8 * -8 - (((uw_object_hdr_t *)puVar6)->ypos)) +
                         (int)(short)((uVar3 >> 1 & 0x1f8) + (short)((bVar1 & 0x1c) >> 2))) * 0x10000)
@@ -1158,7 +1145,7 @@ void apply_melee_damage(byte hit_type)
   }
   else {
     play_positional_sound_effect(4,
-                                 (uint)(((uw_object_hdr_t *)puVar6)->position_word_high >> 5) + DAT_00100600 * 8,
+                                 (uint)(((uw_object_hdr_t *)puVar6)->xpos) + DAT_00100600 * 8,
                                  (((uw_object_hdr_t *)puVar6)->ypos) + DAT_00100604 * 8,
                                  (uVar9 & 0xff) << 2);
   }
@@ -2132,7 +2119,7 @@ bool apply_object_durability_damage(ushort *object, ushort *attacker, short dama
   int iVar5;
   uint uVar6;
   
-  if ((((((uw_object_hdr_t *)object)->type_flags & 0x2000) == 0) &&
+  if (((((uw_object_hdr_t *)object)->doordir == 0) &&
        (uVar6 = ((byte) g_object_type_props[(((uw_object_hdr_t *)object)->item_id)].quality_flags & 0xc) >> 2, (short)uVar6 != 3)) &&
       (iVar5 = (int)damage >> uVar6, 0 < (short)iVar5)) {
     iVar4 = object_ptr_in_arena(object);
@@ -2232,7 +2219,7 @@ int damage_equipped_item_in_slot(int slot, byte damage, byte damage_type, short 
       }
     }
     else {
-      iVar6 = is_valid_equipment_slot_item(((uw_object_hdr_t *)puVar5)->type_flags & 0x1ff,
+      iVar6 = is_valid_equipment_slot_item(((uw_object_hdr_t *)puVar5)->item_id,
                                            slot);
       if (iVar6 == 0) {
         return 0xfffffffe;

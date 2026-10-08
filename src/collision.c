@@ -43,7 +43,7 @@ int build_collision_height_field_for_object(ushort *object)
   DAT_00202c6c[0xb] = (char)((ushort)slot_index >> 8);
   DAT_00202c6c[8] = g_object_type_props[(((uw_object_hdr_t *)object)->item_id)].collision_radius;
   DAT_00202c6c[9] = g_object_type_props[(((uw_object_hdr_t *)object)->item_id)].height;
-  field = ((object[0xb] & 0xfc00) >> 7) + (uint)(((uw_object_hdr_t *)object)->position_word_high >> 5);
+  field = ((object[0xb] & 0xfc00) >> 7) + (uint)(((uw_object_hdr_t *)object)->xpos);
   *DAT_00202c6c = (char)field;
   DAT_00202c6c[1] = (char)((uint)field >> 8);
   field = (((uw_object_hdr_t *)object)->ypos) + ((object[0xb] & 0x3f0) >> 1);
