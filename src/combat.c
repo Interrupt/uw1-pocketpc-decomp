@@ -901,17 +901,17 @@ void spawn_blood_splat_object(int object_slot, int step_count, byte *snapshot)
   uVar3 = ((uw_object_hdr_t *)iVar7)->position_word;
   uVar10 = uVar3 & 0x1fff;
   bVar1 = (byte)(((*DAT_00202c6c & 7) << 0xd) >> 8);
-  *(char *)(iVar7 + 2) = (char)uVar10;
-  *(byte *)(iVar7 + 3) = (byte)(uVar10 >> 8) | bVar1;
+  ((uw_object_hdr_t *)iVar7)->position_word_low = (byte)(char)uVar10;
+  ((uw_object_hdr_t *)iVar7)->position_word_high = (byte)(uVar10 >> 8) | bVar1;
   uVar10 = uVar3 & 0x3ff;
   bVar1 = (byte)(uVar10 >> 8) | bVar1 | (byte)(((DAT_00202c6c[2] & 7) << 10) >> 8);
   bVar2 = (byte)uVar10;
-  *(byte *)(iVar7 + 2) = bVar2;
-  *(byte *)(iVar7 + 3) = bVar1;
+  ((uw_object_hdr_t *)iVar7)->position_word_low = bVar2;
+  ((uw_object_hdr_t *)iVar7)->position_word_high = bVar1;
   sVar4 = *(short *)DAT_00202c6c;
   sVar5 = *(short *)(DAT_00202c6c + 2);
-  *(byte *)(iVar7 + 2) = (DAT_00202c6c[4] + 8 ^ bVar2) & 0x7f ^ bVar2;
-  *(byte *)(iVar7 + 3) = bVar1;
+  ((uw_object_hdr_t *)iVar7)->position_word_low = (DAT_00202c6c[4] + 8 ^ bVar2) & 0x7f ^ bVar2;
+  ((uw_object_hdr_t *)iVar7)->position_word_high = bVar1;
   if (DAT_00100610 == 1) {
     play_positional_sound_effect(7,*(undefined2 *)DAT_00202c6c,*(undefined2 *)(DAT_00202c6c + 2),0);
   }
@@ -1060,7 +1060,7 @@ int resolve_weapon_hit_skill_check(short hit_flag, int target_slot)
     if ((short)iVar3 != 2) {
       if ((((short)iVar3 == -1) && (hit_flag == 1)) &&
          (pbVar5 = (byte *)get_object_record_by_slot_index((int)DAT_00100620),
-         (g_monster_type_props[(*pbVar5 & 0x3f)].movement_flags & 1) == 0)) {
+         (g_monster_type_props[(((uw_object_hdr_t *)pbVar5)->type_flags_low & 0x3f)].movement_flags & 1) == 0)) {
         bVar1 = *(byte *)(DAT_00086df8 + 100);
         uVar4 = roll_dice_sum(2,3);
         damage_equipped_item_in_slot(8 - (bVar1 & 1),uVar4,4,0,1);
@@ -1305,7 +1305,7 @@ int play_weapon_impact_sound(short result)
   if (puVar6 == (ushort *)0x0) {
     return 0;
   }
-  DAT_00100610 = *puVar6 & 0x1ff;
+  DAT_00100610 = ((uw_object_hdr_t *)puVar6)->item_id;
   uVar1 = (uint)(short)DAT_00100610;
   if ((uVar1 == 1) || (0xff < uVar1)) {
     bVar7 = 1;
@@ -1315,7 +1315,7 @@ int play_weapon_impact_sound(short result)
   }
   if (DAT_00100620 == 1) {
     puVar6 = (ushort *)get_equipped_item_at_slot((char)DAT_00100624 + 1U & 3);
-    if (((((puVar6 == (ushort *)0x0) || (uVar3 = *puVar6 & 0x1ff, uVar3 == 0x20)) || (uVar3 == 0x23)
+    if (((((puVar6 == (ushort *)0x0) || (uVar3 = ((uw_object_hdr_t *)puVar6)->item_id, uVar3 == 0x20)) || (uVar3 == 0x23)
          ) || ((uVar3 == 0x26 || (uVar3 == 0x29)))) || (uVar3 == 0x2c)) {
 LAB_00026fe8:
       bVar2 = 0;
@@ -1424,7 +1424,7 @@ int resolve_equipped_weapon_attack(char * *out_attack_data, char * *out_weapon_o
   puVar4 = (ushort *)get_equipped_item_at_slot(8 - (*(byte *)(DAT_00086df8 + 100) & 1));
   *out_weapon_object = (char *)puVar4;
   if (puVar4 != (ushort *)0x0) {
-    uVar2 = *puVar4;
+    uVar2 = ((uw_object_hdr_t *)puVar4)->type_flags;
     uVar1 = (uint)(short)(uVar2 & 0x1ff);
     if ((uVar2 & 0x1f0) == 0x10) {
       iVar5 = (uVar1 & 0xf) * 3;
@@ -1885,7 +1885,7 @@ int check_npc_target_alignment(int mode)
         uVar7 = uw_ord2005_rem_89;
       }
       uVar7 = uVar3 & 0xfc7f | (uVar7 & 7) << 7;
-      *(char *)(iVar4 + 2) = (char)uVar7;
+      ((uw_object_hdr_t *)iVar4)->position_word_low = (byte)(char)uVar7;
       DAT_0010190c->hdr.position_word_high = (byte)(char)(uVar7 >> 8);
       uVar6 = 0;
     }
@@ -2131,7 +2131,7 @@ bool apply_object_durability_damage(ushort *object, ushort *attacker, short dama
           if ((int)(uVar6 * 0x10000) >> 0x10 < 1) {
             uVar6 = 0;
           }
-          *(byte *)(object + 3) = (byte)(uVar2 & 0xffc1) | (byte)((uVar6 & 0x1f) << 1);
+          ((uw_object_hdr_t *)object)->link_word_low = (byte)(uVar2 & 0xffc1) | (byte)((uVar6 & 0x1f) << 1);
           ((uw_object_hdr_t *)object)->link_word_high = (byte)(char)((uVar2 & 0xffc1) >> 8);
           return false;
         }
@@ -2142,7 +2142,7 @@ bool apply_object_durability_damage(ushort *object, ushort *attacker, short dama
       if (iVar1 < 1) {
         iVar5 = 0;
       }
-      *(byte *)(object + 2) = ((byte)uVar2 ^ (byte)iVar5) & 0x3f ^ (byte)uVar2;
+      ((uw_object_hdr_t *)object)->chain_word_low = ((byte)uVar2 ^ (byte)iVar5) & 0x3f ^ (byte)uVar2;
       ((uw_object_hdr_t *)object)->chain_word_high = (byte)(char)(uVar2 >> 8);
     }
     else {
@@ -2226,10 +2226,10 @@ int damage_equipped_item_in_slot(int slot, byte damage, byte damage_type, short 
       }
     }
   }
-  bVar1 = *(byte *)(puVar5 + 2);
+  bVar1 = ((uw_object_hdr_t *)puVar5)->chain_word_low;
   iVar6 = apply_typed_damage_to_object(puVar5,0,0xffffffff,-1,damage,damage_type);
   if (iVar6 == 0) {
-    if ((*(byte *)(puVar5 + 2) & 0x3f) == (bVar1 & 0x3f)) {
+    if ((((uw_object_hdr_t *)puVar5)->quality) == (bVar1 & 0x3f)) {
       return 0xffffffff;
     }
     pcVar9 = s_damaged__00085aa8;
@@ -2255,9 +2255,9 @@ int damage_equipped_item_in_slot(int slot, byte damage, byte damage_type, short 
     pcVar8 = pcVar8 + 1;
   } while (cVar2 != '\0');
   if (puVar5 == g_player_object) {
-    uVar3 = *puVar5;
-    *(undefined1 *)puVar5 = 0xf;
-    *(byte *)((char *)puVar5 + 1) = (byte)((ushort)uVar3 >> 8) & 0xfe;
+    uVar3 = ((uw_object_hdr_t *)puVar5)->type_flags;
+    ((uw_object_hdr_t *)puVar5)->type_flags_low = 0xf;
+    ((uw_object_hdr_t *)puVar5)->type_flags_high = (byte)((ushort)uVar3 >> 8) & 0xfe;
   }
   iVar6 = ce_strlen(acStack_4d + 1);
   build_object_display_name(acStack_4d + iVar6 + 1,puVar5,0,0);

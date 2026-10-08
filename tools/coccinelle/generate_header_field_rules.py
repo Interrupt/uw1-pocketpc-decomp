@@ -67,7 +67,7 @@ def generate(source):
             patterns = list(dict.fromkeys(patterns))
             rules.append(f'@field_{number}_{field}@\ntype R;\nidentifier F =~ "{regex(functions)}";\ntypedef ushort, byte, uw_object_hdr_t;\n@@\nR F(...) {{\n<...\n(\n'+
                          '\n|\n'.join(f'- {p}\n+ ((uw_object_hdr_t *){name})->{field}' for p in patterns)+'\n)\n...>\n}\n')
-    return '\n'.join(rules)
+    return '\n'.join(rules).rstrip() + '\n' if rules else ''
 
 
 def main():

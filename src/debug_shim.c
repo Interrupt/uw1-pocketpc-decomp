@@ -341,9 +341,10 @@ void uw_debug_force_item_id_once(void) {
   if (!obj) return;
   done = 1;
   int newid = (int)strtol(idstr, NULL, 16);
-  ushort old = *obj;
-  *obj = (old & ~(ushort)0x1ff) | (newid & 0x1ff);
-  fprintf(stderr, "[armor] forced slot12 object id 0x%03x -> 0x%03x\n", old & 0x1ff, *obj & 0x1ff);
+  ushort old = ((uw_object_hdr_t *)obj)->type_flags;
+  ((uw_object_hdr_t *)obj)->type_flags = (old & ~(ushort)0x1ff) | (newid & 0x1ff);
+  fprintf(stderr, "[armor] forced slot12 object id 0x%03x -> 0x%03x\n", old & 0x1ff,
+          ((uw_object_hdr_t *)obj)->item_id);
 }
 
 void uw_debug_dump_sprite_frames_once(void) {

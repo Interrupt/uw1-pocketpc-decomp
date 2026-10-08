@@ -95,16 +95,15 @@ LAB_0004b06c:
     puVar6 = (ushort *)0x0;
   }
   else {
-    *(byte *)(puVar6 + 2) = ((uw_object_hdr_t *)puVar6)->quality;
+    ((uw_object_hdr_t *)puVar6)->chain_word_low = ((uw_object_hdr_t *)puVar6)->quality;
     ((uw_object_hdr_t *)puVar6)->chain_word_high = 0;
     uVar7 = ((uw_object_hdr_t *)puVar6)->type_flags | 0x8000;
     ((uw_object_hdr_t *)puVar6)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar6)->type_flags;
     ((uw_object_hdr_t *)puVar6)->type_flags_high = (byte)(char)(uVar7 >> 8);
-    *(byte *)(puVar6 + 3) = ((uw_object_hdr_t *)puVar6)->owner | 0x40;
+    ((uw_object_hdr_t *)puVar6)->link_word_low = ((uw_object_hdr_t *)puVar6)->owner | 0x40;
     ((uw_object_hdr_t *)puVar6)->link_word_high = 0;
     uVar7 = (uVar7 ^ (int)DAT_00202a38) & 0x1ff ^ uVar7;
-    ((uw_object_hdr_t *)puVar6)->type_flags_low = (byte)(char)uVar7;
-    ((uw_object_hdr_t *)puVar6)->type_flags_high = (byte)(char)(uVar7 >> 8);
+    ((uw_object_hdr_t *)puVar6)->type_flags = (ushort)uVar7;
     uVar9 = 0;
     if (DAT_00202a54 != 0) {
       uVar9 = (byte)DAT_00202a44[0xc] & 0x1f;
@@ -118,8 +117,7 @@ LAB_0004b06c:
       fprintf(stderr, "[throw-pos] after compute_object_placement_fields: puVar6[0xb]=0x%x tilex_out=%d tiley_out=%d\n",
               (unsigned)puVar6[0xb], (int)(puVar6[0xb] >> 10), (int)((puVar6[0xb] & 0x3f0) >> 4));
     uVar7 = ((uw_object_hdr_t *)puVar6)->position_word & 0xfc7f | ((int)(short)(DAT_00202a54 & 0xe0) >> 5) << 7;
-    *(char *)(puVar6 + 1) = (char)uVar7;
-    ((uw_object_hdr_t *)puVar6)->position_word_high = (byte)(char)(uVar7 >> 8);
+    ((uw_object_hdr_t *)puVar6)->position_word = (ushort)uVar7;
     *(byte *)(puVar6 + 0xc) = ((byte)DAT_00202a54 ^ (byte)puVar6[0xc]) & 0x1f ^ (byte)puVar6[0xc];
     *(char *)((char *)puVar6 + 9) = (char)DAT_00202a54;
     uVar9 = ((uw_object_hdr_t *)puVar6)->type_flags;
@@ -127,27 +125,27 @@ LAB_0004b06c:
     ((uw_object_hdr_t *)puVar6)->type_flags_high = (byte)(char)((uVar9 & 0xdfff) >> 8);
     uVar7 = (uint)((uw_object_hdr_t *)puVar6)->position_word;
     uVar7 = ((byte)DAT_00202a44[1] ^ uVar7) & 0x7f ^ uVar7;
-    *(char *)(puVar6 + 1) = (char)uVar7;
+    ((uw_object_hdr_t *)puVar6)->position_word_low = (byte)(char)uVar7;
     ((uw_object_hdr_t *)puVar6)->position_word_high = ((uw_object_hdr_t *)puVar6)->position_word_high;
     uVar7 = (uVar7 ^ DAT_00202a44[1]) & 0x1fff ^ (uint)DAT_00202a44[1];
     bVar1 = (byte)uVar7;
-    *(byte *)(puVar6 + 1) = bVar1;
+    ((uw_object_hdr_t *)puVar6)->position_word_low = bVar1;
     bVar2 = (byte)(uVar7 >> 8);
     ((uw_object_hdr_t *)puVar6)->position_word_high = bVar2;
     bVar2 = (*(byte *)((char *)DAT_00202a44 + 3) ^ bVar2) & 0x1c ^ bVar2;
-    *(byte *)(puVar6 + 1) = bVar1;
+    ((uw_object_hdr_t *)puVar6)->position_word_low = bVar1;
     ((uw_object_hdr_t *)puVar6)->position_word_high = bVar2;
     if ((byte) g_object_type_props[(*DAT_00202a44 & 0x1ff)].height != 0) {
       cVar4 = ordint_divmod(6,
                             (uint)(byte) g_object_type_props[(*DAT_00202a44 & 0x1ff)].height * 5).quot;
       bVar3 = (cVar4 + (char)DAT_00202a3c * '\x02' + (bVar1 & 0x7f) ^ bVar1) & 0x7f ^ bVar1;
-      *(byte *)(puVar6 + 1) = bVar3;
+      ((uw_object_hdr_t *)puVar6)->position_word_low = bVar3;
       ((uw_object_hdr_t *)puVar6)->position_word_high = bVar2;
       if ((DAT_00202a44 == g_player_object) && (0x50 < *(byte *)(DAT_00086df8 + 0xb9))) {
-        *(byte *)(puVar6 + 1) =
-             (((char)DAT_00202a3c * '\x02' - (*(byte *)(DAT_00086df8 + 0xb9) >> 3)) +
-              g_object_type_props[(*DAT_00202a44 & 0x1ff)].height + (bVar1 & 0x7f) ^ bVar3) & 0x7f ^
-             bVar3;
+        ((uw_object_hdr_t *)puVar6)->position_word_low =
+            (((char)DAT_00202a3c * '\x02' - (*(byte *)(DAT_00086df8 + 0xb9) >> 3)) +
+             g_object_type_props[(*DAT_00202a44 & 0x1ff)].height + (bVar1 & 0x7f) ^ bVar3) & 0x7f ^
+           bVar3;
         ((uw_object_hdr_t *)puVar6)->position_word_high = bVar2;
       }
       iVar8 = check_object_drop_height(puVar6,DAT_00202a44);
@@ -188,7 +186,7 @@ LAB_0004b06c:
     ;
     if (g_object_type_props[DAT_00202a38].can_have_owner) {
       uVar9 = ((uw_object_hdr_t *)puVar6)->link_word;
-      *(char *)(puVar6 + 3) = (char)(uVar9 & 0xffc0);
+      ((uw_object_hdr_t *)puVar6)->link_word_low = (byte)(char)(uVar9 & 0xffc0);
       ((uw_object_hdr_t *)puVar6)->link_word_high = (byte)(char)((uVar9 & 0xffc0) >> 8);
     }
     /* Was `iVar8 = tilemap_lookup(...); object_list_insert_head(iVar8 + 2,...)` -- tilemap_lookup
@@ -853,7 +851,7 @@ int clear_object_temp_flag_callback(ushort *object)
     if (((uVar3 != 0x140) && (uVar3 != 0x180)) &&
        ((g_object_type_props[(((uw_object_hdr_t *)object)->item_id)].class_flags & 3) != 2)) {
       uVar1 = ((uw_object_hdr_t *)object)->position_word;
-      *(char *)(object + 1) = (char)(uVar1 & 0xfdff);
+      ((uw_object_hdr_t *)object)->position_word_low = (byte)(char)(uVar1 & 0xfdff);
       ((uw_object_hdr_t *)object)->position_word_high = (byte)(char)((uVar1 & 0xfdff) >> 8);
     }
   }
@@ -905,7 +903,7 @@ void free_player_inventory_chain(char *link_field)
 
   iVar1 = resolve_object_link(link_field);
   if (iVar1 != 0) {
-    if ((*(byte *)(iVar1 + 1) & 0x80) == 0) {
+    if (((uw_object_hdr_t *)iVar1)->is_quant == 0) {
       if (((uw_object_hdr_t *)iVar1)->link != 0) {
         free_player_inventory_chain(iVar1 + 6); /* was called with no argument; confirmed via ARM disassembly, 0x44500 */
       }
@@ -1582,7 +1580,7 @@ uw_object_hdr_t *settle_dropped_object(void *object_ptr, short tile_x,
            ((ushort)(byte)(&DAT_00202c38)[cVar4 * 6] != *(ushort *)(DAT_00202c6c + 4))) break;
         DAT_00086998 = cVar4;
         psVar7 = (short *)resolve_object_link(&DAT_00202c3a + cVar4 * 6);
-        uVar8 = (int)*psVar7 & 0x1ff;
+        uVar8 = (int)((uw_object_hdr_t *)psVar7)->type_flags_signed & 0x1ff;
         DAT_00086999 = (undefined1)uVar8;
         DAT_0008699a = (undefined1)(uVar8 >> 8);
         if ((g_object_type_props[(short)uVar8].flags & 2) == 2) {
@@ -1890,11 +1888,11 @@ uw_object_hdr_t *reallocate_object_to_arena(ushort *object)
   else {
     ((uw_object_hdr_t *)puVar2)->type_flags_low = (byte)(char)((uw_object_hdr_t *)object)->type_flags;
     ((uw_object_hdr_t *)puVar2)->type_flags_high = ((uw_object_hdr_t *)object)->type_flags_high;
-    *(char *)(puVar2 + 1) = (char)((uw_object_hdr_t *)object)->position_word;
+    ((uw_object_hdr_t *)puVar2)->position_word_low = (byte)(char)((uw_object_hdr_t *)object)->position_word;
     ((uw_object_hdr_t *)puVar2)->position_word_high = ((uw_object_hdr_t *)object)->position_word_high;
-    *(char *)(puVar2 + 2) = (char)((uw_object_hdr_t *)object)->chain_word;
+    ((uw_object_hdr_t *)puVar2)->chain_word_low = (byte)(char)((uw_object_hdr_t *)object)->chain_word;
     ((uw_object_hdr_t *)puVar2)->chain_word_high = ((uw_object_hdr_t *)object)->chain_word_high;
-    *(char *)(puVar2 + 3) = (char)((uw_object_hdr_t *)object)->link_word;
+    ((uw_object_hdr_t *)puVar2)->link_word_low = (byte)(char)((uw_object_hdr_t *)object)->link_word;
     ((uw_object_hdr_t *)puVar2)->link_word_high = ((uw_object_hdr_t *)object)->link_word_high;
     compute_object_placement_fields(puVar2,(int)DAT_0010144c,(int)DAT_00101454);
     *(byte *)(puVar2 + 4) = ((uw_object_hdr_t *)object)->quality;

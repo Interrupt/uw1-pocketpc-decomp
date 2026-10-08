@@ -352,7 +352,7 @@ void sprite_partition_step(int condition, short *out_index, short entry_value, s
       if (iVar1 != entry_value) {
         if (phase == 0) {
           char *_o = (char *)get_object_record_by_slot_index((int)(short)(&DAT_0023b848)[iVar1]);
-          uVar2 = *(byte *)(_o + 2) & 0x7f;   /* was `int iVar3` -- truncated the object pointer */
+          uVar2 = ((uw_object_hdr_t *)_o)->zpos;   /* was `int iVar3` -- truncated the object pointer */
         }
         else {
           uVar2 = (ushort)(char)(&DAT_0023bb98)[(int)phase + iVar1 * 4];
@@ -383,7 +383,7 @@ void sprite_partition_tmap(int entry_index, short *out_index, int extra)
   byte bVar2;
 
   _o = (char *)get_object_record_by_slot_index((int)(short)(&DAT_0023b848)[(short)entry_index]);  /* was `int iVar1` */
-  bVar2 = *(byte *)(_o + 2) & 0x7f;
+  bVar2 = ((uw_object_hdr_t *)_o)->zpos;
   sprite_partition_step((g_player_object->hdr.zpos) < bVar2,out_index,
                         entry_index,extra,bVar2,0);
 }

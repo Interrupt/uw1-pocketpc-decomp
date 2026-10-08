@@ -61,7 +61,7 @@ R F(...) {
 @receiver_0_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -77,6 +77,48 @@ R F(...) {
 |
 - *(ushort *)((ushort *)puVar2 + 0x0)
 + ((uw_object_hdr_t *)puVar2)->type_flags
+|
+- *(ushort *)(puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags
+|
+- puVar2[0x0]
++ ((uw_object_hdr_t *)puVar2)->type_flags
+|
+- *puVar2
++ ((uw_object_hdr_t *)puVar2)->type_flags
+)
+...>
+}
+
+
+@receiver_0_w_0_0_word_undefined2@
+type R;
+identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags
+|
+- *(undefined2 *)((byte *)puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags
+|
+- ((undefined2 *)puVar2)[0x0]
++ ((uw_object_hdr_t *)puVar2)->type_flags
+|
+- *(undefined2 *)((undefined2 *)puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags
+|
+- *(undefined2 *)(puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags
+|
+- puVar2[0x0]
++ ((uw_object_hdr_t *)puVar2)->type_flags
+|
+- *puVar2
++ ((uw_object_hdr_t *)puVar2)->type_flags
 )
 ...>
 }
@@ -85,7 +127,7 @@ R F(...) {
 @receiver_0_w_0_0_word_short@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -101,6 +143,9 @@ R F(...) {
 |
 - *(short *)((short *)puVar2 + 0x0)
 + ((uw_object_hdr_t *)puVar2)->type_flags_signed
+|
+- *(short *)(puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags_signed
 )
 ...>
 }
@@ -109,7 +154,7 @@ R F(...) {
 @receiver_0_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -131,6 +176,12 @@ R F(...) {
 |
 - *(byte *)puVar2
 + ((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- *(byte *)(puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- (byte)puVar2[0x0]
++ ((uw_object_hdr_t *)puVar2)->type_flags_low
 )
 ...>
 }
@@ -139,7 +190,7 @@ R F(...) {
 @receiver_0_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -161,6 +212,42 @@ R F(...) {
 |
 - *(undefined1 *)puVar2
 + ((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- *(undefined1 *)(puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- (undefined1)puVar2[0x0]
++ ((uw_object_hdr_t *)puVar2)->type_flags_low
+)
+...>
+}
+
+
+@receiver_0_w_0_0_address_0@
+type R;
+identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar2 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- &*(char *)((byte *)puVar2 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- &((char *)puVar2)[0x0]
++ (char *)&((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- &*(char *)((ushort *)puVar2 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- &*(char *)puVar2
++ (char *)&((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- &*(char *)(puVar2 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar2)->type_flags_low
 )
 ...>
 }
@@ -169,7 +256,7 @@ R F(...) {
 @receiver_0_w_0_0_store_0@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -189,6 +276,9 @@ R F(...) {
 |
 - *(char *)puVar2 = E;
 + ((uw_object_hdr_t *)puVar2)->type_flags_low = (byte)E;
+|
+- *(char *)(puVar2 + 0x0) = E;
++ ((uw_object_hdr_t *)puVar2)->type_flags_low = (byte)E;
 )
 ...>
 }
@@ -197,7 +287,7 @@ R F(...) {
 @receiver_0_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -219,6 +309,12 @@ R F(...) {
 |
 - *(char *)puVar2
 + (char)((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- *(char *)(puVar2 + 0x0)
++ (char)((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- (char)puVar2[0x0]
++ (char)((uw_object_hdr_t *)puVar2)->type_flags_low
 )
 ...>
 }
@@ -227,7 +323,7 @@ R F(...) {
 @receiver_0_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -248,7 +344,7 @@ R F(...) {
 @receiver_0_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -266,10 +362,31 @@ R F(...) {
 }
 
 
+@receiver_0_w_0_0_address_1@
+type R;
+identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar2 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar2)->type_flags_high
+|
+- &*(char *)((byte *)puVar2 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar2)->type_flags_high
+|
+- &((char *)puVar2)[0x1]
++ (char *)&((uw_object_hdr_t *)puVar2)->type_flags_high
+)
+...>
+}
+
+
 @receiver_0_w_0_0_store_1@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -291,7 +408,7 @@ R F(...) {
 @receiver_0_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -309,7 +426,7 @@ R F(...) {
 }
 
 
-@receiver_0_w_2_14_pair_char_char@
+@receiver_0_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -324,7 +441,7 @@ R F(...) {
 ...>
 }
 
-@receiver_0_w_2_14_pair_char_byte@
+@receiver_0_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -339,7 +456,7 @@ R F(...) {
 ...>
 }
 
-@receiver_0_w_2_14_pair_byte_char@
+@receiver_0_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -354,7 +471,7 @@ R F(...) {
 ...>
 }
 
-@receiver_0_w_2_14_pair_byte_byte@
+@receiver_0_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -369,10 +486,10 @@ R F(...) {
 ...>
 }
 
-@receiver_0_w_2_14_word_ushort@
+@receiver_0_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -388,15 +505,51 @@ R F(...) {
 |
 - *(ushort *)((ushort *)puVar2 + 0x1)
 + ((uw_object_hdr_t *)puVar2)->position_word
+|
+- *(ushort *)(puVar2 + 0x1)
++ ((uw_object_hdr_t *)puVar2)->position_word
+|
+- puVar2[0x1]
++ ((uw_object_hdr_t *)puVar2)->position_word
 )
 ...>
 }
 
 
-@receiver_0_w_2_14_word_short@
+@receiver_0_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->position_word
+|
+- *(undefined2 *)((byte *)puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->position_word
+|
+- ((undefined2 *)puVar2)[0x1]
++ ((uw_object_hdr_t *)puVar2)->position_word
+|
+- *(undefined2 *)((undefined2 *)puVar2 + 0x1)
++ ((uw_object_hdr_t *)puVar2)->position_word
+|
+- *(undefined2 *)(puVar2 + 0x1)
++ ((uw_object_hdr_t *)puVar2)->position_word
+|
+- puVar2[0x1]
++ ((uw_object_hdr_t *)puVar2)->position_word
+)
+...>
+}
+
+
+@receiver_0_w_2_17_word_short@
+type R;
+identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -412,15 +565,18 @@ R F(...) {
 |
 - *(short *)((short *)puVar2 + 0x1)
 + ((uw_object_hdr_t *)puVar2)->position_word_signed
+|
+- *(short *)(puVar2 + 0x1)
++ ((uw_object_hdr_t *)puVar2)->position_word_signed
 )
 ...>
 }
 
 
-@receiver_0_w_2_14_byte_2_byte@
+@receiver_0_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -439,15 +595,21 @@ R F(...) {
 |
 - (byte)((ushort *)puVar2)[0x1]
 + ((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- *(byte *)(puVar2 + 0x1)
++ ((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- (byte)puVar2[0x1]
++ ((uw_object_hdr_t *)puVar2)->position_word_low
 )
 ...>
 }
 
 
-@receiver_0_w_2_14_byte_2_undefined1@
+@receiver_0_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -466,15 +628,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)puVar2)[0x1]
 + ((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- *(undefined1 *)(puVar2 + 0x1)
++ ((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- (undefined1)puVar2[0x1]
++ ((uw_object_hdr_t *)puVar2)->position_word_low
 )
 ...>
 }
 
 
-@receiver_0_w_2_14_store_2@
+@receiver_0_w_2_17_address_2@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar2 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- &*(char *)((byte *)puVar2 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- &((char *)puVar2)[0x2]
++ (char *)&((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- &*(char *)((ushort *)puVar2 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- &*(char *)(puVar2 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar2)->position_word_low
+)
+...>
+}
+
+
+@receiver_0_w_2_17_store_2@
+type R;
+identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -491,15 +686,18 @@ R F(...) {
 |
 - *(char *)((ushort *)puVar2 + 0x1) = E;
 + ((uw_object_hdr_t *)puVar2)->position_word_low = (byte)E;
+|
+- *(char *)(puVar2 + 0x1) = E;
++ ((uw_object_hdr_t *)puVar2)->position_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_0_w_2_14_byte_2_char@
+@receiver_0_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -518,15 +716,21 @@ R F(...) {
 |
 - (char)((ushort *)puVar2)[0x1]
 + (char)((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- *(char *)(puVar2 + 0x1)
++ (char)((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- (char)puVar2[0x1]
++ (char)((uw_object_hdr_t *)puVar2)->position_word_low
 )
 ...>
 }
 
 
-@receiver_0_w_2_14_byte_3_byte@
+@receiver_0_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -544,10 +748,10 @@ R F(...) {
 }
 
 
-@receiver_0_w_2_14_byte_3_undefined1@
+@receiver_0_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -565,10 +769,31 @@ R F(...) {
 }
 
 
-@receiver_0_w_2_14_store_3@
+@receiver_0_w_2_17_address_3@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar2 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar2)->position_word_high
+|
+- &*(char *)((byte *)puVar2 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar2)->position_word_high
+|
+- &((char *)puVar2)[0x3]
++ (char *)&((uw_object_hdr_t *)puVar2)->position_word_high
+)
+...>
+}
+
+
+@receiver_0_w_2_17_store_3@
+type R;
+identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -587,10 +812,10 @@ R F(...) {
 }
 
 
-@receiver_0_w_2_14_byte_3_char@
+@receiver_0_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -608,7 +833,7 @@ R F(...) {
 }
 
 
-@receiver_0_w_4_28_pair_char_char@
+@receiver_0_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -623,7 +848,7 @@ R F(...) {
 ...>
 }
 
-@receiver_0_w_4_28_pair_char_byte@
+@receiver_0_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -638,7 +863,7 @@ R F(...) {
 ...>
 }
 
-@receiver_0_w_4_28_pair_byte_char@
+@receiver_0_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -653,7 +878,7 @@ R F(...) {
 ...>
 }
 
-@receiver_0_w_4_28_pair_byte_byte@
+@receiver_0_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -668,10 +893,10 @@ R F(...) {
 ...>
 }
 
-@receiver_0_w_4_28_word_ushort@
+@receiver_0_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -687,15 +912,51 @@ R F(...) {
 |
 - *(ushort *)((ushort *)puVar2 + 0x2)
 + ((uw_object_hdr_t *)puVar2)->chain_word
+|
+- *(ushort *)(puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->chain_word
+|
+- puVar2[0x2]
++ ((uw_object_hdr_t *)puVar2)->chain_word
 )
 ...>
 }
 
 
-@receiver_0_w_4_28_word_short@
+@receiver_0_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar2 + 0x4)
++ ((uw_object_hdr_t *)puVar2)->chain_word
+|
+- *(undefined2 *)((byte *)puVar2 + 0x4)
++ ((uw_object_hdr_t *)puVar2)->chain_word
+|
+- ((undefined2 *)puVar2)[0x2]
++ ((uw_object_hdr_t *)puVar2)->chain_word
+|
+- *(undefined2 *)((undefined2 *)puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->chain_word
+|
+- *(undefined2 *)(puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->chain_word
+|
+- puVar2[0x2]
++ ((uw_object_hdr_t *)puVar2)->chain_word
+)
+...>
+}
+
+
+@receiver_0_w_4_34_word_short@
+type R;
+identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -711,15 +972,18 @@ R F(...) {
 |
 - *(short *)((short *)puVar2 + 0x2)
 + ((uw_object_hdr_t *)puVar2)->chain_word_signed
+|
+- *(short *)(puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->chain_word_signed
 )
 ...>
 }
 
 
-@receiver_0_w_4_28_byte_4_byte@
+@receiver_0_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -738,15 +1002,21 @@ R F(...) {
 |
 - (byte)((ushort *)puVar2)[0x2]
 + ((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- *(byte *)(puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- (byte)puVar2[0x2]
++ ((uw_object_hdr_t *)puVar2)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_0_w_4_28_byte_4_undefined1@
+@receiver_0_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -765,15 +1035,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)puVar2)[0x2]
 + ((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- *(undefined1 *)(puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- (undefined1)puVar2[0x2]
++ ((uw_object_hdr_t *)puVar2)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_0_w_4_28_store_4@
+@receiver_0_w_4_34_address_4@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar2 + 0x4)
++ (char *)&((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- &*(char *)((byte *)puVar2 + 0x4)
++ (char *)&((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- &((char *)puVar2)[0x4]
++ (char *)&((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- &*(char *)((ushort *)puVar2 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- &*(char *)(puVar2 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar2)->chain_word_low
+)
+...>
+}
+
+
+@receiver_0_w_4_34_store_4@
+type R;
+identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -790,15 +1093,18 @@ R F(...) {
 |
 - *(char *)((ushort *)puVar2 + 0x2) = E;
 + ((uw_object_hdr_t *)puVar2)->chain_word_low = (byte)E;
+|
+- *(char *)(puVar2 + 0x2) = E;
++ ((uw_object_hdr_t *)puVar2)->chain_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_0_w_4_28_byte_4_char@
+@receiver_0_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -817,15 +1123,21 @@ R F(...) {
 |
 - (char)((ushort *)puVar2)[0x2]
 + (char)((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- *(char *)(puVar2 + 0x2)
++ (char)((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- (char)puVar2[0x2]
++ (char)((uw_object_hdr_t *)puVar2)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_0_w_4_28_byte_5_byte@
+@receiver_0_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -843,10 +1155,10 @@ R F(...) {
 }
 
 
-@receiver_0_w_4_28_byte_5_undefined1@
+@receiver_0_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -864,10 +1176,31 @@ R F(...) {
 }
 
 
-@receiver_0_w_4_28_store_5@
+@receiver_0_w_4_34_address_5@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar2 + 0x5)
++ (char *)&((uw_object_hdr_t *)puVar2)->chain_word_high
+|
+- &*(char *)((byte *)puVar2 + 0x5)
++ (char *)&((uw_object_hdr_t *)puVar2)->chain_word_high
+|
+- &((char *)puVar2)[0x5]
++ (char *)&((uw_object_hdr_t *)puVar2)->chain_word_high
+)
+...>
+}
+
+
+@receiver_0_w_4_34_store_5@
+type R;
+identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -886,10 +1219,10 @@ R F(...) {
 }
 
 
-@receiver_0_w_4_28_byte_5_char@
+@receiver_0_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -907,7 +1240,7 @@ R F(...) {
 }
 
 
-@receiver_0_w_6_42_pair_char_char@
+@receiver_0_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -922,7 +1255,7 @@ R F(...) {
 ...>
 }
 
-@receiver_0_w_6_42_pair_char_byte@
+@receiver_0_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -937,7 +1270,7 @@ R F(...) {
 ...>
 }
 
-@receiver_0_w_6_42_pair_byte_char@
+@receiver_0_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -952,7 +1285,7 @@ R F(...) {
 ...>
 }
 
-@receiver_0_w_6_42_pair_byte_byte@
+@receiver_0_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -967,10 +1300,10 @@ R F(...) {
 ...>
 }
 
-@receiver_0_w_6_42_word_ushort@
+@receiver_0_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -986,15 +1319,51 @@ R F(...) {
 |
 - *(ushort *)((ushort *)puVar2 + 0x3)
 + ((uw_object_hdr_t *)puVar2)->link_word
+|
+- *(ushort *)(puVar2 + 0x3)
++ ((uw_object_hdr_t *)puVar2)->link_word
+|
+- puVar2[0x3]
++ ((uw_object_hdr_t *)puVar2)->link_word
 )
 ...>
 }
 
 
-@receiver_0_w_6_42_word_short@
+@receiver_0_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar2 + 0x6)
++ ((uw_object_hdr_t *)puVar2)->link_word
+|
+- *(undefined2 *)((byte *)puVar2 + 0x6)
++ ((uw_object_hdr_t *)puVar2)->link_word
+|
+- ((undefined2 *)puVar2)[0x3]
++ ((uw_object_hdr_t *)puVar2)->link_word
+|
+- *(undefined2 *)((undefined2 *)puVar2 + 0x3)
++ ((uw_object_hdr_t *)puVar2)->link_word
+|
+- *(undefined2 *)(puVar2 + 0x3)
++ ((uw_object_hdr_t *)puVar2)->link_word
+|
+- puVar2[0x3]
++ ((uw_object_hdr_t *)puVar2)->link_word
+)
+...>
+}
+
+
+@receiver_0_w_6_51_word_short@
+type R;
+identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1010,15 +1379,18 @@ R F(...) {
 |
 - *(short *)((short *)puVar2 + 0x3)
 + ((uw_object_hdr_t *)puVar2)->link_word_signed
+|
+- *(short *)(puVar2 + 0x3)
++ ((uw_object_hdr_t *)puVar2)->link_word_signed
 )
 ...>
 }
 
 
-@receiver_0_w_6_42_byte_6_byte@
+@receiver_0_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1037,15 +1409,21 @@ R F(...) {
 |
 - (byte)((ushort *)puVar2)[0x3]
 + ((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- *(byte *)(puVar2 + 0x3)
++ ((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- (byte)puVar2[0x3]
++ ((uw_object_hdr_t *)puVar2)->link_word_low
 )
 ...>
 }
 
 
-@receiver_0_w_6_42_byte_6_undefined1@
+@receiver_0_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1064,15 +1442,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)puVar2)[0x3]
 + ((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- *(undefined1 *)(puVar2 + 0x3)
++ ((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- (undefined1)puVar2[0x3]
++ ((uw_object_hdr_t *)puVar2)->link_word_low
 )
 ...>
 }
 
 
-@receiver_0_w_6_42_store_6@
+@receiver_0_w_6_51_address_6@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar2 + 0x6)
++ (char *)&((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- &*(char *)((byte *)puVar2 + 0x6)
++ (char *)&((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- &((char *)puVar2)[0x6]
++ (char *)&((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- &*(char *)((ushort *)puVar2 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- &*(char *)(puVar2 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar2)->link_word_low
+)
+...>
+}
+
+
+@receiver_0_w_6_51_store_6@
+type R;
+identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -1089,15 +1500,18 @@ R F(...) {
 |
 - *(char *)((ushort *)puVar2 + 0x3) = E;
 + ((uw_object_hdr_t *)puVar2)->link_word_low = (byte)E;
+|
+- *(char *)(puVar2 + 0x3) = E;
++ ((uw_object_hdr_t *)puVar2)->link_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_0_w_6_42_byte_6_char@
+@receiver_0_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1116,15 +1530,21 @@ R F(...) {
 |
 - (char)((ushort *)puVar2)[0x3]
 + (char)((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- *(char *)(puVar2 + 0x3)
++ (char)((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- (char)puVar2[0x3]
++ (char)((uw_object_hdr_t *)puVar2)->link_word_low
 )
 ...>
 }
 
 
-@receiver_0_w_6_42_byte_7_byte@
+@receiver_0_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1142,10 +1562,10 @@ R F(...) {
 }
 
 
-@receiver_0_w_6_42_byte_7_undefined1@
+@receiver_0_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1163,10 +1583,31 @@ R F(...) {
 }
 
 
-@receiver_0_w_6_42_store_7@
+@receiver_0_w_6_51_address_7@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar2 + 0x7)
++ (char *)&((uw_object_hdr_t *)puVar2)->link_word_high
+|
+- &*(char *)((byte *)puVar2 + 0x7)
++ (char *)&((uw_object_hdr_t *)puVar2)->link_word_high
+|
+- &((char *)puVar2)[0x7]
++ (char *)&((uw_object_hdr_t *)puVar2)->link_word_high
+)
+...>
+}
+
+
+@receiver_0_w_6_51_store_7@
+type R;
+identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -1185,10 +1626,10 @@ R F(...) {
 }
 
 
-@receiver_0_w_6_42_byte_7_char@
+@receiver_0_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\|reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1269,7 +1710,7 @@ R F(...) {
 @receiver_1_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1285,6 +1726,36 @@ R F(...) {
 |
 - *(ushort *)((ushort *)psVar3 + 0x0)
 + ((uw_object_hdr_t *)psVar3)->type_flags
+|
+- *(ushort *)(psVar3 + 0x0)
++ ((uw_object_hdr_t *)psVar3)->type_flags
+)
+...>
+}
+
+
+@receiver_1_w_0_0_word_undefined2@
+type R;
+identifier F =~ "^\(reticle_object_pick\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)psVar3 + 0x0)
++ ((uw_object_hdr_t *)psVar3)->type_flags
+|
+- *(undefined2 *)((byte *)psVar3 + 0x0)
++ ((uw_object_hdr_t *)psVar3)->type_flags
+|
+- ((undefined2 *)psVar3)[0x0]
++ ((uw_object_hdr_t *)psVar3)->type_flags
+|
+- *(undefined2 *)((undefined2 *)psVar3 + 0x0)
++ ((uw_object_hdr_t *)psVar3)->type_flags
+|
+- *(undefined2 *)(psVar3 + 0x0)
++ ((uw_object_hdr_t *)psVar3)->type_flags
 )
 ...>
 }
@@ -1293,7 +1764,7 @@ R F(...) {
 @receiver_1_w_0_0_word_short@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1309,6 +1780,15 @@ R F(...) {
 |
 - *(short *)((short *)psVar3 + 0x0)
 + ((uw_object_hdr_t *)psVar3)->type_flags_signed
+|
+- *(short *)(psVar3 + 0x0)
++ ((uw_object_hdr_t *)psVar3)->type_flags_signed
+|
+- psVar3[0x0]
++ ((uw_object_hdr_t *)psVar3)->type_flags_signed
+|
+- *psVar3
++ ((uw_object_hdr_t *)psVar3)->type_flags_signed
 )
 ...>
 }
@@ -1317,7 +1797,7 @@ R F(...) {
 @receiver_1_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1339,6 +1819,12 @@ R F(...) {
 |
 - *(byte *)psVar3
 + ((uw_object_hdr_t *)psVar3)->type_flags_low
+|
+- *(byte *)(psVar3 + 0x0)
++ ((uw_object_hdr_t *)psVar3)->type_flags_low
+|
+- (byte)psVar3[0x0]
++ ((uw_object_hdr_t *)psVar3)->type_flags_low
 )
 ...>
 }
@@ -1347,7 +1833,7 @@ R F(...) {
 @receiver_1_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1369,6 +1855,42 @@ R F(...) {
 |
 - *(undefined1 *)psVar3
 + ((uw_object_hdr_t *)psVar3)->type_flags_low
+|
+- *(undefined1 *)(psVar3 + 0x0)
++ ((uw_object_hdr_t *)psVar3)->type_flags_low
+|
+- (undefined1)psVar3[0x0]
++ ((uw_object_hdr_t *)psVar3)->type_flags_low
+)
+...>
+}
+
+
+@receiver_1_w_0_0_address_0@
+type R;
+identifier F =~ "^\(reticle_object_pick\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)psVar3 + 0x0)
++ (char *)&((uw_object_hdr_t *)psVar3)->type_flags_low
+|
+- &*(char *)((byte *)psVar3 + 0x0)
++ (char *)&((uw_object_hdr_t *)psVar3)->type_flags_low
+|
+- &((char *)psVar3)[0x0]
++ (char *)&((uw_object_hdr_t *)psVar3)->type_flags_low
+|
+- &*(char *)((ushort *)psVar3 + 0x0)
++ (char *)&((uw_object_hdr_t *)psVar3)->type_flags_low
+|
+- &*(char *)psVar3
++ (char *)&((uw_object_hdr_t *)psVar3)->type_flags_low
+|
+- &*(char *)(psVar3 + 0x0)
++ (char *)&((uw_object_hdr_t *)psVar3)->type_flags_low
 )
 ...>
 }
@@ -1377,7 +1899,7 @@ R F(...) {
 @receiver_1_w_0_0_store_0@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -1397,6 +1919,9 @@ R F(...) {
 |
 - *(char *)psVar3 = E;
 + ((uw_object_hdr_t *)psVar3)->type_flags_low = (byte)E;
+|
+- *(char *)(psVar3 + 0x0) = E;
++ ((uw_object_hdr_t *)psVar3)->type_flags_low = (byte)E;
 )
 ...>
 }
@@ -1405,7 +1930,7 @@ R F(...) {
 @receiver_1_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1427,6 +1952,12 @@ R F(...) {
 |
 - *(char *)psVar3
 + (char)((uw_object_hdr_t *)psVar3)->type_flags_low
+|
+- *(char *)(psVar3 + 0x0)
++ (char)((uw_object_hdr_t *)psVar3)->type_flags_low
+|
+- (char)psVar3[0x0]
++ (char)((uw_object_hdr_t *)psVar3)->type_flags_low
 )
 ...>
 }
@@ -1435,7 +1966,7 @@ R F(...) {
 @receiver_1_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1456,7 +1987,7 @@ R F(...) {
 @receiver_1_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1474,10 +2005,31 @@ R F(...) {
 }
 
 
+@receiver_1_w_0_0_address_1@
+type R;
+identifier F =~ "^\(reticle_object_pick\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)psVar3 + 0x1)
++ (char *)&((uw_object_hdr_t *)psVar3)->type_flags_high
+|
+- &*(char *)((byte *)psVar3 + 0x1)
++ (char *)&((uw_object_hdr_t *)psVar3)->type_flags_high
+|
+- &((char *)psVar3)[0x1]
++ (char *)&((uw_object_hdr_t *)psVar3)->type_flags_high
+)
+...>
+}
+
+
 @receiver_1_w_0_0_store_1@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -1499,7 +2051,7 @@ R F(...) {
 @receiver_1_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1517,7 +2069,7 @@ R F(...) {
 }
 
 
-@receiver_1_w_2_14_pair_char_char@
+@receiver_1_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -1532,7 +2084,7 @@ R F(...) {
 ...>
 }
 
-@receiver_1_w_2_14_pair_char_byte@
+@receiver_1_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -1547,7 +2099,7 @@ R F(...) {
 ...>
 }
 
-@receiver_1_w_2_14_pair_byte_char@
+@receiver_1_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -1562,7 +2114,7 @@ R F(...) {
 ...>
 }
 
-@receiver_1_w_2_14_pair_byte_byte@
+@receiver_1_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -1577,10 +2129,10 @@ R F(...) {
 ...>
 }
 
-@receiver_1_w_2_14_word_ushort@
+@receiver_1_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1596,15 +2148,45 @@ R F(...) {
 |
 - *(ushort *)((ushort *)psVar3 + 0x1)
 + ((uw_object_hdr_t *)psVar3)->position_word
+|
+- *(ushort *)(psVar3 + 0x1)
++ ((uw_object_hdr_t *)psVar3)->position_word
 )
 ...>
 }
 
 
-@receiver_1_w_2_14_word_short@
+@receiver_1_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)psVar3 + 0x2)
++ ((uw_object_hdr_t *)psVar3)->position_word
+|
+- *(undefined2 *)((byte *)psVar3 + 0x2)
++ ((uw_object_hdr_t *)psVar3)->position_word
+|
+- ((undefined2 *)psVar3)[0x1]
++ ((uw_object_hdr_t *)psVar3)->position_word
+|
+- *(undefined2 *)((undefined2 *)psVar3 + 0x1)
++ ((uw_object_hdr_t *)psVar3)->position_word
+|
+- *(undefined2 *)(psVar3 + 0x1)
++ ((uw_object_hdr_t *)psVar3)->position_word
+)
+...>
+}
+
+
+@receiver_1_w_2_17_word_short@
+type R;
+identifier F =~ "^\(reticle_object_pick\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1620,15 +2202,21 @@ R F(...) {
 |
 - *(short *)((short *)psVar3 + 0x1)
 + ((uw_object_hdr_t *)psVar3)->position_word_signed
+|
+- *(short *)(psVar3 + 0x1)
++ ((uw_object_hdr_t *)psVar3)->position_word_signed
+|
+- psVar3[0x1]
++ ((uw_object_hdr_t *)psVar3)->position_word_signed
 )
 ...>
 }
 
 
-@receiver_1_w_2_14_byte_2_byte@
+@receiver_1_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1647,15 +2235,21 @@ R F(...) {
 |
 - (byte)((ushort *)psVar3)[0x1]
 + ((uw_object_hdr_t *)psVar3)->position_word_low
+|
+- *(byte *)(psVar3 + 0x1)
++ ((uw_object_hdr_t *)psVar3)->position_word_low
+|
+- (byte)psVar3[0x1]
++ ((uw_object_hdr_t *)psVar3)->position_word_low
 )
 ...>
 }
 
 
-@receiver_1_w_2_14_byte_2_undefined1@
+@receiver_1_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1674,15 +2268,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)psVar3)[0x1]
 + ((uw_object_hdr_t *)psVar3)->position_word_low
+|
+- *(undefined1 *)(psVar3 + 0x1)
++ ((uw_object_hdr_t *)psVar3)->position_word_low
+|
+- (undefined1)psVar3[0x1]
++ ((uw_object_hdr_t *)psVar3)->position_word_low
 )
 ...>
 }
 
 
-@receiver_1_w_2_14_store_2@
+@receiver_1_w_2_17_address_2@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)psVar3 + 0x2)
++ (char *)&((uw_object_hdr_t *)psVar3)->position_word_low
+|
+- &*(char *)((byte *)psVar3 + 0x2)
++ (char *)&((uw_object_hdr_t *)psVar3)->position_word_low
+|
+- &((char *)psVar3)[0x2]
++ (char *)&((uw_object_hdr_t *)psVar3)->position_word_low
+|
+- &*(char *)((ushort *)psVar3 + 0x1)
++ (char *)&((uw_object_hdr_t *)psVar3)->position_word_low
+|
+- &*(char *)(psVar3 + 0x1)
++ (char *)&((uw_object_hdr_t *)psVar3)->position_word_low
+)
+...>
+}
+
+
+@receiver_1_w_2_17_store_2@
+type R;
+identifier F =~ "^\(reticle_object_pick\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -1699,15 +2326,18 @@ R F(...) {
 |
 - *(char *)((ushort *)psVar3 + 0x1) = E;
 + ((uw_object_hdr_t *)psVar3)->position_word_low = (byte)E;
+|
+- *(char *)(psVar3 + 0x1) = E;
++ ((uw_object_hdr_t *)psVar3)->position_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_1_w_2_14_byte_2_char@
+@receiver_1_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1726,15 +2356,21 @@ R F(...) {
 |
 - (char)((ushort *)psVar3)[0x1]
 + (char)((uw_object_hdr_t *)psVar3)->position_word_low
+|
+- *(char *)(psVar3 + 0x1)
++ (char)((uw_object_hdr_t *)psVar3)->position_word_low
+|
+- (char)psVar3[0x1]
++ (char)((uw_object_hdr_t *)psVar3)->position_word_low
 )
 ...>
 }
 
 
-@receiver_1_w_2_14_byte_3_byte@
+@receiver_1_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1752,10 +2388,10 @@ R F(...) {
 }
 
 
-@receiver_1_w_2_14_byte_3_undefined1@
+@receiver_1_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1773,10 +2409,31 @@ R F(...) {
 }
 
 
-@receiver_1_w_2_14_store_3@
+@receiver_1_w_2_17_address_3@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)psVar3 + 0x3)
++ (char *)&((uw_object_hdr_t *)psVar3)->position_word_high
+|
+- &*(char *)((byte *)psVar3 + 0x3)
++ (char *)&((uw_object_hdr_t *)psVar3)->position_word_high
+|
+- &((char *)psVar3)[0x3]
++ (char *)&((uw_object_hdr_t *)psVar3)->position_word_high
+)
+...>
+}
+
+
+@receiver_1_w_2_17_store_3@
+type R;
+identifier F =~ "^\(reticle_object_pick\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -1795,10 +2452,10 @@ R F(...) {
 }
 
 
-@receiver_1_w_2_14_byte_3_char@
+@receiver_1_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1816,7 +2473,7 @@ R F(...) {
 }
 
 
-@receiver_1_w_4_28_pair_char_char@
+@receiver_1_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -1831,7 +2488,7 @@ R F(...) {
 ...>
 }
 
-@receiver_1_w_4_28_pair_char_byte@
+@receiver_1_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -1846,7 +2503,7 @@ R F(...) {
 ...>
 }
 
-@receiver_1_w_4_28_pair_byte_char@
+@receiver_1_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -1861,7 +2518,7 @@ R F(...) {
 ...>
 }
 
-@receiver_1_w_4_28_pair_byte_byte@
+@receiver_1_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -1876,10 +2533,10 @@ R F(...) {
 ...>
 }
 
-@receiver_1_w_4_28_word_ushort@
+@receiver_1_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1895,15 +2552,45 @@ R F(...) {
 |
 - *(ushort *)((ushort *)psVar3 + 0x2)
 + ((uw_object_hdr_t *)psVar3)->chain_word
+|
+- *(ushort *)(psVar3 + 0x2)
++ ((uw_object_hdr_t *)psVar3)->chain_word
 )
 ...>
 }
 
 
-@receiver_1_w_4_28_word_short@
+@receiver_1_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)psVar3 + 0x4)
++ ((uw_object_hdr_t *)psVar3)->chain_word
+|
+- *(undefined2 *)((byte *)psVar3 + 0x4)
++ ((uw_object_hdr_t *)psVar3)->chain_word
+|
+- ((undefined2 *)psVar3)[0x2]
++ ((uw_object_hdr_t *)psVar3)->chain_word
+|
+- *(undefined2 *)((undefined2 *)psVar3 + 0x2)
++ ((uw_object_hdr_t *)psVar3)->chain_word
+|
+- *(undefined2 *)(psVar3 + 0x2)
++ ((uw_object_hdr_t *)psVar3)->chain_word
+)
+...>
+}
+
+
+@receiver_1_w_4_34_word_short@
+type R;
+identifier F =~ "^\(reticle_object_pick\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1919,15 +2606,21 @@ R F(...) {
 |
 - *(short *)((short *)psVar3 + 0x2)
 + ((uw_object_hdr_t *)psVar3)->chain_word_signed
+|
+- *(short *)(psVar3 + 0x2)
++ ((uw_object_hdr_t *)psVar3)->chain_word_signed
+|
+- psVar3[0x2]
++ ((uw_object_hdr_t *)psVar3)->chain_word_signed
 )
 ...>
 }
 
 
-@receiver_1_w_4_28_byte_4_byte@
+@receiver_1_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1946,15 +2639,21 @@ R F(...) {
 |
 - (byte)((ushort *)psVar3)[0x2]
 + ((uw_object_hdr_t *)psVar3)->chain_word_low
+|
+- *(byte *)(psVar3 + 0x2)
++ ((uw_object_hdr_t *)psVar3)->chain_word_low
+|
+- (byte)psVar3[0x2]
++ ((uw_object_hdr_t *)psVar3)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_1_w_4_28_byte_4_undefined1@
+@receiver_1_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1973,15 +2672,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)psVar3)[0x2]
 + ((uw_object_hdr_t *)psVar3)->chain_word_low
+|
+- *(undefined1 *)(psVar3 + 0x2)
++ ((uw_object_hdr_t *)psVar3)->chain_word_low
+|
+- (undefined1)psVar3[0x2]
++ ((uw_object_hdr_t *)psVar3)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_1_w_4_28_store_4@
+@receiver_1_w_4_34_address_4@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)psVar3 + 0x4)
++ (char *)&((uw_object_hdr_t *)psVar3)->chain_word_low
+|
+- &*(char *)((byte *)psVar3 + 0x4)
++ (char *)&((uw_object_hdr_t *)psVar3)->chain_word_low
+|
+- &((char *)psVar3)[0x4]
++ (char *)&((uw_object_hdr_t *)psVar3)->chain_word_low
+|
+- &*(char *)((ushort *)psVar3 + 0x2)
++ (char *)&((uw_object_hdr_t *)psVar3)->chain_word_low
+|
+- &*(char *)(psVar3 + 0x2)
++ (char *)&((uw_object_hdr_t *)psVar3)->chain_word_low
+)
+...>
+}
+
+
+@receiver_1_w_4_34_store_4@
+type R;
+identifier F =~ "^\(reticle_object_pick\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -1998,15 +2730,18 @@ R F(...) {
 |
 - *(char *)((ushort *)psVar3 + 0x2) = E;
 + ((uw_object_hdr_t *)psVar3)->chain_word_low = (byte)E;
+|
+- *(char *)(psVar3 + 0x2) = E;
++ ((uw_object_hdr_t *)psVar3)->chain_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_1_w_4_28_byte_4_char@
+@receiver_1_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2025,15 +2760,21 @@ R F(...) {
 |
 - (char)((ushort *)psVar3)[0x2]
 + (char)((uw_object_hdr_t *)psVar3)->chain_word_low
+|
+- *(char *)(psVar3 + 0x2)
++ (char)((uw_object_hdr_t *)psVar3)->chain_word_low
+|
+- (char)psVar3[0x2]
++ (char)((uw_object_hdr_t *)psVar3)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_1_w_4_28_byte_5_byte@
+@receiver_1_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2051,10 +2792,10 @@ R F(...) {
 }
 
 
-@receiver_1_w_4_28_byte_5_undefined1@
+@receiver_1_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2072,10 +2813,31 @@ R F(...) {
 }
 
 
-@receiver_1_w_4_28_store_5@
+@receiver_1_w_4_34_address_5@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)psVar3 + 0x5)
++ (char *)&((uw_object_hdr_t *)psVar3)->chain_word_high
+|
+- &*(char *)((byte *)psVar3 + 0x5)
++ (char *)&((uw_object_hdr_t *)psVar3)->chain_word_high
+|
+- &((char *)psVar3)[0x5]
++ (char *)&((uw_object_hdr_t *)psVar3)->chain_word_high
+)
+...>
+}
+
+
+@receiver_1_w_4_34_store_5@
+type R;
+identifier F =~ "^\(reticle_object_pick\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -2094,10 +2856,10 @@ R F(...) {
 }
 
 
-@receiver_1_w_4_28_byte_5_char@
+@receiver_1_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2115,7 +2877,7 @@ R F(...) {
 }
 
 
-@receiver_1_w_6_42_pair_char_char@
+@receiver_1_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -2130,7 +2892,7 @@ R F(...) {
 ...>
 }
 
-@receiver_1_w_6_42_pair_char_byte@
+@receiver_1_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -2145,7 +2907,7 @@ R F(...) {
 ...>
 }
 
-@receiver_1_w_6_42_pair_byte_char@
+@receiver_1_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -2160,7 +2922,7 @@ R F(...) {
 ...>
 }
 
-@receiver_1_w_6_42_pair_byte_byte@
+@receiver_1_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -2175,10 +2937,10 @@ R F(...) {
 ...>
 }
 
-@receiver_1_w_6_42_word_ushort@
+@receiver_1_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2194,15 +2956,45 @@ R F(...) {
 |
 - *(ushort *)((ushort *)psVar3 + 0x3)
 + ((uw_object_hdr_t *)psVar3)->link_word
+|
+- *(ushort *)(psVar3 + 0x3)
++ ((uw_object_hdr_t *)psVar3)->link_word
 )
 ...>
 }
 
 
-@receiver_1_w_6_42_word_short@
+@receiver_1_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)psVar3 + 0x6)
++ ((uw_object_hdr_t *)psVar3)->link_word
+|
+- *(undefined2 *)((byte *)psVar3 + 0x6)
++ ((uw_object_hdr_t *)psVar3)->link_word
+|
+- ((undefined2 *)psVar3)[0x3]
++ ((uw_object_hdr_t *)psVar3)->link_word
+|
+- *(undefined2 *)((undefined2 *)psVar3 + 0x3)
++ ((uw_object_hdr_t *)psVar3)->link_word
+|
+- *(undefined2 *)(psVar3 + 0x3)
++ ((uw_object_hdr_t *)psVar3)->link_word
+)
+...>
+}
+
+
+@receiver_1_w_6_51_word_short@
+type R;
+identifier F =~ "^\(reticle_object_pick\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2218,15 +3010,21 @@ R F(...) {
 |
 - *(short *)((short *)psVar3 + 0x3)
 + ((uw_object_hdr_t *)psVar3)->link_word_signed
+|
+- *(short *)(psVar3 + 0x3)
++ ((uw_object_hdr_t *)psVar3)->link_word_signed
+|
+- psVar3[0x3]
++ ((uw_object_hdr_t *)psVar3)->link_word_signed
 )
 ...>
 }
 
 
-@receiver_1_w_6_42_byte_6_byte@
+@receiver_1_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2245,15 +3043,21 @@ R F(...) {
 |
 - (byte)((ushort *)psVar3)[0x3]
 + ((uw_object_hdr_t *)psVar3)->link_word_low
+|
+- *(byte *)(psVar3 + 0x3)
++ ((uw_object_hdr_t *)psVar3)->link_word_low
+|
+- (byte)psVar3[0x3]
++ ((uw_object_hdr_t *)psVar3)->link_word_low
 )
 ...>
 }
 
 
-@receiver_1_w_6_42_byte_6_undefined1@
+@receiver_1_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2272,15 +3076,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)psVar3)[0x3]
 + ((uw_object_hdr_t *)psVar3)->link_word_low
+|
+- *(undefined1 *)(psVar3 + 0x3)
++ ((uw_object_hdr_t *)psVar3)->link_word_low
+|
+- (undefined1)psVar3[0x3]
++ ((uw_object_hdr_t *)psVar3)->link_word_low
 )
 ...>
 }
 
 
-@receiver_1_w_6_42_store_6@
+@receiver_1_w_6_51_address_6@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)psVar3 + 0x6)
++ (char *)&((uw_object_hdr_t *)psVar3)->link_word_low
+|
+- &*(char *)((byte *)psVar3 + 0x6)
++ (char *)&((uw_object_hdr_t *)psVar3)->link_word_low
+|
+- &((char *)psVar3)[0x6]
++ (char *)&((uw_object_hdr_t *)psVar3)->link_word_low
+|
+- &*(char *)((ushort *)psVar3 + 0x3)
++ (char *)&((uw_object_hdr_t *)psVar3)->link_word_low
+|
+- &*(char *)(psVar3 + 0x3)
++ (char *)&((uw_object_hdr_t *)psVar3)->link_word_low
+)
+...>
+}
+
+
+@receiver_1_w_6_51_store_6@
+type R;
+identifier F =~ "^\(reticle_object_pick\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -2297,15 +3134,18 @@ R F(...) {
 |
 - *(char *)((ushort *)psVar3 + 0x3) = E;
 + ((uw_object_hdr_t *)psVar3)->link_word_low = (byte)E;
+|
+- *(char *)(psVar3 + 0x3) = E;
++ ((uw_object_hdr_t *)psVar3)->link_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_1_w_6_42_byte_6_char@
+@receiver_1_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2324,15 +3164,21 @@ R F(...) {
 |
 - (char)((ushort *)psVar3)[0x3]
 + (char)((uw_object_hdr_t *)psVar3)->link_word_low
+|
+- *(char *)(psVar3 + 0x3)
++ (char)((uw_object_hdr_t *)psVar3)->link_word_low
+|
+- (char)psVar3[0x3]
++ (char)((uw_object_hdr_t *)psVar3)->link_word_low
 )
 ...>
 }
 
 
-@receiver_1_w_6_42_byte_7_byte@
+@receiver_1_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2350,10 +3196,10 @@ R F(...) {
 }
 
 
-@receiver_1_w_6_42_byte_7_undefined1@
+@receiver_1_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2371,10 +3217,31 @@ R F(...) {
 }
 
 
-@receiver_1_w_6_42_store_7@
+@receiver_1_w_6_51_address_7@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)psVar3 + 0x7)
++ (char *)&((uw_object_hdr_t *)psVar3)->link_word_high
+|
+- &*(char *)((byte *)psVar3 + 0x7)
++ (char *)&((uw_object_hdr_t *)psVar3)->link_word_high
+|
+- &((char *)psVar3)[0x7]
++ (char *)&((uw_object_hdr_t *)psVar3)->link_word_high
+)
+...>
+}
+
+
+@receiver_1_w_6_51_store_7@
+type R;
+identifier F =~ "^\(reticle_object_pick\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -2393,10 +3260,10 @@ R F(...) {
 }
 
 
-@receiver_1_w_6_42_byte_7_char@
+@receiver_1_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(reticle_object_pick\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2477,7 +3344,7 @@ R F(...) {
 @receiver_2_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2493,6 +3360,48 @@ R F(...) {
 |
 - *(ushort *)((ushort *)puVar7 + 0x0)
 + ((uw_object_hdr_t *)puVar7)->type_flags
+|
+- *(ushort *)(puVar7 + 0x0)
++ ((uw_object_hdr_t *)puVar7)->type_flags
+|
+- puVar7[0x0]
++ ((uw_object_hdr_t *)puVar7)->type_flags
+|
+- *puVar7
++ ((uw_object_hdr_t *)puVar7)->type_flags
+)
+...>
+}
+
+
+@receiver_2_w_0_0_word_undefined2@
+type R;
+identifier F =~ "^\(sweep_land_on_surface\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar7 + 0x0)
++ ((uw_object_hdr_t *)puVar7)->type_flags
+|
+- *(undefined2 *)((byte *)puVar7 + 0x0)
++ ((uw_object_hdr_t *)puVar7)->type_flags
+|
+- ((undefined2 *)puVar7)[0x0]
++ ((uw_object_hdr_t *)puVar7)->type_flags
+|
+- *(undefined2 *)((undefined2 *)puVar7 + 0x0)
++ ((uw_object_hdr_t *)puVar7)->type_flags
+|
+- *(undefined2 *)(puVar7 + 0x0)
++ ((uw_object_hdr_t *)puVar7)->type_flags
+|
+- puVar7[0x0]
++ ((uw_object_hdr_t *)puVar7)->type_flags
+|
+- *puVar7
++ ((uw_object_hdr_t *)puVar7)->type_flags
 )
 ...>
 }
@@ -2501,7 +3410,7 @@ R F(...) {
 @receiver_2_w_0_0_word_short@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2517,6 +3426,9 @@ R F(...) {
 |
 - *(short *)((short *)puVar7 + 0x0)
 + ((uw_object_hdr_t *)puVar7)->type_flags_signed
+|
+- *(short *)(puVar7 + 0x0)
++ ((uw_object_hdr_t *)puVar7)->type_flags_signed
 )
 ...>
 }
@@ -2525,7 +3437,7 @@ R F(...) {
 @receiver_2_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2547,6 +3459,12 @@ R F(...) {
 |
 - *(byte *)puVar7
 + ((uw_object_hdr_t *)puVar7)->type_flags_low
+|
+- *(byte *)(puVar7 + 0x0)
++ ((uw_object_hdr_t *)puVar7)->type_flags_low
+|
+- (byte)puVar7[0x0]
++ ((uw_object_hdr_t *)puVar7)->type_flags_low
 )
 ...>
 }
@@ -2555,7 +3473,7 @@ R F(...) {
 @receiver_2_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2577,6 +3495,42 @@ R F(...) {
 |
 - *(undefined1 *)puVar7
 + ((uw_object_hdr_t *)puVar7)->type_flags_low
+|
+- *(undefined1 *)(puVar7 + 0x0)
++ ((uw_object_hdr_t *)puVar7)->type_flags_low
+|
+- (undefined1)puVar7[0x0]
++ ((uw_object_hdr_t *)puVar7)->type_flags_low
+)
+...>
+}
+
+
+@receiver_2_w_0_0_address_0@
+type R;
+identifier F =~ "^\(sweep_land_on_surface\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar7 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar7)->type_flags_low
+|
+- &*(char *)((byte *)puVar7 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar7)->type_flags_low
+|
+- &((char *)puVar7)[0x0]
++ (char *)&((uw_object_hdr_t *)puVar7)->type_flags_low
+|
+- &*(char *)((ushort *)puVar7 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar7)->type_flags_low
+|
+- &*(char *)puVar7
++ (char *)&((uw_object_hdr_t *)puVar7)->type_flags_low
+|
+- &*(char *)(puVar7 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar7)->type_flags_low
 )
 ...>
 }
@@ -2585,7 +3539,7 @@ R F(...) {
 @receiver_2_w_0_0_store_0@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -2605,6 +3559,9 @@ R F(...) {
 |
 - *(char *)puVar7 = E;
 + ((uw_object_hdr_t *)puVar7)->type_flags_low = (byte)E;
+|
+- *(char *)(puVar7 + 0x0) = E;
++ ((uw_object_hdr_t *)puVar7)->type_flags_low = (byte)E;
 )
 ...>
 }
@@ -2613,7 +3570,7 @@ R F(...) {
 @receiver_2_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2635,6 +3592,12 @@ R F(...) {
 |
 - *(char *)puVar7
 + (char)((uw_object_hdr_t *)puVar7)->type_flags_low
+|
+- *(char *)(puVar7 + 0x0)
++ (char)((uw_object_hdr_t *)puVar7)->type_flags_low
+|
+- (char)puVar7[0x0]
++ (char)((uw_object_hdr_t *)puVar7)->type_flags_low
 )
 ...>
 }
@@ -2643,7 +3606,7 @@ R F(...) {
 @receiver_2_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2664,7 +3627,7 @@ R F(...) {
 @receiver_2_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2682,10 +3645,31 @@ R F(...) {
 }
 
 
+@receiver_2_w_0_0_address_1@
+type R;
+identifier F =~ "^\(sweep_land_on_surface\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar7 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar7)->type_flags_high
+|
+- &*(char *)((byte *)puVar7 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar7)->type_flags_high
+|
+- &((char *)puVar7)[0x1]
++ (char *)&((uw_object_hdr_t *)puVar7)->type_flags_high
+)
+...>
+}
+
+
 @receiver_2_w_0_0_store_1@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -2707,7 +3691,7 @@ R F(...) {
 @receiver_2_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2725,7 +3709,7 @@ R F(...) {
 }
 
 
-@receiver_2_w_2_14_pair_char_char@
+@receiver_2_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -2740,7 +3724,7 @@ R F(...) {
 ...>
 }
 
-@receiver_2_w_2_14_pair_char_byte@
+@receiver_2_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -2755,7 +3739,7 @@ R F(...) {
 ...>
 }
 
-@receiver_2_w_2_14_pair_byte_char@
+@receiver_2_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -2770,7 +3754,7 @@ R F(...) {
 ...>
 }
 
-@receiver_2_w_2_14_pair_byte_byte@
+@receiver_2_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -2785,10 +3769,10 @@ R F(...) {
 ...>
 }
 
-@receiver_2_w_2_14_word_ushort@
+@receiver_2_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2804,15 +3788,51 @@ R F(...) {
 |
 - *(ushort *)((ushort *)puVar7 + 0x1)
 + ((uw_object_hdr_t *)puVar7)->position_word
+|
+- *(ushort *)(puVar7 + 0x1)
++ ((uw_object_hdr_t *)puVar7)->position_word
+|
+- puVar7[0x1]
++ ((uw_object_hdr_t *)puVar7)->position_word
 )
 ...>
 }
 
 
-@receiver_2_w_2_14_word_short@
+@receiver_2_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar7 + 0x2)
++ ((uw_object_hdr_t *)puVar7)->position_word
+|
+- *(undefined2 *)((byte *)puVar7 + 0x2)
++ ((uw_object_hdr_t *)puVar7)->position_word
+|
+- ((undefined2 *)puVar7)[0x1]
++ ((uw_object_hdr_t *)puVar7)->position_word
+|
+- *(undefined2 *)((undefined2 *)puVar7 + 0x1)
++ ((uw_object_hdr_t *)puVar7)->position_word
+|
+- *(undefined2 *)(puVar7 + 0x1)
++ ((uw_object_hdr_t *)puVar7)->position_word
+|
+- puVar7[0x1]
++ ((uw_object_hdr_t *)puVar7)->position_word
+)
+...>
+}
+
+
+@receiver_2_w_2_17_word_short@
+type R;
+identifier F =~ "^\(sweep_land_on_surface\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2828,15 +3848,18 @@ R F(...) {
 |
 - *(short *)((short *)puVar7 + 0x1)
 + ((uw_object_hdr_t *)puVar7)->position_word_signed
+|
+- *(short *)(puVar7 + 0x1)
++ ((uw_object_hdr_t *)puVar7)->position_word_signed
 )
 ...>
 }
 
 
-@receiver_2_w_2_14_byte_2_byte@
+@receiver_2_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2855,15 +3878,21 @@ R F(...) {
 |
 - (byte)((ushort *)puVar7)[0x1]
 + ((uw_object_hdr_t *)puVar7)->position_word_low
+|
+- *(byte *)(puVar7 + 0x1)
++ ((uw_object_hdr_t *)puVar7)->position_word_low
+|
+- (byte)puVar7[0x1]
++ ((uw_object_hdr_t *)puVar7)->position_word_low
 )
 ...>
 }
 
 
-@receiver_2_w_2_14_byte_2_undefined1@
+@receiver_2_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2882,15 +3911,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)puVar7)[0x1]
 + ((uw_object_hdr_t *)puVar7)->position_word_low
+|
+- *(undefined1 *)(puVar7 + 0x1)
++ ((uw_object_hdr_t *)puVar7)->position_word_low
+|
+- (undefined1)puVar7[0x1]
++ ((uw_object_hdr_t *)puVar7)->position_word_low
 )
 ...>
 }
 
 
-@receiver_2_w_2_14_store_2@
+@receiver_2_w_2_17_address_2@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar7 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar7)->position_word_low
+|
+- &*(char *)((byte *)puVar7 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar7)->position_word_low
+|
+- &((char *)puVar7)[0x2]
++ (char *)&((uw_object_hdr_t *)puVar7)->position_word_low
+|
+- &*(char *)((ushort *)puVar7 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar7)->position_word_low
+|
+- &*(char *)(puVar7 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar7)->position_word_low
+)
+...>
+}
+
+
+@receiver_2_w_2_17_store_2@
+type R;
+identifier F =~ "^\(sweep_land_on_surface\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -2907,15 +3969,18 @@ R F(...) {
 |
 - *(char *)((ushort *)puVar7 + 0x1) = E;
 + ((uw_object_hdr_t *)puVar7)->position_word_low = (byte)E;
+|
+- *(char *)(puVar7 + 0x1) = E;
++ ((uw_object_hdr_t *)puVar7)->position_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_2_w_2_14_byte_2_char@
+@receiver_2_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2934,15 +3999,21 @@ R F(...) {
 |
 - (char)((ushort *)puVar7)[0x1]
 + (char)((uw_object_hdr_t *)puVar7)->position_word_low
+|
+- *(char *)(puVar7 + 0x1)
++ (char)((uw_object_hdr_t *)puVar7)->position_word_low
+|
+- (char)puVar7[0x1]
++ (char)((uw_object_hdr_t *)puVar7)->position_word_low
 )
 ...>
 }
 
 
-@receiver_2_w_2_14_byte_3_byte@
+@receiver_2_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2960,10 +4031,10 @@ R F(...) {
 }
 
 
-@receiver_2_w_2_14_byte_3_undefined1@
+@receiver_2_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2981,10 +4052,31 @@ R F(...) {
 }
 
 
-@receiver_2_w_2_14_store_3@
+@receiver_2_w_2_17_address_3@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar7 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar7)->position_word_high
+|
+- &*(char *)((byte *)puVar7 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar7)->position_word_high
+|
+- &((char *)puVar7)[0x3]
++ (char *)&((uw_object_hdr_t *)puVar7)->position_word_high
+)
+...>
+}
+
+
+@receiver_2_w_2_17_store_3@
+type R;
+identifier F =~ "^\(sweep_land_on_surface\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -3003,10 +4095,10 @@ R F(...) {
 }
 
 
-@receiver_2_w_2_14_byte_3_char@
+@receiver_2_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3024,7 +4116,7 @@ R F(...) {
 }
 
 
-@receiver_2_w_4_28_pair_char_char@
+@receiver_2_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -3039,7 +4131,7 @@ R F(...) {
 ...>
 }
 
-@receiver_2_w_4_28_pair_char_byte@
+@receiver_2_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -3054,7 +4146,7 @@ R F(...) {
 ...>
 }
 
-@receiver_2_w_4_28_pair_byte_char@
+@receiver_2_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -3069,7 +4161,7 @@ R F(...) {
 ...>
 }
 
-@receiver_2_w_4_28_pair_byte_byte@
+@receiver_2_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -3084,10 +4176,10 @@ R F(...) {
 ...>
 }
 
-@receiver_2_w_4_28_word_ushort@
+@receiver_2_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3103,15 +4195,51 @@ R F(...) {
 |
 - *(ushort *)((ushort *)puVar7 + 0x2)
 + ((uw_object_hdr_t *)puVar7)->chain_word
+|
+- *(ushort *)(puVar7 + 0x2)
++ ((uw_object_hdr_t *)puVar7)->chain_word
+|
+- puVar7[0x2]
++ ((uw_object_hdr_t *)puVar7)->chain_word
 )
 ...>
 }
 
 
-@receiver_2_w_4_28_word_short@
+@receiver_2_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar7 + 0x4)
++ ((uw_object_hdr_t *)puVar7)->chain_word
+|
+- *(undefined2 *)((byte *)puVar7 + 0x4)
++ ((uw_object_hdr_t *)puVar7)->chain_word
+|
+- ((undefined2 *)puVar7)[0x2]
++ ((uw_object_hdr_t *)puVar7)->chain_word
+|
+- *(undefined2 *)((undefined2 *)puVar7 + 0x2)
++ ((uw_object_hdr_t *)puVar7)->chain_word
+|
+- *(undefined2 *)(puVar7 + 0x2)
++ ((uw_object_hdr_t *)puVar7)->chain_word
+|
+- puVar7[0x2]
++ ((uw_object_hdr_t *)puVar7)->chain_word
+)
+...>
+}
+
+
+@receiver_2_w_4_34_word_short@
+type R;
+identifier F =~ "^\(sweep_land_on_surface\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3127,15 +4255,18 @@ R F(...) {
 |
 - *(short *)((short *)puVar7 + 0x2)
 + ((uw_object_hdr_t *)puVar7)->chain_word_signed
+|
+- *(short *)(puVar7 + 0x2)
++ ((uw_object_hdr_t *)puVar7)->chain_word_signed
 )
 ...>
 }
 
 
-@receiver_2_w_4_28_byte_4_byte@
+@receiver_2_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3154,15 +4285,21 @@ R F(...) {
 |
 - (byte)((ushort *)puVar7)[0x2]
 + ((uw_object_hdr_t *)puVar7)->chain_word_low
+|
+- *(byte *)(puVar7 + 0x2)
++ ((uw_object_hdr_t *)puVar7)->chain_word_low
+|
+- (byte)puVar7[0x2]
++ ((uw_object_hdr_t *)puVar7)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_2_w_4_28_byte_4_undefined1@
+@receiver_2_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3181,15 +4318,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)puVar7)[0x2]
 + ((uw_object_hdr_t *)puVar7)->chain_word_low
+|
+- *(undefined1 *)(puVar7 + 0x2)
++ ((uw_object_hdr_t *)puVar7)->chain_word_low
+|
+- (undefined1)puVar7[0x2]
++ ((uw_object_hdr_t *)puVar7)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_2_w_4_28_store_4@
+@receiver_2_w_4_34_address_4@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar7 + 0x4)
++ (char *)&((uw_object_hdr_t *)puVar7)->chain_word_low
+|
+- &*(char *)((byte *)puVar7 + 0x4)
++ (char *)&((uw_object_hdr_t *)puVar7)->chain_word_low
+|
+- &((char *)puVar7)[0x4]
++ (char *)&((uw_object_hdr_t *)puVar7)->chain_word_low
+|
+- &*(char *)((ushort *)puVar7 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar7)->chain_word_low
+|
+- &*(char *)(puVar7 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar7)->chain_word_low
+)
+...>
+}
+
+
+@receiver_2_w_4_34_store_4@
+type R;
+identifier F =~ "^\(sweep_land_on_surface\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -3206,15 +4376,18 @@ R F(...) {
 |
 - *(char *)((ushort *)puVar7 + 0x2) = E;
 + ((uw_object_hdr_t *)puVar7)->chain_word_low = (byte)E;
+|
+- *(char *)(puVar7 + 0x2) = E;
++ ((uw_object_hdr_t *)puVar7)->chain_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_2_w_4_28_byte_4_char@
+@receiver_2_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3233,15 +4406,21 @@ R F(...) {
 |
 - (char)((ushort *)puVar7)[0x2]
 + (char)((uw_object_hdr_t *)puVar7)->chain_word_low
+|
+- *(char *)(puVar7 + 0x2)
++ (char)((uw_object_hdr_t *)puVar7)->chain_word_low
+|
+- (char)puVar7[0x2]
++ (char)((uw_object_hdr_t *)puVar7)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_2_w_4_28_byte_5_byte@
+@receiver_2_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3259,10 +4438,10 @@ R F(...) {
 }
 
 
-@receiver_2_w_4_28_byte_5_undefined1@
+@receiver_2_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3280,10 +4459,31 @@ R F(...) {
 }
 
 
-@receiver_2_w_4_28_store_5@
+@receiver_2_w_4_34_address_5@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar7 + 0x5)
++ (char *)&((uw_object_hdr_t *)puVar7)->chain_word_high
+|
+- &*(char *)((byte *)puVar7 + 0x5)
++ (char *)&((uw_object_hdr_t *)puVar7)->chain_word_high
+|
+- &((char *)puVar7)[0x5]
++ (char *)&((uw_object_hdr_t *)puVar7)->chain_word_high
+)
+...>
+}
+
+
+@receiver_2_w_4_34_store_5@
+type R;
+identifier F =~ "^\(sweep_land_on_surface\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -3302,10 +4502,10 @@ R F(...) {
 }
 
 
-@receiver_2_w_4_28_byte_5_char@
+@receiver_2_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3323,7 +4523,7 @@ R F(...) {
 }
 
 
-@receiver_2_w_6_42_pair_char_char@
+@receiver_2_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -3338,7 +4538,7 @@ R F(...) {
 ...>
 }
 
-@receiver_2_w_6_42_pair_char_byte@
+@receiver_2_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -3353,7 +4553,7 @@ R F(...) {
 ...>
 }
 
-@receiver_2_w_6_42_pair_byte_char@
+@receiver_2_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -3368,7 +4568,7 @@ R F(...) {
 ...>
 }
 
-@receiver_2_w_6_42_pair_byte_byte@
+@receiver_2_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -3383,10 +4583,10 @@ R F(...) {
 ...>
 }
 
-@receiver_2_w_6_42_word_ushort@
+@receiver_2_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3402,15 +4602,51 @@ R F(...) {
 |
 - *(ushort *)((ushort *)puVar7 + 0x3)
 + ((uw_object_hdr_t *)puVar7)->link_word
+|
+- *(ushort *)(puVar7 + 0x3)
++ ((uw_object_hdr_t *)puVar7)->link_word
+|
+- puVar7[0x3]
++ ((uw_object_hdr_t *)puVar7)->link_word
 )
 ...>
 }
 
 
-@receiver_2_w_6_42_word_short@
+@receiver_2_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar7 + 0x6)
++ ((uw_object_hdr_t *)puVar7)->link_word
+|
+- *(undefined2 *)((byte *)puVar7 + 0x6)
++ ((uw_object_hdr_t *)puVar7)->link_word
+|
+- ((undefined2 *)puVar7)[0x3]
++ ((uw_object_hdr_t *)puVar7)->link_word
+|
+- *(undefined2 *)((undefined2 *)puVar7 + 0x3)
++ ((uw_object_hdr_t *)puVar7)->link_word
+|
+- *(undefined2 *)(puVar7 + 0x3)
++ ((uw_object_hdr_t *)puVar7)->link_word
+|
+- puVar7[0x3]
++ ((uw_object_hdr_t *)puVar7)->link_word
+)
+...>
+}
+
+
+@receiver_2_w_6_51_word_short@
+type R;
+identifier F =~ "^\(sweep_land_on_surface\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3426,15 +4662,18 @@ R F(...) {
 |
 - *(short *)((short *)puVar7 + 0x3)
 + ((uw_object_hdr_t *)puVar7)->link_word_signed
+|
+- *(short *)(puVar7 + 0x3)
++ ((uw_object_hdr_t *)puVar7)->link_word_signed
 )
 ...>
 }
 
 
-@receiver_2_w_6_42_byte_6_byte@
+@receiver_2_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3453,15 +4692,21 @@ R F(...) {
 |
 - (byte)((ushort *)puVar7)[0x3]
 + ((uw_object_hdr_t *)puVar7)->link_word_low
+|
+- *(byte *)(puVar7 + 0x3)
++ ((uw_object_hdr_t *)puVar7)->link_word_low
+|
+- (byte)puVar7[0x3]
++ ((uw_object_hdr_t *)puVar7)->link_word_low
 )
 ...>
 }
 
 
-@receiver_2_w_6_42_byte_6_undefined1@
+@receiver_2_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3480,15 +4725,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)puVar7)[0x3]
 + ((uw_object_hdr_t *)puVar7)->link_word_low
+|
+- *(undefined1 *)(puVar7 + 0x3)
++ ((uw_object_hdr_t *)puVar7)->link_word_low
+|
+- (undefined1)puVar7[0x3]
++ ((uw_object_hdr_t *)puVar7)->link_word_low
 )
 ...>
 }
 
 
-@receiver_2_w_6_42_store_6@
+@receiver_2_w_6_51_address_6@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar7 + 0x6)
++ (char *)&((uw_object_hdr_t *)puVar7)->link_word_low
+|
+- &*(char *)((byte *)puVar7 + 0x6)
++ (char *)&((uw_object_hdr_t *)puVar7)->link_word_low
+|
+- &((char *)puVar7)[0x6]
++ (char *)&((uw_object_hdr_t *)puVar7)->link_word_low
+|
+- &*(char *)((ushort *)puVar7 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar7)->link_word_low
+|
+- &*(char *)(puVar7 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar7)->link_word_low
+)
+...>
+}
+
+
+@receiver_2_w_6_51_store_6@
+type R;
+identifier F =~ "^\(sweep_land_on_surface\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -3505,15 +4783,18 @@ R F(...) {
 |
 - *(char *)((ushort *)puVar7 + 0x3) = E;
 + ((uw_object_hdr_t *)puVar7)->link_word_low = (byte)E;
+|
+- *(char *)(puVar7 + 0x3) = E;
++ ((uw_object_hdr_t *)puVar7)->link_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_2_w_6_42_byte_6_char@
+@receiver_2_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3532,15 +4813,21 @@ R F(...) {
 |
 - (char)((ushort *)puVar7)[0x3]
 + (char)((uw_object_hdr_t *)puVar7)->link_word_low
+|
+- *(char *)(puVar7 + 0x3)
++ (char)((uw_object_hdr_t *)puVar7)->link_word_low
+|
+- (char)puVar7[0x3]
++ (char)((uw_object_hdr_t *)puVar7)->link_word_low
 )
 ...>
 }
 
 
-@receiver_2_w_6_42_byte_7_byte@
+@receiver_2_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3558,10 +4845,10 @@ R F(...) {
 }
 
 
-@receiver_2_w_6_42_byte_7_undefined1@
+@receiver_2_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3579,10 +4866,31 @@ R F(...) {
 }
 
 
-@receiver_2_w_6_42_store_7@
+@receiver_2_w_6_51_address_7@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar7 + 0x7)
++ (char *)&((uw_object_hdr_t *)puVar7)->link_word_high
+|
+- &*(char *)((byte *)puVar7 + 0x7)
++ (char *)&((uw_object_hdr_t *)puVar7)->link_word_high
+|
+- &((char *)puVar7)[0x7]
++ (char *)&((uw_object_hdr_t *)puVar7)->link_word_high
+)
+...>
+}
+
+
+@receiver_2_w_6_51_store_7@
+type R;
+identifier F =~ "^\(sweep_land_on_surface\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -3601,10 +4909,10 @@ R F(...) {
 }
 
 
-@receiver_2_w_6_42_byte_7_char@
+@receiver_2_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(sweep_land_on_surface\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3685,7 +4993,7 @@ R F(...) {
 @receiver_3_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3706,10 +5014,34 @@ R F(...) {
 }
 
 
+@receiver_3_w_0_0_word_undefined2@
+type R;
+identifier F =~ "^\(find_nearby_door_in_candidates\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)uVar4 + 0x0)
++ ((uw_object_hdr_t *)uVar4)->type_flags
+|
+- *(undefined2 *)((byte *)uVar4 + 0x0)
++ ((uw_object_hdr_t *)uVar4)->type_flags
+|
+- ((undefined2 *)uVar4)[0x0]
++ ((uw_object_hdr_t *)uVar4)->type_flags
+|
+- *(undefined2 *)((undefined2 *)uVar4 + 0x0)
++ ((uw_object_hdr_t *)uVar4)->type_flags
+)
+...>
+}
+
+
 @receiver_3_w_0_0_word_short@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3733,7 +5065,7 @@ R F(...) {
 @receiver_3_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3763,7 +5095,7 @@ R F(...) {
 @receiver_3_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3790,10 +5122,37 @@ R F(...) {
 }
 
 
+@receiver_3_w_0_0_address_0@
+type R;
+identifier F =~ "^\(find_nearby_door_in_candidates\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)uVar4 + 0x0)
++ (char *)&((uw_object_hdr_t *)uVar4)->type_flags_low
+|
+- &*(char *)((byte *)uVar4 + 0x0)
++ (char *)&((uw_object_hdr_t *)uVar4)->type_flags_low
+|
+- &((char *)uVar4)[0x0]
++ (char *)&((uw_object_hdr_t *)uVar4)->type_flags_low
+|
+- &*(char *)((ushort *)uVar4 + 0x0)
++ (char *)&((uw_object_hdr_t *)uVar4)->type_flags_low
+|
+- &*(char *)uVar4
++ (char *)&((uw_object_hdr_t *)uVar4)->type_flags_low
+)
+...>
+}
+
+
 @receiver_3_w_0_0_store_0@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -3821,7 +5180,7 @@ R F(...) {
 @receiver_3_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3851,7 +5210,7 @@ R F(...) {
 @receiver_3_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3872,7 +5231,7 @@ R F(...) {
 @receiver_3_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3890,10 +5249,31 @@ R F(...) {
 }
 
 
+@receiver_3_w_0_0_address_1@
+type R;
+identifier F =~ "^\(find_nearby_door_in_candidates\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)uVar4 + 0x1)
++ (char *)&((uw_object_hdr_t *)uVar4)->type_flags_high
+|
+- &*(char *)((byte *)uVar4 + 0x1)
++ (char *)&((uw_object_hdr_t *)uVar4)->type_flags_high
+|
+- &((char *)uVar4)[0x1]
++ (char *)&((uw_object_hdr_t *)uVar4)->type_flags_high
+)
+...>
+}
+
+
 @receiver_3_w_0_0_store_1@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -3915,7 +5295,7 @@ R F(...) {
 @receiver_3_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3933,7 +5313,7 @@ R F(...) {
 }
 
 
-@receiver_3_w_2_14_pair_char_char@
+@receiver_3_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -3948,7 +5328,7 @@ R F(...) {
 ...>
 }
 
-@receiver_3_w_2_14_pair_char_byte@
+@receiver_3_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -3963,7 +5343,7 @@ R F(...) {
 ...>
 }
 
-@receiver_3_w_2_14_pair_byte_char@
+@receiver_3_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -3978,7 +5358,7 @@ R F(...) {
 ...>
 }
 
-@receiver_3_w_2_14_pair_byte_byte@
+@receiver_3_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -3993,10 +5373,10 @@ R F(...) {
 ...>
 }
 
-@receiver_3_w_2_14_word_ushort@
+@receiver_3_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4017,10 +5397,34 @@ R F(...) {
 }
 
 
-@receiver_3_w_2_14_word_short@
+@receiver_3_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)uVar4 + 0x2)
++ ((uw_object_hdr_t *)uVar4)->position_word
+|
+- *(undefined2 *)((byte *)uVar4 + 0x2)
++ ((uw_object_hdr_t *)uVar4)->position_word
+|
+- ((undefined2 *)uVar4)[0x1]
++ ((uw_object_hdr_t *)uVar4)->position_word
+|
+- *(undefined2 *)((undefined2 *)uVar4 + 0x1)
++ ((uw_object_hdr_t *)uVar4)->position_word
+)
+...>
+}
+
+
+@receiver_3_w_2_17_word_short@
+type R;
+identifier F =~ "^\(find_nearby_door_in_candidates\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4041,10 +5445,10 @@ R F(...) {
 }
 
 
-@receiver_3_w_2_14_byte_2_byte@
+@receiver_3_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4068,10 +5472,10 @@ R F(...) {
 }
 
 
-@receiver_3_w_2_14_byte_2_undefined1@
+@receiver_3_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4095,10 +5499,34 @@ R F(...) {
 }
 
 
-@receiver_3_w_2_14_store_2@
+@receiver_3_w_2_17_address_2@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)uVar4 + 0x2)
++ (char *)&((uw_object_hdr_t *)uVar4)->position_word_low
+|
+- &*(char *)((byte *)uVar4 + 0x2)
++ (char *)&((uw_object_hdr_t *)uVar4)->position_word_low
+|
+- &((char *)uVar4)[0x2]
++ (char *)&((uw_object_hdr_t *)uVar4)->position_word_low
+|
+- &*(char *)((ushort *)uVar4 + 0x1)
++ (char *)&((uw_object_hdr_t *)uVar4)->position_word_low
+)
+...>
+}
+
+
+@receiver_3_w_2_17_store_2@
+type R;
+identifier F =~ "^\(find_nearby_door_in_candidates\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -4120,10 +5548,10 @@ R F(...) {
 }
 
 
-@receiver_3_w_2_14_byte_2_char@
+@receiver_3_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4147,10 +5575,10 @@ R F(...) {
 }
 
 
-@receiver_3_w_2_14_byte_3_byte@
+@receiver_3_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4168,10 +5596,10 @@ R F(...) {
 }
 
 
-@receiver_3_w_2_14_byte_3_undefined1@
+@receiver_3_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4189,10 +5617,31 @@ R F(...) {
 }
 
 
-@receiver_3_w_2_14_store_3@
+@receiver_3_w_2_17_address_3@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)uVar4 + 0x3)
++ (char *)&((uw_object_hdr_t *)uVar4)->position_word_high
+|
+- &*(char *)((byte *)uVar4 + 0x3)
++ (char *)&((uw_object_hdr_t *)uVar4)->position_word_high
+|
+- &((char *)uVar4)[0x3]
++ (char *)&((uw_object_hdr_t *)uVar4)->position_word_high
+)
+...>
+}
+
+
+@receiver_3_w_2_17_store_3@
+type R;
+identifier F =~ "^\(find_nearby_door_in_candidates\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -4211,10 +5660,10 @@ R F(...) {
 }
 
 
-@receiver_3_w_2_14_byte_3_char@
+@receiver_3_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4232,7 +5681,7 @@ R F(...) {
 }
 
 
-@receiver_3_w_4_28_pair_char_char@
+@receiver_3_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -4247,7 +5696,7 @@ R F(...) {
 ...>
 }
 
-@receiver_3_w_4_28_pair_char_byte@
+@receiver_3_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -4262,7 +5711,7 @@ R F(...) {
 ...>
 }
 
-@receiver_3_w_4_28_pair_byte_char@
+@receiver_3_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -4277,7 +5726,7 @@ R F(...) {
 ...>
 }
 
-@receiver_3_w_4_28_pair_byte_byte@
+@receiver_3_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -4292,10 +5741,10 @@ R F(...) {
 ...>
 }
 
-@receiver_3_w_4_28_word_ushort@
+@receiver_3_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4316,10 +5765,34 @@ R F(...) {
 }
 
 
-@receiver_3_w_4_28_word_short@
+@receiver_3_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)uVar4 + 0x4)
++ ((uw_object_hdr_t *)uVar4)->chain_word
+|
+- *(undefined2 *)((byte *)uVar4 + 0x4)
++ ((uw_object_hdr_t *)uVar4)->chain_word
+|
+- ((undefined2 *)uVar4)[0x2]
++ ((uw_object_hdr_t *)uVar4)->chain_word
+|
+- *(undefined2 *)((undefined2 *)uVar4 + 0x2)
++ ((uw_object_hdr_t *)uVar4)->chain_word
+)
+...>
+}
+
+
+@receiver_3_w_4_34_word_short@
+type R;
+identifier F =~ "^\(find_nearby_door_in_candidates\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4340,10 +5813,10 @@ R F(...) {
 }
 
 
-@receiver_3_w_4_28_byte_4_byte@
+@receiver_3_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4367,10 +5840,10 @@ R F(...) {
 }
 
 
-@receiver_3_w_4_28_byte_4_undefined1@
+@receiver_3_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4394,10 +5867,34 @@ R F(...) {
 }
 
 
-@receiver_3_w_4_28_store_4@
+@receiver_3_w_4_34_address_4@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)uVar4 + 0x4)
++ (char *)&((uw_object_hdr_t *)uVar4)->chain_word_low
+|
+- &*(char *)((byte *)uVar4 + 0x4)
++ (char *)&((uw_object_hdr_t *)uVar4)->chain_word_low
+|
+- &((char *)uVar4)[0x4]
++ (char *)&((uw_object_hdr_t *)uVar4)->chain_word_low
+|
+- &*(char *)((ushort *)uVar4 + 0x2)
++ (char *)&((uw_object_hdr_t *)uVar4)->chain_word_low
+)
+...>
+}
+
+
+@receiver_3_w_4_34_store_4@
+type R;
+identifier F =~ "^\(find_nearby_door_in_candidates\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -4419,10 +5916,10 @@ R F(...) {
 }
 
 
-@receiver_3_w_4_28_byte_4_char@
+@receiver_3_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4446,10 +5943,10 @@ R F(...) {
 }
 
 
-@receiver_3_w_4_28_byte_5_byte@
+@receiver_3_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4467,10 +5964,10 @@ R F(...) {
 }
 
 
-@receiver_3_w_4_28_byte_5_undefined1@
+@receiver_3_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4488,10 +5985,31 @@ R F(...) {
 }
 
 
-@receiver_3_w_4_28_store_5@
+@receiver_3_w_4_34_address_5@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)uVar4 + 0x5)
++ (char *)&((uw_object_hdr_t *)uVar4)->chain_word_high
+|
+- &*(char *)((byte *)uVar4 + 0x5)
++ (char *)&((uw_object_hdr_t *)uVar4)->chain_word_high
+|
+- &((char *)uVar4)[0x5]
++ (char *)&((uw_object_hdr_t *)uVar4)->chain_word_high
+)
+...>
+}
+
+
+@receiver_3_w_4_34_store_5@
+type R;
+identifier F =~ "^\(find_nearby_door_in_candidates\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -4510,10 +6028,10 @@ R F(...) {
 }
 
 
-@receiver_3_w_4_28_byte_5_char@
+@receiver_3_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4531,7 +6049,7 @@ R F(...) {
 }
 
 
-@receiver_3_w_6_42_pair_char_char@
+@receiver_3_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -4546,7 +6064,7 @@ R F(...) {
 ...>
 }
 
-@receiver_3_w_6_42_pair_char_byte@
+@receiver_3_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -4561,7 +6079,7 @@ R F(...) {
 ...>
 }
 
-@receiver_3_w_6_42_pair_byte_char@
+@receiver_3_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -4576,7 +6094,7 @@ R F(...) {
 ...>
 }
 
-@receiver_3_w_6_42_pair_byte_byte@
+@receiver_3_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -4591,10 +6109,10 @@ R F(...) {
 ...>
 }
 
-@receiver_3_w_6_42_word_ushort@
+@receiver_3_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4615,10 +6133,34 @@ R F(...) {
 }
 
 
-@receiver_3_w_6_42_word_short@
+@receiver_3_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)uVar4 + 0x6)
++ ((uw_object_hdr_t *)uVar4)->link_word
+|
+- *(undefined2 *)((byte *)uVar4 + 0x6)
++ ((uw_object_hdr_t *)uVar4)->link_word
+|
+- ((undefined2 *)uVar4)[0x3]
++ ((uw_object_hdr_t *)uVar4)->link_word
+|
+- *(undefined2 *)((undefined2 *)uVar4 + 0x3)
++ ((uw_object_hdr_t *)uVar4)->link_word
+)
+...>
+}
+
+
+@receiver_3_w_6_51_word_short@
+type R;
+identifier F =~ "^\(find_nearby_door_in_candidates\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4639,10 +6181,10 @@ R F(...) {
 }
 
 
-@receiver_3_w_6_42_byte_6_byte@
+@receiver_3_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4666,10 +6208,10 @@ R F(...) {
 }
 
 
-@receiver_3_w_6_42_byte_6_undefined1@
+@receiver_3_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4693,10 +6235,34 @@ R F(...) {
 }
 
 
-@receiver_3_w_6_42_store_6@
+@receiver_3_w_6_51_address_6@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)uVar4 + 0x6)
++ (char *)&((uw_object_hdr_t *)uVar4)->link_word_low
+|
+- &*(char *)((byte *)uVar4 + 0x6)
++ (char *)&((uw_object_hdr_t *)uVar4)->link_word_low
+|
+- &((char *)uVar4)[0x6]
++ (char *)&((uw_object_hdr_t *)uVar4)->link_word_low
+|
+- &*(char *)((ushort *)uVar4 + 0x3)
++ (char *)&((uw_object_hdr_t *)uVar4)->link_word_low
+)
+...>
+}
+
+
+@receiver_3_w_6_51_store_6@
+type R;
+identifier F =~ "^\(find_nearby_door_in_candidates\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -4718,10 +6284,10 @@ R F(...) {
 }
 
 
-@receiver_3_w_6_42_byte_6_char@
+@receiver_3_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4745,10 +6311,10 @@ R F(...) {
 }
 
 
-@receiver_3_w_6_42_byte_7_byte@
+@receiver_3_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4766,10 +6332,10 @@ R F(...) {
 }
 
 
-@receiver_3_w_6_42_byte_7_undefined1@
+@receiver_3_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4787,10 +6353,31 @@ R F(...) {
 }
 
 
-@receiver_3_w_6_42_store_7@
+@receiver_3_w_6_51_address_7@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)uVar4 + 0x7)
++ (char *)&((uw_object_hdr_t *)uVar4)->link_word_high
+|
+- &*(char *)((byte *)uVar4 + 0x7)
++ (char *)&((uw_object_hdr_t *)uVar4)->link_word_high
+|
+- &((char *)uVar4)[0x7]
++ (char *)&((uw_object_hdr_t *)uVar4)->link_word_high
+)
+...>
+}
+
+
+@receiver_3_w_6_51_store_7@
+type R;
+identifier F =~ "^\(find_nearby_door_in_candidates\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -4809,10 +6396,10 @@ R F(...) {
 }
 
 
-@receiver_3_w_6_42_byte_7_char@
+@receiver_3_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(find_nearby_door_in_candidates\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4893,7 +6480,7 @@ R F(...) {
 @receiver_4_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4914,10 +6501,34 @@ R F(...) {
 }
 
 
+@receiver_4_w_0_0_word_undefined2@
+type R;
+identifier F =~ "^\(get_first_nearby_candidate_object\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)uVar1 + 0x0)
++ ((uw_object_hdr_t *)uVar1)->type_flags
+|
+- *(undefined2 *)((byte *)uVar1 + 0x0)
++ ((uw_object_hdr_t *)uVar1)->type_flags
+|
+- ((undefined2 *)uVar1)[0x0]
++ ((uw_object_hdr_t *)uVar1)->type_flags
+|
+- *(undefined2 *)((undefined2 *)uVar1 + 0x0)
++ ((uw_object_hdr_t *)uVar1)->type_flags
+)
+...>
+}
+
+
 @receiver_4_w_0_0_word_short@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4941,7 +6552,7 @@ R F(...) {
 @receiver_4_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4971,7 +6582,7 @@ R F(...) {
 @receiver_4_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4998,10 +6609,37 @@ R F(...) {
 }
 
 
+@receiver_4_w_0_0_address_0@
+type R;
+identifier F =~ "^\(get_first_nearby_candidate_object\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)uVar1 + 0x0)
++ (char *)&((uw_object_hdr_t *)uVar1)->type_flags_low
+|
+- &*(char *)((byte *)uVar1 + 0x0)
++ (char *)&((uw_object_hdr_t *)uVar1)->type_flags_low
+|
+- &((char *)uVar1)[0x0]
++ (char *)&((uw_object_hdr_t *)uVar1)->type_flags_low
+|
+- &*(char *)((ushort *)uVar1 + 0x0)
++ (char *)&((uw_object_hdr_t *)uVar1)->type_flags_low
+|
+- &*(char *)uVar1
++ (char *)&((uw_object_hdr_t *)uVar1)->type_flags_low
+)
+...>
+}
+
+
 @receiver_4_w_0_0_store_0@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -5029,7 +6667,7 @@ R F(...) {
 @receiver_4_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5059,7 +6697,7 @@ R F(...) {
 @receiver_4_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5080,7 +6718,7 @@ R F(...) {
 @receiver_4_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5098,10 +6736,31 @@ R F(...) {
 }
 
 
+@receiver_4_w_0_0_address_1@
+type R;
+identifier F =~ "^\(get_first_nearby_candidate_object\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)uVar1 + 0x1)
++ (char *)&((uw_object_hdr_t *)uVar1)->type_flags_high
+|
+- &*(char *)((byte *)uVar1 + 0x1)
++ (char *)&((uw_object_hdr_t *)uVar1)->type_flags_high
+|
+- &((char *)uVar1)[0x1]
++ (char *)&((uw_object_hdr_t *)uVar1)->type_flags_high
+)
+...>
+}
+
+
 @receiver_4_w_0_0_store_1@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -5123,7 +6782,7 @@ R F(...) {
 @receiver_4_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5141,7 +6800,7 @@ R F(...) {
 }
 
 
-@receiver_4_w_2_14_pair_char_char@
+@receiver_4_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -5156,7 +6815,7 @@ R F(...) {
 ...>
 }
 
-@receiver_4_w_2_14_pair_char_byte@
+@receiver_4_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -5171,7 +6830,7 @@ R F(...) {
 ...>
 }
 
-@receiver_4_w_2_14_pair_byte_char@
+@receiver_4_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -5186,7 +6845,7 @@ R F(...) {
 ...>
 }
 
-@receiver_4_w_2_14_pair_byte_byte@
+@receiver_4_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -5201,10 +6860,10 @@ R F(...) {
 ...>
 }
 
-@receiver_4_w_2_14_word_ushort@
+@receiver_4_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5225,10 +6884,34 @@ R F(...) {
 }
 
 
-@receiver_4_w_2_14_word_short@
+@receiver_4_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)uVar1 + 0x2)
++ ((uw_object_hdr_t *)uVar1)->position_word
+|
+- *(undefined2 *)((byte *)uVar1 + 0x2)
++ ((uw_object_hdr_t *)uVar1)->position_word
+|
+- ((undefined2 *)uVar1)[0x1]
++ ((uw_object_hdr_t *)uVar1)->position_word
+|
+- *(undefined2 *)((undefined2 *)uVar1 + 0x1)
++ ((uw_object_hdr_t *)uVar1)->position_word
+)
+...>
+}
+
+
+@receiver_4_w_2_17_word_short@
+type R;
+identifier F =~ "^\(get_first_nearby_candidate_object\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5249,10 +6932,10 @@ R F(...) {
 }
 
 
-@receiver_4_w_2_14_byte_2_byte@
+@receiver_4_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5276,10 +6959,10 @@ R F(...) {
 }
 
 
-@receiver_4_w_2_14_byte_2_undefined1@
+@receiver_4_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5303,10 +6986,34 @@ R F(...) {
 }
 
 
-@receiver_4_w_2_14_store_2@
+@receiver_4_w_2_17_address_2@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)uVar1 + 0x2)
++ (char *)&((uw_object_hdr_t *)uVar1)->position_word_low
+|
+- &*(char *)((byte *)uVar1 + 0x2)
++ (char *)&((uw_object_hdr_t *)uVar1)->position_word_low
+|
+- &((char *)uVar1)[0x2]
++ (char *)&((uw_object_hdr_t *)uVar1)->position_word_low
+|
+- &*(char *)((ushort *)uVar1 + 0x1)
++ (char *)&((uw_object_hdr_t *)uVar1)->position_word_low
+)
+...>
+}
+
+
+@receiver_4_w_2_17_store_2@
+type R;
+identifier F =~ "^\(get_first_nearby_candidate_object\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -5328,10 +7035,10 @@ R F(...) {
 }
 
 
-@receiver_4_w_2_14_byte_2_char@
+@receiver_4_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5355,10 +7062,10 @@ R F(...) {
 }
 
 
-@receiver_4_w_2_14_byte_3_byte@
+@receiver_4_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5376,10 +7083,10 @@ R F(...) {
 }
 
 
-@receiver_4_w_2_14_byte_3_undefined1@
+@receiver_4_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5397,10 +7104,31 @@ R F(...) {
 }
 
 
-@receiver_4_w_2_14_store_3@
+@receiver_4_w_2_17_address_3@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)uVar1 + 0x3)
++ (char *)&((uw_object_hdr_t *)uVar1)->position_word_high
+|
+- &*(char *)((byte *)uVar1 + 0x3)
++ (char *)&((uw_object_hdr_t *)uVar1)->position_word_high
+|
+- &((char *)uVar1)[0x3]
++ (char *)&((uw_object_hdr_t *)uVar1)->position_word_high
+)
+...>
+}
+
+
+@receiver_4_w_2_17_store_3@
+type R;
+identifier F =~ "^\(get_first_nearby_candidate_object\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -5419,10 +7147,10 @@ R F(...) {
 }
 
 
-@receiver_4_w_2_14_byte_3_char@
+@receiver_4_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5440,7 +7168,7 @@ R F(...) {
 }
 
 
-@receiver_4_w_4_28_pair_char_char@
+@receiver_4_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -5455,7 +7183,7 @@ R F(...) {
 ...>
 }
 
-@receiver_4_w_4_28_pair_char_byte@
+@receiver_4_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -5470,7 +7198,7 @@ R F(...) {
 ...>
 }
 
-@receiver_4_w_4_28_pair_byte_char@
+@receiver_4_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -5485,7 +7213,7 @@ R F(...) {
 ...>
 }
 
-@receiver_4_w_4_28_pair_byte_byte@
+@receiver_4_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -5500,10 +7228,10 @@ R F(...) {
 ...>
 }
 
-@receiver_4_w_4_28_word_ushort@
+@receiver_4_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5524,10 +7252,34 @@ R F(...) {
 }
 
 
-@receiver_4_w_4_28_word_short@
+@receiver_4_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)uVar1 + 0x4)
++ ((uw_object_hdr_t *)uVar1)->chain_word
+|
+- *(undefined2 *)((byte *)uVar1 + 0x4)
++ ((uw_object_hdr_t *)uVar1)->chain_word
+|
+- ((undefined2 *)uVar1)[0x2]
++ ((uw_object_hdr_t *)uVar1)->chain_word
+|
+- *(undefined2 *)((undefined2 *)uVar1 + 0x2)
++ ((uw_object_hdr_t *)uVar1)->chain_word
+)
+...>
+}
+
+
+@receiver_4_w_4_34_word_short@
+type R;
+identifier F =~ "^\(get_first_nearby_candidate_object\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5548,10 +7300,10 @@ R F(...) {
 }
 
 
-@receiver_4_w_4_28_byte_4_byte@
+@receiver_4_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5575,10 +7327,10 @@ R F(...) {
 }
 
 
-@receiver_4_w_4_28_byte_4_undefined1@
+@receiver_4_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5602,10 +7354,34 @@ R F(...) {
 }
 
 
-@receiver_4_w_4_28_store_4@
+@receiver_4_w_4_34_address_4@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)uVar1 + 0x4)
++ (char *)&((uw_object_hdr_t *)uVar1)->chain_word_low
+|
+- &*(char *)((byte *)uVar1 + 0x4)
++ (char *)&((uw_object_hdr_t *)uVar1)->chain_word_low
+|
+- &((char *)uVar1)[0x4]
++ (char *)&((uw_object_hdr_t *)uVar1)->chain_word_low
+|
+- &*(char *)((ushort *)uVar1 + 0x2)
++ (char *)&((uw_object_hdr_t *)uVar1)->chain_word_low
+)
+...>
+}
+
+
+@receiver_4_w_4_34_store_4@
+type R;
+identifier F =~ "^\(get_first_nearby_candidate_object\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -5627,10 +7403,10 @@ R F(...) {
 }
 
 
-@receiver_4_w_4_28_byte_4_char@
+@receiver_4_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5654,10 +7430,10 @@ R F(...) {
 }
 
 
-@receiver_4_w_4_28_byte_5_byte@
+@receiver_4_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5675,10 +7451,10 @@ R F(...) {
 }
 
 
-@receiver_4_w_4_28_byte_5_undefined1@
+@receiver_4_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5696,10 +7472,31 @@ R F(...) {
 }
 
 
-@receiver_4_w_4_28_store_5@
+@receiver_4_w_4_34_address_5@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)uVar1 + 0x5)
++ (char *)&((uw_object_hdr_t *)uVar1)->chain_word_high
+|
+- &*(char *)((byte *)uVar1 + 0x5)
++ (char *)&((uw_object_hdr_t *)uVar1)->chain_word_high
+|
+- &((char *)uVar1)[0x5]
++ (char *)&((uw_object_hdr_t *)uVar1)->chain_word_high
+)
+...>
+}
+
+
+@receiver_4_w_4_34_store_5@
+type R;
+identifier F =~ "^\(get_first_nearby_candidate_object\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -5718,10 +7515,10 @@ R F(...) {
 }
 
 
-@receiver_4_w_4_28_byte_5_char@
+@receiver_4_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5739,7 +7536,7 @@ R F(...) {
 }
 
 
-@receiver_4_w_6_42_pair_char_char@
+@receiver_4_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -5754,7 +7551,7 @@ R F(...) {
 ...>
 }
 
-@receiver_4_w_6_42_pair_char_byte@
+@receiver_4_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -5769,7 +7566,7 @@ R F(...) {
 ...>
 }
 
-@receiver_4_w_6_42_pair_byte_char@
+@receiver_4_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -5784,7 +7581,7 @@ R F(...) {
 ...>
 }
 
-@receiver_4_w_6_42_pair_byte_byte@
+@receiver_4_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -5799,10 +7596,10 @@ R F(...) {
 ...>
 }
 
-@receiver_4_w_6_42_word_ushort@
+@receiver_4_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5823,10 +7620,34 @@ R F(...) {
 }
 
 
-@receiver_4_w_6_42_word_short@
+@receiver_4_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)uVar1 + 0x6)
++ ((uw_object_hdr_t *)uVar1)->link_word
+|
+- *(undefined2 *)((byte *)uVar1 + 0x6)
++ ((uw_object_hdr_t *)uVar1)->link_word
+|
+- ((undefined2 *)uVar1)[0x3]
++ ((uw_object_hdr_t *)uVar1)->link_word
+|
+- *(undefined2 *)((undefined2 *)uVar1 + 0x3)
++ ((uw_object_hdr_t *)uVar1)->link_word
+)
+...>
+}
+
+
+@receiver_4_w_6_51_word_short@
+type R;
+identifier F =~ "^\(get_first_nearby_candidate_object\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5847,10 +7668,10 @@ R F(...) {
 }
 
 
-@receiver_4_w_6_42_byte_6_byte@
+@receiver_4_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5874,10 +7695,10 @@ R F(...) {
 }
 
 
-@receiver_4_w_6_42_byte_6_undefined1@
+@receiver_4_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5901,10 +7722,34 @@ R F(...) {
 }
 
 
-@receiver_4_w_6_42_store_6@
+@receiver_4_w_6_51_address_6@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)uVar1 + 0x6)
++ (char *)&((uw_object_hdr_t *)uVar1)->link_word_low
+|
+- &*(char *)((byte *)uVar1 + 0x6)
++ (char *)&((uw_object_hdr_t *)uVar1)->link_word_low
+|
+- &((char *)uVar1)[0x6]
++ (char *)&((uw_object_hdr_t *)uVar1)->link_word_low
+|
+- &*(char *)((ushort *)uVar1 + 0x3)
++ (char *)&((uw_object_hdr_t *)uVar1)->link_word_low
+)
+...>
+}
+
+
+@receiver_4_w_6_51_store_6@
+type R;
+identifier F =~ "^\(get_first_nearby_candidate_object\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -5926,10 +7771,10 @@ R F(...) {
 }
 
 
-@receiver_4_w_6_42_byte_6_char@
+@receiver_4_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5953,10 +7798,10 @@ R F(...) {
 }
 
 
-@receiver_4_w_6_42_byte_7_byte@
+@receiver_4_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5974,10 +7819,10 @@ R F(...) {
 }
 
 
-@receiver_4_w_6_42_byte_7_undefined1@
+@receiver_4_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5995,10 +7840,31 @@ R F(...) {
 }
 
 
-@receiver_4_w_6_42_store_7@
+@receiver_4_w_6_51_address_7@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)uVar1 + 0x7)
++ (char *)&((uw_object_hdr_t *)uVar1)->link_word_high
+|
+- &*(char *)((byte *)uVar1 + 0x7)
++ (char *)&((uw_object_hdr_t *)uVar1)->link_word_high
+|
+- &((char *)uVar1)[0x7]
++ (char *)&((uw_object_hdr_t *)uVar1)->link_word_high
+)
+...>
+}
+
+
+@receiver_4_w_6_51_store_7@
+type R;
+identifier F =~ "^\(get_first_nearby_candidate_object\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -6017,10 +7883,10 @@ R F(...) {
 }
 
 
-@receiver_4_w_6_42_byte_7_char@
+@receiver_4_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(get_first_nearby_candidate_object\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...

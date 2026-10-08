@@ -544,535 +544,6 @@ typedef ushort, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(ushort *)((char *)puVar4 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
-|
-- ((ushort *)puVar4)[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
-|
-- *(ushort *)puVar4 & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
-|
-- *(ushort *)(puVar4 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
-|
-- CONCAT11(puVar4[1], *puVar4) & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
-|
-- CONCAT11(puVar4[1], puVar4[0]) & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
-)
-...>
-}
-
-@field_1_flags_res@
-type R;
-identifier F =~ "^\(emit_tile_features\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)puVar4 + 0x0) >> 9) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->flags_res
-|
-- (*(ushort *)((char *)puVar4 + 0x0) & 0xe00) >> 9
-+ ((uw_object_hdr_t *)puVar4)->flags_res
-|
-- (((ushort *)puVar4)[0] >> 9) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->flags_res
-|
-- (((ushort *)puVar4)[0] & 0xe00) >> 9
-+ ((uw_object_hdr_t *)puVar4)->flags_res
-|
-- (*(ushort *)puVar4 >> 9) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->flags_res
-|
-- (*(ushort *)puVar4 & 0xe00) >> 9
-+ ((uw_object_hdr_t *)puVar4)->flags_res
-|
-- (*(ushort *)(puVar4 + 0x0) >> 9) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->flags_res
-|
-- (*(ushort *)(puVar4 + 0x0) & 0xe00) >> 9
-+ ((uw_object_hdr_t *)puVar4)->flags_res
-|
-- (CONCAT11(puVar4[1], *puVar4) >> 9) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->flags_res
-|
-- (CONCAT11(puVar4[1], *puVar4) & 0xe00) >> 9
-+ ((uw_object_hdr_t *)puVar4)->flags_res
-|
-- (CONCAT11(puVar4[1], puVar4[0]) >> 9) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->flags_res
-|
-- (CONCAT11(puVar4[1], puVar4[0]) & 0xe00) >> 9
-+ ((uw_object_hdr_t *)puVar4)->flags_res
-|
-- (*(byte *)((char *)puVar4 + 0x1) >> 1) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->flags_res
-|
-- (*(byte *)((char *)puVar4 + 0x1) & 0xe) >> 1
-+ ((uw_object_hdr_t *)puVar4)->flags_res
-)
-...>
-}
-
-@field_1_enchanted@
-type R;
-identifier F =~ "^\(emit_tile_features\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)puVar4 + 0x0) >> 12) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->enchanted
-|
-- (*(ushort *)((char *)puVar4 + 0x0) & 0x1000) >> 12
-+ ((uw_object_hdr_t *)puVar4)->enchanted
-|
-- (((ushort *)puVar4)[0] >> 12) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->enchanted
-|
-- (((ushort *)puVar4)[0] & 0x1000) >> 12
-+ ((uw_object_hdr_t *)puVar4)->enchanted
-|
-- (*(ushort *)puVar4 >> 12) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->enchanted
-|
-- (*(ushort *)puVar4 & 0x1000) >> 12
-+ ((uw_object_hdr_t *)puVar4)->enchanted
-|
-- (*(ushort *)(puVar4 + 0x0) >> 12) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->enchanted
-|
-- (*(ushort *)(puVar4 + 0x0) & 0x1000) >> 12
-+ ((uw_object_hdr_t *)puVar4)->enchanted
-|
-- (CONCAT11(puVar4[1], *puVar4) >> 12) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->enchanted
-|
-- (CONCAT11(puVar4[1], *puVar4) & 0x1000) >> 12
-+ ((uw_object_hdr_t *)puVar4)->enchanted
-|
-- (CONCAT11(puVar4[1], puVar4[0]) >> 12) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->enchanted
-|
-- (CONCAT11(puVar4[1], puVar4[0]) & 0x1000) >> 12
-+ ((uw_object_hdr_t *)puVar4)->enchanted
-|
-- (*(byte *)((char *)puVar4 + 0x1) >> 4) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->enchanted
-|
-- (*(byte *)((char *)puVar4 + 0x1) & 0x10) >> 4
-+ ((uw_object_hdr_t *)puVar4)->enchanted
-)
-...>
-}
-
-@field_1_doordir@
-type R;
-identifier F =~ "^\(emit_tile_features\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)puVar4 + 0x0) >> 13) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->doordir
-|
-- (*(ushort *)((char *)puVar4 + 0x0) & 0x2000) >> 13
-+ ((uw_object_hdr_t *)puVar4)->doordir
-|
-- (((ushort *)puVar4)[0] >> 13) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->doordir
-|
-- (((ushort *)puVar4)[0] & 0x2000) >> 13
-+ ((uw_object_hdr_t *)puVar4)->doordir
-|
-- (*(ushort *)puVar4 >> 13) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->doordir
-|
-- (*(ushort *)puVar4 & 0x2000) >> 13
-+ ((uw_object_hdr_t *)puVar4)->doordir
-|
-- (*(ushort *)(puVar4 + 0x0) >> 13) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->doordir
-|
-- (*(ushort *)(puVar4 + 0x0) & 0x2000) >> 13
-+ ((uw_object_hdr_t *)puVar4)->doordir
-|
-- (CONCAT11(puVar4[1], *puVar4) >> 13) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->doordir
-|
-- (CONCAT11(puVar4[1], *puVar4) & 0x2000) >> 13
-+ ((uw_object_hdr_t *)puVar4)->doordir
-|
-- (CONCAT11(puVar4[1], puVar4[0]) >> 13) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->doordir
-|
-- (CONCAT11(puVar4[1], puVar4[0]) & 0x2000) >> 13
-+ ((uw_object_hdr_t *)puVar4)->doordir
-|
-- (*(byte *)((char *)puVar4 + 0x1) >> 5) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->doordir
-|
-- (*(byte *)((char *)puVar4 + 0x1) & 0x20) >> 5
-+ ((uw_object_hdr_t *)puVar4)->doordir
-)
-...>
-}
-
-@field_1_invisible@
-type R;
-identifier F =~ "^\(emit_tile_features\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)puVar4 + 0x0) >> 14) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->invisible
-|
-- (*(ushort *)((char *)puVar4 + 0x0) & 0x4000) >> 14
-+ ((uw_object_hdr_t *)puVar4)->invisible
-|
-- (((ushort *)puVar4)[0] >> 14) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->invisible
-|
-- (((ushort *)puVar4)[0] & 0x4000) >> 14
-+ ((uw_object_hdr_t *)puVar4)->invisible
-|
-- (*(ushort *)puVar4 >> 14) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->invisible
-|
-- (*(ushort *)puVar4 & 0x4000) >> 14
-+ ((uw_object_hdr_t *)puVar4)->invisible
-|
-- (*(ushort *)(puVar4 + 0x0) >> 14) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->invisible
-|
-- (*(ushort *)(puVar4 + 0x0) & 0x4000) >> 14
-+ ((uw_object_hdr_t *)puVar4)->invisible
-|
-- (CONCAT11(puVar4[1], *puVar4) >> 14) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->invisible
-|
-- (CONCAT11(puVar4[1], *puVar4) & 0x4000) >> 14
-+ ((uw_object_hdr_t *)puVar4)->invisible
-|
-- (CONCAT11(puVar4[1], puVar4[0]) >> 14) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->invisible
-|
-- (CONCAT11(puVar4[1], puVar4[0]) & 0x4000) >> 14
-+ ((uw_object_hdr_t *)puVar4)->invisible
-|
-- (*(byte *)((char *)puVar4 + 0x1) >> 6) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->invisible
-|
-- (*(byte *)((char *)puVar4 + 0x1) & 0x40) >> 6
-+ ((uw_object_hdr_t *)puVar4)->invisible
-)
-...>
-}
-
-@field_1_is_quant@
-type R;
-identifier F =~ "^\(emit_tile_features\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)puVar4 + 0x0) >> 15) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- (*(ushort *)((char *)puVar4 + 0x0) & 0x8000) >> 15
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- (((ushort *)puVar4)[0] >> 15) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- (((ushort *)puVar4)[0] & 0x8000) >> 15
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- (*(ushort *)puVar4 >> 15) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- (*(ushort *)puVar4 & 0x8000) >> 15
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- (*(ushort *)(puVar4 + 0x0) >> 15) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- (*(ushort *)(puVar4 + 0x0) & 0x8000) >> 15
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- (CONCAT11(puVar4[1], *puVar4) >> 15) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- (CONCAT11(puVar4[1], *puVar4) & 0x8000) >> 15
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- (CONCAT11(puVar4[1], puVar4[0]) >> 15) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- (CONCAT11(puVar4[1], puVar4[0]) & 0x8000) >> 15
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- (*(byte *)((char *)puVar4 + 0x1) >> 7) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- (*(byte *)((char *)puVar4 + 0x1) & 0x80) >> 7
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-)
-...>
-}
-
-@field_1_zpos@
-type R;
-identifier F =~ "^\(emit_tile_features\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)puVar4 + 0x2) & 0x7f
-+ ((uw_object_hdr_t *)puVar4)->zpos
-|
-- ((ushort *)puVar4)[1] & 0x7f
-+ ((uw_object_hdr_t *)puVar4)->zpos
-|
-- *(ushort *)(puVar4 + 0x2) & 0x7f
-+ ((uw_object_hdr_t *)puVar4)->zpos
-|
-- *(byte *)((char *)puVar4 + 0x2) & 0x7f
-+ ((uw_object_hdr_t *)puVar4)->zpos
-|
-- puVar4[2] & 0x7f
-+ ((uw_object_hdr_t *)puVar4)->zpos
-)
-...>
-}
-
-@field_1_heading@
-type R;
-identifier F =~ "^\(emit_tile_features\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)puVar4 + 0x2) >> 7) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->heading
-|
-- (*(ushort *)((char *)puVar4 + 0x2) & 0x380) >> 7
-+ ((uw_object_hdr_t *)puVar4)->heading
-|
-- (((ushort *)puVar4)[1] >> 7) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->heading
-|
-- (((ushort *)puVar4)[1] & 0x380) >> 7
-+ ((uw_object_hdr_t *)puVar4)->heading
-|
-- (*(ushort *)(puVar4 + 0x2) >> 7) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->heading
-|
-- (*(ushort *)(puVar4 + 0x2) & 0x380) >> 7
-+ ((uw_object_hdr_t *)puVar4)->heading
-)
-...>
-}
-
-@field_1_ypos@
-type R;
-identifier F =~ "^\(emit_tile_features\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)puVar4 + 0x2) >> 10) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->ypos
-|
-- (*(ushort *)((char *)puVar4 + 0x2) & 0x1c00) >> 10
-+ ((uw_object_hdr_t *)puVar4)->ypos
-|
-- (((ushort *)puVar4)[1] >> 10) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->ypos
-|
-- (((ushort *)puVar4)[1] & 0x1c00) >> 10
-+ ((uw_object_hdr_t *)puVar4)->ypos
-|
-- (*(ushort *)(puVar4 + 0x2) >> 10) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->ypos
-|
-- (*(ushort *)(puVar4 + 0x2) & 0x1c00) >> 10
-+ ((uw_object_hdr_t *)puVar4)->ypos
-|
-- (*(byte *)((char *)puVar4 + 0x3) >> 2) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->ypos
-|
-- (*(byte *)((char *)puVar4 + 0x3) & 0x1c) >> 2
-+ ((uw_object_hdr_t *)puVar4)->ypos
-)
-...>
-}
-
-@field_1_xpos@
-type R;
-identifier F =~ "^\(emit_tile_features\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)puVar4 + 0x2) >> 13) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->xpos
-|
-- (*(ushort *)((char *)puVar4 + 0x2) & 0xe000) >> 13
-+ ((uw_object_hdr_t *)puVar4)->xpos
-|
-- (((ushort *)puVar4)[1] >> 13) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->xpos
-|
-- (((ushort *)puVar4)[1] & 0xe000) >> 13
-+ ((uw_object_hdr_t *)puVar4)->xpos
-|
-- (*(ushort *)(puVar4 + 0x2) >> 13) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->xpos
-|
-- (*(ushort *)(puVar4 + 0x2) & 0xe000) >> 13
-+ ((uw_object_hdr_t *)puVar4)->xpos
-|
-- (*(byte *)((char *)puVar4 + 0x3) >> 5) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->xpos
-|
-- (*(byte *)((char *)puVar4 + 0x3) & 0xe0) >> 5
-+ ((uw_object_hdr_t *)puVar4)->xpos
-)
-...>
-}
-
-@field_1_quality@
-type R;
-identifier F =~ "^\(emit_tile_features\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)puVar4 + 0x4) & 0x3f
-+ ((uw_object_hdr_t *)puVar4)->quality
-|
-- ((ushort *)puVar4)[2] & 0x3f
-+ ((uw_object_hdr_t *)puVar4)->quality
-|
-- *(ushort *)(puVar4 + 0x4) & 0x3f
-+ ((uw_object_hdr_t *)puVar4)->quality
-|
-- *(byte *)((char *)puVar4 + 0x4) & 0x3f
-+ ((uw_object_hdr_t *)puVar4)->quality
-|
-- puVar4[4] & 0x3f
-+ ((uw_object_hdr_t *)puVar4)->quality
-)
-...>
-}
-
-@field_1_next@
-type R;
-identifier F =~ "^\(emit_tile_features\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)puVar4 + 0x4) >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)puVar4)->next
-|
-- (*(ushort *)((char *)puVar4 + 0x4) & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)puVar4)->next
-|
-- (((ushort *)puVar4)[2] >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)puVar4)->next
-|
-- (((ushort *)puVar4)[2] & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)puVar4)->next
-|
-- (*(ushort *)(puVar4 + 0x4) >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)puVar4)->next
-|
-- (*(ushort *)(puVar4 + 0x4) & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)puVar4)->next
-)
-...>
-}
-
-@field_1_owner@
-type R;
-identifier F =~ "^\(emit_tile_features\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)puVar4 + 0x6) & 0x3f
-+ ((uw_object_hdr_t *)puVar4)->owner
-|
-- ((ushort *)puVar4)[3] & 0x3f
-+ ((uw_object_hdr_t *)puVar4)->owner
-|
-- *(ushort *)(puVar4 + 0x6) & 0x3f
-+ ((uw_object_hdr_t *)puVar4)->owner
-|
-- *(byte *)((char *)puVar4 + 0x6) & 0x3f
-+ ((uw_object_hdr_t *)puVar4)->owner
-|
-- puVar4[6] & 0x3f
-+ ((uw_object_hdr_t *)puVar4)->owner
-)
-...>
-}
-
-@field_1_link@
-type R;
-identifier F =~ "^\(emit_tile_features\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)puVar4 + 0x6) >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)puVar4)->link
-|
-- (*(ushort *)((char *)puVar4 + 0x6) & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)puVar4)->link
-|
-- (((ushort *)puVar4)[3] >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)puVar4)->link
-|
-- (((ushort *)puVar4)[3] & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)puVar4)->link
-|
-- (*(ushort *)(puVar4 + 0x6) >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)puVar4)->link
-|
-- (*(ushort *)(puVar4 + 0x6) & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)puVar4)->link
-)
-...>
-}
-
-@field_2_item_id@
-type R;
-identifier F =~ "^\(emit_tile_features\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
 - *(ushort *)((char *)puVar5 + 0x0) & 0x1ff
 + ((uw_object_hdr_t *)puVar5)->item_id
 |
@@ -1091,7 +562,7 @@ R F(...) {
 ...>
 }
 
-@field_2_flags_res@
+@field_1_flags_res@
 type R;
 identifier F =~ "^\(emit_tile_features\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1138,7 +609,7 @@ R F(...) {
 ...>
 }
 
-@field_2_enchanted@
+@field_1_enchanted@
 type R;
 identifier F =~ "^\(emit_tile_features\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1185,7 +656,7 @@ R F(...) {
 ...>
 }
 
-@field_2_doordir@
+@field_1_doordir@
 type R;
 identifier F =~ "^\(emit_tile_features\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1232,7 +703,7 @@ R F(...) {
 ...>
 }
 
-@field_2_invisible@
+@field_1_invisible@
 type R;
 identifier F =~ "^\(emit_tile_features\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1279,7 +750,7 @@ R F(...) {
 ...>
 }
 
-@field_2_is_quant@
+@field_1_is_quant@
 type R;
 identifier F =~ "^\(emit_tile_features\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1341,7 +812,7 @@ R F(...) {
 ...>
 }
 
-@field_2_zpos@
+@field_1_zpos@
 type R;
 identifier F =~ "^\(emit_tile_features\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1367,7 +838,7 @@ R F(...) {
 ...>
 }
 
-@field_2_heading@
+@field_1_heading@
 type R;
 identifier F =~ "^\(emit_tile_features\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1396,7 +867,7 @@ R F(...) {
 ...>
 }
 
-@field_2_ypos@
+@field_1_ypos@
 type R;
 identifier F =~ "^\(emit_tile_features\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1431,7 +902,7 @@ R F(...) {
 ...>
 }
 
-@field_2_xpos@
+@field_1_xpos@
 type R;
 identifier F =~ "^\(emit_tile_features\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1475,7 +946,7 @@ R F(...) {
 ...>
 }
 
-@field_2_quality@
+@field_1_quality@
 type R;
 identifier F =~ "^\(emit_tile_features\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1501,7 +972,7 @@ R F(...) {
 ...>
 }
 
-@field_2_next@
+@field_1_next@
 type R;
 identifier F =~ "^\(emit_tile_features\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1539,7 +1010,7 @@ R F(...) {
 ...>
 }
 
-@field_2_owner@
+@field_1_owner@
 type R;
 identifier F =~ "^\(emit_tile_features\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1565,7 +1036,7 @@ R F(...) {
 ...>
 }
 
-@field_2_link@
+@field_1_link@
 type R;
 identifier F =~ "^\(emit_tile_features\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1599,6 +1070,535 @@ R F(...) {
 |
 - puVar5[3] >> 6
 + ((uw_object_hdr_t *)puVar5)->link
+)
+...>
+}
+
+@field_2_item_id@
+type R;
+identifier F =~ "^\(emit_tile_features\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar4 + 0x0) & 0x1ff
++ ((uw_object_hdr_t *)puVar4)->item_id
+|
+- ((ushort *)puVar4)[0] & 0x1ff
++ ((uw_object_hdr_t *)puVar4)->item_id
+|
+- *(ushort *)puVar4 & 0x1ff
++ ((uw_object_hdr_t *)puVar4)->item_id
+|
+- *(ushort *)(puVar4 + 0x0) & 0x1ff
++ ((uw_object_hdr_t *)puVar4)->item_id
+|
+- CONCAT11(puVar4[1], *puVar4) & 0x1ff
++ ((uw_object_hdr_t *)puVar4)->item_id
+|
+- CONCAT11(puVar4[1], puVar4[0]) & 0x1ff
++ ((uw_object_hdr_t *)puVar4)->item_id
+)
+...>
+}
+
+@field_2_flags_res@
+type R;
+identifier F =~ "^\(emit_tile_features\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar4 + 0x0) >> 9) & 0x7
++ ((uw_object_hdr_t *)puVar4)->flags_res
+|
+- (*(ushort *)((char *)puVar4 + 0x0) & 0xe00) >> 9
++ ((uw_object_hdr_t *)puVar4)->flags_res
+|
+- (((ushort *)puVar4)[0] >> 9) & 0x7
++ ((uw_object_hdr_t *)puVar4)->flags_res
+|
+- (((ushort *)puVar4)[0] & 0xe00) >> 9
++ ((uw_object_hdr_t *)puVar4)->flags_res
+|
+- (*(ushort *)puVar4 >> 9) & 0x7
++ ((uw_object_hdr_t *)puVar4)->flags_res
+|
+- (*(ushort *)puVar4 & 0xe00) >> 9
++ ((uw_object_hdr_t *)puVar4)->flags_res
+|
+- (*(ushort *)(puVar4 + 0x0) >> 9) & 0x7
++ ((uw_object_hdr_t *)puVar4)->flags_res
+|
+- (*(ushort *)(puVar4 + 0x0) & 0xe00) >> 9
++ ((uw_object_hdr_t *)puVar4)->flags_res
+|
+- (CONCAT11(puVar4[1], *puVar4) >> 9) & 0x7
++ ((uw_object_hdr_t *)puVar4)->flags_res
+|
+- (CONCAT11(puVar4[1], *puVar4) & 0xe00) >> 9
++ ((uw_object_hdr_t *)puVar4)->flags_res
+|
+- (CONCAT11(puVar4[1], puVar4[0]) >> 9) & 0x7
++ ((uw_object_hdr_t *)puVar4)->flags_res
+|
+- (CONCAT11(puVar4[1], puVar4[0]) & 0xe00) >> 9
++ ((uw_object_hdr_t *)puVar4)->flags_res
+|
+- (*(byte *)((char *)puVar4 + 0x1) >> 1) & 0x7
++ ((uw_object_hdr_t *)puVar4)->flags_res
+|
+- (*(byte *)((char *)puVar4 + 0x1) & 0xe) >> 1
++ ((uw_object_hdr_t *)puVar4)->flags_res
+)
+...>
+}
+
+@field_2_enchanted@
+type R;
+identifier F =~ "^\(emit_tile_features\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar4 + 0x0) >> 12) & 0x1
++ ((uw_object_hdr_t *)puVar4)->enchanted
+|
+- (*(ushort *)((char *)puVar4 + 0x0) & 0x1000) >> 12
++ ((uw_object_hdr_t *)puVar4)->enchanted
+|
+- (((ushort *)puVar4)[0] >> 12) & 0x1
++ ((uw_object_hdr_t *)puVar4)->enchanted
+|
+- (((ushort *)puVar4)[0] & 0x1000) >> 12
++ ((uw_object_hdr_t *)puVar4)->enchanted
+|
+- (*(ushort *)puVar4 >> 12) & 0x1
++ ((uw_object_hdr_t *)puVar4)->enchanted
+|
+- (*(ushort *)puVar4 & 0x1000) >> 12
++ ((uw_object_hdr_t *)puVar4)->enchanted
+|
+- (*(ushort *)(puVar4 + 0x0) >> 12) & 0x1
++ ((uw_object_hdr_t *)puVar4)->enchanted
+|
+- (*(ushort *)(puVar4 + 0x0) & 0x1000) >> 12
++ ((uw_object_hdr_t *)puVar4)->enchanted
+|
+- (CONCAT11(puVar4[1], *puVar4) >> 12) & 0x1
++ ((uw_object_hdr_t *)puVar4)->enchanted
+|
+- (CONCAT11(puVar4[1], *puVar4) & 0x1000) >> 12
++ ((uw_object_hdr_t *)puVar4)->enchanted
+|
+- (CONCAT11(puVar4[1], puVar4[0]) >> 12) & 0x1
++ ((uw_object_hdr_t *)puVar4)->enchanted
+|
+- (CONCAT11(puVar4[1], puVar4[0]) & 0x1000) >> 12
++ ((uw_object_hdr_t *)puVar4)->enchanted
+|
+- (*(byte *)((char *)puVar4 + 0x1) >> 4) & 0x1
++ ((uw_object_hdr_t *)puVar4)->enchanted
+|
+- (*(byte *)((char *)puVar4 + 0x1) & 0x10) >> 4
++ ((uw_object_hdr_t *)puVar4)->enchanted
+)
+...>
+}
+
+@field_2_doordir@
+type R;
+identifier F =~ "^\(emit_tile_features\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar4 + 0x0) >> 13) & 0x1
++ ((uw_object_hdr_t *)puVar4)->doordir
+|
+- (*(ushort *)((char *)puVar4 + 0x0) & 0x2000) >> 13
++ ((uw_object_hdr_t *)puVar4)->doordir
+|
+- (((ushort *)puVar4)[0] >> 13) & 0x1
++ ((uw_object_hdr_t *)puVar4)->doordir
+|
+- (((ushort *)puVar4)[0] & 0x2000) >> 13
++ ((uw_object_hdr_t *)puVar4)->doordir
+|
+- (*(ushort *)puVar4 >> 13) & 0x1
++ ((uw_object_hdr_t *)puVar4)->doordir
+|
+- (*(ushort *)puVar4 & 0x2000) >> 13
++ ((uw_object_hdr_t *)puVar4)->doordir
+|
+- (*(ushort *)(puVar4 + 0x0) >> 13) & 0x1
++ ((uw_object_hdr_t *)puVar4)->doordir
+|
+- (*(ushort *)(puVar4 + 0x0) & 0x2000) >> 13
++ ((uw_object_hdr_t *)puVar4)->doordir
+|
+- (CONCAT11(puVar4[1], *puVar4) >> 13) & 0x1
++ ((uw_object_hdr_t *)puVar4)->doordir
+|
+- (CONCAT11(puVar4[1], *puVar4) & 0x2000) >> 13
++ ((uw_object_hdr_t *)puVar4)->doordir
+|
+- (CONCAT11(puVar4[1], puVar4[0]) >> 13) & 0x1
++ ((uw_object_hdr_t *)puVar4)->doordir
+|
+- (CONCAT11(puVar4[1], puVar4[0]) & 0x2000) >> 13
++ ((uw_object_hdr_t *)puVar4)->doordir
+|
+- (*(byte *)((char *)puVar4 + 0x1) >> 5) & 0x1
++ ((uw_object_hdr_t *)puVar4)->doordir
+|
+- (*(byte *)((char *)puVar4 + 0x1) & 0x20) >> 5
++ ((uw_object_hdr_t *)puVar4)->doordir
+)
+...>
+}
+
+@field_2_invisible@
+type R;
+identifier F =~ "^\(emit_tile_features\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar4 + 0x0) >> 14) & 0x1
++ ((uw_object_hdr_t *)puVar4)->invisible
+|
+- (*(ushort *)((char *)puVar4 + 0x0) & 0x4000) >> 14
++ ((uw_object_hdr_t *)puVar4)->invisible
+|
+- (((ushort *)puVar4)[0] >> 14) & 0x1
++ ((uw_object_hdr_t *)puVar4)->invisible
+|
+- (((ushort *)puVar4)[0] & 0x4000) >> 14
++ ((uw_object_hdr_t *)puVar4)->invisible
+|
+- (*(ushort *)puVar4 >> 14) & 0x1
++ ((uw_object_hdr_t *)puVar4)->invisible
+|
+- (*(ushort *)puVar4 & 0x4000) >> 14
++ ((uw_object_hdr_t *)puVar4)->invisible
+|
+- (*(ushort *)(puVar4 + 0x0) >> 14) & 0x1
++ ((uw_object_hdr_t *)puVar4)->invisible
+|
+- (*(ushort *)(puVar4 + 0x0) & 0x4000) >> 14
++ ((uw_object_hdr_t *)puVar4)->invisible
+|
+- (CONCAT11(puVar4[1], *puVar4) >> 14) & 0x1
++ ((uw_object_hdr_t *)puVar4)->invisible
+|
+- (CONCAT11(puVar4[1], *puVar4) & 0x4000) >> 14
++ ((uw_object_hdr_t *)puVar4)->invisible
+|
+- (CONCAT11(puVar4[1], puVar4[0]) >> 14) & 0x1
++ ((uw_object_hdr_t *)puVar4)->invisible
+|
+- (CONCAT11(puVar4[1], puVar4[0]) & 0x4000) >> 14
++ ((uw_object_hdr_t *)puVar4)->invisible
+|
+- (*(byte *)((char *)puVar4 + 0x1) >> 6) & 0x1
++ ((uw_object_hdr_t *)puVar4)->invisible
+|
+- (*(byte *)((char *)puVar4 + 0x1) & 0x40) >> 6
++ ((uw_object_hdr_t *)puVar4)->invisible
+)
+...>
+}
+
+@field_2_is_quant@
+type R;
+identifier F =~ "^\(emit_tile_features\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar4 + 0x0) >> 15) & 0x1
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- (*(ushort *)((char *)puVar4 + 0x0) & 0x8000) >> 15
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- (((ushort *)puVar4)[0] >> 15) & 0x1
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- (((ushort *)puVar4)[0] & 0x8000) >> 15
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- (*(ushort *)puVar4 >> 15) & 0x1
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- (*(ushort *)puVar4 & 0x8000) >> 15
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- (*(ushort *)(puVar4 + 0x0) >> 15) & 0x1
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- (*(ushort *)(puVar4 + 0x0) & 0x8000) >> 15
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- (CONCAT11(puVar4[1], *puVar4) >> 15) & 0x1
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- (CONCAT11(puVar4[1], *puVar4) & 0x8000) >> 15
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- (CONCAT11(puVar4[1], puVar4[0]) >> 15) & 0x1
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- (CONCAT11(puVar4[1], puVar4[0]) & 0x8000) >> 15
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- (*(byte *)((char *)puVar4 + 0x1) >> 7) & 0x1
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- (*(byte *)((char *)puVar4 + 0x1) & 0x80) >> 7
++ ((uw_object_hdr_t *)puVar4)->is_quant
+)
+...>
+}
+
+@field_2_zpos@
+type R;
+identifier F =~ "^\(emit_tile_features\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar4 + 0x2) & 0x7f
++ ((uw_object_hdr_t *)puVar4)->zpos
+|
+- ((ushort *)puVar4)[1] & 0x7f
++ ((uw_object_hdr_t *)puVar4)->zpos
+|
+- *(ushort *)(puVar4 + 0x2) & 0x7f
++ ((uw_object_hdr_t *)puVar4)->zpos
+|
+- *(byte *)((char *)puVar4 + 0x2) & 0x7f
++ ((uw_object_hdr_t *)puVar4)->zpos
+|
+- puVar4[2] & 0x7f
++ ((uw_object_hdr_t *)puVar4)->zpos
+)
+...>
+}
+
+@field_2_heading@
+type R;
+identifier F =~ "^\(emit_tile_features\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar4 + 0x2) >> 7) & 0x7
++ ((uw_object_hdr_t *)puVar4)->heading
+|
+- (*(ushort *)((char *)puVar4 + 0x2) & 0x380) >> 7
++ ((uw_object_hdr_t *)puVar4)->heading
+|
+- (((ushort *)puVar4)[1] >> 7) & 0x7
++ ((uw_object_hdr_t *)puVar4)->heading
+|
+- (((ushort *)puVar4)[1] & 0x380) >> 7
++ ((uw_object_hdr_t *)puVar4)->heading
+|
+- (*(ushort *)(puVar4 + 0x2) >> 7) & 0x7
++ ((uw_object_hdr_t *)puVar4)->heading
+|
+- (*(ushort *)(puVar4 + 0x2) & 0x380) >> 7
++ ((uw_object_hdr_t *)puVar4)->heading
+)
+...>
+}
+
+@field_2_ypos@
+type R;
+identifier F =~ "^\(emit_tile_features\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar4 + 0x2) >> 10) & 0x7
++ ((uw_object_hdr_t *)puVar4)->ypos
+|
+- (*(ushort *)((char *)puVar4 + 0x2) & 0x1c00) >> 10
++ ((uw_object_hdr_t *)puVar4)->ypos
+|
+- (((ushort *)puVar4)[1] >> 10) & 0x7
++ ((uw_object_hdr_t *)puVar4)->ypos
+|
+- (((ushort *)puVar4)[1] & 0x1c00) >> 10
++ ((uw_object_hdr_t *)puVar4)->ypos
+|
+- (*(ushort *)(puVar4 + 0x2) >> 10) & 0x7
++ ((uw_object_hdr_t *)puVar4)->ypos
+|
+- (*(ushort *)(puVar4 + 0x2) & 0x1c00) >> 10
++ ((uw_object_hdr_t *)puVar4)->ypos
+|
+- (*(byte *)((char *)puVar4 + 0x3) >> 2) & 0x7
++ ((uw_object_hdr_t *)puVar4)->ypos
+|
+- (*(byte *)((char *)puVar4 + 0x3) & 0x1c) >> 2
++ ((uw_object_hdr_t *)puVar4)->ypos
+)
+...>
+}
+
+@field_2_xpos@
+type R;
+identifier F =~ "^\(emit_tile_features\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar4 + 0x2) >> 13) & 0x7
++ ((uw_object_hdr_t *)puVar4)->xpos
+|
+- (*(ushort *)((char *)puVar4 + 0x2) & 0xe000) >> 13
++ ((uw_object_hdr_t *)puVar4)->xpos
+|
+- (((ushort *)puVar4)[1] >> 13) & 0x7
++ ((uw_object_hdr_t *)puVar4)->xpos
+|
+- (((ushort *)puVar4)[1] & 0xe000) >> 13
++ ((uw_object_hdr_t *)puVar4)->xpos
+|
+- (*(ushort *)(puVar4 + 0x2) >> 13) & 0x7
++ ((uw_object_hdr_t *)puVar4)->xpos
+|
+- (*(ushort *)(puVar4 + 0x2) & 0xe000) >> 13
++ ((uw_object_hdr_t *)puVar4)->xpos
+|
+- (*(byte *)((char *)puVar4 + 0x3) >> 5) & 0x7
++ ((uw_object_hdr_t *)puVar4)->xpos
+|
+- (*(byte *)((char *)puVar4 + 0x3) & 0xe0) >> 5
++ ((uw_object_hdr_t *)puVar4)->xpos
+)
+...>
+}
+
+@field_2_quality@
+type R;
+identifier F =~ "^\(emit_tile_features\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar4 + 0x4) & 0x3f
++ ((uw_object_hdr_t *)puVar4)->quality
+|
+- ((ushort *)puVar4)[2] & 0x3f
++ ((uw_object_hdr_t *)puVar4)->quality
+|
+- *(ushort *)(puVar4 + 0x4) & 0x3f
++ ((uw_object_hdr_t *)puVar4)->quality
+|
+- *(byte *)((char *)puVar4 + 0x4) & 0x3f
++ ((uw_object_hdr_t *)puVar4)->quality
+|
+- puVar4[4] & 0x3f
++ ((uw_object_hdr_t *)puVar4)->quality
+)
+...>
+}
+
+@field_2_next@
+type R;
+identifier F =~ "^\(emit_tile_features\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar4 + 0x4) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)puVar4)->next
+|
+- (*(ushort *)((char *)puVar4 + 0x4) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)puVar4)->next
+|
+- (((ushort *)puVar4)[2] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)puVar4)->next
+|
+- (((ushort *)puVar4)[2] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)puVar4)->next
+|
+- (*(ushort *)(puVar4 + 0x4) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)puVar4)->next
+|
+- (*(ushort *)(puVar4 + 0x4) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)puVar4)->next
+)
+...>
+}
+
+@field_2_owner@
+type R;
+identifier F =~ "^\(emit_tile_features\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar4 + 0x6) & 0x3f
++ ((uw_object_hdr_t *)puVar4)->owner
+|
+- ((ushort *)puVar4)[3] & 0x3f
++ ((uw_object_hdr_t *)puVar4)->owner
+|
+- *(ushort *)(puVar4 + 0x6) & 0x3f
++ ((uw_object_hdr_t *)puVar4)->owner
+|
+- *(byte *)((char *)puVar4 + 0x6) & 0x3f
++ ((uw_object_hdr_t *)puVar4)->owner
+|
+- puVar4[6] & 0x3f
++ ((uw_object_hdr_t *)puVar4)->owner
+)
+...>
+}
+
+@field_2_link@
+type R;
+identifier F =~ "^\(emit_tile_features\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar4 + 0x6) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)puVar4)->link
+|
+- (*(ushort *)((char *)puVar4 + 0x6) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)puVar4)->link
+|
+- (((ushort *)puVar4)[3] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)puVar4)->link
+|
+- (((ushort *)puVar4)[3] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)puVar4)->link
+|
+- (*(ushort *)(puVar4 + 0x6) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)puVar4)->link
+|
+- (*(ushort *)(puVar4 + 0x6) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)puVar4)->link
 )
 ...>
 }

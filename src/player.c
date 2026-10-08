@@ -248,8 +248,8 @@ void set_player_tile_position(uint tile_x, uint tile_y, int flag)
   uVar3 = g_player_object->tile_word & 0x3ff;
   g_player_object->tile_word_low = (byte)(char)uVar3;
   g_player_object->tile_word_high = (byte)(uVar3 >> 8) | (byte)(((tile_x & 0x3f) << 10) >> 8);
-  uVar3 = g_player_object->tile_word & 0xfc0f | (tile_y & 0x3f) << 4;
-  g_player_object->tile_word = (ushort)uVar3;
+  g_player_object->npc_yhome = tile_y & 0x3f;
+  uVar3 = g_player_object->tile_word;
   uVar3 = g_player_object->hdr.position_word & 0x1fff;
   g_player_object->hdr.position_word_low = (byte)(char)uVar3;
   g_player_object->hdr.position_word_high = (byte)(uVar3 >> 8) | 0x60;
@@ -786,7 +786,8 @@ LAB_000669a8:
     for (_s = 0; _s < 11; _s++) {
       ushort *_o = (ushort *)get_equipped_item_at_slot(_s);
       fprintf(stderr, "  slot=%d ptr=%p id=0x%03x nibble=0x%x\n", _s, (void *)_o,
-              _o ? (unsigned)(*_o & 0x1ff) : 0u, _o ? (unsigned)(*_o & 0xf) : 0u);
+              _o ? (unsigned)(((uw_object_hdr_t *)_o)->item_id) : 0u,
+              _o ? (unsigned)(((uw_object_hdr_t *)_o)->type_flags & 0xf) : 0u);
     }
   }
   if ((*(ushort *)(DAT_00086df8 + 0x5f) & 0x3c0) != 0) {
@@ -2726,10 +2727,10 @@ void handle_game_victory_sequence()
     if (*(char *)(DAT_00086df8 + 0x6d) == '\0') {
       puVar5 = (undefined2 *)spawn_new_object(0x15a,0);
       if (puVar5 != (undefined2 *)0x0) {
-        uVar2 = *puVar5;
+        uVar2 = ((uw_object_hdr_t *)puVar5)->type_flags;
         ((uw_object_hdr_t *)puVar5)->type_flags_low = (byte)(char)uVar2;
         ((uw_object_hdr_t *)puVar5)->type_flags_high = (byte)((ushort)uVar2 >> 8) | 0x80;
-        *(byte *)(puVar5 + 3) = *(byte *)(puVar5 + 3) & 0x3f;
+        ((uw_object_hdr_t *)puVar5)->link_word_low = ((uw_object_hdr_t *)puVar5)->owner;
         ((uw_object_hdr_t *)puVar5)->link_word_high = 0xb0;
         iVar6 = tilemap_lookup(0x20,0x20);
         local_11c = iVar6 + 2;
@@ -2843,21 +2844,21 @@ LAB_00072374:
   iVar7 = place_object_in_world((int)DAT_00204880 >> 5,(int)DAT_00204882 >> 5,(int)DAT_00204884 >> 3,
                        pNewObj,0,1);
   if (iVar7 != 0) {
-    uVar4 = *(undefined2 *)(pNewObj + 2);
+    uVar4 = ((uw_object_hdr_t *)pNewObj)->position_word;
     bVar1 = (byte)uVar4;
-    *(byte *)(pNewObj + 2) = (g_player_object->hdr.position_word_low ^ bVar1) & 0x7f ^ bVar1;
-    *(char *)(pNewObj + 3) = (char)((ushort)uVar4 >> 8);
-    *(byte *)(pNewObj + 6) = *(byte *)(pNewObj + 6) | 0x3f;
-    *(undefined1 *)(pNewObj + 7) = *(undefined1 *)(pNewObj + 7);
+    ((uw_object_hdr_t *)pNewObj)->position_word_low = (g_player_object->hdr.position_word_low ^ bVar1) & 0x7f ^ bVar1;
+    ((uw_object_hdr_t *)pNewObj)->position_word_high = (byte)(char)((ushort)uVar4 >> 8);
+    ((uw_object_hdr_t *)pNewObj)->owner = 0x3f;
+    ((uw_object_hdr_t *)pNewObj)->link_word_high = ((uw_object_hdr_t *)pNewObj)->link_word_high;
     uVar8 = (((uw_object_hdr_t *)pNewObj)->position_word ^ g_player_object->hdr.position_word) & 0x1fff ^
             (uint) g_player_object->hdr.position_word;
     uVar2 = (undefined1)uVar8;
-    *(undefined1 *)(pNewObj + 2) = uVar2;
+    ((uw_object_hdr_t *)pNewObj)->position_word_low = uVar2;
     bVar3 = (byte)(uVar8 >> 8);
-    *(byte *)(pNewObj + 3) = bVar3;
+    ((uw_object_hdr_t *)pNewObj)->position_word_high = bVar3;
     bVar1 = g_player_object->hdr.position_word_high;
-    *(undefined1 *)(pNewObj + 2) = uVar2;
-    *(byte *)(pNewObj + 3) = (bVar1 ^ bVar3) & 0x1c ^ bVar3;
+    ((uw_object_hdr_t *)pNewObj)->position_word_low = uVar2;
+    ((uw_object_hdr_t *)pNewObj)->position_word_high = (bVar1 ^ bVar3) & 0x1c ^ bVar3;
     settle_dropped_object(pNewObj,(int)DAT_00204880 >> 8,(int)DAT_00204882 >> 8,1);
   }
   if (((*(byte *)(DAT_00086df8 + 0x5e) & 0xf0) != 0) && (DAT_00201b68 != 9)) {
@@ -3356,9 +3357,9 @@ void reset_player_for_resurrection()
 
   close_panels_before_level_change();
   refresh_player_equipment_effects();
-  uVar1 = g_player_object->hdr.position_word & 0xfc7f;
-  g_player_object->hdr.position_word = (ushort)uVar1;
-  g_player_object->heading_flags = g_player_object->heading_flags & 0xe0;
+  g_player_object->hdr.heading = 0x0;
+  uVar1 = g_player_object->hdr.position_word;
+  g_player_object->npc_heading = 0;
   DAT_00201c70 = 0;
   DAT_00201c78 = 0;
   DAT_00086b20 = 1;
@@ -3779,7 +3780,7 @@ int decay_equipped_light_sources(short elapsed, byte tick_phase)
   do {
     puVar6 = (ushort *)get_equipped_item_at_slot((int)(char)(&g_light_source_slots)[iVar9]);
     if (puVar6 != (ushort *)0x0) {
-      uVar2 = *puVar6;
+      uVar2 = ((uw_object_hdr_t *)puVar6)->type_flags;
       if (((((uVar2 & 0x1f0) == 0x90) && (uVar7 = (uint)(short)(uVar2 & 0xf), 3 < uVar7)) &&
           (uVar7 < 8)) && (cVar1 = g_light_type_props[uVar7].decay_interval, cVar1 != '\0')) {
         /* ARM 0x540d4 uses the tick phase (tick_phase) for the remainder.
@@ -3793,19 +3794,18 @@ int decay_equipped_light_sources(short elapsed, byte tick_phase)
           uVar8 = (ushort)(extraout_r1 == 0) + sVar5;
         }
         if ((short)uVar8 != 0) {
-          uVar3 = puVar6[2];
+          uVar3 = ((uw_object_hdr_t *)puVar6)->chain_word;
           if ((int)(short)uVar8 < (int)(uVar3 & 0x3f)) {
             bVar4 = (byte)uVar3;
-            *(byte *)(puVar6 + 2) = (bVar4 - (char)uVar8 ^ bVar4) & 0x3f ^ bVar4;
-            *(byte *)((char *)puVar6 + 5) = (byte)(uVar3 >> 8);
+            ((uw_object_hdr_t *)puVar6)->chain_word_low = (bVar4 - (char)uVar8 ^ bVar4) & 0x3f ^ bVar4;
+            ((uw_object_hdr_t *)puVar6)->chain_word_high = (byte)(uVar3 >> 8);
           }
           else {
             uVar7 = uVar3 & 0xffc0;
-            *(byte *)(puVar6 + 2) = (byte)uVar7;
-            *(byte *)((char *)puVar6 + 5) = (byte)(uVar7 >> 8);
+            ((uw_object_hdr_t *)puVar6)->chain_word = (ushort)uVar7;
             bVar4 = (byte)uVar2;
-            *(byte *)puVar6 = (bVar4 - 4 ^ bVar4) & 0xf ^ bVar4;
-            *(byte *)((char *)puVar6 + 1) = (byte)(uVar2 >> 8);
+            ((uw_object_hdr_t *)puVar6)->type_flags_low = (bVar4 - 4 ^ bVar4) & 0xf ^ bVar4;
+            ((uw_object_hdr_t *)puVar6)->type_flags_high = (byte)(uVar2 >> 8);
             redraw_backpack_slot_widget((int)(char)(&g_light_source_slots)[iVar9]);
             uVar10 = 1;
             set_ambient_bias_without_light(0);

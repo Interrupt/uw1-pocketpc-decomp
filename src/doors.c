@@ -163,15 +163,15 @@ int spawn_scheduled_door_texture_object()
       door_texture = (undefined1 *)spawn_new_object(0x1ca, 0);
       tile_word = ((uw_object_hdr_t *)door_texture)->position_word;
       object_word = (tile_word ^ object_word) & 0x7f ^ (uint)tile_word;
-      door_texture[2] = (char)object_word;
-      door_texture[3] = (char)(tile_word >> 8);
+      ((uw_object_hdr_t *)door_texture)->position_word_low = (char)object_word;
+      ((uw_object_hdr_t *)door_texture)->position_word_high = (char)(tile_word >> 8);
       position_high_bits = (byte)(((target_x & 7) << 0xd) >> 8);
-      door_texture[2] = (char)(object_word & 0x1fff);
-      door_texture[3] = (byte)((object_word & 0x1fff) >> 8) | position_high_bits;
-      door_texture[2] = (char)(object_word & 0x3ff);
-      door_texture[3] = (byte)((object_word & 0x3ff) >> 8) | position_high_bits | (byte)(((target_y & 7) << 10) >> 8);
-      *door_texture = *door_texture;
-      door_texture[1] = door_texture[1] | 0x20;
+      ((uw_object_hdr_t *)door_texture)->position_word_low = (char)(object_word & 0x1fff);
+      ((uw_object_hdr_t *)door_texture)->position_word_high = (byte)((object_word & 0x1fff) >> 8) | position_high_bits;
+      ((uw_object_hdr_t *)door_texture)->position_word_low = (char)(object_word & 0x3ff);
+      ((uw_object_hdr_t *)door_texture)->position_word_high = (byte)((object_word & 0x3ff) >> 8) | position_high_bits | (byte)(((target_y & 7) << 10) >> 8);
+      ((uw_object_hdr_t *)door_texture)->type_flags_low = ((uw_object_hdr_t *)door_texture)->type_flags_low;
+      ((uw_object_hdr_t *)door_texture)->doordir = 0x1;
       slot_index = encode_object_slot_index(door_texture);
       tile_type = scheduler_add_entry(slot_index, 0xffffffff, 0, (short)target_x >> 3 & 0xff,
                                       CONCAT11(object_word_high_byte, (char)((short)target_y >> 3)));

@@ -799,23 +799,21 @@ void fire_ranged_weapon(short weapon_type)
     else {
       puVar7 = (ushort *)extract_ammo_and_refresh(0,1,(int)cVar3,uVar5);
       uVar8 = (*puVar7 ^ ((uw_object_hdr_t *)puVar6)->type_flags) & 0x7fff ^ (uint)*puVar7;
-      ((uw_object_hdr_t *)puVar6)->type_flags_low = (byte)(char)uVar8;
-      ((uw_object_hdr_t *)puVar6)->type_flags_high = (byte)(char)(uVar8 >> 8);
+      ((uw_object_hdr_t *)puVar6)->type_flags = (ushort)uVar8;
       uVar4 = puVar7[3];
       bVar2 = (byte)uVar4;
-      *(byte *)(puVar6 + 3) = ((byte)((uw_object_hdr_t *)puVar6)->link_word ^ bVar2) & 0x3f ^ bVar2;
+      ((uw_object_hdr_t *)puVar6)->link_word_low = ((byte)((uw_object_hdr_t *)puVar6)->link_word ^ bVar2) & 0x3f ^ bVar2;
       ((uw_object_hdr_t *)puVar6)->link_word_high = (byte)(char)(uVar4 >> 8);
       bVar2 = *(byte *)((char *)puVar7 + 1);
       ((uw_object_hdr_t *)puVar6)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar6)->type_flags;
       ((uw_object_hdr_t *)puVar6)->type_flags_high =
           (bVar2 ^ ((uw_object_hdr_t *)puVar6)->type_flags_high) & 0x1e ^ ((uw_object_hdr_t *)puVar6)->type_flags_high;
       *(byte *)(puVar6 + 4) = (byte)puVar7[2] & 0x3f;
-      *(byte *)(puVar6 + 3) = ((byte)puVar7[3] ^ (byte)((uw_object_hdr_t *)puVar6)->link_word) & 0x3f ^ (byte)((uw_object_hdr_t *)puVar6)->link_word;
+      ((uw_object_hdr_t *)puVar6)->link_word_low = ((byte)puVar7[3] ^ (byte)((uw_object_hdr_t *)puVar6)->link_word) & 0x3f ^ (byte)((uw_object_hdr_t *)puVar6)->link_word;
       ((uw_object_hdr_t *)puVar6)->link_word_high = ((uw_object_hdr_t *)puVar6)->link_word_high;
       bVar2 = *(byte *)((char *)puVar7 + 1);
       ((uw_object_hdr_t *)puVar6)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar6)->type_flags;
-      ((uw_object_hdr_t *)puVar6)->type_flags_high =
-                      (bVar2 ^ ((uw_object_hdr_t *)puVar6)->type_flags_high) & 0x20 ^ ((uw_object_hdr_t *)puVar6)->type_flags_high;
+      ((uw_object_hdr_t *)puVar6)->doordir = (bVar2 >> 5) & 0x1;
       if ((*puVar7 & 0x1c0) != 0x140) {
         if ((g_object_type_props[(*puVar7 & 0x1ff)].class_flags & 3) != 2) {
           *(byte *)(puVar6 + 0xd) = (byte)(puVar7[1] >> 7) & 7;

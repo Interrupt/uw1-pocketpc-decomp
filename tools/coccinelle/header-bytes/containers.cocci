@@ -1,6 +1,6 @@
 @receiver_0_w_0_0_pair_char_char@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
+identifier F =~ "^\(release_container_reference\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -15,7 +15,7 @@ R F(...) {
 
 @receiver_0_w_0_0_pair_char_byte@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
+identifier F =~ "^\(release_container_reference\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -30,7 +30,7 @@ R F(...) {
 
 @receiver_0_w_0_0_pair_byte_char@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
+identifier F =~ "^\(release_container_reference\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -45,7 +45,7 @@ R F(...) {
 
 @receiver_0_w_0_0_pair_byte_byte@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
+identifier F =~ "^\(release_container_reference\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -60,8 +60,8 @@ R F(...) {
 
 @receiver_0_w_0_0_word_ushort@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef ushort, byte, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -77,6 +77,48 @@ R F(...) {
 |
 - *(ushort *)((ushort *)puVar2 + 0x0)
 + ((uw_object_hdr_t *)puVar2)->type_flags
+|
+- *(ushort *)(puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags
+|
+- puVar2[0x0]
++ ((uw_object_hdr_t *)puVar2)->type_flags
+|
+- *puVar2
++ ((uw_object_hdr_t *)puVar2)->type_flags
+)
+...>
+}
+
+
+@receiver_0_w_0_0_word_undefined2@
+type R;
+identifier F =~ "^\(release_container_reference\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags
+|
+- *(undefined2 *)((byte *)puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags
+|
+- ((undefined2 *)puVar2)[0x0]
++ ((uw_object_hdr_t *)puVar2)->type_flags
+|
+- *(undefined2 *)((undefined2 *)puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags
+|
+- *(undefined2 *)(puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags
+|
+- puVar2[0x0]
++ ((uw_object_hdr_t *)puVar2)->type_flags
+|
+- *puVar2
++ ((uw_object_hdr_t *)puVar2)->type_flags
 )
 ...>
 }
@@ -84,8 +126,8 @@ R F(...) {
 
 @receiver_0_w_0_0_word_short@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef ushort, byte, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -101,6 +143,9 @@ R F(...) {
 |
 - *(short *)((short *)puVar2 + 0x0)
 + ((uw_object_hdr_t *)puVar2)->type_flags_signed
+|
+- *(short *)(puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags_signed
 )
 ...>
 }
@@ -108,8 +153,8 @@ R F(...) {
 
 @receiver_0_w_0_0_byte_0_byte@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -131,6 +176,12 @@ R F(...) {
 |
 - *(byte *)puVar2
 + ((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- *(byte *)(puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- (byte)puVar2[0x0]
++ ((uw_object_hdr_t *)puVar2)->type_flags_low
 )
 ...>
 }
@@ -138,8 +189,8 @@ R F(...) {
 
 @receiver_0_w_0_0_byte_0_undefined1@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -161,6 +212,42 @@ R F(...) {
 |
 - *(undefined1 *)puVar2
 + ((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- *(undefined1 *)(puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- (undefined1)puVar2[0x0]
++ ((uw_object_hdr_t *)puVar2)->type_flags_low
+)
+...>
+}
+
+
+@receiver_0_w_0_0_address_0@
+type R;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar2 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- &*(char *)((byte *)puVar2 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- &((char *)puVar2)[0x0]
++ (char *)&((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- &*(char *)((ushort *)puVar2 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- &*(char *)puVar2
++ (char *)&((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- &*(char *)(puVar2 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar2)->type_flags_low
 )
 ...>
 }
@@ -168,8 +255,8 @@ R F(...) {
 
 @receiver_0_w_0_0_store_0@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -189,6 +276,9 @@ R F(...) {
 |
 - *(char *)puVar2 = E;
 + ((uw_object_hdr_t *)puVar2)->type_flags_low = (byte)E;
+|
+- *(char *)(puVar2 + 0x0) = E;
++ ((uw_object_hdr_t *)puVar2)->type_flags_low = (byte)E;
 )
 ...>
 }
@@ -196,8 +286,8 @@ R F(...) {
 
 @receiver_0_w_0_0_byte_0_char@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -219,6 +309,12 @@ R F(...) {
 |
 - *(char *)puVar2
 + (char)((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- *(char *)(puVar2 + 0x0)
++ (char)((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- (char)puVar2[0x0]
++ (char)((uw_object_hdr_t *)puVar2)->type_flags_low
 )
 ...>
 }
@@ -226,8 +322,8 @@ R F(...) {
 
 @receiver_0_w_0_0_byte_1_byte@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -247,8 +343,8 @@ R F(...) {
 
 @receiver_0_w_0_0_byte_1_undefined1@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -266,10 +362,31 @@ R F(...) {
 }
 
 
+@receiver_0_w_0_0_address_1@
+type R;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar2 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar2)->type_flags_high
+|
+- &*(char *)((byte *)puVar2 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar2)->type_flags_high
+|
+- &((char *)puVar2)[0x1]
++ (char *)&((uw_object_hdr_t *)puVar2)->type_flags_high
+)
+...>
+}
+
+
 @receiver_0_w_0_0_store_1@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -290,8 +407,8 @@ R F(...) {
 
 @receiver_0_w_0_0_byte_1_char@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -309,9 +426,9 @@ R F(...) {
 }
 
 
-@receiver_0_w_2_14_pair_char_char@
+@receiver_0_w_2_17_pair_char_char@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
+identifier F =~ "^\(release_container_reference\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -324,9 +441,9 @@ R F(...) {
 ...>
 }
 
-@receiver_0_w_2_14_pair_char_byte@
+@receiver_0_w_2_17_pair_char_byte@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
+identifier F =~ "^\(release_container_reference\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -339,9 +456,9 @@ R F(...) {
 ...>
 }
 
-@receiver_0_w_2_14_pair_byte_char@
+@receiver_0_w_2_17_pair_byte_char@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
+identifier F =~ "^\(release_container_reference\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -354,9 +471,9 @@ R F(...) {
 ...>
 }
 
-@receiver_0_w_2_14_pair_byte_byte@
+@receiver_0_w_2_17_pair_byte_byte@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
+identifier F =~ "^\(release_container_reference\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -369,10 +486,10 @@ R F(...) {
 ...>
 }
 
-@receiver_0_w_2_14_word_ushort@
+@receiver_0_w_2_17_word_ushort@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef ushort, byte, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -388,15 +505,51 @@ R F(...) {
 |
 - *(ushort *)((ushort *)puVar2 + 0x1)
 + ((uw_object_hdr_t *)puVar2)->position_word
+|
+- *(ushort *)(puVar2 + 0x1)
++ ((uw_object_hdr_t *)puVar2)->position_word
+|
+- puVar2[0x1]
++ ((uw_object_hdr_t *)puVar2)->position_word
 )
 ...>
 }
 
 
-@receiver_0_w_2_14_word_short@
+@receiver_0_w_2_17_word_undefined2@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef ushort, byte, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->position_word
+|
+- *(undefined2 *)((byte *)puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->position_word
+|
+- ((undefined2 *)puVar2)[0x1]
++ ((uw_object_hdr_t *)puVar2)->position_word
+|
+- *(undefined2 *)((undefined2 *)puVar2 + 0x1)
++ ((uw_object_hdr_t *)puVar2)->position_word
+|
+- *(undefined2 *)(puVar2 + 0x1)
++ ((uw_object_hdr_t *)puVar2)->position_word
+|
+- puVar2[0x1]
++ ((uw_object_hdr_t *)puVar2)->position_word
+)
+...>
+}
+
+
+@receiver_0_w_2_17_word_short@
+type R;
+identifier F =~ "^\(release_container_reference\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -412,15 +565,18 @@ R F(...) {
 |
 - *(short *)((short *)puVar2 + 0x1)
 + ((uw_object_hdr_t *)puVar2)->position_word_signed
+|
+- *(short *)(puVar2 + 0x1)
++ ((uw_object_hdr_t *)puVar2)->position_word_signed
 )
 ...>
 }
 
 
-@receiver_0_w_2_14_byte_2_byte@
+@receiver_0_w_2_17_byte_2_byte@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -439,15 +595,21 @@ R F(...) {
 |
 - (byte)((ushort *)puVar2)[0x1]
 + ((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- *(byte *)(puVar2 + 0x1)
++ ((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- (byte)puVar2[0x1]
++ ((uw_object_hdr_t *)puVar2)->position_word_low
 )
 ...>
 }
 
 
-@receiver_0_w_2_14_byte_2_undefined1@
+@receiver_0_w_2_17_byte_2_undefined1@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -466,15 +628,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)puVar2)[0x1]
 + ((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- *(undefined1 *)(puVar2 + 0x1)
++ ((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- (undefined1)puVar2[0x1]
++ ((uw_object_hdr_t *)puVar2)->position_word_low
 )
 ...>
 }
 
 
-@receiver_0_w_2_14_store_2@
+@receiver_0_w_2_17_address_2@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar2 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- &*(char *)((byte *)puVar2 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- &((char *)puVar2)[0x2]
++ (char *)&((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- &*(char *)((ushort *)puVar2 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- &*(char *)(puVar2 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar2)->position_word_low
+)
+...>
+}
+
+
+@receiver_0_w_2_17_store_2@
+type R;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -491,15 +686,18 @@ R F(...) {
 |
 - *(char *)((ushort *)puVar2 + 0x1) = E;
 + ((uw_object_hdr_t *)puVar2)->position_word_low = (byte)E;
+|
+- *(char *)(puVar2 + 0x1) = E;
++ ((uw_object_hdr_t *)puVar2)->position_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_0_w_2_14_byte_2_char@
+@receiver_0_w_2_17_byte_2_char@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -518,15 +716,21 @@ R F(...) {
 |
 - (char)((ushort *)puVar2)[0x1]
 + (char)((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- *(char *)(puVar2 + 0x1)
++ (char)((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- (char)puVar2[0x1]
++ (char)((uw_object_hdr_t *)puVar2)->position_word_low
 )
 ...>
 }
 
 
-@receiver_0_w_2_14_byte_3_byte@
+@receiver_0_w_2_17_byte_3_byte@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -544,10 +748,10 @@ R F(...) {
 }
 
 
-@receiver_0_w_2_14_byte_3_undefined1@
+@receiver_0_w_2_17_byte_3_undefined1@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -565,10 +769,31 @@ R F(...) {
 }
 
 
-@receiver_0_w_2_14_store_3@
+@receiver_0_w_2_17_address_3@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar2 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar2)->position_word_high
+|
+- &*(char *)((byte *)puVar2 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar2)->position_word_high
+|
+- &((char *)puVar2)[0x3]
++ (char *)&((uw_object_hdr_t *)puVar2)->position_word_high
+)
+...>
+}
+
+
+@receiver_0_w_2_17_store_3@
+type R;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -587,10 +812,10 @@ R F(...) {
 }
 
 
-@receiver_0_w_2_14_byte_3_char@
+@receiver_0_w_2_17_byte_3_char@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -608,9 +833,9 @@ R F(...) {
 }
 
 
-@receiver_0_w_4_28_pair_char_char@
+@receiver_0_w_4_34_pair_char_char@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
+identifier F =~ "^\(release_container_reference\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -623,9 +848,9 @@ R F(...) {
 ...>
 }
 
-@receiver_0_w_4_28_pair_char_byte@
+@receiver_0_w_4_34_pair_char_byte@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
+identifier F =~ "^\(release_container_reference\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -638,9 +863,9 @@ R F(...) {
 ...>
 }
 
-@receiver_0_w_4_28_pair_byte_char@
+@receiver_0_w_4_34_pair_byte_char@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
+identifier F =~ "^\(release_container_reference\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -653,9 +878,9 @@ R F(...) {
 ...>
 }
 
-@receiver_0_w_4_28_pair_byte_byte@
+@receiver_0_w_4_34_pair_byte_byte@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
+identifier F =~ "^\(release_container_reference\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -668,10 +893,10 @@ R F(...) {
 ...>
 }
 
-@receiver_0_w_4_28_word_ushort@
+@receiver_0_w_4_34_word_ushort@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef ushort, byte, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -687,15 +912,51 @@ R F(...) {
 |
 - *(ushort *)((ushort *)puVar2 + 0x2)
 + ((uw_object_hdr_t *)puVar2)->chain_word
+|
+- *(ushort *)(puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->chain_word
+|
+- puVar2[0x2]
++ ((uw_object_hdr_t *)puVar2)->chain_word
 )
 ...>
 }
 
 
-@receiver_0_w_4_28_word_short@
+@receiver_0_w_4_34_word_undefined2@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef ushort, byte, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar2 + 0x4)
++ ((uw_object_hdr_t *)puVar2)->chain_word
+|
+- *(undefined2 *)((byte *)puVar2 + 0x4)
++ ((uw_object_hdr_t *)puVar2)->chain_word
+|
+- ((undefined2 *)puVar2)[0x2]
++ ((uw_object_hdr_t *)puVar2)->chain_word
+|
+- *(undefined2 *)((undefined2 *)puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->chain_word
+|
+- *(undefined2 *)(puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->chain_word
+|
+- puVar2[0x2]
++ ((uw_object_hdr_t *)puVar2)->chain_word
+)
+...>
+}
+
+
+@receiver_0_w_4_34_word_short@
+type R;
+identifier F =~ "^\(release_container_reference\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -711,15 +972,18 @@ R F(...) {
 |
 - *(short *)((short *)puVar2 + 0x2)
 + ((uw_object_hdr_t *)puVar2)->chain_word_signed
+|
+- *(short *)(puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->chain_word_signed
 )
 ...>
 }
 
 
-@receiver_0_w_4_28_byte_4_byte@
+@receiver_0_w_4_34_byte_4_byte@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -738,15 +1002,21 @@ R F(...) {
 |
 - (byte)((ushort *)puVar2)[0x2]
 + ((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- *(byte *)(puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- (byte)puVar2[0x2]
++ ((uw_object_hdr_t *)puVar2)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_0_w_4_28_byte_4_undefined1@
+@receiver_0_w_4_34_byte_4_undefined1@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -765,15 +1035,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)puVar2)[0x2]
 + ((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- *(undefined1 *)(puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- (undefined1)puVar2[0x2]
++ ((uw_object_hdr_t *)puVar2)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_0_w_4_28_store_4@
+@receiver_0_w_4_34_address_4@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar2 + 0x4)
++ (char *)&((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- &*(char *)((byte *)puVar2 + 0x4)
++ (char *)&((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- &((char *)puVar2)[0x4]
++ (char *)&((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- &*(char *)((ushort *)puVar2 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- &*(char *)(puVar2 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar2)->chain_word_low
+)
+...>
+}
+
+
+@receiver_0_w_4_34_store_4@
+type R;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -790,15 +1093,18 @@ R F(...) {
 |
 - *(char *)((ushort *)puVar2 + 0x2) = E;
 + ((uw_object_hdr_t *)puVar2)->chain_word_low = (byte)E;
+|
+- *(char *)(puVar2 + 0x2) = E;
++ ((uw_object_hdr_t *)puVar2)->chain_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_0_w_4_28_byte_4_char@
+@receiver_0_w_4_34_byte_4_char@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -817,15 +1123,21 @@ R F(...) {
 |
 - (char)((ushort *)puVar2)[0x2]
 + (char)((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- *(char *)(puVar2 + 0x2)
++ (char)((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- (char)puVar2[0x2]
++ (char)((uw_object_hdr_t *)puVar2)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_0_w_4_28_byte_5_byte@
+@receiver_0_w_4_34_byte_5_byte@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -843,10 +1155,10 @@ R F(...) {
 }
 
 
-@receiver_0_w_4_28_byte_5_undefined1@
+@receiver_0_w_4_34_byte_5_undefined1@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -864,10 +1176,31 @@ R F(...) {
 }
 
 
-@receiver_0_w_4_28_store_5@
+@receiver_0_w_4_34_address_5@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar2 + 0x5)
++ (char *)&((uw_object_hdr_t *)puVar2)->chain_word_high
+|
+- &*(char *)((byte *)puVar2 + 0x5)
++ (char *)&((uw_object_hdr_t *)puVar2)->chain_word_high
+|
+- &((char *)puVar2)[0x5]
++ (char *)&((uw_object_hdr_t *)puVar2)->chain_word_high
+)
+...>
+}
+
+
+@receiver_0_w_4_34_store_5@
+type R;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -886,10 +1219,10 @@ R F(...) {
 }
 
 
-@receiver_0_w_4_28_byte_5_char@
+@receiver_0_w_4_34_byte_5_char@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -907,9 +1240,9 @@ R F(...) {
 }
 
 
-@receiver_0_w_6_42_pair_char_char@
+@receiver_0_w_6_51_pair_char_char@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
+identifier F =~ "^\(release_container_reference\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -922,9 +1255,9 @@ R F(...) {
 ...>
 }
 
-@receiver_0_w_6_42_pair_char_byte@
+@receiver_0_w_6_51_pair_char_byte@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
+identifier F =~ "^\(release_container_reference\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -937,9 +1270,9 @@ R F(...) {
 ...>
 }
 
-@receiver_0_w_6_42_pair_byte_char@
+@receiver_0_w_6_51_pair_byte_char@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
+identifier F =~ "^\(release_container_reference\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -952,9 +1285,9 @@ R F(...) {
 ...>
 }
 
-@receiver_0_w_6_42_pair_byte_byte@
+@receiver_0_w_6_51_pair_byte_byte@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
+identifier F =~ "^\(release_container_reference\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -967,10 +1300,10 @@ R F(...) {
 ...>
 }
 
-@receiver_0_w_6_42_word_ushort@
+@receiver_0_w_6_51_word_ushort@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef ushort, byte, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -986,15 +1319,51 @@ R F(...) {
 |
 - *(ushort *)((ushort *)puVar2 + 0x3)
 + ((uw_object_hdr_t *)puVar2)->link_word
+|
+- *(ushort *)(puVar2 + 0x3)
++ ((uw_object_hdr_t *)puVar2)->link_word
+|
+- puVar2[0x3]
++ ((uw_object_hdr_t *)puVar2)->link_word
 )
 ...>
 }
 
 
-@receiver_0_w_6_42_word_short@
+@receiver_0_w_6_51_word_undefined2@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef ushort, byte, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar2 + 0x6)
++ ((uw_object_hdr_t *)puVar2)->link_word
+|
+- *(undefined2 *)((byte *)puVar2 + 0x6)
++ ((uw_object_hdr_t *)puVar2)->link_word
+|
+- ((undefined2 *)puVar2)[0x3]
++ ((uw_object_hdr_t *)puVar2)->link_word
+|
+- *(undefined2 *)((undefined2 *)puVar2 + 0x3)
++ ((uw_object_hdr_t *)puVar2)->link_word
+|
+- *(undefined2 *)(puVar2 + 0x3)
++ ((uw_object_hdr_t *)puVar2)->link_word
+|
+- puVar2[0x3]
++ ((uw_object_hdr_t *)puVar2)->link_word
+)
+...>
+}
+
+
+@receiver_0_w_6_51_word_short@
+type R;
+identifier F =~ "^\(release_container_reference\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1010,15 +1379,18 @@ R F(...) {
 |
 - *(short *)((short *)puVar2 + 0x3)
 + ((uw_object_hdr_t *)puVar2)->link_word_signed
+|
+- *(short *)(puVar2 + 0x3)
++ ((uw_object_hdr_t *)puVar2)->link_word_signed
 )
 ...>
 }
 
 
-@receiver_0_w_6_42_byte_6_byte@
+@receiver_0_w_6_51_byte_6_byte@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1037,15 +1409,21 @@ R F(...) {
 |
 - (byte)((ushort *)puVar2)[0x3]
 + ((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- *(byte *)(puVar2 + 0x3)
++ ((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- (byte)puVar2[0x3]
++ ((uw_object_hdr_t *)puVar2)->link_word_low
 )
 ...>
 }
 
 
-@receiver_0_w_6_42_byte_6_undefined1@
+@receiver_0_w_6_51_byte_6_undefined1@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1064,15 +1442,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)puVar2)[0x3]
 + ((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- *(undefined1 *)(puVar2 + 0x3)
++ ((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- (undefined1)puVar2[0x3]
++ ((uw_object_hdr_t *)puVar2)->link_word_low
 )
 ...>
 }
 
 
-@receiver_0_w_6_42_store_6@
+@receiver_0_w_6_51_address_6@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar2 + 0x6)
++ (char *)&((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- &*(char *)((byte *)puVar2 + 0x6)
++ (char *)&((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- &((char *)puVar2)[0x6]
++ (char *)&((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- &*(char *)((ushort *)puVar2 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- &*(char *)(puVar2 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar2)->link_word_low
+)
+...>
+}
+
+
+@receiver_0_w_6_51_store_6@
+type R;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -1089,15 +1500,18 @@ R F(...) {
 |
 - *(char *)((ushort *)puVar2 + 0x3) = E;
 + ((uw_object_hdr_t *)puVar2)->link_word_low = (byte)E;
+|
+- *(char *)(puVar2 + 0x3) = E;
++ ((uw_object_hdr_t *)puVar2)->link_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_0_w_6_42_byte_6_char@
+@receiver_0_w_6_51_byte_6_char@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1116,15 +1530,21 @@ R F(...) {
 |
 - (char)((ushort *)puVar2)[0x3]
 + (char)((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- *(char *)(puVar2 + 0x3)
++ (char)((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- (char)puVar2[0x3]
++ (char)((uw_object_hdr_t *)puVar2)->link_word_low
 )
 ...>
 }
 
 
-@receiver_0_w_6_42_byte_7_byte@
+@receiver_0_w_6_51_byte_7_byte@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1142,10 +1562,10 @@ R F(...) {
 }
 
 
-@receiver_0_w_6_42_byte_7_undefined1@
+@receiver_0_w_6_51_byte_7_undefined1@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1163,10 +1583,31 @@ R F(...) {
 }
 
 
-@receiver_0_w_6_42_store_7@
+@receiver_0_w_6_51_address_7@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar2 + 0x7)
++ (char *)&((uw_object_hdr_t *)puVar2)->link_word_high
+|
+- &*(char *)((byte *)puVar2 + 0x7)
++ (char *)&((uw_object_hdr_t *)puVar2)->link_word_high
+|
+- &((char *)puVar2)[0x7]
++ (char *)&((uw_object_hdr_t *)puVar2)->link_word_high
+)
+...>
+}
+
+
+@receiver_0_w_6_51_store_7@
+type R;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -1185,10 +1626,10 @@ R F(...) {
 }
 
 
-@receiver_0_w_6_42_byte_7_char@
+@receiver_0_w_6_51_byte_7_char@
 type R;
-identifier F =~ "^\(release_container_reference\|sum_container_weight\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(release_container_reference\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1269,7 +1710,7 @@ R F(...) {
 @receiver_1_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1285,6 +1726,36 @@ R F(...) {
 |
 - *(ushort *)((ushort *)iVar1 + 0x0)
 + ((uw_object_hdr_t *)iVar1)->type_flags
+|
+- *(ushort *)(iVar1 + 0x0)
++ ((uw_object_hdr_t *)iVar1)->type_flags
+)
+...>
+}
+
+
+@receiver_1_w_0_0_word_undefined2@
+type R;
+identifier F =~ "^\(leave_nested_container_level\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)iVar1 + 0x0)
++ ((uw_object_hdr_t *)iVar1)->type_flags
+|
+- *(undefined2 *)((byte *)iVar1 + 0x0)
++ ((uw_object_hdr_t *)iVar1)->type_flags
+|
+- ((undefined2 *)iVar1)[0x0]
++ ((uw_object_hdr_t *)iVar1)->type_flags
+|
+- *(undefined2 *)((undefined2 *)iVar1 + 0x0)
++ ((uw_object_hdr_t *)iVar1)->type_flags
+|
+- *(undefined2 *)(iVar1 + 0x0)
++ ((uw_object_hdr_t *)iVar1)->type_flags
 )
 ...>
 }
@@ -1293,7 +1764,7 @@ R F(...) {
 @receiver_1_w_0_0_word_short@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1309,6 +1780,9 @@ R F(...) {
 |
 - *(short *)((short *)iVar1 + 0x0)
 + ((uw_object_hdr_t *)iVar1)->type_flags_signed
+|
+- *(short *)(iVar1 + 0x0)
++ ((uw_object_hdr_t *)iVar1)->type_flags_signed
 )
 ...>
 }
@@ -1317,7 +1791,7 @@ R F(...) {
 @receiver_1_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1339,6 +1813,9 @@ R F(...) {
 |
 - *(byte *)iVar1
 + ((uw_object_hdr_t *)iVar1)->type_flags_low
+|
+- *(byte *)(iVar1 + 0x0)
++ ((uw_object_hdr_t *)iVar1)->type_flags_low
 )
 ...>
 }
@@ -1347,7 +1824,7 @@ R F(...) {
 @receiver_1_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1369,6 +1846,45 @@ R F(...) {
 |
 - *(undefined1 *)iVar1
 + ((uw_object_hdr_t *)iVar1)->type_flags_low
+|
+- *(undefined1 *)(iVar1 + 0x0)
++ ((uw_object_hdr_t *)iVar1)->type_flags_low
+)
+...>
+}
+
+
+@receiver_1_w_0_0_address_0@
+type R;
+identifier F =~ "^\(leave_nested_container_level\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)iVar1 + 0x0)
++ (char *)&((uw_object_hdr_t *)iVar1)->type_flags_low
+|
+- &*(char *)((byte *)iVar1 + 0x0)
++ (char *)&((uw_object_hdr_t *)iVar1)->type_flags_low
+|
+- &((char *)iVar1)[0x0]
++ (char *)&((uw_object_hdr_t *)iVar1)->type_flags_low
+|
+- &*(char *)((ushort *)iVar1 + 0x0)
++ (char *)&((uw_object_hdr_t *)iVar1)->type_flags_low
+|
+- &*(char *)iVar1
++ (char *)&((uw_object_hdr_t *)iVar1)->type_flags_low
+|
+- &*(char *)(iVar1 + 0x0)
++ (char *)&((uw_object_hdr_t *)iVar1)->type_flags_low
+|
+- &iVar1[0x0]
++ (char *)&((uw_object_hdr_t *)iVar1)->type_flags_low
+|
+- &*iVar1
++ (char *)&((uw_object_hdr_t *)iVar1)->type_flags_low
 )
 ...>
 }
@@ -1377,7 +1893,7 @@ R F(...) {
 @receiver_1_w_0_0_store_0@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -1397,6 +1913,15 @@ R F(...) {
 |
 - *(char *)iVar1 = E;
 + ((uw_object_hdr_t *)iVar1)->type_flags_low = (byte)E;
+|
+- *(char *)(iVar1 + 0x0) = E;
++ ((uw_object_hdr_t *)iVar1)->type_flags_low = (byte)E;
+|
+- iVar1[0x0] = E;
++ ((uw_object_hdr_t *)iVar1)->type_flags_low = (byte)E;
+|
+- *iVar1 = E;
++ ((uw_object_hdr_t *)iVar1)->type_flags_low = (byte)E;
 )
 ...>
 }
@@ -1405,7 +1930,7 @@ R F(...) {
 @receiver_1_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1427,6 +1952,15 @@ R F(...) {
 |
 - *(char *)iVar1
 + (char)((uw_object_hdr_t *)iVar1)->type_flags_low
+|
+- *(char *)(iVar1 + 0x0)
++ (char)((uw_object_hdr_t *)iVar1)->type_flags_low
+|
+- iVar1[0x0]
++ (char)((uw_object_hdr_t *)iVar1)->type_flags_low
+|
+- *iVar1
++ (char)((uw_object_hdr_t *)iVar1)->type_flags_low
 )
 ...>
 }
@@ -1435,7 +1969,7 @@ R F(...) {
 @receiver_1_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1448,6 +1982,9 @@ R F(...) {
 |
 - ((byte *)iVar1)[0x1]
 + ((uw_object_hdr_t *)iVar1)->type_flags_high
+|
+- *(byte *)(iVar1 + 0x1)
++ ((uw_object_hdr_t *)iVar1)->type_flags_high
 )
 ...>
 }
@@ -1456,7 +1993,7 @@ R F(...) {
 @receiver_1_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1469,6 +2006,36 @@ R F(...) {
 |
 - ((undefined1 *)iVar1)[0x1]
 + ((uw_object_hdr_t *)iVar1)->type_flags_high
+|
+- *(undefined1 *)(iVar1 + 0x1)
++ ((uw_object_hdr_t *)iVar1)->type_flags_high
+)
+...>
+}
+
+
+@receiver_1_w_0_0_address_1@
+type R;
+identifier F =~ "^\(leave_nested_container_level\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)iVar1 + 0x1)
++ (char *)&((uw_object_hdr_t *)iVar1)->type_flags_high
+|
+- &*(char *)((byte *)iVar1 + 0x1)
++ (char *)&((uw_object_hdr_t *)iVar1)->type_flags_high
+|
+- &((char *)iVar1)[0x1]
++ (char *)&((uw_object_hdr_t *)iVar1)->type_flags_high
+|
+- &*(char *)(iVar1 + 0x1)
++ (char *)&((uw_object_hdr_t *)iVar1)->type_flags_high
+|
+- &iVar1[0x1]
++ (char *)&((uw_object_hdr_t *)iVar1)->type_flags_high
 )
 ...>
 }
@@ -1477,7 +2044,7 @@ R F(...) {
 @receiver_1_w_0_0_store_1@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -1491,6 +2058,12 @@ R F(...) {
 |
 - ((char *)iVar1)[0x1] = E;
 + ((uw_object_hdr_t *)iVar1)->type_flags_high = (byte)E;
+|
+- *(char *)(iVar1 + 0x1) = E;
++ ((uw_object_hdr_t *)iVar1)->type_flags_high = (byte)E;
+|
+- iVar1[0x1] = E;
++ ((uw_object_hdr_t *)iVar1)->type_flags_high = (byte)E;
 )
 ...>
 }
@@ -1499,7 +2072,7 @@ R F(...) {
 @receiver_1_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1512,12 +2085,18 @@ R F(...) {
 |
 - ((char *)iVar1)[0x1]
 + (char)((uw_object_hdr_t *)iVar1)->type_flags_high
+|
+- *(char *)(iVar1 + 0x1)
++ (char)((uw_object_hdr_t *)iVar1)->type_flags_high
+|
+- iVar1[0x1]
++ (char)((uw_object_hdr_t *)iVar1)->type_flags_high
 )
 ...>
 }
 
 
-@receiver_1_w_2_14_pair_char_char@
+@receiver_1_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -1532,7 +2111,7 @@ R F(...) {
 ...>
 }
 
-@receiver_1_w_2_14_pair_char_byte@
+@receiver_1_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -1547,7 +2126,7 @@ R F(...) {
 ...>
 }
 
-@receiver_1_w_2_14_pair_byte_char@
+@receiver_1_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -1562,7 +2141,7 @@ R F(...) {
 ...>
 }
 
-@receiver_1_w_2_14_pair_byte_byte@
+@receiver_1_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -1577,10 +2156,10 @@ R F(...) {
 ...>
 }
 
-@receiver_1_w_2_14_word_ushort@
+@receiver_1_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1596,15 +2175,45 @@ R F(...) {
 |
 - *(ushort *)((ushort *)iVar1 + 0x1)
 + ((uw_object_hdr_t *)iVar1)->position_word
+|
+- *(ushort *)(iVar1 + 0x2)
++ ((uw_object_hdr_t *)iVar1)->position_word
 )
 ...>
 }
 
 
-@receiver_1_w_2_14_word_short@
+@receiver_1_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)iVar1 + 0x2)
++ ((uw_object_hdr_t *)iVar1)->position_word
+|
+- *(undefined2 *)((byte *)iVar1 + 0x2)
++ ((uw_object_hdr_t *)iVar1)->position_word
+|
+- ((undefined2 *)iVar1)[0x1]
++ ((uw_object_hdr_t *)iVar1)->position_word
+|
+- *(undefined2 *)((undefined2 *)iVar1 + 0x1)
++ ((uw_object_hdr_t *)iVar1)->position_word
+|
+- *(undefined2 *)(iVar1 + 0x2)
++ ((uw_object_hdr_t *)iVar1)->position_word
+)
+...>
+}
+
+
+@receiver_1_w_2_17_word_short@
+type R;
+identifier F =~ "^\(leave_nested_container_level\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1620,15 +2229,18 @@ R F(...) {
 |
 - *(short *)((short *)iVar1 + 0x1)
 + ((uw_object_hdr_t *)iVar1)->position_word_signed
+|
+- *(short *)(iVar1 + 0x2)
++ ((uw_object_hdr_t *)iVar1)->position_word_signed
 )
 ...>
 }
 
 
-@receiver_1_w_2_14_byte_2_byte@
+@receiver_1_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1647,15 +2259,18 @@ R F(...) {
 |
 - (byte)((ushort *)iVar1)[0x1]
 + ((uw_object_hdr_t *)iVar1)->position_word_low
+|
+- *(byte *)(iVar1 + 0x2)
++ ((uw_object_hdr_t *)iVar1)->position_word_low
 )
 ...>
 }
 
 
-@receiver_1_w_2_14_byte_2_undefined1@
+@receiver_1_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1674,15 +2289,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)iVar1)[0x1]
 + ((uw_object_hdr_t *)iVar1)->position_word_low
+|
+- *(undefined1 *)(iVar1 + 0x2)
++ ((uw_object_hdr_t *)iVar1)->position_word_low
 )
 ...>
 }
 
 
-@receiver_1_w_2_14_store_2@
+@receiver_1_w_2_17_address_2@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)iVar1 + 0x2)
++ (char *)&((uw_object_hdr_t *)iVar1)->position_word_low
+|
+- &*(char *)((byte *)iVar1 + 0x2)
++ (char *)&((uw_object_hdr_t *)iVar1)->position_word_low
+|
+- &((char *)iVar1)[0x2]
++ (char *)&((uw_object_hdr_t *)iVar1)->position_word_low
+|
+- &*(char *)((ushort *)iVar1 + 0x1)
++ (char *)&((uw_object_hdr_t *)iVar1)->position_word_low
+|
+- &*(char *)(iVar1 + 0x2)
++ (char *)&((uw_object_hdr_t *)iVar1)->position_word_low
+|
+- &iVar1[0x2]
++ (char *)&((uw_object_hdr_t *)iVar1)->position_word_low
+)
+...>
+}
+
+
+@receiver_1_w_2_17_store_2@
+type R;
+identifier F =~ "^\(leave_nested_container_level\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -1699,15 +2347,21 @@ R F(...) {
 |
 - *(char *)((ushort *)iVar1 + 0x1) = E;
 + ((uw_object_hdr_t *)iVar1)->position_word_low = (byte)E;
+|
+- *(char *)(iVar1 + 0x2) = E;
++ ((uw_object_hdr_t *)iVar1)->position_word_low = (byte)E;
+|
+- iVar1[0x2] = E;
++ ((uw_object_hdr_t *)iVar1)->position_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_1_w_2_14_byte_2_char@
+@receiver_1_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1726,15 +2380,21 @@ R F(...) {
 |
 - (char)((ushort *)iVar1)[0x1]
 + (char)((uw_object_hdr_t *)iVar1)->position_word_low
+|
+- *(char *)(iVar1 + 0x2)
++ (char)((uw_object_hdr_t *)iVar1)->position_word_low
+|
+- iVar1[0x2]
++ (char)((uw_object_hdr_t *)iVar1)->position_word_low
 )
 ...>
 }
 
 
-@receiver_1_w_2_14_byte_3_byte@
+@receiver_1_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1747,15 +2407,18 @@ R F(...) {
 |
 - ((byte *)iVar1)[0x3]
 + ((uw_object_hdr_t *)iVar1)->position_word_high
+|
+- *(byte *)(iVar1 + 0x3)
++ ((uw_object_hdr_t *)iVar1)->position_word_high
 )
 ...>
 }
 
 
-@receiver_1_w_2_14_byte_3_undefined1@
+@receiver_1_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1768,15 +2431,45 @@ R F(...) {
 |
 - ((undefined1 *)iVar1)[0x3]
 + ((uw_object_hdr_t *)iVar1)->position_word_high
+|
+- *(undefined1 *)(iVar1 + 0x3)
++ ((uw_object_hdr_t *)iVar1)->position_word_high
 )
 ...>
 }
 
 
-@receiver_1_w_2_14_store_3@
+@receiver_1_w_2_17_address_3@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)iVar1 + 0x3)
++ (char *)&((uw_object_hdr_t *)iVar1)->position_word_high
+|
+- &*(char *)((byte *)iVar1 + 0x3)
++ (char *)&((uw_object_hdr_t *)iVar1)->position_word_high
+|
+- &((char *)iVar1)[0x3]
++ (char *)&((uw_object_hdr_t *)iVar1)->position_word_high
+|
+- &*(char *)(iVar1 + 0x3)
++ (char *)&((uw_object_hdr_t *)iVar1)->position_word_high
+|
+- &iVar1[0x3]
++ (char *)&((uw_object_hdr_t *)iVar1)->position_word_high
+)
+...>
+}
+
+
+@receiver_1_w_2_17_store_3@
+type R;
+identifier F =~ "^\(leave_nested_container_level\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -1790,15 +2483,21 @@ R F(...) {
 |
 - ((char *)iVar1)[0x3] = E;
 + ((uw_object_hdr_t *)iVar1)->position_word_high = (byte)E;
+|
+- *(char *)(iVar1 + 0x3) = E;
++ ((uw_object_hdr_t *)iVar1)->position_word_high = (byte)E;
+|
+- iVar1[0x3] = E;
++ ((uw_object_hdr_t *)iVar1)->position_word_high = (byte)E;
 )
 ...>
 }
 
 
-@receiver_1_w_2_14_byte_3_char@
+@receiver_1_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1811,12 +2510,18 @@ R F(...) {
 |
 - ((char *)iVar1)[0x3]
 + (char)((uw_object_hdr_t *)iVar1)->position_word_high
+|
+- *(char *)(iVar1 + 0x3)
++ (char)((uw_object_hdr_t *)iVar1)->position_word_high
+|
+- iVar1[0x3]
++ (char)((uw_object_hdr_t *)iVar1)->position_word_high
 )
 ...>
 }
 
 
-@receiver_1_w_4_28_pair_char_char@
+@receiver_1_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -1831,7 +2536,7 @@ R F(...) {
 ...>
 }
 
-@receiver_1_w_4_28_pair_char_byte@
+@receiver_1_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -1846,7 +2551,7 @@ R F(...) {
 ...>
 }
 
-@receiver_1_w_4_28_pair_byte_char@
+@receiver_1_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -1861,7 +2566,7 @@ R F(...) {
 ...>
 }
 
-@receiver_1_w_4_28_pair_byte_byte@
+@receiver_1_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -1876,10 +2581,10 @@ R F(...) {
 ...>
 }
 
-@receiver_1_w_4_28_word_ushort@
+@receiver_1_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1895,15 +2600,45 @@ R F(...) {
 |
 - *(ushort *)((ushort *)iVar1 + 0x2)
 + ((uw_object_hdr_t *)iVar1)->chain_word
+|
+- *(ushort *)(iVar1 + 0x4)
++ ((uw_object_hdr_t *)iVar1)->chain_word
 )
 ...>
 }
 
 
-@receiver_1_w_4_28_word_short@
+@receiver_1_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)iVar1 + 0x4)
++ ((uw_object_hdr_t *)iVar1)->chain_word
+|
+- *(undefined2 *)((byte *)iVar1 + 0x4)
++ ((uw_object_hdr_t *)iVar1)->chain_word
+|
+- ((undefined2 *)iVar1)[0x2]
++ ((uw_object_hdr_t *)iVar1)->chain_word
+|
+- *(undefined2 *)((undefined2 *)iVar1 + 0x2)
++ ((uw_object_hdr_t *)iVar1)->chain_word
+|
+- *(undefined2 *)(iVar1 + 0x4)
++ ((uw_object_hdr_t *)iVar1)->chain_word
+)
+...>
+}
+
+
+@receiver_1_w_4_34_word_short@
+type R;
+identifier F =~ "^\(leave_nested_container_level\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1919,15 +2654,18 @@ R F(...) {
 |
 - *(short *)((short *)iVar1 + 0x2)
 + ((uw_object_hdr_t *)iVar1)->chain_word_signed
+|
+- *(short *)(iVar1 + 0x4)
++ ((uw_object_hdr_t *)iVar1)->chain_word_signed
 )
 ...>
 }
 
 
-@receiver_1_w_4_28_byte_4_byte@
+@receiver_1_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1946,15 +2684,18 @@ R F(...) {
 |
 - (byte)((ushort *)iVar1)[0x2]
 + ((uw_object_hdr_t *)iVar1)->chain_word_low
+|
+- *(byte *)(iVar1 + 0x4)
++ ((uw_object_hdr_t *)iVar1)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_1_w_4_28_byte_4_undefined1@
+@receiver_1_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -1973,15 +2714,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)iVar1)[0x2]
 + ((uw_object_hdr_t *)iVar1)->chain_word_low
+|
+- *(undefined1 *)(iVar1 + 0x4)
++ ((uw_object_hdr_t *)iVar1)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_1_w_4_28_store_4@
+@receiver_1_w_4_34_address_4@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)iVar1 + 0x4)
++ (char *)&((uw_object_hdr_t *)iVar1)->chain_word_low
+|
+- &*(char *)((byte *)iVar1 + 0x4)
++ (char *)&((uw_object_hdr_t *)iVar1)->chain_word_low
+|
+- &((char *)iVar1)[0x4]
++ (char *)&((uw_object_hdr_t *)iVar1)->chain_word_low
+|
+- &*(char *)((ushort *)iVar1 + 0x2)
++ (char *)&((uw_object_hdr_t *)iVar1)->chain_word_low
+|
+- &*(char *)(iVar1 + 0x4)
++ (char *)&((uw_object_hdr_t *)iVar1)->chain_word_low
+|
+- &iVar1[0x4]
++ (char *)&((uw_object_hdr_t *)iVar1)->chain_word_low
+)
+...>
+}
+
+
+@receiver_1_w_4_34_store_4@
+type R;
+identifier F =~ "^\(leave_nested_container_level\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -1998,15 +2772,21 @@ R F(...) {
 |
 - *(char *)((ushort *)iVar1 + 0x2) = E;
 + ((uw_object_hdr_t *)iVar1)->chain_word_low = (byte)E;
+|
+- *(char *)(iVar1 + 0x4) = E;
++ ((uw_object_hdr_t *)iVar1)->chain_word_low = (byte)E;
+|
+- iVar1[0x4] = E;
++ ((uw_object_hdr_t *)iVar1)->chain_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_1_w_4_28_byte_4_char@
+@receiver_1_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2025,15 +2805,21 @@ R F(...) {
 |
 - (char)((ushort *)iVar1)[0x2]
 + (char)((uw_object_hdr_t *)iVar1)->chain_word_low
+|
+- *(char *)(iVar1 + 0x4)
++ (char)((uw_object_hdr_t *)iVar1)->chain_word_low
+|
+- iVar1[0x4]
++ (char)((uw_object_hdr_t *)iVar1)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_1_w_4_28_byte_5_byte@
+@receiver_1_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2046,15 +2832,18 @@ R F(...) {
 |
 - ((byte *)iVar1)[0x5]
 + ((uw_object_hdr_t *)iVar1)->chain_word_high
+|
+- *(byte *)(iVar1 + 0x5)
++ ((uw_object_hdr_t *)iVar1)->chain_word_high
 )
 ...>
 }
 
 
-@receiver_1_w_4_28_byte_5_undefined1@
+@receiver_1_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2067,15 +2856,45 @@ R F(...) {
 |
 - ((undefined1 *)iVar1)[0x5]
 + ((uw_object_hdr_t *)iVar1)->chain_word_high
+|
+- *(undefined1 *)(iVar1 + 0x5)
++ ((uw_object_hdr_t *)iVar1)->chain_word_high
 )
 ...>
 }
 
 
-@receiver_1_w_4_28_store_5@
+@receiver_1_w_4_34_address_5@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)iVar1 + 0x5)
++ (char *)&((uw_object_hdr_t *)iVar1)->chain_word_high
+|
+- &*(char *)((byte *)iVar1 + 0x5)
++ (char *)&((uw_object_hdr_t *)iVar1)->chain_word_high
+|
+- &((char *)iVar1)[0x5]
++ (char *)&((uw_object_hdr_t *)iVar1)->chain_word_high
+|
+- &*(char *)(iVar1 + 0x5)
++ (char *)&((uw_object_hdr_t *)iVar1)->chain_word_high
+|
+- &iVar1[0x5]
++ (char *)&((uw_object_hdr_t *)iVar1)->chain_word_high
+)
+...>
+}
+
+
+@receiver_1_w_4_34_store_5@
+type R;
+identifier F =~ "^\(leave_nested_container_level\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -2089,15 +2908,21 @@ R F(...) {
 |
 - ((char *)iVar1)[0x5] = E;
 + ((uw_object_hdr_t *)iVar1)->chain_word_high = (byte)E;
+|
+- *(char *)(iVar1 + 0x5) = E;
++ ((uw_object_hdr_t *)iVar1)->chain_word_high = (byte)E;
+|
+- iVar1[0x5] = E;
++ ((uw_object_hdr_t *)iVar1)->chain_word_high = (byte)E;
 )
 ...>
 }
 
 
-@receiver_1_w_4_28_byte_5_char@
+@receiver_1_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2110,12 +2935,18 @@ R F(...) {
 |
 - ((char *)iVar1)[0x5]
 + (char)((uw_object_hdr_t *)iVar1)->chain_word_high
+|
+- *(char *)(iVar1 + 0x5)
++ (char)((uw_object_hdr_t *)iVar1)->chain_word_high
+|
+- iVar1[0x5]
++ (char)((uw_object_hdr_t *)iVar1)->chain_word_high
 )
 ...>
 }
 
 
-@receiver_1_w_6_42_pair_char_char@
+@receiver_1_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -2130,7 +2961,7 @@ R F(...) {
 ...>
 }
 
-@receiver_1_w_6_42_pair_char_byte@
+@receiver_1_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -2145,7 +2976,7 @@ R F(...) {
 ...>
 }
 
-@receiver_1_w_6_42_pair_byte_char@
+@receiver_1_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -2160,7 +2991,7 @@ R F(...) {
 ...>
 }
 
-@receiver_1_w_6_42_pair_byte_byte@
+@receiver_1_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -2175,10 +3006,10 @@ R F(...) {
 ...>
 }
 
-@receiver_1_w_6_42_word_ushort@
+@receiver_1_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2194,15 +3025,45 @@ R F(...) {
 |
 - *(ushort *)((ushort *)iVar1 + 0x3)
 + ((uw_object_hdr_t *)iVar1)->link_word
+|
+- *(ushort *)(iVar1 + 0x6)
++ ((uw_object_hdr_t *)iVar1)->link_word
 )
 ...>
 }
 
 
-@receiver_1_w_6_42_word_short@
+@receiver_1_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)iVar1 + 0x6)
++ ((uw_object_hdr_t *)iVar1)->link_word
+|
+- *(undefined2 *)((byte *)iVar1 + 0x6)
++ ((uw_object_hdr_t *)iVar1)->link_word
+|
+- ((undefined2 *)iVar1)[0x3]
++ ((uw_object_hdr_t *)iVar1)->link_word
+|
+- *(undefined2 *)((undefined2 *)iVar1 + 0x3)
++ ((uw_object_hdr_t *)iVar1)->link_word
+|
+- *(undefined2 *)(iVar1 + 0x6)
++ ((uw_object_hdr_t *)iVar1)->link_word
+)
+...>
+}
+
+
+@receiver_1_w_6_51_word_short@
+type R;
+identifier F =~ "^\(leave_nested_container_level\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2218,15 +3079,18 @@ R F(...) {
 |
 - *(short *)((short *)iVar1 + 0x3)
 + ((uw_object_hdr_t *)iVar1)->link_word_signed
+|
+- *(short *)(iVar1 + 0x6)
++ ((uw_object_hdr_t *)iVar1)->link_word_signed
 )
 ...>
 }
 
 
-@receiver_1_w_6_42_byte_6_byte@
+@receiver_1_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2245,15 +3109,18 @@ R F(...) {
 |
 - (byte)((ushort *)iVar1)[0x3]
 + ((uw_object_hdr_t *)iVar1)->link_word_low
+|
+- *(byte *)(iVar1 + 0x6)
++ ((uw_object_hdr_t *)iVar1)->link_word_low
 )
 ...>
 }
 
 
-@receiver_1_w_6_42_byte_6_undefined1@
+@receiver_1_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2272,15 +3139,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)iVar1)[0x3]
 + ((uw_object_hdr_t *)iVar1)->link_word_low
+|
+- *(undefined1 *)(iVar1 + 0x6)
++ ((uw_object_hdr_t *)iVar1)->link_word_low
 )
 ...>
 }
 
 
-@receiver_1_w_6_42_store_6@
+@receiver_1_w_6_51_address_6@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)iVar1 + 0x6)
++ (char *)&((uw_object_hdr_t *)iVar1)->link_word_low
+|
+- &*(char *)((byte *)iVar1 + 0x6)
++ (char *)&((uw_object_hdr_t *)iVar1)->link_word_low
+|
+- &((char *)iVar1)[0x6]
++ (char *)&((uw_object_hdr_t *)iVar1)->link_word_low
+|
+- &*(char *)((ushort *)iVar1 + 0x3)
++ (char *)&((uw_object_hdr_t *)iVar1)->link_word_low
+|
+- &*(char *)(iVar1 + 0x6)
++ (char *)&((uw_object_hdr_t *)iVar1)->link_word_low
+|
+- &iVar1[0x6]
++ (char *)&((uw_object_hdr_t *)iVar1)->link_word_low
+)
+...>
+}
+
+
+@receiver_1_w_6_51_store_6@
+type R;
+identifier F =~ "^\(leave_nested_container_level\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -2297,15 +3197,21 @@ R F(...) {
 |
 - *(char *)((ushort *)iVar1 + 0x3) = E;
 + ((uw_object_hdr_t *)iVar1)->link_word_low = (byte)E;
+|
+- *(char *)(iVar1 + 0x6) = E;
++ ((uw_object_hdr_t *)iVar1)->link_word_low = (byte)E;
+|
+- iVar1[0x6] = E;
++ ((uw_object_hdr_t *)iVar1)->link_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_1_w_6_42_byte_6_char@
+@receiver_1_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2324,15 +3230,21 @@ R F(...) {
 |
 - (char)((ushort *)iVar1)[0x3]
 + (char)((uw_object_hdr_t *)iVar1)->link_word_low
+|
+- *(char *)(iVar1 + 0x6)
++ (char)((uw_object_hdr_t *)iVar1)->link_word_low
+|
+- iVar1[0x6]
++ (char)((uw_object_hdr_t *)iVar1)->link_word_low
 )
 ...>
 }
 
 
-@receiver_1_w_6_42_byte_7_byte@
+@receiver_1_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2345,15 +3257,18 @@ R F(...) {
 |
 - ((byte *)iVar1)[0x7]
 + ((uw_object_hdr_t *)iVar1)->link_word_high
+|
+- *(byte *)(iVar1 + 0x7)
++ ((uw_object_hdr_t *)iVar1)->link_word_high
 )
 ...>
 }
 
 
-@receiver_1_w_6_42_byte_7_undefined1@
+@receiver_1_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2366,15 +3281,45 @@ R F(...) {
 |
 - ((undefined1 *)iVar1)[0x7]
 + ((uw_object_hdr_t *)iVar1)->link_word_high
+|
+- *(undefined1 *)(iVar1 + 0x7)
++ ((uw_object_hdr_t *)iVar1)->link_word_high
 )
 ...>
 }
 
 
-@receiver_1_w_6_42_store_7@
+@receiver_1_w_6_51_address_7@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)iVar1 + 0x7)
++ (char *)&((uw_object_hdr_t *)iVar1)->link_word_high
+|
+- &*(char *)((byte *)iVar1 + 0x7)
++ (char *)&((uw_object_hdr_t *)iVar1)->link_word_high
+|
+- &((char *)iVar1)[0x7]
++ (char *)&((uw_object_hdr_t *)iVar1)->link_word_high
+|
+- &*(char *)(iVar1 + 0x7)
++ (char *)&((uw_object_hdr_t *)iVar1)->link_word_high
+|
+- &iVar1[0x7]
++ (char *)&((uw_object_hdr_t *)iVar1)->link_word_high
+)
+...>
+}
+
+
+@receiver_1_w_6_51_store_7@
+type R;
+identifier F =~ "^\(leave_nested_container_level\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -2388,15 +3333,21 @@ R F(...) {
 |
 - ((char *)iVar1)[0x7] = E;
 + ((uw_object_hdr_t *)iVar1)->link_word_high = (byte)E;
+|
+- *(char *)(iVar1 + 0x7) = E;
++ ((uw_object_hdr_t *)iVar1)->link_word_high = (byte)E;
+|
+- iVar1[0x7] = E;
++ ((uw_object_hdr_t *)iVar1)->link_word_high = (byte)E;
 )
 ...>
 }
 
 
-@receiver_1_w_6_42_byte_7_char@
+@receiver_1_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(leave_nested_container_level\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2408,6 +3359,12 @@ R F(...) {
 + (char)((uw_object_hdr_t *)iVar1)->link_word_high
 |
 - ((char *)iVar1)[0x7]
++ (char)((uw_object_hdr_t *)iVar1)->link_word_high
+|
+- *(char *)(iVar1 + 0x7)
++ (char)((uw_object_hdr_t *)iVar1)->link_word_high
+|
+- iVar1[0x7]
 + (char)((uw_object_hdr_t *)iVar1)->link_word_high
 )
 ...>
@@ -2477,7 +3434,7 @@ R F(...) {
 @receiver_2_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2493,6 +3450,36 @@ R F(...) {
 |
 - *(ushort *)((ushort *)pContents + 0x0)
 + ((uw_object_hdr_t *)pContents)->type_flags
+|
+- *(ushort *)(pContents + 0x0)
++ ((uw_object_hdr_t *)pContents)->type_flags
+)
+...>
+}
+
+
+@receiver_2_w_0_0_word_undefined2@
+type R;
+identifier F =~ "^\(repopulate_container_grid_slots\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)pContents + 0x0)
++ ((uw_object_hdr_t *)pContents)->type_flags
+|
+- *(undefined2 *)((byte *)pContents + 0x0)
++ ((uw_object_hdr_t *)pContents)->type_flags
+|
+- ((undefined2 *)pContents)[0x0]
++ ((uw_object_hdr_t *)pContents)->type_flags
+|
+- *(undefined2 *)((undefined2 *)pContents + 0x0)
++ ((uw_object_hdr_t *)pContents)->type_flags
+|
+- *(undefined2 *)(pContents + 0x0)
++ ((uw_object_hdr_t *)pContents)->type_flags
 )
 ...>
 }
@@ -2501,7 +3488,7 @@ R F(...) {
 @receiver_2_w_0_0_word_short@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2517,6 +3504,9 @@ R F(...) {
 |
 - *(short *)((short *)pContents + 0x0)
 + ((uw_object_hdr_t *)pContents)->type_flags_signed
+|
+- *(short *)(pContents + 0x0)
++ ((uw_object_hdr_t *)pContents)->type_flags_signed
 )
 ...>
 }
@@ -2525,7 +3515,7 @@ R F(...) {
 @receiver_2_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2547,6 +3537,9 @@ R F(...) {
 |
 - *(byte *)pContents
 + ((uw_object_hdr_t *)pContents)->type_flags_low
+|
+- *(byte *)(pContents + 0x0)
++ ((uw_object_hdr_t *)pContents)->type_flags_low
 )
 ...>
 }
@@ -2555,7 +3548,7 @@ R F(...) {
 @receiver_2_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2577,6 +3570,45 @@ R F(...) {
 |
 - *(undefined1 *)pContents
 + ((uw_object_hdr_t *)pContents)->type_flags_low
+|
+- *(undefined1 *)(pContents + 0x0)
++ ((uw_object_hdr_t *)pContents)->type_flags_low
+)
+...>
+}
+
+
+@receiver_2_w_0_0_address_0@
+type R;
+identifier F =~ "^\(repopulate_container_grid_slots\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)pContents + 0x0)
++ (char *)&((uw_object_hdr_t *)pContents)->type_flags_low
+|
+- &*(char *)((byte *)pContents + 0x0)
++ (char *)&((uw_object_hdr_t *)pContents)->type_flags_low
+|
+- &((char *)pContents)[0x0]
++ (char *)&((uw_object_hdr_t *)pContents)->type_flags_low
+|
+- &*(char *)((ushort *)pContents + 0x0)
++ (char *)&((uw_object_hdr_t *)pContents)->type_flags_low
+|
+- &*(char *)pContents
++ (char *)&((uw_object_hdr_t *)pContents)->type_flags_low
+|
+- &*(char *)(pContents + 0x0)
++ (char *)&((uw_object_hdr_t *)pContents)->type_flags_low
+|
+- &pContents[0x0]
++ (char *)&((uw_object_hdr_t *)pContents)->type_flags_low
+|
+- &*pContents
++ (char *)&((uw_object_hdr_t *)pContents)->type_flags_low
 )
 ...>
 }
@@ -2585,7 +3617,7 @@ R F(...) {
 @receiver_2_w_0_0_store_0@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -2605,6 +3637,15 @@ R F(...) {
 |
 - *(char *)pContents = E;
 + ((uw_object_hdr_t *)pContents)->type_flags_low = (byte)E;
+|
+- *(char *)(pContents + 0x0) = E;
++ ((uw_object_hdr_t *)pContents)->type_flags_low = (byte)E;
+|
+- pContents[0x0] = E;
++ ((uw_object_hdr_t *)pContents)->type_flags_low = (byte)E;
+|
+- *pContents = E;
++ ((uw_object_hdr_t *)pContents)->type_flags_low = (byte)E;
 )
 ...>
 }
@@ -2613,7 +3654,7 @@ R F(...) {
 @receiver_2_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2635,6 +3676,15 @@ R F(...) {
 |
 - *(char *)pContents
 + (char)((uw_object_hdr_t *)pContents)->type_flags_low
+|
+- *(char *)(pContents + 0x0)
++ (char)((uw_object_hdr_t *)pContents)->type_flags_low
+|
+- pContents[0x0]
++ (char)((uw_object_hdr_t *)pContents)->type_flags_low
+|
+- *pContents
++ (char)((uw_object_hdr_t *)pContents)->type_flags_low
 )
 ...>
 }
@@ -2643,7 +3693,7 @@ R F(...) {
 @receiver_2_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2656,6 +3706,9 @@ R F(...) {
 |
 - ((byte *)pContents)[0x1]
 + ((uw_object_hdr_t *)pContents)->type_flags_high
+|
+- *(byte *)(pContents + 0x1)
++ ((uw_object_hdr_t *)pContents)->type_flags_high
 )
 ...>
 }
@@ -2664,7 +3717,7 @@ R F(...) {
 @receiver_2_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2677,6 +3730,36 @@ R F(...) {
 |
 - ((undefined1 *)pContents)[0x1]
 + ((uw_object_hdr_t *)pContents)->type_flags_high
+|
+- *(undefined1 *)(pContents + 0x1)
++ ((uw_object_hdr_t *)pContents)->type_flags_high
+)
+...>
+}
+
+
+@receiver_2_w_0_0_address_1@
+type R;
+identifier F =~ "^\(repopulate_container_grid_slots\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)pContents + 0x1)
++ (char *)&((uw_object_hdr_t *)pContents)->type_flags_high
+|
+- &*(char *)((byte *)pContents + 0x1)
++ (char *)&((uw_object_hdr_t *)pContents)->type_flags_high
+|
+- &((char *)pContents)[0x1]
++ (char *)&((uw_object_hdr_t *)pContents)->type_flags_high
+|
+- &*(char *)(pContents + 0x1)
++ (char *)&((uw_object_hdr_t *)pContents)->type_flags_high
+|
+- &pContents[0x1]
++ (char *)&((uw_object_hdr_t *)pContents)->type_flags_high
 )
 ...>
 }
@@ -2685,7 +3768,7 @@ R F(...) {
 @receiver_2_w_0_0_store_1@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -2699,6 +3782,12 @@ R F(...) {
 |
 - ((char *)pContents)[0x1] = E;
 + ((uw_object_hdr_t *)pContents)->type_flags_high = (byte)E;
+|
+- *(char *)(pContents + 0x1) = E;
++ ((uw_object_hdr_t *)pContents)->type_flags_high = (byte)E;
+|
+- pContents[0x1] = E;
++ ((uw_object_hdr_t *)pContents)->type_flags_high = (byte)E;
 )
 ...>
 }
@@ -2707,7 +3796,7 @@ R F(...) {
 @receiver_2_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2720,12 +3809,18 @@ R F(...) {
 |
 - ((char *)pContents)[0x1]
 + (char)((uw_object_hdr_t *)pContents)->type_flags_high
+|
+- *(char *)(pContents + 0x1)
++ (char)((uw_object_hdr_t *)pContents)->type_flags_high
+|
+- pContents[0x1]
++ (char)((uw_object_hdr_t *)pContents)->type_flags_high
 )
 ...>
 }
 
 
-@receiver_2_w_2_14_pair_char_char@
+@receiver_2_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -2740,7 +3835,7 @@ R F(...) {
 ...>
 }
 
-@receiver_2_w_2_14_pair_char_byte@
+@receiver_2_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -2755,7 +3850,7 @@ R F(...) {
 ...>
 }
 
-@receiver_2_w_2_14_pair_byte_char@
+@receiver_2_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -2770,7 +3865,7 @@ R F(...) {
 ...>
 }
 
-@receiver_2_w_2_14_pair_byte_byte@
+@receiver_2_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -2785,10 +3880,10 @@ R F(...) {
 ...>
 }
 
-@receiver_2_w_2_14_word_ushort@
+@receiver_2_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2804,15 +3899,45 @@ R F(...) {
 |
 - *(ushort *)((ushort *)pContents + 0x1)
 + ((uw_object_hdr_t *)pContents)->position_word
+|
+- *(ushort *)(pContents + 0x2)
++ ((uw_object_hdr_t *)pContents)->position_word
 )
 ...>
 }
 
 
-@receiver_2_w_2_14_word_short@
+@receiver_2_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)pContents + 0x2)
++ ((uw_object_hdr_t *)pContents)->position_word
+|
+- *(undefined2 *)((byte *)pContents + 0x2)
++ ((uw_object_hdr_t *)pContents)->position_word
+|
+- ((undefined2 *)pContents)[0x1]
++ ((uw_object_hdr_t *)pContents)->position_word
+|
+- *(undefined2 *)((undefined2 *)pContents + 0x1)
++ ((uw_object_hdr_t *)pContents)->position_word
+|
+- *(undefined2 *)(pContents + 0x2)
++ ((uw_object_hdr_t *)pContents)->position_word
+)
+...>
+}
+
+
+@receiver_2_w_2_17_word_short@
+type R;
+identifier F =~ "^\(repopulate_container_grid_slots\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2828,15 +3953,18 @@ R F(...) {
 |
 - *(short *)((short *)pContents + 0x1)
 + ((uw_object_hdr_t *)pContents)->position_word_signed
+|
+- *(short *)(pContents + 0x2)
++ ((uw_object_hdr_t *)pContents)->position_word_signed
 )
 ...>
 }
 
 
-@receiver_2_w_2_14_byte_2_byte@
+@receiver_2_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2855,15 +3983,18 @@ R F(...) {
 |
 - (byte)((ushort *)pContents)[0x1]
 + ((uw_object_hdr_t *)pContents)->position_word_low
+|
+- *(byte *)(pContents + 0x2)
++ ((uw_object_hdr_t *)pContents)->position_word_low
 )
 ...>
 }
 
 
-@receiver_2_w_2_14_byte_2_undefined1@
+@receiver_2_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2882,15 +4013,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)pContents)[0x1]
 + ((uw_object_hdr_t *)pContents)->position_word_low
+|
+- *(undefined1 *)(pContents + 0x2)
++ ((uw_object_hdr_t *)pContents)->position_word_low
 )
 ...>
 }
 
 
-@receiver_2_w_2_14_store_2@
+@receiver_2_w_2_17_address_2@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)pContents + 0x2)
++ (char *)&((uw_object_hdr_t *)pContents)->position_word_low
+|
+- &*(char *)((byte *)pContents + 0x2)
++ (char *)&((uw_object_hdr_t *)pContents)->position_word_low
+|
+- &((char *)pContents)[0x2]
++ (char *)&((uw_object_hdr_t *)pContents)->position_word_low
+|
+- &*(char *)((ushort *)pContents + 0x1)
++ (char *)&((uw_object_hdr_t *)pContents)->position_word_low
+|
+- &*(char *)(pContents + 0x2)
++ (char *)&((uw_object_hdr_t *)pContents)->position_word_low
+|
+- &pContents[0x2]
++ (char *)&((uw_object_hdr_t *)pContents)->position_word_low
+)
+...>
+}
+
+
+@receiver_2_w_2_17_store_2@
+type R;
+identifier F =~ "^\(repopulate_container_grid_slots\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -2907,15 +4071,21 @@ R F(...) {
 |
 - *(char *)((ushort *)pContents + 0x1) = E;
 + ((uw_object_hdr_t *)pContents)->position_word_low = (byte)E;
+|
+- *(char *)(pContents + 0x2) = E;
++ ((uw_object_hdr_t *)pContents)->position_word_low = (byte)E;
+|
+- pContents[0x2] = E;
++ ((uw_object_hdr_t *)pContents)->position_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_2_w_2_14_byte_2_char@
+@receiver_2_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2934,15 +4104,21 @@ R F(...) {
 |
 - (char)((ushort *)pContents)[0x1]
 + (char)((uw_object_hdr_t *)pContents)->position_word_low
+|
+- *(char *)(pContents + 0x2)
++ (char)((uw_object_hdr_t *)pContents)->position_word_low
+|
+- pContents[0x2]
++ (char)((uw_object_hdr_t *)pContents)->position_word_low
 )
 ...>
 }
 
 
-@receiver_2_w_2_14_byte_3_byte@
+@receiver_2_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2955,15 +4131,18 @@ R F(...) {
 |
 - ((byte *)pContents)[0x3]
 + ((uw_object_hdr_t *)pContents)->position_word_high
+|
+- *(byte *)(pContents + 0x3)
++ ((uw_object_hdr_t *)pContents)->position_word_high
 )
 ...>
 }
 
 
-@receiver_2_w_2_14_byte_3_undefined1@
+@receiver_2_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -2976,15 +4155,45 @@ R F(...) {
 |
 - ((undefined1 *)pContents)[0x3]
 + ((uw_object_hdr_t *)pContents)->position_word_high
+|
+- *(undefined1 *)(pContents + 0x3)
++ ((uw_object_hdr_t *)pContents)->position_word_high
 )
 ...>
 }
 
 
-@receiver_2_w_2_14_store_3@
+@receiver_2_w_2_17_address_3@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)pContents + 0x3)
++ (char *)&((uw_object_hdr_t *)pContents)->position_word_high
+|
+- &*(char *)((byte *)pContents + 0x3)
++ (char *)&((uw_object_hdr_t *)pContents)->position_word_high
+|
+- &((char *)pContents)[0x3]
++ (char *)&((uw_object_hdr_t *)pContents)->position_word_high
+|
+- &*(char *)(pContents + 0x3)
++ (char *)&((uw_object_hdr_t *)pContents)->position_word_high
+|
+- &pContents[0x3]
++ (char *)&((uw_object_hdr_t *)pContents)->position_word_high
+)
+...>
+}
+
+
+@receiver_2_w_2_17_store_3@
+type R;
+identifier F =~ "^\(repopulate_container_grid_slots\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -2998,15 +4207,21 @@ R F(...) {
 |
 - ((char *)pContents)[0x3] = E;
 + ((uw_object_hdr_t *)pContents)->position_word_high = (byte)E;
+|
+- *(char *)(pContents + 0x3) = E;
++ ((uw_object_hdr_t *)pContents)->position_word_high = (byte)E;
+|
+- pContents[0x3] = E;
++ ((uw_object_hdr_t *)pContents)->position_word_high = (byte)E;
 )
 ...>
 }
 
 
-@receiver_2_w_2_14_byte_3_char@
+@receiver_2_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3019,12 +4234,18 @@ R F(...) {
 |
 - ((char *)pContents)[0x3]
 + (char)((uw_object_hdr_t *)pContents)->position_word_high
+|
+- *(char *)(pContents + 0x3)
++ (char)((uw_object_hdr_t *)pContents)->position_word_high
+|
+- pContents[0x3]
++ (char)((uw_object_hdr_t *)pContents)->position_word_high
 )
 ...>
 }
 
 
-@receiver_2_w_4_28_pair_char_char@
+@receiver_2_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -3039,7 +4260,7 @@ R F(...) {
 ...>
 }
 
-@receiver_2_w_4_28_pair_char_byte@
+@receiver_2_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -3054,7 +4275,7 @@ R F(...) {
 ...>
 }
 
-@receiver_2_w_4_28_pair_byte_char@
+@receiver_2_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -3069,7 +4290,7 @@ R F(...) {
 ...>
 }
 
-@receiver_2_w_4_28_pair_byte_byte@
+@receiver_2_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -3084,10 +4305,10 @@ R F(...) {
 ...>
 }
 
-@receiver_2_w_4_28_word_ushort@
+@receiver_2_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3103,15 +4324,45 @@ R F(...) {
 |
 - *(ushort *)((ushort *)pContents + 0x2)
 + ((uw_object_hdr_t *)pContents)->chain_word
+|
+- *(ushort *)(pContents + 0x4)
++ ((uw_object_hdr_t *)pContents)->chain_word
 )
 ...>
 }
 
 
-@receiver_2_w_4_28_word_short@
+@receiver_2_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)pContents + 0x4)
++ ((uw_object_hdr_t *)pContents)->chain_word
+|
+- *(undefined2 *)((byte *)pContents + 0x4)
++ ((uw_object_hdr_t *)pContents)->chain_word
+|
+- ((undefined2 *)pContents)[0x2]
++ ((uw_object_hdr_t *)pContents)->chain_word
+|
+- *(undefined2 *)((undefined2 *)pContents + 0x2)
++ ((uw_object_hdr_t *)pContents)->chain_word
+|
+- *(undefined2 *)(pContents + 0x4)
++ ((uw_object_hdr_t *)pContents)->chain_word
+)
+...>
+}
+
+
+@receiver_2_w_4_34_word_short@
+type R;
+identifier F =~ "^\(repopulate_container_grid_slots\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3127,15 +4378,18 @@ R F(...) {
 |
 - *(short *)((short *)pContents + 0x2)
 + ((uw_object_hdr_t *)pContents)->chain_word_signed
+|
+- *(short *)(pContents + 0x4)
++ ((uw_object_hdr_t *)pContents)->chain_word_signed
 )
 ...>
 }
 
 
-@receiver_2_w_4_28_byte_4_byte@
+@receiver_2_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3154,15 +4408,18 @@ R F(...) {
 |
 - (byte)((ushort *)pContents)[0x2]
 + ((uw_object_hdr_t *)pContents)->chain_word_low
+|
+- *(byte *)(pContents + 0x4)
++ ((uw_object_hdr_t *)pContents)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_2_w_4_28_byte_4_undefined1@
+@receiver_2_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3181,15 +4438,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)pContents)[0x2]
 + ((uw_object_hdr_t *)pContents)->chain_word_low
+|
+- *(undefined1 *)(pContents + 0x4)
++ ((uw_object_hdr_t *)pContents)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_2_w_4_28_store_4@
+@receiver_2_w_4_34_address_4@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)pContents + 0x4)
++ (char *)&((uw_object_hdr_t *)pContents)->chain_word_low
+|
+- &*(char *)((byte *)pContents + 0x4)
++ (char *)&((uw_object_hdr_t *)pContents)->chain_word_low
+|
+- &((char *)pContents)[0x4]
++ (char *)&((uw_object_hdr_t *)pContents)->chain_word_low
+|
+- &*(char *)((ushort *)pContents + 0x2)
++ (char *)&((uw_object_hdr_t *)pContents)->chain_word_low
+|
+- &*(char *)(pContents + 0x4)
++ (char *)&((uw_object_hdr_t *)pContents)->chain_word_low
+|
+- &pContents[0x4]
++ (char *)&((uw_object_hdr_t *)pContents)->chain_word_low
+)
+...>
+}
+
+
+@receiver_2_w_4_34_store_4@
+type R;
+identifier F =~ "^\(repopulate_container_grid_slots\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -3206,15 +4496,21 @@ R F(...) {
 |
 - *(char *)((ushort *)pContents + 0x2) = E;
 + ((uw_object_hdr_t *)pContents)->chain_word_low = (byte)E;
+|
+- *(char *)(pContents + 0x4) = E;
++ ((uw_object_hdr_t *)pContents)->chain_word_low = (byte)E;
+|
+- pContents[0x4] = E;
++ ((uw_object_hdr_t *)pContents)->chain_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_2_w_4_28_byte_4_char@
+@receiver_2_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3233,15 +4529,21 @@ R F(...) {
 |
 - (char)((ushort *)pContents)[0x2]
 + (char)((uw_object_hdr_t *)pContents)->chain_word_low
+|
+- *(char *)(pContents + 0x4)
++ (char)((uw_object_hdr_t *)pContents)->chain_word_low
+|
+- pContents[0x4]
++ (char)((uw_object_hdr_t *)pContents)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_2_w_4_28_byte_5_byte@
+@receiver_2_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3254,15 +4556,18 @@ R F(...) {
 |
 - ((byte *)pContents)[0x5]
 + ((uw_object_hdr_t *)pContents)->chain_word_high
+|
+- *(byte *)(pContents + 0x5)
++ ((uw_object_hdr_t *)pContents)->chain_word_high
 )
 ...>
 }
 
 
-@receiver_2_w_4_28_byte_5_undefined1@
+@receiver_2_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3275,15 +4580,45 @@ R F(...) {
 |
 - ((undefined1 *)pContents)[0x5]
 + ((uw_object_hdr_t *)pContents)->chain_word_high
+|
+- *(undefined1 *)(pContents + 0x5)
++ ((uw_object_hdr_t *)pContents)->chain_word_high
 )
 ...>
 }
 
 
-@receiver_2_w_4_28_store_5@
+@receiver_2_w_4_34_address_5@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)pContents + 0x5)
++ (char *)&((uw_object_hdr_t *)pContents)->chain_word_high
+|
+- &*(char *)((byte *)pContents + 0x5)
++ (char *)&((uw_object_hdr_t *)pContents)->chain_word_high
+|
+- &((char *)pContents)[0x5]
++ (char *)&((uw_object_hdr_t *)pContents)->chain_word_high
+|
+- &*(char *)(pContents + 0x5)
++ (char *)&((uw_object_hdr_t *)pContents)->chain_word_high
+|
+- &pContents[0x5]
++ (char *)&((uw_object_hdr_t *)pContents)->chain_word_high
+)
+...>
+}
+
+
+@receiver_2_w_4_34_store_5@
+type R;
+identifier F =~ "^\(repopulate_container_grid_slots\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -3297,15 +4632,21 @@ R F(...) {
 |
 - ((char *)pContents)[0x5] = E;
 + ((uw_object_hdr_t *)pContents)->chain_word_high = (byte)E;
+|
+- *(char *)(pContents + 0x5) = E;
++ ((uw_object_hdr_t *)pContents)->chain_word_high = (byte)E;
+|
+- pContents[0x5] = E;
++ ((uw_object_hdr_t *)pContents)->chain_word_high = (byte)E;
 )
 ...>
 }
 
 
-@receiver_2_w_4_28_byte_5_char@
+@receiver_2_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3318,12 +4659,18 @@ R F(...) {
 |
 - ((char *)pContents)[0x5]
 + (char)((uw_object_hdr_t *)pContents)->chain_word_high
+|
+- *(char *)(pContents + 0x5)
++ (char)((uw_object_hdr_t *)pContents)->chain_word_high
+|
+- pContents[0x5]
++ (char)((uw_object_hdr_t *)pContents)->chain_word_high
 )
 ...>
 }
 
 
-@receiver_2_w_6_42_pair_char_char@
+@receiver_2_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -3338,7 +4685,7 @@ R F(...) {
 ...>
 }
 
-@receiver_2_w_6_42_pair_char_byte@
+@receiver_2_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -3353,7 +4700,7 @@ R F(...) {
 ...>
 }
 
-@receiver_2_w_6_42_pair_byte_char@
+@receiver_2_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -3368,7 +4715,7 @@ R F(...) {
 ...>
 }
 
-@receiver_2_w_6_42_pair_byte_byte@
+@receiver_2_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -3383,10 +4730,10 @@ R F(...) {
 ...>
 }
 
-@receiver_2_w_6_42_word_ushort@
+@receiver_2_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3402,15 +4749,45 @@ R F(...) {
 |
 - *(ushort *)((ushort *)pContents + 0x3)
 + ((uw_object_hdr_t *)pContents)->link_word
+|
+- *(ushort *)(pContents + 0x6)
++ ((uw_object_hdr_t *)pContents)->link_word
 )
 ...>
 }
 
 
-@receiver_2_w_6_42_word_short@
+@receiver_2_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)pContents + 0x6)
++ ((uw_object_hdr_t *)pContents)->link_word
+|
+- *(undefined2 *)((byte *)pContents + 0x6)
++ ((uw_object_hdr_t *)pContents)->link_word
+|
+- ((undefined2 *)pContents)[0x3]
++ ((uw_object_hdr_t *)pContents)->link_word
+|
+- *(undefined2 *)((undefined2 *)pContents + 0x3)
++ ((uw_object_hdr_t *)pContents)->link_word
+|
+- *(undefined2 *)(pContents + 0x6)
++ ((uw_object_hdr_t *)pContents)->link_word
+)
+...>
+}
+
+
+@receiver_2_w_6_51_word_short@
+type R;
+identifier F =~ "^\(repopulate_container_grid_slots\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3426,15 +4803,18 @@ R F(...) {
 |
 - *(short *)((short *)pContents + 0x3)
 + ((uw_object_hdr_t *)pContents)->link_word_signed
+|
+- *(short *)(pContents + 0x6)
++ ((uw_object_hdr_t *)pContents)->link_word_signed
 )
 ...>
 }
 
 
-@receiver_2_w_6_42_byte_6_byte@
+@receiver_2_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3453,15 +4833,18 @@ R F(...) {
 |
 - (byte)((ushort *)pContents)[0x3]
 + ((uw_object_hdr_t *)pContents)->link_word_low
+|
+- *(byte *)(pContents + 0x6)
++ ((uw_object_hdr_t *)pContents)->link_word_low
 )
 ...>
 }
 
 
-@receiver_2_w_6_42_byte_6_undefined1@
+@receiver_2_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3480,15 +4863,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)pContents)[0x3]
 + ((uw_object_hdr_t *)pContents)->link_word_low
+|
+- *(undefined1 *)(pContents + 0x6)
++ ((uw_object_hdr_t *)pContents)->link_word_low
 )
 ...>
 }
 
 
-@receiver_2_w_6_42_store_6@
+@receiver_2_w_6_51_address_6@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)pContents + 0x6)
++ (char *)&((uw_object_hdr_t *)pContents)->link_word_low
+|
+- &*(char *)((byte *)pContents + 0x6)
++ (char *)&((uw_object_hdr_t *)pContents)->link_word_low
+|
+- &((char *)pContents)[0x6]
++ (char *)&((uw_object_hdr_t *)pContents)->link_word_low
+|
+- &*(char *)((ushort *)pContents + 0x3)
++ (char *)&((uw_object_hdr_t *)pContents)->link_word_low
+|
+- &*(char *)(pContents + 0x6)
++ (char *)&((uw_object_hdr_t *)pContents)->link_word_low
+|
+- &pContents[0x6]
++ (char *)&((uw_object_hdr_t *)pContents)->link_word_low
+)
+...>
+}
+
+
+@receiver_2_w_6_51_store_6@
+type R;
+identifier F =~ "^\(repopulate_container_grid_slots\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -3505,15 +4921,21 @@ R F(...) {
 |
 - *(char *)((ushort *)pContents + 0x3) = E;
 + ((uw_object_hdr_t *)pContents)->link_word_low = (byte)E;
+|
+- *(char *)(pContents + 0x6) = E;
++ ((uw_object_hdr_t *)pContents)->link_word_low = (byte)E;
+|
+- pContents[0x6] = E;
++ ((uw_object_hdr_t *)pContents)->link_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_2_w_6_42_byte_6_char@
+@receiver_2_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3532,15 +4954,21 @@ R F(...) {
 |
 - (char)((ushort *)pContents)[0x3]
 + (char)((uw_object_hdr_t *)pContents)->link_word_low
+|
+- *(char *)(pContents + 0x6)
++ (char)((uw_object_hdr_t *)pContents)->link_word_low
+|
+- pContents[0x6]
++ (char)((uw_object_hdr_t *)pContents)->link_word_low
 )
 ...>
 }
 
 
-@receiver_2_w_6_42_byte_7_byte@
+@receiver_2_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3553,15 +4981,18 @@ R F(...) {
 |
 - ((byte *)pContents)[0x7]
 + ((uw_object_hdr_t *)pContents)->link_word_high
+|
+- *(byte *)(pContents + 0x7)
++ ((uw_object_hdr_t *)pContents)->link_word_high
 )
 ...>
 }
 
 
-@receiver_2_w_6_42_byte_7_undefined1@
+@receiver_2_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3574,15 +5005,45 @@ R F(...) {
 |
 - ((undefined1 *)pContents)[0x7]
 + ((uw_object_hdr_t *)pContents)->link_word_high
+|
+- *(undefined1 *)(pContents + 0x7)
++ ((uw_object_hdr_t *)pContents)->link_word_high
 )
 ...>
 }
 
 
-@receiver_2_w_6_42_store_7@
+@receiver_2_w_6_51_address_7@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)pContents + 0x7)
++ (char *)&((uw_object_hdr_t *)pContents)->link_word_high
+|
+- &*(char *)((byte *)pContents + 0x7)
++ (char *)&((uw_object_hdr_t *)pContents)->link_word_high
+|
+- &((char *)pContents)[0x7]
++ (char *)&((uw_object_hdr_t *)pContents)->link_word_high
+|
+- &*(char *)(pContents + 0x7)
++ (char *)&((uw_object_hdr_t *)pContents)->link_word_high
+|
+- &pContents[0x7]
++ (char *)&((uw_object_hdr_t *)pContents)->link_word_high
+)
+...>
+}
+
+
+@receiver_2_w_6_51_store_7@
+type R;
+identifier F =~ "^\(repopulate_container_grid_slots\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -3596,15 +5057,21 @@ R F(...) {
 |
 - ((char *)pContents)[0x7] = E;
 + ((uw_object_hdr_t *)pContents)->link_word_high = (byte)E;
+|
+- *(char *)(pContents + 0x7) = E;
++ ((uw_object_hdr_t *)pContents)->link_word_high = (byte)E;
+|
+- pContents[0x7] = E;
++ ((uw_object_hdr_t *)pContents)->link_word_high = (byte)E;
 )
 ...>
 }
 
 
-@receiver_2_w_6_42_byte_7_char@
+@receiver_2_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3616,6 +5083,12 @@ R F(...) {
 + (char)((uw_object_hdr_t *)pContents)->link_word_high
 |
 - ((char *)pContents)[0x7]
++ (char)((uw_object_hdr_t *)pContents)->link_word_high
+|
+- *(char *)(pContents + 0x7)
++ (char)((uw_object_hdr_t *)pContents)->link_word_high
+|
+- pContents[0x7]
 + (char)((uw_object_hdr_t *)pContents)->link_word_high
 )
 ...>
@@ -3685,7 +5158,7 @@ R F(...) {
 @receiver_3_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3701,6 +5174,36 @@ R F(...) {
 |
 - *(ushort *)((ushort *)_pMatch + 0x0)
 + ((uw_object_hdr_t *)_pMatch)->type_flags
+|
+- *(ushort *)(_pMatch + 0x0)
++ ((uw_object_hdr_t *)_pMatch)->type_flags
+)
+...>
+}
+
+
+@receiver_3_w_0_0_word_undefined2@
+type R;
+identifier F =~ "^\(repopulate_container_grid_slots\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)_pMatch + 0x0)
++ ((uw_object_hdr_t *)_pMatch)->type_flags
+|
+- *(undefined2 *)((byte *)_pMatch + 0x0)
++ ((uw_object_hdr_t *)_pMatch)->type_flags
+|
+- ((undefined2 *)_pMatch)[0x0]
++ ((uw_object_hdr_t *)_pMatch)->type_flags
+|
+- *(undefined2 *)((undefined2 *)_pMatch + 0x0)
++ ((uw_object_hdr_t *)_pMatch)->type_flags
+|
+- *(undefined2 *)(_pMatch + 0x0)
++ ((uw_object_hdr_t *)_pMatch)->type_flags
 )
 ...>
 }
@@ -3709,7 +5212,7 @@ R F(...) {
 @receiver_3_w_0_0_word_short@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3725,6 +5228,9 @@ R F(...) {
 |
 - *(short *)((short *)_pMatch + 0x0)
 + ((uw_object_hdr_t *)_pMatch)->type_flags_signed
+|
+- *(short *)(_pMatch + 0x0)
++ ((uw_object_hdr_t *)_pMatch)->type_flags_signed
 )
 ...>
 }
@@ -3733,7 +5239,7 @@ R F(...) {
 @receiver_3_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3755,6 +5261,9 @@ R F(...) {
 |
 - *(byte *)_pMatch
 + ((uw_object_hdr_t *)_pMatch)->type_flags_low
+|
+- *(byte *)(_pMatch + 0x0)
++ ((uw_object_hdr_t *)_pMatch)->type_flags_low
 )
 ...>
 }
@@ -3763,7 +5272,7 @@ R F(...) {
 @receiver_3_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3785,6 +5294,45 @@ R F(...) {
 |
 - *(undefined1 *)_pMatch
 + ((uw_object_hdr_t *)_pMatch)->type_flags_low
+|
+- *(undefined1 *)(_pMatch + 0x0)
++ ((uw_object_hdr_t *)_pMatch)->type_flags_low
+)
+...>
+}
+
+
+@receiver_3_w_0_0_address_0@
+type R;
+identifier F =~ "^\(repopulate_container_grid_slots\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)_pMatch + 0x0)
++ (char *)&((uw_object_hdr_t *)_pMatch)->type_flags_low
+|
+- &*(char *)((byte *)_pMatch + 0x0)
++ (char *)&((uw_object_hdr_t *)_pMatch)->type_flags_low
+|
+- &((char *)_pMatch)[0x0]
++ (char *)&((uw_object_hdr_t *)_pMatch)->type_flags_low
+|
+- &*(char *)((ushort *)_pMatch + 0x0)
++ (char *)&((uw_object_hdr_t *)_pMatch)->type_flags_low
+|
+- &*(char *)_pMatch
++ (char *)&((uw_object_hdr_t *)_pMatch)->type_flags_low
+|
+- &*(char *)(_pMatch + 0x0)
++ (char *)&((uw_object_hdr_t *)_pMatch)->type_flags_low
+|
+- &_pMatch[0x0]
++ (char *)&((uw_object_hdr_t *)_pMatch)->type_flags_low
+|
+- &*_pMatch
++ (char *)&((uw_object_hdr_t *)_pMatch)->type_flags_low
 )
 ...>
 }
@@ -3793,7 +5341,7 @@ R F(...) {
 @receiver_3_w_0_0_store_0@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -3813,6 +5361,15 @@ R F(...) {
 |
 - *(char *)_pMatch = E;
 + ((uw_object_hdr_t *)_pMatch)->type_flags_low = (byte)E;
+|
+- *(char *)(_pMatch + 0x0) = E;
++ ((uw_object_hdr_t *)_pMatch)->type_flags_low = (byte)E;
+|
+- _pMatch[0x0] = E;
++ ((uw_object_hdr_t *)_pMatch)->type_flags_low = (byte)E;
+|
+- *_pMatch = E;
++ ((uw_object_hdr_t *)_pMatch)->type_flags_low = (byte)E;
 )
 ...>
 }
@@ -3821,7 +5378,7 @@ R F(...) {
 @receiver_3_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3843,6 +5400,15 @@ R F(...) {
 |
 - *(char *)_pMatch
 + (char)((uw_object_hdr_t *)_pMatch)->type_flags_low
+|
+- *(char *)(_pMatch + 0x0)
++ (char)((uw_object_hdr_t *)_pMatch)->type_flags_low
+|
+- _pMatch[0x0]
++ (char)((uw_object_hdr_t *)_pMatch)->type_flags_low
+|
+- *_pMatch
++ (char)((uw_object_hdr_t *)_pMatch)->type_flags_low
 )
 ...>
 }
@@ -3851,7 +5417,7 @@ R F(...) {
 @receiver_3_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3864,6 +5430,9 @@ R F(...) {
 |
 - ((byte *)_pMatch)[0x1]
 + ((uw_object_hdr_t *)_pMatch)->type_flags_high
+|
+- *(byte *)(_pMatch + 0x1)
++ ((uw_object_hdr_t *)_pMatch)->type_flags_high
 )
 ...>
 }
@@ -3872,7 +5441,7 @@ R F(...) {
 @receiver_3_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3885,6 +5454,36 @@ R F(...) {
 |
 - ((undefined1 *)_pMatch)[0x1]
 + ((uw_object_hdr_t *)_pMatch)->type_flags_high
+|
+- *(undefined1 *)(_pMatch + 0x1)
++ ((uw_object_hdr_t *)_pMatch)->type_flags_high
+)
+...>
+}
+
+
+@receiver_3_w_0_0_address_1@
+type R;
+identifier F =~ "^\(repopulate_container_grid_slots\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)_pMatch + 0x1)
++ (char *)&((uw_object_hdr_t *)_pMatch)->type_flags_high
+|
+- &*(char *)((byte *)_pMatch + 0x1)
++ (char *)&((uw_object_hdr_t *)_pMatch)->type_flags_high
+|
+- &((char *)_pMatch)[0x1]
++ (char *)&((uw_object_hdr_t *)_pMatch)->type_flags_high
+|
+- &*(char *)(_pMatch + 0x1)
++ (char *)&((uw_object_hdr_t *)_pMatch)->type_flags_high
+|
+- &_pMatch[0x1]
++ (char *)&((uw_object_hdr_t *)_pMatch)->type_flags_high
 )
 ...>
 }
@@ -3893,7 +5492,7 @@ R F(...) {
 @receiver_3_w_0_0_store_1@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -3907,6 +5506,12 @@ R F(...) {
 |
 - ((char *)_pMatch)[0x1] = E;
 + ((uw_object_hdr_t *)_pMatch)->type_flags_high = (byte)E;
+|
+- *(char *)(_pMatch + 0x1) = E;
++ ((uw_object_hdr_t *)_pMatch)->type_flags_high = (byte)E;
+|
+- _pMatch[0x1] = E;
++ ((uw_object_hdr_t *)_pMatch)->type_flags_high = (byte)E;
 )
 ...>
 }
@@ -3915,7 +5520,7 @@ R F(...) {
 @receiver_3_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -3928,12 +5533,18 @@ R F(...) {
 |
 - ((char *)_pMatch)[0x1]
 + (char)((uw_object_hdr_t *)_pMatch)->type_flags_high
+|
+- *(char *)(_pMatch + 0x1)
++ (char)((uw_object_hdr_t *)_pMatch)->type_flags_high
+|
+- _pMatch[0x1]
++ (char)((uw_object_hdr_t *)_pMatch)->type_flags_high
 )
 ...>
 }
 
 
-@receiver_3_w_2_14_pair_char_char@
+@receiver_3_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -3948,7 +5559,7 @@ R F(...) {
 ...>
 }
 
-@receiver_3_w_2_14_pair_char_byte@
+@receiver_3_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -3963,7 +5574,7 @@ R F(...) {
 ...>
 }
 
-@receiver_3_w_2_14_pair_byte_char@
+@receiver_3_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -3978,7 +5589,7 @@ R F(...) {
 ...>
 }
 
-@receiver_3_w_2_14_pair_byte_byte@
+@receiver_3_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -3993,10 +5604,10 @@ R F(...) {
 ...>
 }
 
-@receiver_3_w_2_14_word_ushort@
+@receiver_3_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4012,15 +5623,45 @@ R F(...) {
 |
 - *(ushort *)((ushort *)_pMatch + 0x1)
 + ((uw_object_hdr_t *)_pMatch)->position_word
+|
+- *(ushort *)(_pMatch + 0x2)
++ ((uw_object_hdr_t *)_pMatch)->position_word
 )
 ...>
 }
 
 
-@receiver_3_w_2_14_word_short@
+@receiver_3_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)_pMatch + 0x2)
++ ((uw_object_hdr_t *)_pMatch)->position_word
+|
+- *(undefined2 *)((byte *)_pMatch + 0x2)
++ ((uw_object_hdr_t *)_pMatch)->position_word
+|
+- ((undefined2 *)_pMatch)[0x1]
++ ((uw_object_hdr_t *)_pMatch)->position_word
+|
+- *(undefined2 *)((undefined2 *)_pMatch + 0x1)
++ ((uw_object_hdr_t *)_pMatch)->position_word
+|
+- *(undefined2 *)(_pMatch + 0x2)
++ ((uw_object_hdr_t *)_pMatch)->position_word
+)
+...>
+}
+
+
+@receiver_3_w_2_17_word_short@
+type R;
+identifier F =~ "^\(repopulate_container_grid_slots\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4036,15 +5677,18 @@ R F(...) {
 |
 - *(short *)((short *)_pMatch + 0x1)
 + ((uw_object_hdr_t *)_pMatch)->position_word_signed
+|
+- *(short *)(_pMatch + 0x2)
++ ((uw_object_hdr_t *)_pMatch)->position_word_signed
 )
 ...>
 }
 
 
-@receiver_3_w_2_14_byte_2_byte@
+@receiver_3_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4063,15 +5707,18 @@ R F(...) {
 |
 - (byte)((ushort *)_pMatch)[0x1]
 + ((uw_object_hdr_t *)_pMatch)->position_word_low
+|
+- *(byte *)(_pMatch + 0x2)
++ ((uw_object_hdr_t *)_pMatch)->position_word_low
 )
 ...>
 }
 
 
-@receiver_3_w_2_14_byte_2_undefined1@
+@receiver_3_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4090,15 +5737,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)_pMatch)[0x1]
 + ((uw_object_hdr_t *)_pMatch)->position_word_low
+|
+- *(undefined1 *)(_pMatch + 0x2)
++ ((uw_object_hdr_t *)_pMatch)->position_word_low
 )
 ...>
 }
 
 
-@receiver_3_w_2_14_store_2@
+@receiver_3_w_2_17_address_2@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)_pMatch + 0x2)
++ (char *)&((uw_object_hdr_t *)_pMatch)->position_word_low
+|
+- &*(char *)((byte *)_pMatch + 0x2)
++ (char *)&((uw_object_hdr_t *)_pMatch)->position_word_low
+|
+- &((char *)_pMatch)[0x2]
++ (char *)&((uw_object_hdr_t *)_pMatch)->position_word_low
+|
+- &*(char *)((ushort *)_pMatch + 0x1)
++ (char *)&((uw_object_hdr_t *)_pMatch)->position_word_low
+|
+- &*(char *)(_pMatch + 0x2)
++ (char *)&((uw_object_hdr_t *)_pMatch)->position_word_low
+|
+- &_pMatch[0x2]
++ (char *)&((uw_object_hdr_t *)_pMatch)->position_word_low
+)
+...>
+}
+
+
+@receiver_3_w_2_17_store_2@
+type R;
+identifier F =~ "^\(repopulate_container_grid_slots\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -4115,15 +5795,21 @@ R F(...) {
 |
 - *(char *)((ushort *)_pMatch + 0x1) = E;
 + ((uw_object_hdr_t *)_pMatch)->position_word_low = (byte)E;
+|
+- *(char *)(_pMatch + 0x2) = E;
++ ((uw_object_hdr_t *)_pMatch)->position_word_low = (byte)E;
+|
+- _pMatch[0x2] = E;
++ ((uw_object_hdr_t *)_pMatch)->position_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_3_w_2_14_byte_2_char@
+@receiver_3_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4142,15 +5828,21 @@ R F(...) {
 |
 - (char)((ushort *)_pMatch)[0x1]
 + (char)((uw_object_hdr_t *)_pMatch)->position_word_low
+|
+- *(char *)(_pMatch + 0x2)
++ (char)((uw_object_hdr_t *)_pMatch)->position_word_low
+|
+- _pMatch[0x2]
++ (char)((uw_object_hdr_t *)_pMatch)->position_word_low
 )
 ...>
 }
 
 
-@receiver_3_w_2_14_byte_3_byte@
+@receiver_3_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4163,15 +5855,18 @@ R F(...) {
 |
 - ((byte *)_pMatch)[0x3]
 + ((uw_object_hdr_t *)_pMatch)->position_word_high
+|
+- *(byte *)(_pMatch + 0x3)
++ ((uw_object_hdr_t *)_pMatch)->position_word_high
 )
 ...>
 }
 
 
-@receiver_3_w_2_14_byte_3_undefined1@
+@receiver_3_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4184,15 +5879,45 @@ R F(...) {
 |
 - ((undefined1 *)_pMatch)[0x3]
 + ((uw_object_hdr_t *)_pMatch)->position_word_high
+|
+- *(undefined1 *)(_pMatch + 0x3)
++ ((uw_object_hdr_t *)_pMatch)->position_word_high
 )
 ...>
 }
 
 
-@receiver_3_w_2_14_store_3@
+@receiver_3_w_2_17_address_3@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)_pMatch + 0x3)
++ (char *)&((uw_object_hdr_t *)_pMatch)->position_word_high
+|
+- &*(char *)((byte *)_pMatch + 0x3)
++ (char *)&((uw_object_hdr_t *)_pMatch)->position_word_high
+|
+- &((char *)_pMatch)[0x3]
++ (char *)&((uw_object_hdr_t *)_pMatch)->position_word_high
+|
+- &*(char *)(_pMatch + 0x3)
++ (char *)&((uw_object_hdr_t *)_pMatch)->position_word_high
+|
+- &_pMatch[0x3]
++ (char *)&((uw_object_hdr_t *)_pMatch)->position_word_high
+)
+...>
+}
+
+
+@receiver_3_w_2_17_store_3@
+type R;
+identifier F =~ "^\(repopulate_container_grid_slots\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -4206,15 +5931,21 @@ R F(...) {
 |
 - ((char *)_pMatch)[0x3] = E;
 + ((uw_object_hdr_t *)_pMatch)->position_word_high = (byte)E;
+|
+- *(char *)(_pMatch + 0x3) = E;
++ ((uw_object_hdr_t *)_pMatch)->position_word_high = (byte)E;
+|
+- _pMatch[0x3] = E;
++ ((uw_object_hdr_t *)_pMatch)->position_word_high = (byte)E;
 )
 ...>
 }
 
 
-@receiver_3_w_2_14_byte_3_char@
+@receiver_3_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4227,12 +5958,18 @@ R F(...) {
 |
 - ((char *)_pMatch)[0x3]
 + (char)((uw_object_hdr_t *)_pMatch)->position_word_high
+|
+- *(char *)(_pMatch + 0x3)
++ (char)((uw_object_hdr_t *)_pMatch)->position_word_high
+|
+- _pMatch[0x3]
++ (char)((uw_object_hdr_t *)_pMatch)->position_word_high
 )
 ...>
 }
 
 
-@receiver_3_w_4_28_pair_char_char@
+@receiver_3_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -4247,7 +5984,7 @@ R F(...) {
 ...>
 }
 
-@receiver_3_w_4_28_pair_char_byte@
+@receiver_3_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -4262,7 +5999,7 @@ R F(...) {
 ...>
 }
 
-@receiver_3_w_4_28_pair_byte_char@
+@receiver_3_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -4277,7 +6014,7 @@ R F(...) {
 ...>
 }
 
-@receiver_3_w_4_28_pair_byte_byte@
+@receiver_3_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -4292,10 +6029,10 @@ R F(...) {
 ...>
 }
 
-@receiver_3_w_4_28_word_ushort@
+@receiver_3_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4311,15 +6048,45 @@ R F(...) {
 |
 - *(ushort *)((ushort *)_pMatch + 0x2)
 + ((uw_object_hdr_t *)_pMatch)->chain_word
+|
+- *(ushort *)(_pMatch + 0x4)
++ ((uw_object_hdr_t *)_pMatch)->chain_word
 )
 ...>
 }
 
 
-@receiver_3_w_4_28_word_short@
+@receiver_3_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)_pMatch + 0x4)
++ ((uw_object_hdr_t *)_pMatch)->chain_word
+|
+- *(undefined2 *)((byte *)_pMatch + 0x4)
++ ((uw_object_hdr_t *)_pMatch)->chain_word
+|
+- ((undefined2 *)_pMatch)[0x2]
++ ((uw_object_hdr_t *)_pMatch)->chain_word
+|
+- *(undefined2 *)((undefined2 *)_pMatch + 0x2)
++ ((uw_object_hdr_t *)_pMatch)->chain_word
+|
+- *(undefined2 *)(_pMatch + 0x4)
++ ((uw_object_hdr_t *)_pMatch)->chain_word
+)
+...>
+}
+
+
+@receiver_3_w_4_34_word_short@
+type R;
+identifier F =~ "^\(repopulate_container_grid_slots\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4335,15 +6102,18 @@ R F(...) {
 |
 - *(short *)((short *)_pMatch + 0x2)
 + ((uw_object_hdr_t *)_pMatch)->chain_word_signed
+|
+- *(short *)(_pMatch + 0x4)
++ ((uw_object_hdr_t *)_pMatch)->chain_word_signed
 )
 ...>
 }
 
 
-@receiver_3_w_4_28_byte_4_byte@
+@receiver_3_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4362,15 +6132,18 @@ R F(...) {
 |
 - (byte)((ushort *)_pMatch)[0x2]
 + ((uw_object_hdr_t *)_pMatch)->chain_word_low
+|
+- *(byte *)(_pMatch + 0x4)
++ ((uw_object_hdr_t *)_pMatch)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_3_w_4_28_byte_4_undefined1@
+@receiver_3_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4389,15 +6162,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)_pMatch)[0x2]
 + ((uw_object_hdr_t *)_pMatch)->chain_word_low
+|
+- *(undefined1 *)(_pMatch + 0x4)
++ ((uw_object_hdr_t *)_pMatch)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_3_w_4_28_store_4@
+@receiver_3_w_4_34_address_4@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)_pMatch + 0x4)
++ (char *)&((uw_object_hdr_t *)_pMatch)->chain_word_low
+|
+- &*(char *)((byte *)_pMatch + 0x4)
++ (char *)&((uw_object_hdr_t *)_pMatch)->chain_word_low
+|
+- &((char *)_pMatch)[0x4]
++ (char *)&((uw_object_hdr_t *)_pMatch)->chain_word_low
+|
+- &*(char *)((ushort *)_pMatch + 0x2)
++ (char *)&((uw_object_hdr_t *)_pMatch)->chain_word_low
+|
+- &*(char *)(_pMatch + 0x4)
++ (char *)&((uw_object_hdr_t *)_pMatch)->chain_word_low
+|
+- &_pMatch[0x4]
++ (char *)&((uw_object_hdr_t *)_pMatch)->chain_word_low
+)
+...>
+}
+
+
+@receiver_3_w_4_34_store_4@
+type R;
+identifier F =~ "^\(repopulate_container_grid_slots\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -4414,15 +6220,21 @@ R F(...) {
 |
 - *(char *)((ushort *)_pMatch + 0x2) = E;
 + ((uw_object_hdr_t *)_pMatch)->chain_word_low = (byte)E;
+|
+- *(char *)(_pMatch + 0x4) = E;
++ ((uw_object_hdr_t *)_pMatch)->chain_word_low = (byte)E;
+|
+- _pMatch[0x4] = E;
++ ((uw_object_hdr_t *)_pMatch)->chain_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_3_w_4_28_byte_4_char@
+@receiver_3_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4441,15 +6253,21 @@ R F(...) {
 |
 - (char)((ushort *)_pMatch)[0x2]
 + (char)((uw_object_hdr_t *)_pMatch)->chain_word_low
+|
+- *(char *)(_pMatch + 0x4)
++ (char)((uw_object_hdr_t *)_pMatch)->chain_word_low
+|
+- _pMatch[0x4]
++ (char)((uw_object_hdr_t *)_pMatch)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_3_w_4_28_byte_5_byte@
+@receiver_3_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4462,15 +6280,18 @@ R F(...) {
 |
 - ((byte *)_pMatch)[0x5]
 + ((uw_object_hdr_t *)_pMatch)->chain_word_high
+|
+- *(byte *)(_pMatch + 0x5)
++ ((uw_object_hdr_t *)_pMatch)->chain_word_high
 )
 ...>
 }
 
 
-@receiver_3_w_4_28_byte_5_undefined1@
+@receiver_3_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4483,15 +6304,45 @@ R F(...) {
 |
 - ((undefined1 *)_pMatch)[0x5]
 + ((uw_object_hdr_t *)_pMatch)->chain_word_high
+|
+- *(undefined1 *)(_pMatch + 0x5)
++ ((uw_object_hdr_t *)_pMatch)->chain_word_high
 )
 ...>
 }
 
 
-@receiver_3_w_4_28_store_5@
+@receiver_3_w_4_34_address_5@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)_pMatch + 0x5)
++ (char *)&((uw_object_hdr_t *)_pMatch)->chain_word_high
+|
+- &*(char *)((byte *)_pMatch + 0x5)
++ (char *)&((uw_object_hdr_t *)_pMatch)->chain_word_high
+|
+- &((char *)_pMatch)[0x5]
++ (char *)&((uw_object_hdr_t *)_pMatch)->chain_word_high
+|
+- &*(char *)(_pMatch + 0x5)
++ (char *)&((uw_object_hdr_t *)_pMatch)->chain_word_high
+|
+- &_pMatch[0x5]
++ (char *)&((uw_object_hdr_t *)_pMatch)->chain_word_high
+)
+...>
+}
+
+
+@receiver_3_w_4_34_store_5@
+type R;
+identifier F =~ "^\(repopulate_container_grid_slots\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -4505,15 +6356,21 @@ R F(...) {
 |
 - ((char *)_pMatch)[0x5] = E;
 + ((uw_object_hdr_t *)_pMatch)->chain_word_high = (byte)E;
+|
+- *(char *)(_pMatch + 0x5) = E;
++ ((uw_object_hdr_t *)_pMatch)->chain_word_high = (byte)E;
+|
+- _pMatch[0x5] = E;
++ ((uw_object_hdr_t *)_pMatch)->chain_word_high = (byte)E;
 )
 ...>
 }
 
 
-@receiver_3_w_4_28_byte_5_char@
+@receiver_3_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4526,12 +6383,18 @@ R F(...) {
 |
 - ((char *)_pMatch)[0x5]
 + (char)((uw_object_hdr_t *)_pMatch)->chain_word_high
+|
+- *(char *)(_pMatch + 0x5)
++ (char)((uw_object_hdr_t *)_pMatch)->chain_word_high
+|
+- _pMatch[0x5]
++ (char)((uw_object_hdr_t *)_pMatch)->chain_word_high
 )
 ...>
 }
 
 
-@receiver_3_w_6_42_pair_char_char@
+@receiver_3_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -4546,7 +6409,7 @@ R F(...) {
 ...>
 }
 
-@receiver_3_w_6_42_pair_char_byte@
+@receiver_3_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -4561,7 +6424,7 @@ R F(...) {
 ...>
 }
 
-@receiver_3_w_6_42_pair_byte_char@
+@receiver_3_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -4576,7 +6439,7 @@ R F(...) {
 ...>
 }
 
-@receiver_3_w_6_42_pair_byte_byte@
+@receiver_3_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -4591,10 +6454,10 @@ R F(...) {
 ...>
 }
 
-@receiver_3_w_6_42_word_ushort@
+@receiver_3_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4610,15 +6473,45 @@ R F(...) {
 |
 - *(ushort *)((ushort *)_pMatch + 0x3)
 + ((uw_object_hdr_t *)_pMatch)->link_word
+|
+- *(ushort *)(_pMatch + 0x6)
++ ((uw_object_hdr_t *)_pMatch)->link_word
 )
 ...>
 }
 
 
-@receiver_3_w_6_42_word_short@
+@receiver_3_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)_pMatch + 0x6)
++ ((uw_object_hdr_t *)_pMatch)->link_word
+|
+- *(undefined2 *)((byte *)_pMatch + 0x6)
++ ((uw_object_hdr_t *)_pMatch)->link_word
+|
+- ((undefined2 *)_pMatch)[0x3]
++ ((uw_object_hdr_t *)_pMatch)->link_word
+|
+- *(undefined2 *)((undefined2 *)_pMatch + 0x3)
++ ((uw_object_hdr_t *)_pMatch)->link_word
+|
+- *(undefined2 *)(_pMatch + 0x6)
++ ((uw_object_hdr_t *)_pMatch)->link_word
+)
+...>
+}
+
+
+@receiver_3_w_6_51_word_short@
+type R;
+identifier F =~ "^\(repopulate_container_grid_slots\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4634,15 +6527,18 @@ R F(...) {
 |
 - *(short *)((short *)_pMatch + 0x3)
 + ((uw_object_hdr_t *)_pMatch)->link_word_signed
+|
+- *(short *)(_pMatch + 0x6)
++ ((uw_object_hdr_t *)_pMatch)->link_word_signed
 )
 ...>
 }
 
 
-@receiver_3_w_6_42_byte_6_byte@
+@receiver_3_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4661,15 +6557,18 @@ R F(...) {
 |
 - (byte)((ushort *)_pMatch)[0x3]
 + ((uw_object_hdr_t *)_pMatch)->link_word_low
+|
+- *(byte *)(_pMatch + 0x6)
++ ((uw_object_hdr_t *)_pMatch)->link_word_low
 )
 ...>
 }
 
 
-@receiver_3_w_6_42_byte_6_undefined1@
+@receiver_3_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4688,15 +6587,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)_pMatch)[0x3]
 + ((uw_object_hdr_t *)_pMatch)->link_word_low
+|
+- *(undefined1 *)(_pMatch + 0x6)
++ ((uw_object_hdr_t *)_pMatch)->link_word_low
 )
 ...>
 }
 
 
-@receiver_3_w_6_42_store_6@
+@receiver_3_w_6_51_address_6@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)_pMatch + 0x6)
++ (char *)&((uw_object_hdr_t *)_pMatch)->link_word_low
+|
+- &*(char *)((byte *)_pMatch + 0x6)
++ (char *)&((uw_object_hdr_t *)_pMatch)->link_word_low
+|
+- &((char *)_pMatch)[0x6]
++ (char *)&((uw_object_hdr_t *)_pMatch)->link_word_low
+|
+- &*(char *)((ushort *)_pMatch + 0x3)
++ (char *)&((uw_object_hdr_t *)_pMatch)->link_word_low
+|
+- &*(char *)(_pMatch + 0x6)
++ (char *)&((uw_object_hdr_t *)_pMatch)->link_word_low
+|
+- &_pMatch[0x6]
++ (char *)&((uw_object_hdr_t *)_pMatch)->link_word_low
+)
+...>
+}
+
+
+@receiver_3_w_6_51_store_6@
+type R;
+identifier F =~ "^\(repopulate_container_grid_slots\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -4713,15 +6645,21 @@ R F(...) {
 |
 - *(char *)((ushort *)_pMatch + 0x3) = E;
 + ((uw_object_hdr_t *)_pMatch)->link_word_low = (byte)E;
+|
+- *(char *)(_pMatch + 0x6) = E;
++ ((uw_object_hdr_t *)_pMatch)->link_word_low = (byte)E;
+|
+- _pMatch[0x6] = E;
++ ((uw_object_hdr_t *)_pMatch)->link_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_3_w_6_42_byte_6_char@
+@receiver_3_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4740,15 +6678,21 @@ R F(...) {
 |
 - (char)((ushort *)_pMatch)[0x3]
 + (char)((uw_object_hdr_t *)_pMatch)->link_word_low
+|
+- *(char *)(_pMatch + 0x6)
++ (char)((uw_object_hdr_t *)_pMatch)->link_word_low
+|
+- _pMatch[0x6]
++ (char)((uw_object_hdr_t *)_pMatch)->link_word_low
 )
 ...>
 }
 
 
-@receiver_3_w_6_42_byte_7_byte@
+@receiver_3_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4761,15 +6705,18 @@ R F(...) {
 |
 - ((byte *)_pMatch)[0x7]
 + ((uw_object_hdr_t *)_pMatch)->link_word_high
+|
+- *(byte *)(_pMatch + 0x7)
++ ((uw_object_hdr_t *)_pMatch)->link_word_high
 )
 ...>
 }
 
 
-@receiver_3_w_6_42_byte_7_undefined1@
+@receiver_3_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4782,15 +6729,45 @@ R F(...) {
 |
 - ((undefined1 *)_pMatch)[0x7]
 + ((uw_object_hdr_t *)_pMatch)->link_word_high
+|
+- *(undefined1 *)(_pMatch + 0x7)
++ ((uw_object_hdr_t *)_pMatch)->link_word_high
 )
 ...>
 }
 
 
-@receiver_3_w_6_42_store_7@
+@receiver_3_w_6_51_address_7@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)_pMatch + 0x7)
++ (char *)&((uw_object_hdr_t *)_pMatch)->link_word_high
+|
+- &*(char *)((byte *)_pMatch + 0x7)
++ (char *)&((uw_object_hdr_t *)_pMatch)->link_word_high
+|
+- &((char *)_pMatch)[0x7]
++ (char *)&((uw_object_hdr_t *)_pMatch)->link_word_high
+|
+- &*(char *)(_pMatch + 0x7)
++ (char *)&((uw_object_hdr_t *)_pMatch)->link_word_high
+|
+- &_pMatch[0x7]
++ (char *)&((uw_object_hdr_t *)_pMatch)->link_word_high
+)
+...>
+}
+
+
+@receiver_3_w_6_51_store_7@
+type R;
+identifier F =~ "^\(repopulate_container_grid_slots\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -4804,15 +6781,21 @@ R F(...) {
 |
 - ((char *)_pMatch)[0x7] = E;
 + ((uw_object_hdr_t *)_pMatch)->link_word_high = (byte)E;
+|
+- *(char *)(_pMatch + 0x7) = E;
++ ((uw_object_hdr_t *)_pMatch)->link_word_high = (byte)E;
+|
+- _pMatch[0x7] = E;
++ ((uw_object_hdr_t *)_pMatch)->link_word_high = (byte)E;
 )
 ...>
 }
 
 
-@receiver_3_w_6_42_byte_7_char@
+@receiver_3_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(repopulate_container_grid_slots\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4824,6 +6807,12 @@ R F(...) {
 + (char)((uw_object_hdr_t *)_pMatch)->link_word_high
 |
 - ((char *)_pMatch)[0x7]
++ (char)((uw_object_hdr_t *)_pMatch)->link_word_high
+|
+- *(char *)(_pMatch + 0x7)
++ (char)((uw_object_hdr_t *)_pMatch)->link_word_high
+|
+- _pMatch[0x7]
 + (char)((uw_object_hdr_t *)_pMatch)->link_word_high
 )
 ...>
@@ -4893,7 +6882,7 @@ R F(...) {
 @receiver_4_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4909,6 +6898,48 @@ R F(...) {
 |
 - *(ushort *)((ushort *)puVar7 + 0x0)
 + ((uw_object_hdr_t *)puVar7)->type_flags
+|
+- *(ushort *)(puVar7 + 0x0)
++ ((uw_object_hdr_t *)puVar7)->type_flags
+|
+- puVar7[0x0]
++ ((uw_object_hdr_t *)puVar7)->type_flags
+|
+- *puVar7
++ ((uw_object_hdr_t *)puVar7)->type_flags
+)
+...>
+}
+
+
+@receiver_4_w_0_0_word_undefined2@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar7 + 0x0)
++ ((uw_object_hdr_t *)puVar7)->type_flags
+|
+- *(undefined2 *)((byte *)puVar7 + 0x0)
++ ((uw_object_hdr_t *)puVar7)->type_flags
+|
+- ((undefined2 *)puVar7)[0x0]
++ ((uw_object_hdr_t *)puVar7)->type_flags
+|
+- *(undefined2 *)((undefined2 *)puVar7 + 0x0)
++ ((uw_object_hdr_t *)puVar7)->type_flags
+|
+- *(undefined2 *)(puVar7 + 0x0)
++ ((uw_object_hdr_t *)puVar7)->type_flags
+|
+- puVar7[0x0]
++ ((uw_object_hdr_t *)puVar7)->type_flags
+|
+- *puVar7
++ ((uw_object_hdr_t *)puVar7)->type_flags
 )
 ...>
 }
@@ -4917,7 +6948,7 @@ R F(...) {
 @receiver_4_w_0_0_word_short@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4933,6 +6964,9 @@ R F(...) {
 |
 - *(short *)((short *)puVar7 + 0x0)
 + ((uw_object_hdr_t *)puVar7)->type_flags_signed
+|
+- *(short *)(puVar7 + 0x0)
++ ((uw_object_hdr_t *)puVar7)->type_flags_signed
 )
 ...>
 }
@@ -4941,7 +6975,7 @@ R F(...) {
 @receiver_4_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4963,6 +6997,12 @@ R F(...) {
 |
 - *(byte *)puVar7
 + ((uw_object_hdr_t *)puVar7)->type_flags_low
+|
+- *(byte *)(puVar7 + 0x0)
++ ((uw_object_hdr_t *)puVar7)->type_flags_low
+|
+- (byte)puVar7[0x0]
++ ((uw_object_hdr_t *)puVar7)->type_flags_low
 )
 ...>
 }
@@ -4971,7 +7011,7 @@ R F(...) {
 @receiver_4_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -4993,6 +7033,42 @@ R F(...) {
 |
 - *(undefined1 *)puVar7
 + ((uw_object_hdr_t *)puVar7)->type_flags_low
+|
+- *(undefined1 *)(puVar7 + 0x0)
++ ((uw_object_hdr_t *)puVar7)->type_flags_low
+|
+- (undefined1)puVar7[0x0]
++ ((uw_object_hdr_t *)puVar7)->type_flags_low
+)
+...>
+}
+
+
+@receiver_4_w_0_0_address_0@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar7 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar7)->type_flags_low
+|
+- &*(char *)((byte *)puVar7 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar7)->type_flags_low
+|
+- &((char *)puVar7)[0x0]
++ (char *)&((uw_object_hdr_t *)puVar7)->type_flags_low
+|
+- &*(char *)((ushort *)puVar7 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar7)->type_flags_low
+|
+- &*(char *)puVar7
++ (char *)&((uw_object_hdr_t *)puVar7)->type_flags_low
+|
+- &*(char *)(puVar7 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar7)->type_flags_low
 )
 ...>
 }
@@ -5001,7 +7077,7 @@ R F(...) {
 @receiver_4_w_0_0_store_0@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -5021,6 +7097,9 @@ R F(...) {
 |
 - *(char *)puVar7 = E;
 + ((uw_object_hdr_t *)puVar7)->type_flags_low = (byte)E;
+|
+- *(char *)(puVar7 + 0x0) = E;
++ ((uw_object_hdr_t *)puVar7)->type_flags_low = (byte)E;
 )
 ...>
 }
@@ -5029,7 +7108,7 @@ R F(...) {
 @receiver_4_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5051,6 +7130,12 @@ R F(...) {
 |
 - *(char *)puVar7
 + (char)((uw_object_hdr_t *)puVar7)->type_flags_low
+|
+- *(char *)(puVar7 + 0x0)
++ (char)((uw_object_hdr_t *)puVar7)->type_flags_low
+|
+- (char)puVar7[0x0]
++ (char)((uw_object_hdr_t *)puVar7)->type_flags_low
 )
 ...>
 }
@@ -5059,7 +7144,7 @@ R F(...) {
 @receiver_4_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5080,7 +7165,7 @@ R F(...) {
 @receiver_4_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5098,10 +7183,31 @@ R F(...) {
 }
 
 
+@receiver_4_w_0_0_address_1@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar7 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar7)->type_flags_high
+|
+- &*(char *)((byte *)puVar7 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar7)->type_flags_high
+|
+- &((char *)puVar7)[0x1]
++ (char *)&((uw_object_hdr_t *)puVar7)->type_flags_high
+)
+...>
+}
+
+
 @receiver_4_w_0_0_store_1@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -5123,7 +7229,7 @@ R F(...) {
 @receiver_4_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5141,7 +7247,7 @@ R F(...) {
 }
 
 
-@receiver_4_w_2_14_pair_char_char@
+@receiver_4_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -5156,7 +7262,7 @@ R F(...) {
 ...>
 }
 
-@receiver_4_w_2_14_pair_char_byte@
+@receiver_4_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -5171,7 +7277,7 @@ R F(...) {
 ...>
 }
 
-@receiver_4_w_2_14_pair_byte_char@
+@receiver_4_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -5186,7 +7292,7 @@ R F(...) {
 ...>
 }
 
-@receiver_4_w_2_14_pair_byte_byte@
+@receiver_4_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -5201,10 +7307,10 @@ R F(...) {
 ...>
 }
 
-@receiver_4_w_2_14_word_ushort@
+@receiver_4_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5220,15 +7326,51 @@ R F(...) {
 |
 - *(ushort *)((ushort *)puVar7 + 0x1)
 + ((uw_object_hdr_t *)puVar7)->position_word
+|
+- *(ushort *)(puVar7 + 0x1)
++ ((uw_object_hdr_t *)puVar7)->position_word
+|
+- puVar7[0x1]
++ ((uw_object_hdr_t *)puVar7)->position_word
 )
 ...>
 }
 
 
-@receiver_4_w_2_14_word_short@
+@receiver_4_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar7 + 0x2)
++ ((uw_object_hdr_t *)puVar7)->position_word
+|
+- *(undefined2 *)((byte *)puVar7 + 0x2)
++ ((uw_object_hdr_t *)puVar7)->position_word
+|
+- ((undefined2 *)puVar7)[0x1]
++ ((uw_object_hdr_t *)puVar7)->position_word
+|
+- *(undefined2 *)((undefined2 *)puVar7 + 0x1)
++ ((uw_object_hdr_t *)puVar7)->position_word
+|
+- *(undefined2 *)(puVar7 + 0x1)
++ ((uw_object_hdr_t *)puVar7)->position_word
+|
+- puVar7[0x1]
++ ((uw_object_hdr_t *)puVar7)->position_word
+)
+...>
+}
+
+
+@receiver_4_w_2_17_word_short@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5244,15 +7386,18 @@ R F(...) {
 |
 - *(short *)((short *)puVar7 + 0x1)
 + ((uw_object_hdr_t *)puVar7)->position_word_signed
+|
+- *(short *)(puVar7 + 0x1)
++ ((uw_object_hdr_t *)puVar7)->position_word_signed
 )
 ...>
 }
 
 
-@receiver_4_w_2_14_byte_2_byte@
+@receiver_4_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5271,15 +7416,21 @@ R F(...) {
 |
 - (byte)((ushort *)puVar7)[0x1]
 + ((uw_object_hdr_t *)puVar7)->position_word_low
+|
+- *(byte *)(puVar7 + 0x1)
++ ((uw_object_hdr_t *)puVar7)->position_word_low
+|
+- (byte)puVar7[0x1]
++ ((uw_object_hdr_t *)puVar7)->position_word_low
 )
 ...>
 }
 
 
-@receiver_4_w_2_14_byte_2_undefined1@
+@receiver_4_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5298,15 +7449,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)puVar7)[0x1]
 + ((uw_object_hdr_t *)puVar7)->position_word_low
+|
+- *(undefined1 *)(puVar7 + 0x1)
++ ((uw_object_hdr_t *)puVar7)->position_word_low
+|
+- (undefined1)puVar7[0x1]
++ ((uw_object_hdr_t *)puVar7)->position_word_low
 )
 ...>
 }
 
 
-@receiver_4_w_2_14_store_2@
+@receiver_4_w_2_17_address_2@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar7 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar7)->position_word_low
+|
+- &*(char *)((byte *)puVar7 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar7)->position_word_low
+|
+- &((char *)puVar7)[0x2]
++ (char *)&((uw_object_hdr_t *)puVar7)->position_word_low
+|
+- &*(char *)((ushort *)puVar7 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar7)->position_word_low
+|
+- &*(char *)(puVar7 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar7)->position_word_low
+)
+...>
+}
+
+
+@receiver_4_w_2_17_store_2@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -5323,15 +7507,18 @@ R F(...) {
 |
 - *(char *)((ushort *)puVar7 + 0x1) = E;
 + ((uw_object_hdr_t *)puVar7)->position_word_low = (byte)E;
+|
+- *(char *)(puVar7 + 0x1) = E;
++ ((uw_object_hdr_t *)puVar7)->position_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_4_w_2_14_byte_2_char@
+@receiver_4_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5350,15 +7537,21 @@ R F(...) {
 |
 - (char)((ushort *)puVar7)[0x1]
 + (char)((uw_object_hdr_t *)puVar7)->position_word_low
+|
+- *(char *)(puVar7 + 0x1)
++ (char)((uw_object_hdr_t *)puVar7)->position_word_low
+|
+- (char)puVar7[0x1]
++ (char)((uw_object_hdr_t *)puVar7)->position_word_low
 )
 ...>
 }
 
 
-@receiver_4_w_2_14_byte_3_byte@
+@receiver_4_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5376,10 +7569,10 @@ R F(...) {
 }
 
 
-@receiver_4_w_2_14_byte_3_undefined1@
+@receiver_4_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5397,10 +7590,31 @@ R F(...) {
 }
 
 
-@receiver_4_w_2_14_store_3@
+@receiver_4_w_2_17_address_3@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar7 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar7)->position_word_high
+|
+- &*(char *)((byte *)puVar7 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar7)->position_word_high
+|
+- &((char *)puVar7)[0x3]
++ (char *)&((uw_object_hdr_t *)puVar7)->position_word_high
+)
+...>
+}
+
+
+@receiver_4_w_2_17_store_3@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -5419,10 +7633,10 @@ R F(...) {
 }
 
 
-@receiver_4_w_2_14_byte_3_char@
+@receiver_4_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5440,7 +7654,7 @@ R F(...) {
 }
 
 
-@receiver_4_w_4_28_pair_char_char@
+@receiver_4_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -5455,7 +7669,7 @@ R F(...) {
 ...>
 }
 
-@receiver_4_w_4_28_pair_char_byte@
+@receiver_4_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -5470,7 +7684,7 @@ R F(...) {
 ...>
 }
 
-@receiver_4_w_4_28_pair_byte_char@
+@receiver_4_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -5485,7 +7699,7 @@ R F(...) {
 ...>
 }
 
-@receiver_4_w_4_28_pair_byte_byte@
+@receiver_4_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -5500,10 +7714,10 @@ R F(...) {
 ...>
 }
 
-@receiver_4_w_4_28_word_ushort@
+@receiver_4_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5519,15 +7733,51 @@ R F(...) {
 |
 - *(ushort *)((ushort *)puVar7 + 0x2)
 + ((uw_object_hdr_t *)puVar7)->chain_word
+|
+- *(ushort *)(puVar7 + 0x2)
++ ((uw_object_hdr_t *)puVar7)->chain_word
+|
+- puVar7[0x2]
++ ((uw_object_hdr_t *)puVar7)->chain_word
 )
 ...>
 }
 
 
-@receiver_4_w_4_28_word_short@
+@receiver_4_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar7 + 0x4)
++ ((uw_object_hdr_t *)puVar7)->chain_word
+|
+- *(undefined2 *)((byte *)puVar7 + 0x4)
++ ((uw_object_hdr_t *)puVar7)->chain_word
+|
+- ((undefined2 *)puVar7)[0x2]
++ ((uw_object_hdr_t *)puVar7)->chain_word
+|
+- *(undefined2 *)((undefined2 *)puVar7 + 0x2)
++ ((uw_object_hdr_t *)puVar7)->chain_word
+|
+- *(undefined2 *)(puVar7 + 0x2)
++ ((uw_object_hdr_t *)puVar7)->chain_word
+|
+- puVar7[0x2]
++ ((uw_object_hdr_t *)puVar7)->chain_word
+)
+...>
+}
+
+
+@receiver_4_w_4_34_word_short@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5543,15 +7793,18 @@ R F(...) {
 |
 - *(short *)((short *)puVar7 + 0x2)
 + ((uw_object_hdr_t *)puVar7)->chain_word_signed
+|
+- *(short *)(puVar7 + 0x2)
++ ((uw_object_hdr_t *)puVar7)->chain_word_signed
 )
 ...>
 }
 
 
-@receiver_4_w_4_28_byte_4_byte@
+@receiver_4_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5570,15 +7823,21 @@ R F(...) {
 |
 - (byte)((ushort *)puVar7)[0x2]
 + ((uw_object_hdr_t *)puVar7)->chain_word_low
+|
+- *(byte *)(puVar7 + 0x2)
++ ((uw_object_hdr_t *)puVar7)->chain_word_low
+|
+- (byte)puVar7[0x2]
++ ((uw_object_hdr_t *)puVar7)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_4_w_4_28_byte_4_undefined1@
+@receiver_4_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5597,15 +7856,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)puVar7)[0x2]
 + ((uw_object_hdr_t *)puVar7)->chain_word_low
+|
+- *(undefined1 *)(puVar7 + 0x2)
++ ((uw_object_hdr_t *)puVar7)->chain_word_low
+|
+- (undefined1)puVar7[0x2]
++ ((uw_object_hdr_t *)puVar7)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_4_w_4_28_store_4@
+@receiver_4_w_4_34_address_4@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar7 + 0x4)
++ (char *)&((uw_object_hdr_t *)puVar7)->chain_word_low
+|
+- &*(char *)((byte *)puVar7 + 0x4)
++ (char *)&((uw_object_hdr_t *)puVar7)->chain_word_low
+|
+- &((char *)puVar7)[0x4]
++ (char *)&((uw_object_hdr_t *)puVar7)->chain_word_low
+|
+- &*(char *)((ushort *)puVar7 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar7)->chain_word_low
+|
+- &*(char *)(puVar7 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar7)->chain_word_low
+)
+...>
+}
+
+
+@receiver_4_w_4_34_store_4@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -5622,15 +7914,18 @@ R F(...) {
 |
 - *(char *)((ushort *)puVar7 + 0x2) = E;
 + ((uw_object_hdr_t *)puVar7)->chain_word_low = (byte)E;
+|
+- *(char *)(puVar7 + 0x2) = E;
++ ((uw_object_hdr_t *)puVar7)->chain_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_4_w_4_28_byte_4_char@
+@receiver_4_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5649,15 +7944,21 @@ R F(...) {
 |
 - (char)((ushort *)puVar7)[0x2]
 + (char)((uw_object_hdr_t *)puVar7)->chain_word_low
+|
+- *(char *)(puVar7 + 0x2)
++ (char)((uw_object_hdr_t *)puVar7)->chain_word_low
+|
+- (char)puVar7[0x2]
++ (char)((uw_object_hdr_t *)puVar7)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_4_w_4_28_byte_5_byte@
+@receiver_4_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5675,10 +7976,10 @@ R F(...) {
 }
 
 
-@receiver_4_w_4_28_byte_5_undefined1@
+@receiver_4_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5696,10 +7997,31 @@ R F(...) {
 }
 
 
-@receiver_4_w_4_28_store_5@
+@receiver_4_w_4_34_address_5@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar7 + 0x5)
++ (char *)&((uw_object_hdr_t *)puVar7)->chain_word_high
+|
+- &*(char *)((byte *)puVar7 + 0x5)
++ (char *)&((uw_object_hdr_t *)puVar7)->chain_word_high
+|
+- &((char *)puVar7)[0x5]
++ (char *)&((uw_object_hdr_t *)puVar7)->chain_word_high
+)
+...>
+}
+
+
+@receiver_4_w_4_34_store_5@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -5718,10 +8040,10 @@ R F(...) {
 }
 
 
-@receiver_4_w_4_28_byte_5_char@
+@receiver_4_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5739,7 +8061,7 @@ R F(...) {
 }
 
 
-@receiver_4_w_6_42_pair_char_char@
+@receiver_4_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -5754,7 +8076,7 @@ R F(...) {
 ...>
 }
 
-@receiver_4_w_6_42_pair_char_byte@
+@receiver_4_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -5769,7 +8091,7 @@ R F(...) {
 ...>
 }
 
-@receiver_4_w_6_42_pair_byte_char@
+@receiver_4_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -5784,7 +8106,7 @@ R F(...) {
 ...>
 }
 
-@receiver_4_w_6_42_pair_byte_byte@
+@receiver_4_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -5799,10 +8121,10 @@ R F(...) {
 ...>
 }
 
-@receiver_4_w_6_42_word_ushort@
+@receiver_4_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5818,15 +8140,51 @@ R F(...) {
 |
 - *(ushort *)((ushort *)puVar7 + 0x3)
 + ((uw_object_hdr_t *)puVar7)->link_word
+|
+- *(ushort *)(puVar7 + 0x3)
++ ((uw_object_hdr_t *)puVar7)->link_word
+|
+- puVar7[0x3]
++ ((uw_object_hdr_t *)puVar7)->link_word
 )
 ...>
 }
 
 
-@receiver_4_w_6_42_word_short@
+@receiver_4_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar7 + 0x6)
++ ((uw_object_hdr_t *)puVar7)->link_word
+|
+- *(undefined2 *)((byte *)puVar7 + 0x6)
++ ((uw_object_hdr_t *)puVar7)->link_word
+|
+- ((undefined2 *)puVar7)[0x3]
++ ((uw_object_hdr_t *)puVar7)->link_word
+|
+- *(undefined2 *)((undefined2 *)puVar7 + 0x3)
++ ((uw_object_hdr_t *)puVar7)->link_word
+|
+- *(undefined2 *)(puVar7 + 0x3)
++ ((uw_object_hdr_t *)puVar7)->link_word
+|
+- puVar7[0x3]
++ ((uw_object_hdr_t *)puVar7)->link_word
+)
+...>
+}
+
+
+@receiver_4_w_6_51_word_short@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5842,15 +8200,18 @@ R F(...) {
 |
 - *(short *)((short *)puVar7 + 0x3)
 + ((uw_object_hdr_t *)puVar7)->link_word_signed
+|
+- *(short *)(puVar7 + 0x3)
++ ((uw_object_hdr_t *)puVar7)->link_word_signed
 )
 ...>
 }
 
 
-@receiver_4_w_6_42_byte_6_byte@
+@receiver_4_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5869,15 +8230,21 @@ R F(...) {
 |
 - (byte)((ushort *)puVar7)[0x3]
 + ((uw_object_hdr_t *)puVar7)->link_word_low
+|
+- *(byte *)(puVar7 + 0x3)
++ ((uw_object_hdr_t *)puVar7)->link_word_low
+|
+- (byte)puVar7[0x3]
++ ((uw_object_hdr_t *)puVar7)->link_word_low
 )
 ...>
 }
 
 
-@receiver_4_w_6_42_byte_6_undefined1@
+@receiver_4_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5896,15 +8263,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)puVar7)[0x3]
 + ((uw_object_hdr_t *)puVar7)->link_word_low
+|
+- *(undefined1 *)(puVar7 + 0x3)
++ ((uw_object_hdr_t *)puVar7)->link_word_low
+|
+- (undefined1)puVar7[0x3]
++ ((uw_object_hdr_t *)puVar7)->link_word_low
 )
 ...>
 }
 
 
-@receiver_4_w_6_42_store_6@
+@receiver_4_w_6_51_address_6@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar7 + 0x6)
++ (char *)&((uw_object_hdr_t *)puVar7)->link_word_low
+|
+- &*(char *)((byte *)puVar7 + 0x6)
++ (char *)&((uw_object_hdr_t *)puVar7)->link_word_low
+|
+- &((char *)puVar7)[0x6]
++ (char *)&((uw_object_hdr_t *)puVar7)->link_word_low
+|
+- &*(char *)((ushort *)puVar7 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar7)->link_word_low
+|
+- &*(char *)(puVar7 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar7)->link_word_low
+)
+...>
+}
+
+
+@receiver_4_w_6_51_store_6@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -5921,15 +8321,18 @@ R F(...) {
 |
 - *(char *)((ushort *)puVar7 + 0x3) = E;
 + ((uw_object_hdr_t *)puVar7)->link_word_low = (byte)E;
+|
+- *(char *)(puVar7 + 0x3) = E;
++ ((uw_object_hdr_t *)puVar7)->link_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_4_w_6_42_byte_6_char@
+@receiver_4_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5948,15 +8351,21 @@ R F(...) {
 |
 - (char)((ushort *)puVar7)[0x3]
 + (char)((uw_object_hdr_t *)puVar7)->link_word_low
+|
+- *(char *)(puVar7 + 0x3)
++ (char)((uw_object_hdr_t *)puVar7)->link_word_low
+|
+- (char)puVar7[0x3]
++ (char)((uw_object_hdr_t *)puVar7)->link_word_low
 )
 ...>
 }
 
 
-@receiver_4_w_6_42_byte_7_byte@
+@receiver_4_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5974,10 +8383,10 @@ R F(...) {
 }
 
 
-@receiver_4_w_6_42_byte_7_undefined1@
+@receiver_4_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -5995,10 +8404,31 @@ R F(...) {
 }
 
 
-@receiver_4_w_6_42_store_7@
+@receiver_4_w_6_51_address_7@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar7 + 0x7)
++ (char *)&((uw_object_hdr_t *)puVar7)->link_word_high
+|
+- &*(char *)((byte *)puVar7 + 0x7)
++ (char *)&((uw_object_hdr_t *)puVar7)->link_word_high
+|
+- &((char *)puVar7)[0x7]
++ (char *)&((uw_object_hdr_t *)puVar7)->link_word_high
+)
+...>
+}
+
+
+@receiver_4_w_6_51_store_7@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -6017,10 +8447,10 @@ R F(...) {
 }
 
 
-@receiver_4_w_6_42_byte_7_char@
+@receiver_4_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -6046,9 +8476,9 @@ identifier V;
 @@
 R F(...) {
 <...
-- *(char *)((char *)puVar14 + 0x0) = (char)V;
-- *(char *)((char *)puVar14 + 0x1) = (char)(V >> 8);
-+ ((uw_object_hdr_t *)puVar14)->type_flags = (ushort)V;
+- *(char *)((char *)puVar15 + 0x0) = (char)V;
+- *(char *)((char *)puVar15 + 0x1) = (char)(V >> 8);
++ ((uw_object_hdr_t *)puVar15)->type_flags = (ushort)V;
 
 ...>
 }
@@ -6061,9 +8491,9 @@ identifier V;
 @@
 R F(...) {
 <...
-- *(char *)((char *)puVar14 + 0x0) = (char)V;
-- *(byte *)((char *)puVar14 + 0x1) = (byte)(V >> 8);
-+ ((uw_object_hdr_t *)puVar14)->type_flags = (ushort)V;
+- *(char *)((char *)puVar15 + 0x0) = (char)V;
+- *(byte *)((char *)puVar15 + 0x1) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)puVar15)->type_flags = (ushort)V;
 
 ...>
 }
@@ -6076,9 +8506,9 @@ identifier V;
 @@
 R F(...) {
 <...
-- *(byte *)((char *)puVar14 + 0x0) = (byte)V;
-- *(char *)((char *)puVar14 + 0x1) = (char)(V >> 8);
-+ ((uw_object_hdr_t *)puVar14)->type_flags = (ushort)V;
+- *(byte *)((char *)puVar15 + 0x0) = (byte)V;
+- *(char *)((char *)puVar15 + 0x1) = (char)(V >> 8);
++ ((uw_object_hdr_t *)puVar15)->type_flags = (ushort)V;
 
 ...>
 }
@@ -6091,9 +8521,9 @@ identifier V;
 @@
 R F(...) {
 <...
-- *(byte *)((char *)puVar14 + 0x0) = (byte)V;
-- *(byte *)((char *)puVar14 + 0x1) = (byte)(V >> 8);
-+ ((uw_object_hdr_t *)puVar14)->type_flags = (ushort)V;
+- *(byte *)((char *)puVar15 + 0x0) = (byte)V;
+- *(byte *)((char *)puVar15 + 0x1) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)puVar15)->type_flags = (ushort)V;
 
 ...>
 }
@@ -6101,1215 +8531,7 @@ R F(...) {
 @receiver_5_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)puVar14 + 0x0)
-+ ((uw_object_hdr_t *)puVar14)->type_flags
-|
-- *(ushort *)((byte *)puVar14 + 0x0)
-+ ((uw_object_hdr_t *)puVar14)->type_flags
-|
-- ((ushort *)puVar14)[0x0]
-+ ((uw_object_hdr_t *)puVar14)->type_flags
-|
-- *(ushort *)((ushort *)puVar14 + 0x0)
-+ ((uw_object_hdr_t *)puVar14)->type_flags
-)
-...>
-}
-
-
-@receiver_5_w_0_0_word_short@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(short *)((char *)puVar14 + 0x0)
-+ ((uw_object_hdr_t *)puVar14)->type_flags_signed
-|
-- *(short *)((byte *)puVar14 + 0x0)
-+ ((uw_object_hdr_t *)puVar14)->type_flags_signed
-|
-- ((short *)puVar14)[0x0]
-+ ((uw_object_hdr_t *)puVar14)->type_flags_signed
-|
-- *(short *)((short *)puVar14 + 0x0)
-+ ((uw_object_hdr_t *)puVar14)->type_flags_signed
-)
-...>
-}
-
-
-@receiver_5_w_0_0_byte_0_byte@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(byte *)((char *)puVar14 + 0x0)
-+ ((uw_object_hdr_t *)puVar14)->type_flags_low
-|
-- *(byte *)((byte *)puVar14 + 0x0)
-+ ((uw_object_hdr_t *)puVar14)->type_flags_low
-|
-- ((byte *)puVar14)[0x0]
-+ ((uw_object_hdr_t *)puVar14)->type_flags_low
-|
-- *(byte *)((ushort *)puVar14 + 0x0)
-+ ((uw_object_hdr_t *)puVar14)->type_flags_low
-|
-- (byte)((ushort *)puVar14)[0x0]
-+ ((uw_object_hdr_t *)puVar14)->type_flags_low
-|
-- *(byte *)puVar14
-+ ((uw_object_hdr_t *)puVar14)->type_flags_low
-)
-...>
-}
-
-
-@receiver_5_w_0_0_byte_0_undefined1@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(undefined1 *)((char *)puVar14 + 0x0)
-+ ((uw_object_hdr_t *)puVar14)->type_flags_low
-|
-- *(undefined1 *)((byte *)puVar14 + 0x0)
-+ ((uw_object_hdr_t *)puVar14)->type_flags_low
-|
-- ((undefined1 *)puVar14)[0x0]
-+ ((uw_object_hdr_t *)puVar14)->type_flags_low
-|
-- *(undefined1 *)((ushort *)puVar14 + 0x0)
-+ ((uw_object_hdr_t *)puVar14)->type_flags_low
-|
-- (undefined1)((ushort *)puVar14)[0x0]
-+ ((uw_object_hdr_t *)puVar14)->type_flags_low
-|
-- *(undefined1 *)puVar14
-+ ((uw_object_hdr_t *)puVar14)->type_flags_low
-)
-...>
-}
-
-
-@receiver_5_w_0_0_store_0@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, uw_object_hdr_t;
-expression E;
-@@
-R F(...) {
-<...
-(
-- *(char *)((char *)puVar14 + 0x0) = E;
-+ ((uw_object_hdr_t *)puVar14)->type_flags_low = (byte)E;
-|
-- *(char *)((byte *)puVar14 + 0x0) = E;
-+ ((uw_object_hdr_t *)puVar14)->type_flags_low = (byte)E;
-|
-- ((char *)puVar14)[0x0] = E;
-+ ((uw_object_hdr_t *)puVar14)->type_flags_low = (byte)E;
-|
-- *(char *)((ushort *)puVar14 + 0x0) = E;
-+ ((uw_object_hdr_t *)puVar14)->type_flags_low = (byte)E;
-|
-- *(char *)puVar14 = E;
-+ ((uw_object_hdr_t *)puVar14)->type_flags_low = (byte)E;
-)
-...>
-}
-
-
-@receiver_5_w_0_0_byte_0_char@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(char *)((char *)puVar14 + 0x0)
-+ (char)((uw_object_hdr_t *)puVar14)->type_flags_low
-|
-- *(char *)((byte *)puVar14 + 0x0)
-+ (char)((uw_object_hdr_t *)puVar14)->type_flags_low
-|
-- ((char *)puVar14)[0x0]
-+ (char)((uw_object_hdr_t *)puVar14)->type_flags_low
-|
-- *(char *)((ushort *)puVar14 + 0x0)
-+ (char)((uw_object_hdr_t *)puVar14)->type_flags_low
-|
-- (char)((ushort *)puVar14)[0x0]
-+ (char)((uw_object_hdr_t *)puVar14)->type_flags_low
-|
-- *(char *)puVar14
-+ (char)((uw_object_hdr_t *)puVar14)->type_flags_low
-)
-...>
-}
-
-
-@receiver_5_w_0_0_byte_1_byte@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(byte *)((char *)puVar14 + 0x1)
-+ ((uw_object_hdr_t *)puVar14)->type_flags_high
-|
-- *(byte *)((byte *)puVar14 + 0x1)
-+ ((uw_object_hdr_t *)puVar14)->type_flags_high
-|
-- ((byte *)puVar14)[0x1]
-+ ((uw_object_hdr_t *)puVar14)->type_flags_high
-)
-...>
-}
-
-
-@receiver_5_w_0_0_byte_1_undefined1@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(undefined1 *)((char *)puVar14 + 0x1)
-+ ((uw_object_hdr_t *)puVar14)->type_flags_high
-|
-- *(undefined1 *)((byte *)puVar14 + 0x1)
-+ ((uw_object_hdr_t *)puVar14)->type_flags_high
-|
-- ((undefined1 *)puVar14)[0x1]
-+ ((uw_object_hdr_t *)puVar14)->type_flags_high
-)
-...>
-}
-
-
-@receiver_5_w_0_0_store_1@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, uw_object_hdr_t;
-expression E;
-@@
-R F(...) {
-<...
-(
-- *(char *)((char *)puVar14 + 0x1) = E;
-+ ((uw_object_hdr_t *)puVar14)->type_flags_high = (byte)E;
-|
-- *(char *)((byte *)puVar14 + 0x1) = E;
-+ ((uw_object_hdr_t *)puVar14)->type_flags_high = (byte)E;
-|
-- ((char *)puVar14)[0x1] = E;
-+ ((uw_object_hdr_t *)puVar14)->type_flags_high = (byte)E;
-)
-...>
-}
-
-
-@receiver_5_w_0_0_byte_1_char@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(char *)((char *)puVar14 + 0x1)
-+ (char)((uw_object_hdr_t *)puVar14)->type_flags_high
-|
-- *(char *)((byte *)puVar14 + 0x1)
-+ (char)((uw_object_hdr_t *)puVar14)->type_flags_high
-|
-- ((char *)puVar14)[0x1]
-+ (char)((uw_object_hdr_t *)puVar14)->type_flags_high
-)
-...>
-}
-
-
-@receiver_5_w_2_14_pair_char_char@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, ushort, uw_object_hdr_t;
-identifier V;
-@@
-R F(...) {
-<...
-- *(char *)((char *)puVar14 + 0x2) = (char)V;
-- *(char *)((char *)puVar14 + 0x3) = (char)(V >> 8);
-+ ((uw_object_hdr_t *)puVar14)->position_word = (ushort)V;
-
-...>
-}
-
-@receiver_5_w_2_14_pair_char_byte@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, ushort, uw_object_hdr_t;
-identifier V;
-@@
-R F(...) {
-<...
-- *(char *)((char *)puVar14 + 0x2) = (char)V;
-- *(byte *)((char *)puVar14 + 0x3) = (byte)(V >> 8);
-+ ((uw_object_hdr_t *)puVar14)->position_word = (ushort)V;
-
-...>
-}
-
-@receiver_5_w_2_14_pair_byte_char@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, ushort, uw_object_hdr_t;
-identifier V;
-@@
-R F(...) {
-<...
-- *(byte *)((char *)puVar14 + 0x2) = (byte)V;
-- *(char *)((char *)puVar14 + 0x3) = (char)(V >> 8);
-+ ((uw_object_hdr_t *)puVar14)->position_word = (ushort)V;
-
-...>
-}
-
-@receiver_5_w_2_14_pair_byte_byte@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, ushort, uw_object_hdr_t;
-identifier V;
-@@
-R F(...) {
-<...
-- *(byte *)((char *)puVar14 + 0x2) = (byte)V;
-- *(byte *)((char *)puVar14 + 0x3) = (byte)(V >> 8);
-+ ((uw_object_hdr_t *)puVar14)->position_word = (ushort)V;
-
-...>
-}
-
-@receiver_5_w_2_14_word_ushort@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)puVar14 + 0x2)
-+ ((uw_object_hdr_t *)puVar14)->position_word
-|
-- *(ushort *)((byte *)puVar14 + 0x2)
-+ ((uw_object_hdr_t *)puVar14)->position_word
-|
-- ((ushort *)puVar14)[0x1]
-+ ((uw_object_hdr_t *)puVar14)->position_word
-|
-- *(ushort *)((ushort *)puVar14 + 0x1)
-+ ((uw_object_hdr_t *)puVar14)->position_word
-)
-...>
-}
-
-
-@receiver_5_w_2_14_word_short@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(short *)((char *)puVar14 + 0x2)
-+ ((uw_object_hdr_t *)puVar14)->position_word_signed
-|
-- *(short *)((byte *)puVar14 + 0x2)
-+ ((uw_object_hdr_t *)puVar14)->position_word_signed
-|
-- ((short *)puVar14)[0x1]
-+ ((uw_object_hdr_t *)puVar14)->position_word_signed
-|
-- *(short *)((short *)puVar14 + 0x1)
-+ ((uw_object_hdr_t *)puVar14)->position_word_signed
-)
-...>
-}
-
-
-@receiver_5_w_2_14_byte_2_byte@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(byte *)((char *)puVar14 + 0x2)
-+ ((uw_object_hdr_t *)puVar14)->position_word_low
-|
-- *(byte *)((byte *)puVar14 + 0x2)
-+ ((uw_object_hdr_t *)puVar14)->position_word_low
-|
-- ((byte *)puVar14)[0x2]
-+ ((uw_object_hdr_t *)puVar14)->position_word_low
-|
-- *(byte *)((ushort *)puVar14 + 0x1)
-+ ((uw_object_hdr_t *)puVar14)->position_word_low
-|
-- (byte)((ushort *)puVar14)[0x1]
-+ ((uw_object_hdr_t *)puVar14)->position_word_low
-)
-...>
-}
-
-
-@receiver_5_w_2_14_byte_2_undefined1@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(undefined1 *)((char *)puVar14 + 0x2)
-+ ((uw_object_hdr_t *)puVar14)->position_word_low
-|
-- *(undefined1 *)((byte *)puVar14 + 0x2)
-+ ((uw_object_hdr_t *)puVar14)->position_word_low
-|
-- ((undefined1 *)puVar14)[0x2]
-+ ((uw_object_hdr_t *)puVar14)->position_word_low
-|
-- *(undefined1 *)((ushort *)puVar14 + 0x1)
-+ ((uw_object_hdr_t *)puVar14)->position_word_low
-|
-- (undefined1)((ushort *)puVar14)[0x1]
-+ ((uw_object_hdr_t *)puVar14)->position_word_low
-)
-...>
-}
-
-
-@receiver_5_w_2_14_store_2@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, uw_object_hdr_t;
-expression E;
-@@
-R F(...) {
-<...
-(
-- *(char *)((char *)puVar14 + 0x2) = E;
-+ ((uw_object_hdr_t *)puVar14)->position_word_low = (byte)E;
-|
-- *(char *)((byte *)puVar14 + 0x2) = E;
-+ ((uw_object_hdr_t *)puVar14)->position_word_low = (byte)E;
-|
-- ((char *)puVar14)[0x2] = E;
-+ ((uw_object_hdr_t *)puVar14)->position_word_low = (byte)E;
-|
-- *(char *)((ushort *)puVar14 + 0x1) = E;
-+ ((uw_object_hdr_t *)puVar14)->position_word_low = (byte)E;
-)
-...>
-}
-
-
-@receiver_5_w_2_14_byte_2_char@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(char *)((char *)puVar14 + 0x2)
-+ (char)((uw_object_hdr_t *)puVar14)->position_word_low
-|
-- *(char *)((byte *)puVar14 + 0x2)
-+ (char)((uw_object_hdr_t *)puVar14)->position_word_low
-|
-- ((char *)puVar14)[0x2]
-+ (char)((uw_object_hdr_t *)puVar14)->position_word_low
-|
-- *(char *)((ushort *)puVar14 + 0x1)
-+ (char)((uw_object_hdr_t *)puVar14)->position_word_low
-|
-- (char)((ushort *)puVar14)[0x1]
-+ (char)((uw_object_hdr_t *)puVar14)->position_word_low
-)
-...>
-}
-
-
-@receiver_5_w_2_14_byte_3_byte@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(byte *)((char *)puVar14 + 0x3)
-+ ((uw_object_hdr_t *)puVar14)->position_word_high
-|
-- *(byte *)((byte *)puVar14 + 0x3)
-+ ((uw_object_hdr_t *)puVar14)->position_word_high
-|
-- ((byte *)puVar14)[0x3]
-+ ((uw_object_hdr_t *)puVar14)->position_word_high
-)
-...>
-}
-
-
-@receiver_5_w_2_14_byte_3_undefined1@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(undefined1 *)((char *)puVar14 + 0x3)
-+ ((uw_object_hdr_t *)puVar14)->position_word_high
-|
-- *(undefined1 *)((byte *)puVar14 + 0x3)
-+ ((uw_object_hdr_t *)puVar14)->position_word_high
-|
-- ((undefined1 *)puVar14)[0x3]
-+ ((uw_object_hdr_t *)puVar14)->position_word_high
-)
-...>
-}
-
-
-@receiver_5_w_2_14_store_3@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, uw_object_hdr_t;
-expression E;
-@@
-R F(...) {
-<...
-(
-- *(char *)((char *)puVar14 + 0x3) = E;
-+ ((uw_object_hdr_t *)puVar14)->position_word_high = (byte)E;
-|
-- *(char *)((byte *)puVar14 + 0x3) = E;
-+ ((uw_object_hdr_t *)puVar14)->position_word_high = (byte)E;
-|
-- ((char *)puVar14)[0x3] = E;
-+ ((uw_object_hdr_t *)puVar14)->position_word_high = (byte)E;
-)
-...>
-}
-
-
-@receiver_5_w_2_14_byte_3_char@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(char *)((char *)puVar14 + 0x3)
-+ (char)((uw_object_hdr_t *)puVar14)->position_word_high
-|
-- *(char *)((byte *)puVar14 + 0x3)
-+ (char)((uw_object_hdr_t *)puVar14)->position_word_high
-|
-- ((char *)puVar14)[0x3]
-+ (char)((uw_object_hdr_t *)puVar14)->position_word_high
-)
-...>
-}
-
-
-@receiver_5_w_4_28_pair_char_char@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, ushort, uw_object_hdr_t;
-identifier V;
-@@
-R F(...) {
-<...
-- *(char *)((char *)puVar14 + 0x4) = (char)V;
-- *(char *)((char *)puVar14 + 0x5) = (char)(V >> 8);
-+ ((uw_object_hdr_t *)puVar14)->chain_word = (ushort)V;
-
-...>
-}
-
-@receiver_5_w_4_28_pair_char_byte@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, ushort, uw_object_hdr_t;
-identifier V;
-@@
-R F(...) {
-<...
-- *(char *)((char *)puVar14 + 0x4) = (char)V;
-- *(byte *)((char *)puVar14 + 0x5) = (byte)(V >> 8);
-+ ((uw_object_hdr_t *)puVar14)->chain_word = (ushort)V;
-
-...>
-}
-
-@receiver_5_w_4_28_pair_byte_char@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, ushort, uw_object_hdr_t;
-identifier V;
-@@
-R F(...) {
-<...
-- *(byte *)((char *)puVar14 + 0x4) = (byte)V;
-- *(char *)((char *)puVar14 + 0x5) = (char)(V >> 8);
-+ ((uw_object_hdr_t *)puVar14)->chain_word = (ushort)V;
-
-...>
-}
-
-@receiver_5_w_4_28_pair_byte_byte@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, ushort, uw_object_hdr_t;
-identifier V;
-@@
-R F(...) {
-<...
-- *(byte *)((char *)puVar14 + 0x4) = (byte)V;
-- *(byte *)((char *)puVar14 + 0x5) = (byte)(V >> 8);
-+ ((uw_object_hdr_t *)puVar14)->chain_word = (ushort)V;
-
-...>
-}
-
-@receiver_5_w_4_28_word_ushort@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)puVar14 + 0x4)
-+ ((uw_object_hdr_t *)puVar14)->chain_word
-|
-- *(ushort *)((byte *)puVar14 + 0x4)
-+ ((uw_object_hdr_t *)puVar14)->chain_word
-|
-- ((ushort *)puVar14)[0x2]
-+ ((uw_object_hdr_t *)puVar14)->chain_word
-|
-- *(ushort *)((ushort *)puVar14 + 0x2)
-+ ((uw_object_hdr_t *)puVar14)->chain_word
-)
-...>
-}
-
-
-@receiver_5_w_4_28_word_short@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(short *)((char *)puVar14 + 0x4)
-+ ((uw_object_hdr_t *)puVar14)->chain_word_signed
-|
-- *(short *)((byte *)puVar14 + 0x4)
-+ ((uw_object_hdr_t *)puVar14)->chain_word_signed
-|
-- ((short *)puVar14)[0x2]
-+ ((uw_object_hdr_t *)puVar14)->chain_word_signed
-|
-- *(short *)((short *)puVar14 + 0x2)
-+ ((uw_object_hdr_t *)puVar14)->chain_word_signed
-)
-...>
-}
-
-
-@receiver_5_w_4_28_byte_4_byte@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(byte *)((char *)puVar14 + 0x4)
-+ ((uw_object_hdr_t *)puVar14)->chain_word_low
-|
-- *(byte *)((byte *)puVar14 + 0x4)
-+ ((uw_object_hdr_t *)puVar14)->chain_word_low
-|
-- ((byte *)puVar14)[0x4]
-+ ((uw_object_hdr_t *)puVar14)->chain_word_low
-|
-- *(byte *)((ushort *)puVar14 + 0x2)
-+ ((uw_object_hdr_t *)puVar14)->chain_word_low
-|
-- (byte)((ushort *)puVar14)[0x2]
-+ ((uw_object_hdr_t *)puVar14)->chain_word_low
-)
-...>
-}
-
-
-@receiver_5_w_4_28_byte_4_undefined1@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(undefined1 *)((char *)puVar14 + 0x4)
-+ ((uw_object_hdr_t *)puVar14)->chain_word_low
-|
-- *(undefined1 *)((byte *)puVar14 + 0x4)
-+ ((uw_object_hdr_t *)puVar14)->chain_word_low
-|
-- ((undefined1 *)puVar14)[0x4]
-+ ((uw_object_hdr_t *)puVar14)->chain_word_low
-|
-- *(undefined1 *)((ushort *)puVar14 + 0x2)
-+ ((uw_object_hdr_t *)puVar14)->chain_word_low
-|
-- (undefined1)((ushort *)puVar14)[0x2]
-+ ((uw_object_hdr_t *)puVar14)->chain_word_low
-)
-...>
-}
-
-
-@receiver_5_w_4_28_store_4@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, uw_object_hdr_t;
-expression E;
-@@
-R F(...) {
-<...
-(
-- *(char *)((char *)puVar14 + 0x4) = E;
-+ ((uw_object_hdr_t *)puVar14)->chain_word_low = (byte)E;
-|
-- *(char *)((byte *)puVar14 + 0x4) = E;
-+ ((uw_object_hdr_t *)puVar14)->chain_word_low = (byte)E;
-|
-- ((char *)puVar14)[0x4] = E;
-+ ((uw_object_hdr_t *)puVar14)->chain_word_low = (byte)E;
-|
-- *(char *)((ushort *)puVar14 + 0x2) = E;
-+ ((uw_object_hdr_t *)puVar14)->chain_word_low = (byte)E;
-)
-...>
-}
-
-
-@receiver_5_w_4_28_byte_4_char@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(char *)((char *)puVar14 + 0x4)
-+ (char)((uw_object_hdr_t *)puVar14)->chain_word_low
-|
-- *(char *)((byte *)puVar14 + 0x4)
-+ (char)((uw_object_hdr_t *)puVar14)->chain_word_low
-|
-- ((char *)puVar14)[0x4]
-+ (char)((uw_object_hdr_t *)puVar14)->chain_word_low
-|
-- *(char *)((ushort *)puVar14 + 0x2)
-+ (char)((uw_object_hdr_t *)puVar14)->chain_word_low
-|
-- (char)((ushort *)puVar14)[0x2]
-+ (char)((uw_object_hdr_t *)puVar14)->chain_word_low
-)
-...>
-}
-
-
-@receiver_5_w_4_28_byte_5_byte@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(byte *)((char *)puVar14 + 0x5)
-+ ((uw_object_hdr_t *)puVar14)->chain_word_high
-|
-- *(byte *)((byte *)puVar14 + 0x5)
-+ ((uw_object_hdr_t *)puVar14)->chain_word_high
-|
-- ((byte *)puVar14)[0x5]
-+ ((uw_object_hdr_t *)puVar14)->chain_word_high
-)
-...>
-}
-
-
-@receiver_5_w_4_28_byte_5_undefined1@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(undefined1 *)((char *)puVar14 + 0x5)
-+ ((uw_object_hdr_t *)puVar14)->chain_word_high
-|
-- *(undefined1 *)((byte *)puVar14 + 0x5)
-+ ((uw_object_hdr_t *)puVar14)->chain_word_high
-|
-- ((undefined1 *)puVar14)[0x5]
-+ ((uw_object_hdr_t *)puVar14)->chain_word_high
-)
-...>
-}
-
-
-@receiver_5_w_4_28_store_5@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, uw_object_hdr_t;
-expression E;
-@@
-R F(...) {
-<...
-(
-- *(char *)((char *)puVar14 + 0x5) = E;
-+ ((uw_object_hdr_t *)puVar14)->chain_word_high = (byte)E;
-|
-- *(char *)((byte *)puVar14 + 0x5) = E;
-+ ((uw_object_hdr_t *)puVar14)->chain_word_high = (byte)E;
-|
-- ((char *)puVar14)[0x5] = E;
-+ ((uw_object_hdr_t *)puVar14)->chain_word_high = (byte)E;
-)
-...>
-}
-
-
-@receiver_5_w_4_28_byte_5_char@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(char *)((char *)puVar14 + 0x5)
-+ (char)((uw_object_hdr_t *)puVar14)->chain_word_high
-|
-- *(char *)((byte *)puVar14 + 0x5)
-+ (char)((uw_object_hdr_t *)puVar14)->chain_word_high
-|
-- ((char *)puVar14)[0x5]
-+ (char)((uw_object_hdr_t *)puVar14)->chain_word_high
-)
-...>
-}
-
-
-@receiver_5_w_6_42_pair_char_char@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, ushort, uw_object_hdr_t;
-identifier V;
-@@
-R F(...) {
-<...
-- *(char *)((char *)puVar14 + 0x6) = (char)V;
-- *(char *)((char *)puVar14 + 0x7) = (char)(V >> 8);
-+ ((uw_object_hdr_t *)puVar14)->link_word = (ushort)V;
-
-...>
-}
-
-@receiver_5_w_6_42_pair_char_byte@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, ushort, uw_object_hdr_t;
-identifier V;
-@@
-R F(...) {
-<...
-- *(char *)((char *)puVar14 + 0x6) = (char)V;
-- *(byte *)((char *)puVar14 + 0x7) = (byte)(V >> 8);
-+ ((uw_object_hdr_t *)puVar14)->link_word = (ushort)V;
-
-...>
-}
-
-@receiver_5_w_6_42_pair_byte_char@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, ushort, uw_object_hdr_t;
-identifier V;
-@@
-R F(...) {
-<...
-- *(byte *)((char *)puVar14 + 0x6) = (byte)V;
-- *(char *)((char *)puVar14 + 0x7) = (char)(V >> 8);
-+ ((uw_object_hdr_t *)puVar14)->link_word = (ushort)V;
-
-...>
-}
-
-@receiver_5_w_6_42_pair_byte_byte@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, ushort, uw_object_hdr_t;
-identifier V;
-@@
-R F(...) {
-<...
-- *(byte *)((char *)puVar14 + 0x6) = (byte)V;
-- *(byte *)((char *)puVar14 + 0x7) = (byte)(V >> 8);
-+ ((uw_object_hdr_t *)puVar14)->link_word = (ushort)V;
-
-...>
-}
-
-@receiver_5_w_6_42_word_ushort@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)puVar14 + 0x6)
-+ ((uw_object_hdr_t *)puVar14)->link_word
-|
-- *(ushort *)((byte *)puVar14 + 0x6)
-+ ((uw_object_hdr_t *)puVar14)->link_word
-|
-- ((ushort *)puVar14)[0x3]
-+ ((uw_object_hdr_t *)puVar14)->link_word
-|
-- *(ushort *)((ushort *)puVar14 + 0x3)
-+ ((uw_object_hdr_t *)puVar14)->link_word
-)
-...>
-}
-
-
-@receiver_5_w_6_42_word_short@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(short *)((char *)puVar14 + 0x6)
-+ ((uw_object_hdr_t *)puVar14)->link_word_signed
-|
-- *(short *)((byte *)puVar14 + 0x6)
-+ ((uw_object_hdr_t *)puVar14)->link_word_signed
-|
-- ((short *)puVar14)[0x3]
-+ ((uw_object_hdr_t *)puVar14)->link_word_signed
-|
-- *(short *)((short *)puVar14 + 0x3)
-+ ((uw_object_hdr_t *)puVar14)->link_word_signed
-)
-...>
-}
-
-
-@receiver_5_w_6_42_byte_6_byte@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(byte *)((char *)puVar14 + 0x6)
-+ ((uw_object_hdr_t *)puVar14)->link_word_low
-|
-- *(byte *)((byte *)puVar14 + 0x6)
-+ ((uw_object_hdr_t *)puVar14)->link_word_low
-|
-- ((byte *)puVar14)[0x6]
-+ ((uw_object_hdr_t *)puVar14)->link_word_low
-|
-- *(byte *)((ushort *)puVar14 + 0x3)
-+ ((uw_object_hdr_t *)puVar14)->link_word_low
-|
-- (byte)((ushort *)puVar14)[0x3]
-+ ((uw_object_hdr_t *)puVar14)->link_word_low
-)
-...>
-}
-
-
-@receiver_5_w_6_42_byte_6_undefined1@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(undefined1 *)((char *)puVar14 + 0x6)
-+ ((uw_object_hdr_t *)puVar14)->link_word_low
-|
-- *(undefined1 *)((byte *)puVar14 + 0x6)
-+ ((uw_object_hdr_t *)puVar14)->link_word_low
-|
-- ((undefined1 *)puVar14)[0x6]
-+ ((uw_object_hdr_t *)puVar14)->link_word_low
-|
-- *(undefined1 *)((ushort *)puVar14 + 0x3)
-+ ((uw_object_hdr_t *)puVar14)->link_word_low
-|
-- (undefined1)((ushort *)puVar14)[0x3]
-+ ((uw_object_hdr_t *)puVar14)->link_word_low
-)
-...>
-}
-
-
-@receiver_5_w_6_42_store_6@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, uw_object_hdr_t;
-expression E;
-@@
-R F(...) {
-<...
-(
-- *(char *)((char *)puVar14 + 0x6) = E;
-+ ((uw_object_hdr_t *)puVar14)->link_word_low = (byte)E;
-|
-- *(char *)((byte *)puVar14 + 0x6) = E;
-+ ((uw_object_hdr_t *)puVar14)->link_word_low = (byte)E;
-|
-- ((char *)puVar14)[0x6] = E;
-+ ((uw_object_hdr_t *)puVar14)->link_word_low = (byte)E;
-|
-- *(char *)((ushort *)puVar14 + 0x3) = E;
-+ ((uw_object_hdr_t *)puVar14)->link_word_low = (byte)E;
-)
-...>
-}
-
-
-@receiver_5_w_6_42_byte_6_char@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(char *)((char *)puVar14 + 0x6)
-+ (char)((uw_object_hdr_t *)puVar14)->link_word_low
-|
-- *(char *)((byte *)puVar14 + 0x6)
-+ (char)((uw_object_hdr_t *)puVar14)->link_word_low
-|
-- ((char *)puVar14)[0x6]
-+ (char)((uw_object_hdr_t *)puVar14)->link_word_low
-|
-- *(char *)((ushort *)puVar14 + 0x3)
-+ (char)((uw_object_hdr_t *)puVar14)->link_word_low
-|
-- (char)((ushort *)puVar14)[0x3]
-+ (char)((uw_object_hdr_t *)puVar14)->link_word_low
-)
-...>
-}
-
-
-@receiver_5_w_6_42_byte_7_byte@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(byte *)((char *)puVar14 + 0x7)
-+ ((uw_object_hdr_t *)puVar14)->link_word_high
-|
-- *(byte *)((byte *)puVar14 + 0x7)
-+ ((uw_object_hdr_t *)puVar14)->link_word_high
-|
-- ((byte *)puVar14)[0x7]
-+ ((uw_object_hdr_t *)puVar14)->link_word_high
-)
-...>
-}
-
-
-@receiver_5_w_6_42_byte_7_undefined1@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(undefined1 *)((char *)puVar14 + 0x7)
-+ ((uw_object_hdr_t *)puVar14)->link_word_high
-|
-- *(undefined1 *)((byte *)puVar14 + 0x7)
-+ ((uw_object_hdr_t *)puVar14)->link_word_high
-|
-- ((undefined1 *)puVar14)[0x7]
-+ ((uw_object_hdr_t *)puVar14)->link_word_high
-)
-...>
-}
-
-
-@receiver_5_w_6_42_store_7@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, uw_object_hdr_t;
-expression E;
-@@
-R F(...) {
-<...
-(
-- *(char *)((char *)puVar14 + 0x7) = E;
-+ ((uw_object_hdr_t *)puVar14)->link_word_high = (byte)E;
-|
-- *(char *)((byte *)puVar14 + 0x7) = E;
-+ ((uw_object_hdr_t *)puVar14)->link_word_high = (byte)E;
-|
-- ((char *)puVar14)[0x7] = E;
-+ ((uw_object_hdr_t *)puVar14)->link_word_high = (byte)E;
-)
-...>
-}
-
-
-@receiver_5_w_6_42_byte_7_char@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(char *)((char *)puVar14 + 0x7)
-+ (char)((uw_object_hdr_t *)puVar14)->link_word_high
-|
-- *(char *)((byte *)puVar14 + 0x7)
-+ (char)((uw_object_hdr_t *)puVar14)->link_word_high
-|
-- ((char *)puVar14)[0x7]
-+ (char)((uw_object_hdr_t *)puVar14)->link_word_high
-)
-...>
-}
-
-
-@receiver_6_w_0_0_pair_char_char@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, ushort, uw_object_hdr_t;
-identifier V;
-@@
-R F(...) {
-<...
-- *(char *)((char *)puVar15 + 0x0) = (char)V;
-- *(char *)((char *)puVar15 + 0x1) = (char)(V >> 8);
-+ ((uw_object_hdr_t *)puVar15)->type_flags = (ushort)V;
-
-...>
-}
-
-@receiver_6_w_0_0_pair_char_byte@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, ushort, uw_object_hdr_t;
-identifier V;
-@@
-R F(...) {
-<...
-- *(char *)((char *)puVar15 + 0x0) = (char)V;
-- *(byte *)((char *)puVar15 + 0x1) = (byte)(V >> 8);
-+ ((uw_object_hdr_t *)puVar15)->type_flags = (ushort)V;
-
-...>
-}
-
-@receiver_6_w_0_0_pair_byte_char@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, ushort, uw_object_hdr_t;
-identifier V;
-@@
-R F(...) {
-<...
-- *(byte *)((char *)puVar15 + 0x0) = (byte)V;
-- *(char *)((char *)puVar15 + 0x1) = (char)(V >> 8);
-+ ((uw_object_hdr_t *)puVar15)->type_flags = (ushort)V;
-
-...>
-}
-
-@receiver_6_w_0_0_pair_byte_byte@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, ushort, uw_object_hdr_t;
-identifier V;
-@@
-R F(...) {
-<...
-- *(byte *)((char *)puVar15 + 0x0) = (byte)V;
-- *(byte *)((char *)puVar15 + 0x1) = (byte)(V >> 8);
-+ ((uw_object_hdr_t *)puVar15)->type_flags = (ushort)V;
-
-...>
-}
-
-@receiver_6_w_0_0_word_ushort@
-type R;
-identifier F =~ "^\(open_backpack_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -7325,15 +8547,57 @@ R F(...) {
 |
 - *(ushort *)((ushort *)puVar15 + 0x0)
 + ((uw_object_hdr_t *)puVar15)->type_flags
+|
+- *(ushort *)(puVar15 + 0x0)
++ ((uw_object_hdr_t *)puVar15)->type_flags
+|
+- puVar15[0x0]
++ ((uw_object_hdr_t *)puVar15)->type_flags
+|
+- *puVar15
++ ((uw_object_hdr_t *)puVar15)->type_flags
 )
 ...>
 }
 
 
-@receiver_6_w_0_0_word_short@
+@receiver_5_w_0_0_word_undefined2@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar15 + 0x0)
++ ((uw_object_hdr_t *)puVar15)->type_flags
+|
+- *(undefined2 *)((byte *)puVar15 + 0x0)
++ ((uw_object_hdr_t *)puVar15)->type_flags
+|
+- ((undefined2 *)puVar15)[0x0]
++ ((uw_object_hdr_t *)puVar15)->type_flags
+|
+- *(undefined2 *)((undefined2 *)puVar15 + 0x0)
++ ((uw_object_hdr_t *)puVar15)->type_flags
+|
+- *(undefined2 *)(puVar15 + 0x0)
++ ((uw_object_hdr_t *)puVar15)->type_flags
+|
+- puVar15[0x0]
++ ((uw_object_hdr_t *)puVar15)->type_flags
+|
+- *puVar15
++ ((uw_object_hdr_t *)puVar15)->type_flags
+)
+...>
+}
+
+
+@receiver_5_w_0_0_word_short@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -7349,15 +8613,18 @@ R F(...) {
 |
 - *(short *)((short *)puVar15 + 0x0)
 + ((uw_object_hdr_t *)puVar15)->type_flags_signed
+|
+- *(short *)(puVar15 + 0x0)
++ ((uw_object_hdr_t *)puVar15)->type_flags_signed
 )
 ...>
 }
 
 
-@receiver_6_w_0_0_byte_0_byte@
+@receiver_5_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -7379,15 +8646,21 @@ R F(...) {
 |
 - *(byte *)puVar15
 + ((uw_object_hdr_t *)puVar15)->type_flags_low
+|
+- *(byte *)(puVar15 + 0x0)
++ ((uw_object_hdr_t *)puVar15)->type_flags_low
+|
+- (byte)puVar15[0x0]
++ ((uw_object_hdr_t *)puVar15)->type_flags_low
 )
 ...>
 }
 
 
-@receiver_6_w_0_0_byte_0_undefined1@
+@receiver_5_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -7409,15 +8682,51 @@ R F(...) {
 |
 - *(undefined1 *)puVar15
 + ((uw_object_hdr_t *)puVar15)->type_flags_low
+|
+- *(undefined1 *)(puVar15 + 0x0)
++ ((uw_object_hdr_t *)puVar15)->type_flags_low
+|
+- (undefined1)puVar15[0x0]
++ ((uw_object_hdr_t *)puVar15)->type_flags_low
 )
 ...>
 }
 
 
-@receiver_6_w_0_0_store_0@
+@receiver_5_w_0_0_address_0@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar15 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar15)->type_flags_low
+|
+- &*(char *)((byte *)puVar15 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar15)->type_flags_low
+|
+- &((char *)puVar15)[0x0]
++ (char *)&((uw_object_hdr_t *)puVar15)->type_flags_low
+|
+- &*(char *)((ushort *)puVar15 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar15)->type_flags_low
+|
+- &*(char *)puVar15
++ (char *)&((uw_object_hdr_t *)puVar15)->type_flags_low
+|
+- &*(char *)(puVar15 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar15)->type_flags_low
+)
+...>
+}
+
+
+@receiver_5_w_0_0_store_0@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -7437,15 +8746,18 @@ R F(...) {
 |
 - *(char *)puVar15 = E;
 + ((uw_object_hdr_t *)puVar15)->type_flags_low = (byte)E;
+|
+- *(char *)(puVar15 + 0x0) = E;
++ ((uw_object_hdr_t *)puVar15)->type_flags_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_6_w_0_0_byte_0_char@
+@receiver_5_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -7467,15 +8779,21 @@ R F(...) {
 |
 - *(char *)puVar15
 + (char)((uw_object_hdr_t *)puVar15)->type_flags_low
+|
+- *(char *)(puVar15 + 0x0)
++ (char)((uw_object_hdr_t *)puVar15)->type_flags_low
+|
+- (char)puVar15[0x0]
++ (char)((uw_object_hdr_t *)puVar15)->type_flags_low
 )
 ...>
 }
 
 
-@receiver_6_w_0_0_byte_1_byte@
+@receiver_5_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -7493,10 +8811,10 @@ R F(...) {
 }
 
 
-@receiver_6_w_0_0_byte_1_undefined1@
+@receiver_5_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -7514,10 +8832,31 @@ R F(...) {
 }
 
 
-@receiver_6_w_0_0_store_1@
+@receiver_5_w_0_0_address_1@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar15 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar15)->type_flags_high
+|
+- &*(char *)((byte *)puVar15 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar15)->type_flags_high
+|
+- &((char *)puVar15)[0x1]
++ (char *)&((uw_object_hdr_t *)puVar15)->type_flags_high
+)
+...>
+}
+
+
+@receiver_5_w_0_0_store_1@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -7536,10 +8875,10 @@ R F(...) {
 }
 
 
-@receiver_6_w_0_0_byte_1_char@
+@receiver_5_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -7557,7 +8896,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_2_14_pair_char_char@
+@receiver_5_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -7572,7 +8911,7 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_2_14_pair_char_byte@
+@receiver_5_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -7587,7 +8926,7 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_2_14_pair_byte_char@
+@receiver_5_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -7602,7 +8941,7 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_2_14_pair_byte_byte@
+@receiver_5_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -7617,10 +8956,10 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_2_14_word_ushort@
+@receiver_5_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -7636,15 +8975,51 @@ R F(...) {
 |
 - *(ushort *)((ushort *)puVar15 + 0x1)
 + ((uw_object_hdr_t *)puVar15)->position_word
+|
+- *(ushort *)(puVar15 + 0x1)
++ ((uw_object_hdr_t *)puVar15)->position_word
+|
+- puVar15[0x1]
++ ((uw_object_hdr_t *)puVar15)->position_word
 )
 ...>
 }
 
 
-@receiver_6_w_2_14_word_short@
+@receiver_5_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar15 + 0x2)
++ ((uw_object_hdr_t *)puVar15)->position_word
+|
+- *(undefined2 *)((byte *)puVar15 + 0x2)
++ ((uw_object_hdr_t *)puVar15)->position_word
+|
+- ((undefined2 *)puVar15)[0x1]
++ ((uw_object_hdr_t *)puVar15)->position_word
+|
+- *(undefined2 *)((undefined2 *)puVar15 + 0x1)
++ ((uw_object_hdr_t *)puVar15)->position_word
+|
+- *(undefined2 *)(puVar15 + 0x1)
++ ((uw_object_hdr_t *)puVar15)->position_word
+|
+- puVar15[0x1]
++ ((uw_object_hdr_t *)puVar15)->position_word
+)
+...>
+}
+
+
+@receiver_5_w_2_17_word_short@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -7660,15 +9035,18 @@ R F(...) {
 |
 - *(short *)((short *)puVar15 + 0x1)
 + ((uw_object_hdr_t *)puVar15)->position_word_signed
+|
+- *(short *)(puVar15 + 0x1)
++ ((uw_object_hdr_t *)puVar15)->position_word_signed
 )
 ...>
 }
 
 
-@receiver_6_w_2_14_byte_2_byte@
+@receiver_5_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -7687,15 +9065,21 @@ R F(...) {
 |
 - (byte)((ushort *)puVar15)[0x1]
 + ((uw_object_hdr_t *)puVar15)->position_word_low
+|
+- *(byte *)(puVar15 + 0x1)
++ ((uw_object_hdr_t *)puVar15)->position_word_low
+|
+- (byte)puVar15[0x1]
++ ((uw_object_hdr_t *)puVar15)->position_word_low
 )
 ...>
 }
 
 
-@receiver_6_w_2_14_byte_2_undefined1@
+@receiver_5_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -7714,15 +9098,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)puVar15)[0x1]
 + ((uw_object_hdr_t *)puVar15)->position_word_low
+|
+- *(undefined1 *)(puVar15 + 0x1)
++ ((uw_object_hdr_t *)puVar15)->position_word_low
+|
+- (undefined1)puVar15[0x1]
++ ((uw_object_hdr_t *)puVar15)->position_word_low
 )
 ...>
 }
 
 
-@receiver_6_w_2_14_store_2@
+@receiver_5_w_2_17_address_2@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar15 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar15)->position_word_low
+|
+- &*(char *)((byte *)puVar15 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar15)->position_word_low
+|
+- &((char *)puVar15)[0x2]
++ (char *)&((uw_object_hdr_t *)puVar15)->position_word_low
+|
+- &*(char *)((ushort *)puVar15 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar15)->position_word_low
+|
+- &*(char *)(puVar15 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar15)->position_word_low
+)
+...>
+}
+
+
+@receiver_5_w_2_17_store_2@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -7739,15 +9156,18 @@ R F(...) {
 |
 - *(char *)((ushort *)puVar15 + 0x1) = E;
 + ((uw_object_hdr_t *)puVar15)->position_word_low = (byte)E;
+|
+- *(char *)(puVar15 + 0x1) = E;
++ ((uw_object_hdr_t *)puVar15)->position_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_6_w_2_14_byte_2_char@
+@receiver_5_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -7766,15 +9186,21 @@ R F(...) {
 |
 - (char)((ushort *)puVar15)[0x1]
 + (char)((uw_object_hdr_t *)puVar15)->position_word_low
+|
+- *(char *)(puVar15 + 0x1)
++ (char)((uw_object_hdr_t *)puVar15)->position_word_low
+|
+- (char)puVar15[0x1]
++ (char)((uw_object_hdr_t *)puVar15)->position_word_low
 )
 ...>
 }
 
 
-@receiver_6_w_2_14_byte_3_byte@
+@receiver_5_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -7792,10 +9218,10 @@ R F(...) {
 }
 
 
-@receiver_6_w_2_14_byte_3_undefined1@
+@receiver_5_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -7813,10 +9239,31 @@ R F(...) {
 }
 
 
-@receiver_6_w_2_14_store_3@
+@receiver_5_w_2_17_address_3@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar15 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar15)->position_word_high
+|
+- &*(char *)((byte *)puVar15 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar15)->position_word_high
+|
+- &((char *)puVar15)[0x3]
++ (char *)&((uw_object_hdr_t *)puVar15)->position_word_high
+)
+...>
+}
+
+
+@receiver_5_w_2_17_store_3@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -7835,10 +9282,10 @@ R F(...) {
 }
 
 
-@receiver_6_w_2_14_byte_3_char@
+@receiver_5_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -7856,7 +9303,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_4_28_pair_char_char@
+@receiver_5_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -7871,7 +9318,7 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_4_28_pair_char_byte@
+@receiver_5_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -7886,7 +9333,7 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_4_28_pair_byte_char@
+@receiver_5_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -7901,7 +9348,7 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_4_28_pair_byte_byte@
+@receiver_5_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -7916,10 +9363,10 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_4_28_word_ushort@
+@receiver_5_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -7935,15 +9382,51 @@ R F(...) {
 |
 - *(ushort *)((ushort *)puVar15 + 0x2)
 + ((uw_object_hdr_t *)puVar15)->chain_word
+|
+- *(ushort *)(puVar15 + 0x2)
++ ((uw_object_hdr_t *)puVar15)->chain_word
+|
+- puVar15[0x2]
++ ((uw_object_hdr_t *)puVar15)->chain_word
 )
 ...>
 }
 
 
-@receiver_6_w_4_28_word_short@
+@receiver_5_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar15 + 0x4)
++ ((uw_object_hdr_t *)puVar15)->chain_word
+|
+- *(undefined2 *)((byte *)puVar15 + 0x4)
++ ((uw_object_hdr_t *)puVar15)->chain_word
+|
+- ((undefined2 *)puVar15)[0x2]
++ ((uw_object_hdr_t *)puVar15)->chain_word
+|
+- *(undefined2 *)((undefined2 *)puVar15 + 0x2)
++ ((uw_object_hdr_t *)puVar15)->chain_word
+|
+- *(undefined2 *)(puVar15 + 0x2)
++ ((uw_object_hdr_t *)puVar15)->chain_word
+|
+- puVar15[0x2]
++ ((uw_object_hdr_t *)puVar15)->chain_word
+)
+...>
+}
+
+
+@receiver_5_w_4_34_word_short@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -7959,15 +9442,18 @@ R F(...) {
 |
 - *(short *)((short *)puVar15 + 0x2)
 + ((uw_object_hdr_t *)puVar15)->chain_word_signed
+|
+- *(short *)(puVar15 + 0x2)
++ ((uw_object_hdr_t *)puVar15)->chain_word_signed
 )
 ...>
 }
 
 
-@receiver_6_w_4_28_byte_4_byte@
+@receiver_5_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -7986,15 +9472,21 @@ R F(...) {
 |
 - (byte)((ushort *)puVar15)[0x2]
 + ((uw_object_hdr_t *)puVar15)->chain_word_low
+|
+- *(byte *)(puVar15 + 0x2)
++ ((uw_object_hdr_t *)puVar15)->chain_word_low
+|
+- (byte)puVar15[0x2]
++ ((uw_object_hdr_t *)puVar15)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_6_w_4_28_byte_4_undefined1@
+@receiver_5_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8013,15 +9505,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)puVar15)[0x2]
 + ((uw_object_hdr_t *)puVar15)->chain_word_low
+|
+- *(undefined1 *)(puVar15 + 0x2)
++ ((uw_object_hdr_t *)puVar15)->chain_word_low
+|
+- (undefined1)puVar15[0x2]
++ ((uw_object_hdr_t *)puVar15)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_6_w_4_28_store_4@
+@receiver_5_w_4_34_address_4@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar15 + 0x4)
++ (char *)&((uw_object_hdr_t *)puVar15)->chain_word_low
+|
+- &*(char *)((byte *)puVar15 + 0x4)
++ (char *)&((uw_object_hdr_t *)puVar15)->chain_word_low
+|
+- &((char *)puVar15)[0x4]
++ (char *)&((uw_object_hdr_t *)puVar15)->chain_word_low
+|
+- &*(char *)((ushort *)puVar15 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar15)->chain_word_low
+|
+- &*(char *)(puVar15 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar15)->chain_word_low
+)
+...>
+}
+
+
+@receiver_5_w_4_34_store_4@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -8038,15 +9563,18 @@ R F(...) {
 |
 - *(char *)((ushort *)puVar15 + 0x2) = E;
 + ((uw_object_hdr_t *)puVar15)->chain_word_low = (byte)E;
+|
+- *(char *)(puVar15 + 0x2) = E;
++ ((uw_object_hdr_t *)puVar15)->chain_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_6_w_4_28_byte_4_char@
+@receiver_5_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8065,15 +9593,21 @@ R F(...) {
 |
 - (char)((ushort *)puVar15)[0x2]
 + (char)((uw_object_hdr_t *)puVar15)->chain_word_low
+|
+- *(char *)(puVar15 + 0x2)
++ (char)((uw_object_hdr_t *)puVar15)->chain_word_low
+|
+- (char)puVar15[0x2]
++ (char)((uw_object_hdr_t *)puVar15)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_6_w_4_28_byte_5_byte@
+@receiver_5_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8091,10 +9625,10 @@ R F(...) {
 }
 
 
-@receiver_6_w_4_28_byte_5_undefined1@
+@receiver_5_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8112,10 +9646,31 @@ R F(...) {
 }
 
 
-@receiver_6_w_4_28_store_5@
+@receiver_5_w_4_34_address_5@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar15 + 0x5)
++ (char *)&((uw_object_hdr_t *)puVar15)->chain_word_high
+|
+- &*(char *)((byte *)puVar15 + 0x5)
++ (char *)&((uw_object_hdr_t *)puVar15)->chain_word_high
+|
+- &((char *)puVar15)[0x5]
++ (char *)&((uw_object_hdr_t *)puVar15)->chain_word_high
+)
+...>
+}
+
+
+@receiver_5_w_4_34_store_5@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -8134,10 +9689,10 @@ R F(...) {
 }
 
 
-@receiver_6_w_4_28_byte_5_char@
+@receiver_5_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8155,7 +9710,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_6_42_pair_char_char@
+@receiver_5_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -8170,7 +9725,7 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_6_42_pair_char_byte@
+@receiver_5_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -8185,7 +9740,7 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_6_42_pair_byte_char@
+@receiver_5_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -8200,7 +9755,7 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_6_42_pair_byte_byte@
+@receiver_5_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -8215,10 +9770,10 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_6_42_word_ushort@
+@receiver_5_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8234,15 +9789,51 @@ R F(...) {
 |
 - *(ushort *)((ushort *)puVar15 + 0x3)
 + ((uw_object_hdr_t *)puVar15)->link_word
+|
+- *(ushort *)(puVar15 + 0x3)
++ ((uw_object_hdr_t *)puVar15)->link_word
+|
+- puVar15[0x3]
++ ((uw_object_hdr_t *)puVar15)->link_word
 )
 ...>
 }
 
 
-@receiver_6_w_6_42_word_short@
+@receiver_5_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar15 + 0x6)
++ ((uw_object_hdr_t *)puVar15)->link_word
+|
+- *(undefined2 *)((byte *)puVar15 + 0x6)
++ ((uw_object_hdr_t *)puVar15)->link_word
+|
+- ((undefined2 *)puVar15)[0x3]
++ ((uw_object_hdr_t *)puVar15)->link_word
+|
+- *(undefined2 *)((undefined2 *)puVar15 + 0x3)
++ ((uw_object_hdr_t *)puVar15)->link_word
+|
+- *(undefined2 *)(puVar15 + 0x3)
++ ((uw_object_hdr_t *)puVar15)->link_word
+|
+- puVar15[0x3]
++ ((uw_object_hdr_t *)puVar15)->link_word
+)
+...>
+}
+
+
+@receiver_5_w_6_51_word_short@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8258,15 +9849,18 @@ R F(...) {
 |
 - *(short *)((short *)puVar15 + 0x3)
 + ((uw_object_hdr_t *)puVar15)->link_word_signed
+|
+- *(short *)(puVar15 + 0x3)
++ ((uw_object_hdr_t *)puVar15)->link_word_signed
 )
 ...>
 }
 
 
-@receiver_6_w_6_42_byte_6_byte@
+@receiver_5_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8285,15 +9879,21 @@ R F(...) {
 |
 - (byte)((ushort *)puVar15)[0x3]
 + ((uw_object_hdr_t *)puVar15)->link_word_low
+|
+- *(byte *)(puVar15 + 0x3)
++ ((uw_object_hdr_t *)puVar15)->link_word_low
+|
+- (byte)puVar15[0x3]
++ ((uw_object_hdr_t *)puVar15)->link_word_low
 )
 ...>
 }
 
 
-@receiver_6_w_6_42_byte_6_undefined1@
+@receiver_5_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8312,15 +9912,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)puVar15)[0x3]
 + ((uw_object_hdr_t *)puVar15)->link_word_low
+|
+- *(undefined1 *)(puVar15 + 0x3)
++ ((uw_object_hdr_t *)puVar15)->link_word_low
+|
+- (undefined1)puVar15[0x3]
++ ((uw_object_hdr_t *)puVar15)->link_word_low
 )
 ...>
 }
 
 
-@receiver_6_w_6_42_store_6@
+@receiver_5_w_6_51_address_6@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar15 + 0x6)
++ (char *)&((uw_object_hdr_t *)puVar15)->link_word_low
+|
+- &*(char *)((byte *)puVar15 + 0x6)
++ (char *)&((uw_object_hdr_t *)puVar15)->link_word_low
+|
+- &((char *)puVar15)[0x6]
++ (char *)&((uw_object_hdr_t *)puVar15)->link_word_low
+|
+- &*(char *)((ushort *)puVar15 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar15)->link_word_low
+|
+- &*(char *)(puVar15 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar15)->link_word_low
+)
+...>
+}
+
+
+@receiver_5_w_6_51_store_6@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -8337,15 +9970,18 @@ R F(...) {
 |
 - *(char *)((ushort *)puVar15 + 0x3) = E;
 + ((uw_object_hdr_t *)puVar15)->link_word_low = (byte)E;
+|
+- *(char *)(puVar15 + 0x3) = E;
++ ((uw_object_hdr_t *)puVar15)->link_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_6_w_6_42_byte_6_char@
+@receiver_5_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8364,15 +10000,21 @@ R F(...) {
 |
 - (char)((ushort *)puVar15)[0x3]
 + (char)((uw_object_hdr_t *)puVar15)->link_word_low
+|
+- *(char *)(puVar15 + 0x3)
++ (char)((uw_object_hdr_t *)puVar15)->link_word_low
+|
+- (char)puVar15[0x3]
++ (char)((uw_object_hdr_t *)puVar15)->link_word_low
 )
 ...>
 }
 
 
-@receiver_6_w_6_42_byte_7_byte@
+@receiver_5_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8390,10 +10032,10 @@ R F(...) {
 }
 
 
-@receiver_6_w_6_42_byte_7_undefined1@
+@receiver_5_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8411,10 +10053,31 @@ R F(...) {
 }
 
 
-@receiver_6_w_6_42_store_7@
+@receiver_5_w_6_51_address_7@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar15 + 0x7)
++ (char *)&((uw_object_hdr_t *)puVar15)->link_word_high
+|
+- &*(char *)((byte *)puVar15 + 0x7)
++ (char *)&((uw_object_hdr_t *)puVar15)->link_word_high
+|
+- &((char *)puVar15)[0x7]
++ (char *)&((uw_object_hdr_t *)puVar15)->link_word_high
+)
+...>
+}
+
+
+@receiver_5_w_6_51_store_7@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -8433,10 +10096,10 @@ R F(...) {
 }
 
 
-@receiver_6_w_6_42_byte_7_char@
+@receiver_5_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(open_backpack_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8449,6 +10112,1655 @@ R F(...) {
 |
 - ((char *)puVar15)[0x7]
 + (char)((uw_object_hdr_t *)puVar15)->link_word_high
+)
+...>
+}
+
+
+@receiver_6_w_0_0_pair_char_char@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)puVar14 + 0x0) = (char)V;
+- *(char *)((char *)puVar14 + 0x1) = (char)(V >> 8);
++ ((uw_object_hdr_t *)puVar14)->type_flags = (ushort)V;
+
+...>
+}
+
+@receiver_6_w_0_0_pair_char_byte@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)puVar14 + 0x0) = (char)V;
+- *(byte *)((char *)puVar14 + 0x1) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)puVar14)->type_flags = (ushort)V;
+
+...>
+}
+
+@receiver_6_w_0_0_pair_byte_char@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)puVar14 + 0x0) = (byte)V;
+- *(char *)((char *)puVar14 + 0x1) = (char)(V >> 8);
++ ((uw_object_hdr_t *)puVar14)->type_flags = (ushort)V;
+
+...>
+}
+
+@receiver_6_w_0_0_pair_byte_byte@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)puVar14 + 0x0) = (byte)V;
+- *(byte *)((char *)puVar14 + 0x1) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)puVar14)->type_flags = (ushort)V;
+
+...>
+}
+
+@receiver_6_w_0_0_word_ushort@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar14 + 0x0)
++ ((uw_object_hdr_t *)puVar14)->type_flags
+|
+- *(ushort *)((byte *)puVar14 + 0x0)
++ ((uw_object_hdr_t *)puVar14)->type_flags
+|
+- ((ushort *)puVar14)[0x0]
++ ((uw_object_hdr_t *)puVar14)->type_flags
+|
+- *(ushort *)((ushort *)puVar14 + 0x0)
++ ((uw_object_hdr_t *)puVar14)->type_flags
+|
+- *(ushort *)(puVar14 + 0x0)
++ ((uw_object_hdr_t *)puVar14)->type_flags
+|
+- puVar14[0x0]
++ ((uw_object_hdr_t *)puVar14)->type_flags
+|
+- *puVar14
++ ((uw_object_hdr_t *)puVar14)->type_flags
+)
+...>
+}
+
+
+@receiver_6_w_0_0_word_undefined2@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar14 + 0x0)
++ ((uw_object_hdr_t *)puVar14)->type_flags
+|
+- *(undefined2 *)((byte *)puVar14 + 0x0)
++ ((uw_object_hdr_t *)puVar14)->type_flags
+|
+- ((undefined2 *)puVar14)[0x0]
++ ((uw_object_hdr_t *)puVar14)->type_flags
+|
+- *(undefined2 *)((undefined2 *)puVar14 + 0x0)
++ ((uw_object_hdr_t *)puVar14)->type_flags
+|
+- *(undefined2 *)(puVar14 + 0x0)
++ ((uw_object_hdr_t *)puVar14)->type_flags
+|
+- puVar14[0x0]
++ ((uw_object_hdr_t *)puVar14)->type_flags
+|
+- *puVar14
++ ((uw_object_hdr_t *)puVar14)->type_flags
+)
+...>
+}
+
+
+@receiver_6_w_0_0_word_short@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(short *)((char *)puVar14 + 0x0)
++ ((uw_object_hdr_t *)puVar14)->type_flags_signed
+|
+- *(short *)((byte *)puVar14 + 0x0)
++ ((uw_object_hdr_t *)puVar14)->type_flags_signed
+|
+- ((short *)puVar14)[0x0]
++ ((uw_object_hdr_t *)puVar14)->type_flags_signed
+|
+- *(short *)((short *)puVar14 + 0x0)
++ ((uw_object_hdr_t *)puVar14)->type_flags_signed
+|
+- *(short *)(puVar14 + 0x0)
++ ((uw_object_hdr_t *)puVar14)->type_flags_signed
+)
+...>
+}
+
+
+@receiver_6_w_0_0_byte_0_byte@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)puVar14 + 0x0)
++ ((uw_object_hdr_t *)puVar14)->type_flags_low
+|
+- *(byte *)((byte *)puVar14 + 0x0)
++ ((uw_object_hdr_t *)puVar14)->type_flags_low
+|
+- ((byte *)puVar14)[0x0]
++ ((uw_object_hdr_t *)puVar14)->type_flags_low
+|
+- *(byte *)((ushort *)puVar14 + 0x0)
++ ((uw_object_hdr_t *)puVar14)->type_flags_low
+|
+- (byte)((ushort *)puVar14)[0x0]
++ ((uw_object_hdr_t *)puVar14)->type_flags_low
+|
+- *(byte *)puVar14
++ ((uw_object_hdr_t *)puVar14)->type_flags_low
+|
+- *(byte *)(puVar14 + 0x0)
++ ((uw_object_hdr_t *)puVar14)->type_flags_low
+|
+- (byte)puVar14[0x0]
++ ((uw_object_hdr_t *)puVar14)->type_flags_low
+)
+...>
+}
+
+
+@receiver_6_w_0_0_byte_0_undefined1@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)puVar14 + 0x0)
++ ((uw_object_hdr_t *)puVar14)->type_flags_low
+|
+- *(undefined1 *)((byte *)puVar14 + 0x0)
++ ((uw_object_hdr_t *)puVar14)->type_flags_low
+|
+- ((undefined1 *)puVar14)[0x0]
++ ((uw_object_hdr_t *)puVar14)->type_flags_low
+|
+- *(undefined1 *)((ushort *)puVar14 + 0x0)
++ ((uw_object_hdr_t *)puVar14)->type_flags_low
+|
+- (undefined1)((ushort *)puVar14)[0x0]
++ ((uw_object_hdr_t *)puVar14)->type_flags_low
+|
+- *(undefined1 *)puVar14
++ ((uw_object_hdr_t *)puVar14)->type_flags_low
+|
+- *(undefined1 *)(puVar14 + 0x0)
++ ((uw_object_hdr_t *)puVar14)->type_flags_low
+|
+- (undefined1)puVar14[0x0]
++ ((uw_object_hdr_t *)puVar14)->type_flags_low
+)
+...>
+}
+
+
+@receiver_6_w_0_0_address_0@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar14 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar14)->type_flags_low
+|
+- &*(char *)((byte *)puVar14 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar14)->type_flags_low
+|
+- &((char *)puVar14)[0x0]
++ (char *)&((uw_object_hdr_t *)puVar14)->type_flags_low
+|
+- &*(char *)((ushort *)puVar14 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar14)->type_flags_low
+|
+- &*(char *)puVar14
++ (char *)&((uw_object_hdr_t *)puVar14)->type_flags_low
+|
+- &*(char *)(puVar14 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar14)->type_flags_low
+)
+...>
+}
+
+
+@receiver_6_w_0_0_store_0@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar14 + 0x0) = E;
++ ((uw_object_hdr_t *)puVar14)->type_flags_low = (byte)E;
+|
+- *(char *)((byte *)puVar14 + 0x0) = E;
++ ((uw_object_hdr_t *)puVar14)->type_flags_low = (byte)E;
+|
+- ((char *)puVar14)[0x0] = E;
++ ((uw_object_hdr_t *)puVar14)->type_flags_low = (byte)E;
+|
+- *(char *)((ushort *)puVar14 + 0x0) = E;
++ ((uw_object_hdr_t *)puVar14)->type_flags_low = (byte)E;
+|
+- *(char *)puVar14 = E;
++ ((uw_object_hdr_t *)puVar14)->type_flags_low = (byte)E;
+|
+- *(char *)(puVar14 + 0x0) = E;
++ ((uw_object_hdr_t *)puVar14)->type_flags_low = (byte)E;
+)
+...>
+}
+
+
+@receiver_6_w_0_0_byte_0_char@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar14 + 0x0)
++ (char)((uw_object_hdr_t *)puVar14)->type_flags_low
+|
+- *(char *)((byte *)puVar14 + 0x0)
++ (char)((uw_object_hdr_t *)puVar14)->type_flags_low
+|
+- ((char *)puVar14)[0x0]
++ (char)((uw_object_hdr_t *)puVar14)->type_flags_low
+|
+- *(char *)((ushort *)puVar14 + 0x0)
++ (char)((uw_object_hdr_t *)puVar14)->type_flags_low
+|
+- (char)((ushort *)puVar14)[0x0]
++ (char)((uw_object_hdr_t *)puVar14)->type_flags_low
+|
+- *(char *)puVar14
++ (char)((uw_object_hdr_t *)puVar14)->type_flags_low
+|
+- *(char *)(puVar14 + 0x0)
++ (char)((uw_object_hdr_t *)puVar14)->type_flags_low
+|
+- (char)puVar14[0x0]
++ (char)((uw_object_hdr_t *)puVar14)->type_flags_low
+)
+...>
+}
+
+
+@receiver_6_w_0_0_byte_1_byte@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)puVar14 + 0x1)
++ ((uw_object_hdr_t *)puVar14)->type_flags_high
+|
+- *(byte *)((byte *)puVar14 + 0x1)
++ ((uw_object_hdr_t *)puVar14)->type_flags_high
+|
+- ((byte *)puVar14)[0x1]
++ ((uw_object_hdr_t *)puVar14)->type_flags_high
+)
+...>
+}
+
+
+@receiver_6_w_0_0_byte_1_undefined1@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)puVar14 + 0x1)
++ ((uw_object_hdr_t *)puVar14)->type_flags_high
+|
+- *(undefined1 *)((byte *)puVar14 + 0x1)
++ ((uw_object_hdr_t *)puVar14)->type_flags_high
+|
+- ((undefined1 *)puVar14)[0x1]
++ ((uw_object_hdr_t *)puVar14)->type_flags_high
+)
+...>
+}
+
+
+@receiver_6_w_0_0_address_1@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar14 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar14)->type_flags_high
+|
+- &*(char *)((byte *)puVar14 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar14)->type_flags_high
+|
+- &((char *)puVar14)[0x1]
++ (char *)&((uw_object_hdr_t *)puVar14)->type_flags_high
+)
+...>
+}
+
+
+@receiver_6_w_0_0_store_1@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar14 + 0x1) = E;
++ ((uw_object_hdr_t *)puVar14)->type_flags_high = (byte)E;
+|
+- *(char *)((byte *)puVar14 + 0x1) = E;
++ ((uw_object_hdr_t *)puVar14)->type_flags_high = (byte)E;
+|
+- ((char *)puVar14)[0x1] = E;
++ ((uw_object_hdr_t *)puVar14)->type_flags_high = (byte)E;
+)
+...>
+}
+
+
+@receiver_6_w_0_0_byte_1_char@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar14 + 0x1)
++ (char)((uw_object_hdr_t *)puVar14)->type_flags_high
+|
+- *(char *)((byte *)puVar14 + 0x1)
++ (char)((uw_object_hdr_t *)puVar14)->type_flags_high
+|
+- ((char *)puVar14)[0x1]
++ (char)((uw_object_hdr_t *)puVar14)->type_flags_high
+)
+...>
+}
+
+
+@receiver_6_w_2_17_pair_char_char@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)puVar14 + 0x2) = (char)V;
+- *(char *)((char *)puVar14 + 0x3) = (char)(V >> 8);
++ ((uw_object_hdr_t *)puVar14)->position_word = (ushort)V;
+
+...>
+}
+
+@receiver_6_w_2_17_pair_char_byte@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)puVar14 + 0x2) = (char)V;
+- *(byte *)((char *)puVar14 + 0x3) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)puVar14)->position_word = (ushort)V;
+
+...>
+}
+
+@receiver_6_w_2_17_pair_byte_char@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)puVar14 + 0x2) = (byte)V;
+- *(char *)((char *)puVar14 + 0x3) = (char)(V >> 8);
++ ((uw_object_hdr_t *)puVar14)->position_word = (ushort)V;
+
+...>
+}
+
+@receiver_6_w_2_17_pair_byte_byte@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)puVar14 + 0x2) = (byte)V;
+- *(byte *)((char *)puVar14 + 0x3) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)puVar14)->position_word = (ushort)V;
+
+...>
+}
+
+@receiver_6_w_2_17_word_ushort@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar14 + 0x2)
++ ((uw_object_hdr_t *)puVar14)->position_word
+|
+- *(ushort *)((byte *)puVar14 + 0x2)
++ ((uw_object_hdr_t *)puVar14)->position_word
+|
+- ((ushort *)puVar14)[0x1]
++ ((uw_object_hdr_t *)puVar14)->position_word
+|
+- *(ushort *)((ushort *)puVar14 + 0x1)
++ ((uw_object_hdr_t *)puVar14)->position_word
+|
+- *(ushort *)(puVar14 + 0x1)
++ ((uw_object_hdr_t *)puVar14)->position_word
+|
+- puVar14[0x1]
++ ((uw_object_hdr_t *)puVar14)->position_word
+)
+...>
+}
+
+
+@receiver_6_w_2_17_word_undefined2@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar14 + 0x2)
++ ((uw_object_hdr_t *)puVar14)->position_word
+|
+- *(undefined2 *)((byte *)puVar14 + 0x2)
++ ((uw_object_hdr_t *)puVar14)->position_word
+|
+- ((undefined2 *)puVar14)[0x1]
++ ((uw_object_hdr_t *)puVar14)->position_word
+|
+- *(undefined2 *)((undefined2 *)puVar14 + 0x1)
++ ((uw_object_hdr_t *)puVar14)->position_word
+|
+- *(undefined2 *)(puVar14 + 0x1)
++ ((uw_object_hdr_t *)puVar14)->position_word
+|
+- puVar14[0x1]
++ ((uw_object_hdr_t *)puVar14)->position_word
+)
+...>
+}
+
+
+@receiver_6_w_2_17_word_short@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(short *)((char *)puVar14 + 0x2)
++ ((uw_object_hdr_t *)puVar14)->position_word_signed
+|
+- *(short *)((byte *)puVar14 + 0x2)
++ ((uw_object_hdr_t *)puVar14)->position_word_signed
+|
+- ((short *)puVar14)[0x1]
++ ((uw_object_hdr_t *)puVar14)->position_word_signed
+|
+- *(short *)((short *)puVar14 + 0x1)
++ ((uw_object_hdr_t *)puVar14)->position_word_signed
+|
+- *(short *)(puVar14 + 0x1)
++ ((uw_object_hdr_t *)puVar14)->position_word_signed
+)
+...>
+}
+
+
+@receiver_6_w_2_17_byte_2_byte@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)puVar14 + 0x2)
++ ((uw_object_hdr_t *)puVar14)->position_word_low
+|
+- *(byte *)((byte *)puVar14 + 0x2)
++ ((uw_object_hdr_t *)puVar14)->position_word_low
+|
+- ((byte *)puVar14)[0x2]
++ ((uw_object_hdr_t *)puVar14)->position_word_low
+|
+- *(byte *)((ushort *)puVar14 + 0x1)
++ ((uw_object_hdr_t *)puVar14)->position_word_low
+|
+- (byte)((ushort *)puVar14)[0x1]
++ ((uw_object_hdr_t *)puVar14)->position_word_low
+|
+- *(byte *)(puVar14 + 0x1)
++ ((uw_object_hdr_t *)puVar14)->position_word_low
+|
+- (byte)puVar14[0x1]
++ ((uw_object_hdr_t *)puVar14)->position_word_low
+)
+...>
+}
+
+
+@receiver_6_w_2_17_byte_2_undefined1@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)puVar14 + 0x2)
++ ((uw_object_hdr_t *)puVar14)->position_word_low
+|
+- *(undefined1 *)((byte *)puVar14 + 0x2)
++ ((uw_object_hdr_t *)puVar14)->position_word_low
+|
+- ((undefined1 *)puVar14)[0x2]
++ ((uw_object_hdr_t *)puVar14)->position_word_low
+|
+- *(undefined1 *)((ushort *)puVar14 + 0x1)
++ ((uw_object_hdr_t *)puVar14)->position_word_low
+|
+- (undefined1)((ushort *)puVar14)[0x1]
++ ((uw_object_hdr_t *)puVar14)->position_word_low
+|
+- *(undefined1 *)(puVar14 + 0x1)
++ ((uw_object_hdr_t *)puVar14)->position_word_low
+|
+- (undefined1)puVar14[0x1]
++ ((uw_object_hdr_t *)puVar14)->position_word_low
+)
+...>
+}
+
+
+@receiver_6_w_2_17_address_2@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar14 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar14)->position_word_low
+|
+- &*(char *)((byte *)puVar14 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar14)->position_word_low
+|
+- &((char *)puVar14)[0x2]
++ (char *)&((uw_object_hdr_t *)puVar14)->position_word_low
+|
+- &*(char *)((ushort *)puVar14 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar14)->position_word_low
+|
+- &*(char *)(puVar14 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar14)->position_word_low
+)
+...>
+}
+
+
+@receiver_6_w_2_17_store_2@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar14 + 0x2) = E;
++ ((uw_object_hdr_t *)puVar14)->position_word_low = (byte)E;
+|
+- *(char *)((byte *)puVar14 + 0x2) = E;
++ ((uw_object_hdr_t *)puVar14)->position_word_low = (byte)E;
+|
+- ((char *)puVar14)[0x2] = E;
++ ((uw_object_hdr_t *)puVar14)->position_word_low = (byte)E;
+|
+- *(char *)((ushort *)puVar14 + 0x1) = E;
++ ((uw_object_hdr_t *)puVar14)->position_word_low = (byte)E;
+|
+- *(char *)(puVar14 + 0x1) = E;
++ ((uw_object_hdr_t *)puVar14)->position_word_low = (byte)E;
+)
+...>
+}
+
+
+@receiver_6_w_2_17_byte_2_char@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar14 + 0x2)
++ (char)((uw_object_hdr_t *)puVar14)->position_word_low
+|
+- *(char *)((byte *)puVar14 + 0x2)
++ (char)((uw_object_hdr_t *)puVar14)->position_word_low
+|
+- ((char *)puVar14)[0x2]
++ (char)((uw_object_hdr_t *)puVar14)->position_word_low
+|
+- *(char *)((ushort *)puVar14 + 0x1)
++ (char)((uw_object_hdr_t *)puVar14)->position_word_low
+|
+- (char)((ushort *)puVar14)[0x1]
++ (char)((uw_object_hdr_t *)puVar14)->position_word_low
+|
+- *(char *)(puVar14 + 0x1)
++ (char)((uw_object_hdr_t *)puVar14)->position_word_low
+|
+- (char)puVar14[0x1]
++ (char)((uw_object_hdr_t *)puVar14)->position_word_low
+)
+...>
+}
+
+
+@receiver_6_w_2_17_byte_3_byte@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)puVar14 + 0x3)
++ ((uw_object_hdr_t *)puVar14)->position_word_high
+|
+- *(byte *)((byte *)puVar14 + 0x3)
++ ((uw_object_hdr_t *)puVar14)->position_word_high
+|
+- ((byte *)puVar14)[0x3]
++ ((uw_object_hdr_t *)puVar14)->position_word_high
+)
+...>
+}
+
+
+@receiver_6_w_2_17_byte_3_undefined1@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)puVar14 + 0x3)
++ ((uw_object_hdr_t *)puVar14)->position_word_high
+|
+- *(undefined1 *)((byte *)puVar14 + 0x3)
++ ((uw_object_hdr_t *)puVar14)->position_word_high
+|
+- ((undefined1 *)puVar14)[0x3]
++ ((uw_object_hdr_t *)puVar14)->position_word_high
+)
+...>
+}
+
+
+@receiver_6_w_2_17_address_3@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar14 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar14)->position_word_high
+|
+- &*(char *)((byte *)puVar14 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar14)->position_word_high
+|
+- &((char *)puVar14)[0x3]
++ (char *)&((uw_object_hdr_t *)puVar14)->position_word_high
+)
+...>
+}
+
+
+@receiver_6_w_2_17_store_3@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar14 + 0x3) = E;
++ ((uw_object_hdr_t *)puVar14)->position_word_high = (byte)E;
+|
+- *(char *)((byte *)puVar14 + 0x3) = E;
++ ((uw_object_hdr_t *)puVar14)->position_word_high = (byte)E;
+|
+- ((char *)puVar14)[0x3] = E;
++ ((uw_object_hdr_t *)puVar14)->position_word_high = (byte)E;
+)
+...>
+}
+
+
+@receiver_6_w_2_17_byte_3_char@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar14 + 0x3)
++ (char)((uw_object_hdr_t *)puVar14)->position_word_high
+|
+- *(char *)((byte *)puVar14 + 0x3)
++ (char)((uw_object_hdr_t *)puVar14)->position_word_high
+|
+- ((char *)puVar14)[0x3]
++ (char)((uw_object_hdr_t *)puVar14)->position_word_high
+)
+...>
+}
+
+
+@receiver_6_w_4_34_pair_char_char@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)puVar14 + 0x4) = (char)V;
+- *(char *)((char *)puVar14 + 0x5) = (char)(V >> 8);
++ ((uw_object_hdr_t *)puVar14)->chain_word = (ushort)V;
+
+...>
+}
+
+@receiver_6_w_4_34_pair_char_byte@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)puVar14 + 0x4) = (char)V;
+- *(byte *)((char *)puVar14 + 0x5) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)puVar14)->chain_word = (ushort)V;
+
+...>
+}
+
+@receiver_6_w_4_34_pair_byte_char@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)puVar14 + 0x4) = (byte)V;
+- *(char *)((char *)puVar14 + 0x5) = (char)(V >> 8);
++ ((uw_object_hdr_t *)puVar14)->chain_word = (ushort)V;
+
+...>
+}
+
+@receiver_6_w_4_34_pair_byte_byte@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)puVar14 + 0x4) = (byte)V;
+- *(byte *)((char *)puVar14 + 0x5) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)puVar14)->chain_word = (ushort)V;
+
+...>
+}
+
+@receiver_6_w_4_34_word_ushort@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar14 + 0x4)
++ ((uw_object_hdr_t *)puVar14)->chain_word
+|
+- *(ushort *)((byte *)puVar14 + 0x4)
++ ((uw_object_hdr_t *)puVar14)->chain_word
+|
+- ((ushort *)puVar14)[0x2]
++ ((uw_object_hdr_t *)puVar14)->chain_word
+|
+- *(ushort *)((ushort *)puVar14 + 0x2)
++ ((uw_object_hdr_t *)puVar14)->chain_word
+|
+- *(ushort *)(puVar14 + 0x2)
++ ((uw_object_hdr_t *)puVar14)->chain_word
+|
+- puVar14[0x2]
++ ((uw_object_hdr_t *)puVar14)->chain_word
+)
+...>
+}
+
+
+@receiver_6_w_4_34_word_undefined2@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar14 + 0x4)
++ ((uw_object_hdr_t *)puVar14)->chain_word
+|
+- *(undefined2 *)((byte *)puVar14 + 0x4)
++ ((uw_object_hdr_t *)puVar14)->chain_word
+|
+- ((undefined2 *)puVar14)[0x2]
++ ((uw_object_hdr_t *)puVar14)->chain_word
+|
+- *(undefined2 *)((undefined2 *)puVar14 + 0x2)
++ ((uw_object_hdr_t *)puVar14)->chain_word
+|
+- *(undefined2 *)(puVar14 + 0x2)
++ ((uw_object_hdr_t *)puVar14)->chain_word
+|
+- puVar14[0x2]
++ ((uw_object_hdr_t *)puVar14)->chain_word
+)
+...>
+}
+
+
+@receiver_6_w_4_34_word_short@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(short *)((char *)puVar14 + 0x4)
++ ((uw_object_hdr_t *)puVar14)->chain_word_signed
+|
+- *(short *)((byte *)puVar14 + 0x4)
++ ((uw_object_hdr_t *)puVar14)->chain_word_signed
+|
+- ((short *)puVar14)[0x2]
++ ((uw_object_hdr_t *)puVar14)->chain_word_signed
+|
+- *(short *)((short *)puVar14 + 0x2)
++ ((uw_object_hdr_t *)puVar14)->chain_word_signed
+|
+- *(short *)(puVar14 + 0x2)
++ ((uw_object_hdr_t *)puVar14)->chain_word_signed
+)
+...>
+}
+
+
+@receiver_6_w_4_34_byte_4_byte@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)puVar14 + 0x4)
++ ((uw_object_hdr_t *)puVar14)->chain_word_low
+|
+- *(byte *)((byte *)puVar14 + 0x4)
++ ((uw_object_hdr_t *)puVar14)->chain_word_low
+|
+- ((byte *)puVar14)[0x4]
++ ((uw_object_hdr_t *)puVar14)->chain_word_low
+|
+- *(byte *)((ushort *)puVar14 + 0x2)
++ ((uw_object_hdr_t *)puVar14)->chain_word_low
+|
+- (byte)((ushort *)puVar14)[0x2]
++ ((uw_object_hdr_t *)puVar14)->chain_word_low
+|
+- *(byte *)(puVar14 + 0x2)
++ ((uw_object_hdr_t *)puVar14)->chain_word_low
+|
+- (byte)puVar14[0x2]
++ ((uw_object_hdr_t *)puVar14)->chain_word_low
+)
+...>
+}
+
+
+@receiver_6_w_4_34_byte_4_undefined1@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)puVar14 + 0x4)
++ ((uw_object_hdr_t *)puVar14)->chain_word_low
+|
+- *(undefined1 *)((byte *)puVar14 + 0x4)
++ ((uw_object_hdr_t *)puVar14)->chain_word_low
+|
+- ((undefined1 *)puVar14)[0x4]
++ ((uw_object_hdr_t *)puVar14)->chain_word_low
+|
+- *(undefined1 *)((ushort *)puVar14 + 0x2)
++ ((uw_object_hdr_t *)puVar14)->chain_word_low
+|
+- (undefined1)((ushort *)puVar14)[0x2]
++ ((uw_object_hdr_t *)puVar14)->chain_word_low
+|
+- *(undefined1 *)(puVar14 + 0x2)
++ ((uw_object_hdr_t *)puVar14)->chain_word_low
+|
+- (undefined1)puVar14[0x2]
++ ((uw_object_hdr_t *)puVar14)->chain_word_low
+)
+...>
+}
+
+
+@receiver_6_w_4_34_address_4@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar14 + 0x4)
++ (char *)&((uw_object_hdr_t *)puVar14)->chain_word_low
+|
+- &*(char *)((byte *)puVar14 + 0x4)
++ (char *)&((uw_object_hdr_t *)puVar14)->chain_word_low
+|
+- &((char *)puVar14)[0x4]
++ (char *)&((uw_object_hdr_t *)puVar14)->chain_word_low
+|
+- &*(char *)((ushort *)puVar14 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar14)->chain_word_low
+|
+- &*(char *)(puVar14 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar14)->chain_word_low
+)
+...>
+}
+
+
+@receiver_6_w_4_34_store_4@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar14 + 0x4) = E;
++ ((uw_object_hdr_t *)puVar14)->chain_word_low = (byte)E;
+|
+- *(char *)((byte *)puVar14 + 0x4) = E;
++ ((uw_object_hdr_t *)puVar14)->chain_word_low = (byte)E;
+|
+- ((char *)puVar14)[0x4] = E;
++ ((uw_object_hdr_t *)puVar14)->chain_word_low = (byte)E;
+|
+- *(char *)((ushort *)puVar14 + 0x2) = E;
++ ((uw_object_hdr_t *)puVar14)->chain_word_low = (byte)E;
+|
+- *(char *)(puVar14 + 0x2) = E;
++ ((uw_object_hdr_t *)puVar14)->chain_word_low = (byte)E;
+)
+...>
+}
+
+
+@receiver_6_w_4_34_byte_4_char@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar14 + 0x4)
++ (char)((uw_object_hdr_t *)puVar14)->chain_word_low
+|
+- *(char *)((byte *)puVar14 + 0x4)
++ (char)((uw_object_hdr_t *)puVar14)->chain_word_low
+|
+- ((char *)puVar14)[0x4]
++ (char)((uw_object_hdr_t *)puVar14)->chain_word_low
+|
+- *(char *)((ushort *)puVar14 + 0x2)
++ (char)((uw_object_hdr_t *)puVar14)->chain_word_low
+|
+- (char)((ushort *)puVar14)[0x2]
++ (char)((uw_object_hdr_t *)puVar14)->chain_word_low
+|
+- *(char *)(puVar14 + 0x2)
++ (char)((uw_object_hdr_t *)puVar14)->chain_word_low
+|
+- (char)puVar14[0x2]
++ (char)((uw_object_hdr_t *)puVar14)->chain_word_low
+)
+...>
+}
+
+
+@receiver_6_w_4_34_byte_5_byte@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)puVar14 + 0x5)
++ ((uw_object_hdr_t *)puVar14)->chain_word_high
+|
+- *(byte *)((byte *)puVar14 + 0x5)
++ ((uw_object_hdr_t *)puVar14)->chain_word_high
+|
+- ((byte *)puVar14)[0x5]
++ ((uw_object_hdr_t *)puVar14)->chain_word_high
+)
+...>
+}
+
+
+@receiver_6_w_4_34_byte_5_undefined1@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)puVar14 + 0x5)
++ ((uw_object_hdr_t *)puVar14)->chain_word_high
+|
+- *(undefined1 *)((byte *)puVar14 + 0x5)
++ ((uw_object_hdr_t *)puVar14)->chain_word_high
+|
+- ((undefined1 *)puVar14)[0x5]
++ ((uw_object_hdr_t *)puVar14)->chain_word_high
+)
+...>
+}
+
+
+@receiver_6_w_4_34_address_5@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar14 + 0x5)
++ (char *)&((uw_object_hdr_t *)puVar14)->chain_word_high
+|
+- &*(char *)((byte *)puVar14 + 0x5)
++ (char *)&((uw_object_hdr_t *)puVar14)->chain_word_high
+|
+- &((char *)puVar14)[0x5]
++ (char *)&((uw_object_hdr_t *)puVar14)->chain_word_high
+)
+...>
+}
+
+
+@receiver_6_w_4_34_store_5@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar14 + 0x5) = E;
++ ((uw_object_hdr_t *)puVar14)->chain_word_high = (byte)E;
+|
+- *(char *)((byte *)puVar14 + 0x5) = E;
++ ((uw_object_hdr_t *)puVar14)->chain_word_high = (byte)E;
+|
+- ((char *)puVar14)[0x5] = E;
++ ((uw_object_hdr_t *)puVar14)->chain_word_high = (byte)E;
+)
+...>
+}
+
+
+@receiver_6_w_4_34_byte_5_char@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar14 + 0x5)
++ (char)((uw_object_hdr_t *)puVar14)->chain_word_high
+|
+- *(char *)((byte *)puVar14 + 0x5)
++ (char)((uw_object_hdr_t *)puVar14)->chain_word_high
+|
+- ((char *)puVar14)[0x5]
++ (char)((uw_object_hdr_t *)puVar14)->chain_word_high
+)
+...>
+}
+
+
+@receiver_6_w_6_51_pair_char_char@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)puVar14 + 0x6) = (char)V;
+- *(char *)((char *)puVar14 + 0x7) = (char)(V >> 8);
++ ((uw_object_hdr_t *)puVar14)->link_word = (ushort)V;
+
+...>
+}
+
+@receiver_6_w_6_51_pair_char_byte@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)puVar14 + 0x6) = (char)V;
+- *(byte *)((char *)puVar14 + 0x7) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)puVar14)->link_word = (ushort)V;
+
+...>
+}
+
+@receiver_6_w_6_51_pair_byte_char@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)puVar14 + 0x6) = (byte)V;
+- *(char *)((char *)puVar14 + 0x7) = (char)(V >> 8);
++ ((uw_object_hdr_t *)puVar14)->link_word = (ushort)V;
+
+...>
+}
+
+@receiver_6_w_6_51_pair_byte_byte@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)puVar14 + 0x6) = (byte)V;
+- *(byte *)((char *)puVar14 + 0x7) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)puVar14)->link_word = (ushort)V;
+
+...>
+}
+
+@receiver_6_w_6_51_word_ushort@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar14 + 0x6)
++ ((uw_object_hdr_t *)puVar14)->link_word
+|
+- *(ushort *)((byte *)puVar14 + 0x6)
++ ((uw_object_hdr_t *)puVar14)->link_word
+|
+- ((ushort *)puVar14)[0x3]
++ ((uw_object_hdr_t *)puVar14)->link_word
+|
+- *(ushort *)((ushort *)puVar14 + 0x3)
++ ((uw_object_hdr_t *)puVar14)->link_word
+|
+- *(ushort *)(puVar14 + 0x3)
++ ((uw_object_hdr_t *)puVar14)->link_word
+|
+- puVar14[0x3]
++ ((uw_object_hdr_t *)puVar14)->link_word
+)
+...>
+}
+
+
+@receiver_6_w_6_51_word_undefined2@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar14 + 0x6)
++ ((uw_object_hdr_t *)puVar14)->link_word
+|
+- *(undefined2 *)((byte *)puVar14 + 0x6)
++ ((uw_object_hdr_t *)puVar14)->link_word
+|
+- ((undefined2 *)puVar14)[0x3]
++ ((uw_object_hdr_t *)puVar14)->link_word
+|
+- *(undefined2 *)((undefined2 *)puVar14 + 0x3)
++ ((uw_object_hdr_t *)puVar14)->link_word
+|
+- *(undefined2 *)(puVar14 + 0x3)
++ ((uw_object_hdr_t *)puVar14)->link_word
+|
+- puVar14[0x3]
++ ((uw_object_hdr_t *)puVar14)->link_word
+)
+...>
+}
+
+
+@receiver_6_w_6_51_word_short@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(short *)((char *)puVar14 + 0x6)
++ ((uw_object_hdr_t *)puVar14)->link_word_signed
+|
+- *(short *)((byte *)puVar14 + 0x6)
++ ((uw_object_hdr_t *)puVar14)->link_word_signed
+|
+- ((short *)puVar14)[0x3]
++ ((uw_object_hdr_t *)puVar14)->link_word_signed
+|
+- *(short *)((short *)puVar14 + 0x3)
++ ((uw_object_hdr_t *)puVar14)->link_word_signed
+|
+- *(short *)(puVar14 + 0x3)
++ ((uw_object_hdr_t *)puVar14)->link_word_signed
+)
+...>
+}
+
+
+@receiver_6_w_6_51_byte_6_byte@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)puVar14 + 0x6)
++ ((uw_object_hdr_t *)puVar14)->link_word_low
+|
+- *(byte *)((byte *)puVar14 + 0x6)
++ ((uw_object_hdr_t *)puVar14)->link_word_low
+|
+- ((byte *)puVar14)[0x6]
++ ((uw_object_hdr_t *)puVar14)->link_word_low
+|
+- *(byte *)((ushort *)puVar14 + 0x3)
++ ((uw_object_hdr_t *)puVar14)->link_word_low
+|
+- (byte)((ushort *)puVar14)[0x3]
++ ((uw_object_hdr_t *)puVar14)->link_word_low
+|
+- *(byte *)(puVar14 + 0x3)
++ ((uw_object_hdr_t *)puVar14)->link_word_low
+|
+- (byte)puVar14[0x3]
++ ((uw_object_hdr_t *)puVar14)->link_word_low
+)
+...>
+}
+
+
+@receiver_6_w_6_51_byte_6_undefined1@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)puVar14 + 0x6)
++ ((uw_object_hdr_t *)puVar14)->link_word_low
+|
+- *(undefined1 *)((byte *)puVar14 + 0x6)
++ ((uw_object_hdr_t *)puVar14)->link_word_low
+|
+- ((undefined1 *)puVar14)[0x6]
++ ((uw_object_hdr_t *)puVar14)->link_word_low
+|
+- *(undefined1 *)((ushort *)puVar14 + 0x3)
++ ((uw_object_hdr_t *)puVar14)->link_word_low
+|
+- (undefined1)((ushort *)puVar14)[0x3]
++ ((uw_object_hdr_t *)puVar14)->link_word_low
+|
+- *(undefined1 *)(puVar14 + 0x3)
++ ((uw_object_hdr_t *)puVar14)->link_word_low
+|
+- (undefined1)puVar14[0x3]
++ ((uw_object_hdr_t *)puVar14)->link_word_low
+)
+...>
+}
+
+
+@receiver_6_w_6_51_address_6@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar14 + 0x6)
++ (char *)&((uw_object_hdr_t *)puVar14)->link_word_low
+|
+- &*(char *)((byte *)puVar14 + 0x6)
++ (char *)&((uw_object_hdr_t *)puVar14)->link_word_low
+|
+- &((char *)puVar14)[0x6]
++ (char *)&((uw_object_hdr_t *)puVar14)->link_word_low
+|
+- &*(char *)((ushort *)puVar14 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar14)->link_word_low
+|
+- &*(char *)(puVar14 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar14)->link_word_low
+)
+...>
+}
+
+
+@receiver_6_w_6_51_store_6@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar14 + 0x6) = E;
++ ((uw_object_hdr_t *)puVar14)->link_word_low = (byte)E;
+|
+- *(char *)((byte *)puVar14 + 0x6) = E;
++ ((uw_object_hdr_t *)puVar14)->link_word_low = (byte)E;
+|
+- ((char *)puVar14)[0x6] = E;
++ ((uw_object_hdr_t *)puVar14)->link_word_low = (byte)E;
+|
+- *(char *)((ushort *)puVar14 + 0x3) = E;
++ ((uw_object_hdr_t *)puVar14)->link_word_low = (byte)E;
+|
+- *(char *)(puVar14 + 0x3) = E;
++ ((uw_object_hdr_t *)puVar14)->link_word_low = (byte)E;
+)
+...>
+}
+
+
+@receiver_6_w_6_51_byte_6_char@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar14 + 0x6)
++ (char)((uw_object_hdr_t *)puVar14)->link_word_low
+|
+- *(char *)((byte *)puVar14 + 0x6)
++ (char)((uw_object_hdr_t *)puVar14)->link_word_low
+|
+- ((char *)puVar14)[0x6]
++ (char)((uw_object_hdr_t *)puVar14)->link_word_low
+|
+- *(char *)((ushort *)puVar14 + 0x3)
++ (char)((uw_object_hdr_t *)puVar14)->link_word_low
+|
+- (char)((ushort *)puVar14)[0x3]
++ (char)((uw_object_hdr_t *)puVar14)->link_word_low
+|
+- *(char *)(puVar14 + 0x3)
++ (char)((uw_object_hdr_t *)puVar14)->link_word_low
+|
+- (char)puVar14[0x3]
++ (char)((uw_object_hdr_t *)puVar14)->link_word_low
+)
+...>
+}
+
+
+@receiver_6_w_6_51_byte_7_byte@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)puVar14 + 0x7)
++ ((uw_object_hdr_t *)puVar14)->link_word_high
+|
+- *(byte *)((byte *)puVar14 + 0x7)
++ ((uw_object_hdr_t *)puVar14)->link_word_high
+|
+- ((byte *)puVar14)[0x7]
++ ((uw_object_hdr_t *)puVar14)->link_word_high
+)
+...>
+}
+
+
+@receiver_6_w_6_51_byte_7_undefined1@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)puVar14 + 0x7)
++ ((uw_object_hdr_t *)puVar14)->link_word_high
+|
+- *(undefined1 *)((byte *)puVar14 + 0x7)
++ ((uw_object_hdr_t *)puVar14)->link_word_high
+|
+- ((undefined1 *)puVar14)[0x7]
++ ((uw_object_hdr_t *)puVar14)->link_word_high
+)
+...>
+}
+
+
+@receiver_6_w_6_51_address_7@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar14 + 0x7)
++ (char *)&((uw_object_hdr_t *)puVar14)->link_word_high
+|
+- &*(char *)((byte *)puVar14 + 0x7)
++ (char *)&((uw_object_hdr_t *)puVar14)->link_word_high
+|
+- &((char *)puVar14)[0x7]
++ (char *)&((uw_object_hdr_t *)puVar14)->link_word_high
+)
+...>
+}
+
+
+@receiver_6_w_6_51_store_7@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar14 + 0x7) = E;
++ ((uw_object_hdr_t *)puVar14)->link_word_high = (byte)E;
+|
+- *(char *)((byte *)puVar14 + 0x7) = E;
++ ((uw_object_hdr_t *)puVar14)->link_word_high = (byte)E;
+|
+- ((char *)puVar14)[0x7] = E;
++ ((uw_object_hdr_t *)puVar14)->link_word_high = (byte)E;
+)
+...>
+}
+
+
+@receiver_6_w_6_51_byte_7_char@
+type R;
+identifier F =~ "^\(open_backpack_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar14 + 0x7)
++ (char)((uw_object_hdr_t *)puVar14)->link_word_high
+|
+- *(char *)((byte *)puVar14 + 0x7)
++ (char)((uw_object_hdr_t *)puVar14)->link_word_high
+|
+- ((char *)puVar14)[0x7]
++ (char)((uw_object_hdr_t *)puVar14)->link_word_high
 )
 ...>
 }
@@ -8517,7 +11829,7 @@ R F(...) {
 @receiver_7_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8533,6 +11845,36 @@ R F(...) {
 |
 - *(ushort *)((ushort *)iVar4 + 0x0)
 + ((uw_object_hdr_t *)iVar4)->type_flags
+|
+- *(ushort *)(iVar4 + 0x0)
++ ((uw_object_hdr_t *)iVar4)->type_flags
+)
+...>
+}
+
+
+@receiver_7_w_0_0_word_undefined2@
+type R;
+identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)iVar4 + 0x0)
++ ((uw_object_hdr_t *)iVar4)->type_flags
+|
+- *(undefined2 *)((byte *)iVar4 + 0x0)
++ ((uw_object_hdr_t *)iVar4)->type_flags
+|
+- ((undefined2 *)iVar4)[0x0]
++ ((uw_object_hdr_t *)iVar4)->type_flags
+|
+- *(undefined2 *)((undefined2 *)iVar4 + 0x0)
++ ((uw_object_hdr_t *)iVar4)->type_flags
+|
+- *(undefined2 *)(iVar4 + 0x0)
++ ((uw_object_hdr_t *)iVar4)->type_flags
 )
 ...>
 }
@@ -8541,7 +11883,7 @@ R F(...) {
 @receiver_7_w_0_0_word_short@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8557,6 +11899,9 @@ R F(...) {
 |
 - *(short *)((short *)iVar4 + 0x0)
 + ((uw_object_hdr_t *)iVar4)->type_flags_signed
+|
+- *(short *)(iVar4 + 0x0)
++ ((uw_object_hdr_t *)iVar4)->type_flags_signed
 )
 ...>
 }
@@ -8565,7 +11910,7 @@ R F(...) {
 @receiver_7_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8587,6 +11932,9 @@ R F(...) {
 |
 - *(byte *)iVar4
 + ((uw_object_hdr_t *)iVar4)->type_flags_low
+|
+- *(byte *)(iVar4 + 0x0)
++ ((uw_object_hdr_t *)iVar4)->type_flags_low
 )
 ...>
 }
@@ -8595,7 +11943,7 @@ R F(...) {
 @receiver_7_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8617,6 +11965,45 @@ R F(...) {
 |
 - *(undefined1 *)iVar4
 + ((uw_object_hdr_t *)iVar4)->type_flags_low
+|
+- *(undefined1 *)(iVar4 + 0x0)
++ ((uw_object_hdr_t *)iVar4)->type_flags_low
+)
+...>
+}
+
+
+@receiver_7_w_0_0_address_0@
+type R;
+identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)iVar4 + 0x0)
++ (char *)&((uw_object_hdr_t *)iVar4)->type_flags_low
+|
+- &*(char *)((byte *)iVar4 + 0x0)
++ (char *)&((uw_object_hdr_t *)iVar4)->type_flags_low
+|
+- &((char *)iVar4)[0x0]
++ (char *)&((uw_object_hdr_t *)iVar4)->type_flags_low
+|
+- &*(char *)((ushort *)iVar4 + 0x0)
++ (char *)&((uw_object_hdr_t *)iVar4)->type_flags_low
+|
+- &*(char *)iVar4
++ (char *)&((uw_object_hdr_t *)iVar4)->type_flags_low
+|
+- &*(char *)(iVar4 + 0x0)
++ (char *)&((uw_object_hdr_t *)iVar4)->type_flags_low
+|
+- &iVar4[0x0]
++ (char *)&((uw_object_hdr_t *)iVar4)->type_flags_low
+|
+- &*iVar4
++ (char *)&((uw_object_hdr_t *)iVar4)->type_flags_low
 )
 ...>
 }
@@ -8625,7 +12012,7 @@ R F(...) {
 @receiver_7_w_0_0_store_0@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -8645,6 +12032,15 @@ R F(...) {
 |
 - *(char *)iVar4 = E;
 + ((uw_object_hdr_t *)iVar4)->type_flags_low = (byte)E;
+|
+- *(char *)(iVar4 + 0x0) = E;
++ ((uw_object_hdr_t *)iVar4)->type_flags_low = (byte)E;
+|
+- iVar4[0x0] = E;
++ ((uw_object_hdr_t *)iVar4)->type_flags_low = (byte)E;
+|
+- *iVar4 = E;
++ ((uw_object_hdr_t *)iVar4)->type_flags_low = (byte)E;
 )
 ...>
 }
@@ -8653,7 +12049,7 @@ R F(...) {
 @receiver_7_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8675,6 +12071,15 @@ R F(...) {
 |
 - *(char *)iVar4
 + (char)((uw_object_hdr_t *)iVar4)->type_flags_low
+|
+- *(char *)(iVar4 + 0x0)
++ (char)((uw_object_hdr_t *)iVar4)->type_flags_low
+|
+- iVar4[0x0]
++ (char)((uw_object_hdr_t *)iVar4)->type_flags_low
+|
+- *iVar4
++ (char)((uw_object_hdr_t *)iVar4)->type_flags_low
 )
 ...>
 }
@@ -8683,7 +12088,7 @@ R F(...) {
 @receiver_7_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8696,6 +12101,9 @@ R F(...) {
 |
 - ((byte *)iVar4)[0x1]
 + ((uw_object_hdr_t *)iVar4)->type_flags_high
+|
+- *(byte *)(iVar4 + 0x1)
++ ((uw_object_hdr_t *)iVar4)->type_flags_high
 )
 ...>
 }
@@ -8704,7 +12112,7 @@ R F(...) {
 @receiver_7_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8717,6 +12125,36 @@ R F(...) {
 |
 - ((undefined1 *)iVar4)[0x1]
 + ((uw_object_hdr_t *)iVar4)->type_flags_high
+|
+- *(undefined1 *)(iVar4 + 0x1)
++ ((uw_object_hdr_t *)iVar4)->type_flags_high
+)
+...>
+}
+
+
+@receiver_7_w_0_0_address_1@
+type R;
+identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)iVar4 + 0x1)
++ (char *)&((uw_object_hdr_t *)iVar4)->type_flags_high
+|
+- &*(char *)((byte *)iVar4 + 0x1)
++ (char *)&((uw_object_hdr_t *)iVar4)->type_flags_high
+|
+- &((char *)iVar4)[0x1]
++ (char *)&((uw_object_hdr_t *)iVar4)->type_flags_high
+|
+- &*(char *)(iVar4 + 0x1)
++ (char *)&((uw_object_hdr_t *)iVar4)->type_flags_high
+|
+- &iVar4[0x1]
++ (char *)&((uw_object_hdr_t *)iVar4)->type_flags_high
 )
 ...>
 }
@@ -8725,7 +12163,7 @@ R F(...) {
 @receiver_7_w_0_0_store_1@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -8739,6 +12177,12 @@ R F(...) {
 |
 - ((char *)iVar4)[0x1] = E;
 + ((uw_object_hdr_t *)iVar4)->type_flags_high = (byte)E;
+|
+- *(char *)(iVar4 + 0x1) = E;
++ ((uw_object_hdr_t *)iVar4)->type_flags_high = (byte)E;
+|
+- iVar4[0x1] = E;
++ ((uw_object_hdr_t *)iVar4)->type_flags_high = (byte)E;
 )
 ...>
 }
@@ -8747,7 +12191,7 @@ R F(...) {
 @receiver_7_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8760,12 +12204,18 @@ R F(...) {
 |
 - ((char *)iVar4)[0x1]
 + (char)((uw_object_hdr_t *)iVar4)->type_flags_high
+|
+- *(char *)(iVar4 + 0x1)
++ (char)((uw_object_hdr_t *)iVar4)->type_flags_high
+|
+- iVar4[0x1]
++ (char)((uw_object_hdr_t *)iVar4)->type_flags_high
 )
 ...>
 }
 
 
-@receiver_7_w_2_14_pair_char_char@
+@receiver_7_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -8780,7 +12230,7 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_2_14_pair_char_byte@
+@receiver_7_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -8795,7 +12245,7 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_2_14_pair_byte_char@
+@receiver_7_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -8810,7 +12260,7 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_2_14_pair_byte_byte@
+@receiver_7_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -8825,10 +12275,10 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_2_14_word_ushort@
+@receiver_7_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8844,15 +12294,45 @@ R F(...) {
 |
 - *(ushort *)((ushort *)iVar4 + 0x1)
 + ((uw_object_hdr_t *)iVar4)->position_word
+|
+- *(ushort *)(iVar4 + 0x2)
++ ((uw_object_hdr_t *)iVar4)->position_word
 )
 ...>
 }
 
 
-@receiver_7_w_2_14_word_short@
+@receiver_7_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)iVar4 + 0x2)
++ ((uw_object_hdr_t *)iVar4)->position_word
+|
+- *(undefined2 *)((byte *)iVar4 + 0x2)
++ ((uw_object_hdr_t *)iVar4)->position_word
+|
+- ((undefined2 *)iVar4)[0x1]
++ ((uw_object_hdr_t *)iVar4)->position_word
+|
+- *(undefined2 *)((undefined2 *)iVar4 + 0x1)
++ ((uw_object_hdr_t *)iVar4)->position_word
+|
+- *(undefined2 *)(iVar4 + 0x2)
++ ((uw_object_hdr_t *)iVar4)->position_word
+)
+...>
+}
+
+
+@receiver_7_w_2_17_word_short@
+type R;
+identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8868,15 +12348,18 @@ R F(...) {
 |
 - *(short *)((short *)iVar4 + 0x1)
 + ((uw_object_hdr_t *)iVar4)->position_word_signed
+|
+- *(short *)(iVar4 + 0x2)
++ ((uw_object_hdr_t *)iVar4)->position_word_signed
 )
 ...>
 }
 
 
-@receiver_7_w_2_14_byte_2_byte@
+@receiver_7_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8895,15 +12378,18 @@ R F(...) {
 |
 - (byte)((ushort *)iVar4)[0x1]
 + ((uw_object_hdr_t *)iVar4)->position_word_low
+|
+- *(byte *)(iVar4 + 0x2)
++ ((uw_object_hdr_t *)iVar4)->position_word_low
 )
 ...>
 }
 
 
-@receiver_7_w_2_14_byte_2_undefined1@
+@receiver_7_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8922,15 +12408,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)iVar4)[0x1]
 + ((uw_object_hdr_t *)iVar4)->position_word_low
+|
+- *(undefined1 *)(iVar4 + 0x2)
++ ((uw_object_hdr_t *)iVar4)->position_word_low
 )
 ...>
 }
 
 
-@receiver_7_w_2_14_store_2@
+@receiver_7_w_2_17_address_2@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)iVar4 + 0x2)
++ (char *)&((uw_object_hdr_t *)iVar4)->position_word_low
+|
+- &*(char *)((byte *)iVar4 + 0x2)
++ (char *)&((uw_object_hdr_t *)iVar4)->position_word_low
+|
+- &((char *)iVar4)[0x2]
++ (char *)&((uw_object_hdr_t *)iVar4)->position_word_low
+|
+- &*(char *)((ushort *)iVar4 + 0x1)
++ (char *)&((uw_object_hdr_t *)iVar4)->position_word_low
+|
+- &*(char *)(iVar4 + 0x2)
++ (char *)&((uw_object_hdr_t *)iVar4)->position_word_low
+|
+- &iVar4[0x2]
++ (char *)&((uw_object_hdr_t *)iVar4)->position_word_low
+)
+...>
+}
+
+
+@receiver_7_w_2_17_store_2@
+type R;
+identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -8947,15 +12466,21 @@ R F(...) {
 |
 - *(char *)((ushort *)iVar4 + 0x1) = E;
 + ((uw_object_hdr_t *)iVar4)->position_word_low = (byte)E;
+|
+- *(char *)(iVar4 + 0x2) = E;
++ ((uw_object_hdr_t *)iVar4)->position_word_low = (byte)E;
+|
+- iVar4[0x2] = E;
++ ((uw_object_hdr_t *)iVar4)->position_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_7_w_2_14_byte_2_char@
+@receiver_7_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8974,15 +12499,21 @@ R F(...) {
 |
 - (char)((ushort *)iVar4)[0x1]
 + (char)((uw_object_hdr_t *)iVar4)->position_word_low
+|
+- *(char *)(iVar4 + 0x2)
++ (char)((uw_object_hdr_t *)iVar4)->position_word_low
+|
+- iVar4[0x2]
++ (char)((uw_object_hdr_t *)iVar4)->position_word_low
 )
 ...>
 }
 
 
-@receiver_7_w_2_14_byte_3_byte@
+@receiver_7_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -8995,15 +12526,18 @@ R F(...) {
 |
 - ((byte *)iVar4)[0x3]
 + ((uw_object_hdr_t *)iVar4)->position_word_high
+|
+- *(byte *)(iVar4 + 0x3)
++ ((uw_object_hdr_t *)iVar4)->position_word_high
 )
 ...>
 }
 
 
-@receiver_7_w_2_14_byte_3_undefined1@
+@receiver_7_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -9016,15 +12550,45 @@ R F(...) {
 |
 - ((undefined1 *)iVar4)[0x3]
 + ((uw_object_hdr_t *)iVar4)->position_word_high
+|
+- *(undefined1 *)(iVar4 + 0x3)
++ ((uw_object_hdr_t *)iVar4)->position_word_high
 )
 ...>
 }
 
 
-@receiver_7_w_2_14_store_3@
+@receiver_7_w_2_17_address_3@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)iVar4 + 0x3)
++ (char *)&((uw_object_hdr_t *)iVar4)->position_word_high
+|
+- &*(char *)((byte *)iVar4 + 0x3)
++ (char *)&((uw_object_hdr_t *)iVar4)->position_word_high
+|
+- &((char *)iVar4)[0x3]
++ (char *)&((uw_object_hdr_t *)iVar4)->position_word_high
+|
+- &*(char *)(iVar4 + 0x3)
++ (char *)&((uw_object_hdr_t *)iVar4)->position_word_high
+|
+- &iVar4[0x3]
++ (char *)&((uw_object_hdr_t *)iVar4)->position_word_high
+)
+...>
+}
+
+
+@receiver_7_w_2_17_store_3@
+type R;
+identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -9038,15 +12602,21 @@ R F(...) {
 |
 - ((char *)iVar4)[0x3] = E;
 + ((uw_object_hdr_t *)iVar4)->position_word_high = (byte)E;
+|
+- *(char *)(iVar4 + 0x3) = E;
++ ((uw_object_hdr_t *)iVar4)->position_word_high = (byte)E;
+|
+- iVar4[0x3] = E;
++ ((uw_object_hdr_t *)iVar4)->position_word_high = (byte)E;
 )
 ...>
 }
 
 
-@receiver_7_w_2_14_byte_3_char@
+@receiver_7_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -9059,12 +12629,18 @@ R F(...) {
 |
 - ((char *)iVar4)[0x3]
 + (char)((uw_object_hdr_t *)iVar4)->position_word_high
+|
+- *(char *)(iVar4 + 0x3)
++ (char)((uw_object_hdr_t *)iVar4)->position_word_high
+|
+- iVar4[0x3]
++ (char)((uw_object_hdr_t *)iVar4)->position_word_high
 )
 ...>
 }
 
 
-@receiver_7_w_4_28_pair_char_char@
+@receiver_7_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9079,7 +12655,7 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_4_28_pair_char_byte@
+@receiver_7_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9094,7 +12670,7 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_4_28_pair_byte_char@
+@receiver_7_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9109,7 +12685,7 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_4_28_pair_byte_byte@
+@receiver_7_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9124,10 +12700,10 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_4_28_word_ushort@
+@receiver_7_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -9143,15 +12719,45 @@ R F(...) {
 |
 - *(ushort *)((ushort *)iVar4 + 0x2)
 + ((uw_object_hdr_t *)iVar4)->chain_word
+|
+- *(ushort *)(iVar4 + 0x4)
++ ((uw_object_hdr_t *)iVar4)->chain_word
 )
 ...>
 }
 
 
-@receiver_7_w_4_28_word_short@
+@receiver_7_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)iVar4 + 0x4)
++ ((uw_object_hdr_t *)iVar4)->chain_word
+|
+- *(undefined2 *)((byte *)iVar4 + 0x4)
++ ((uw_object_hdr_t *)iVar4)->chain_word
+|
+- ((undefined2 *)iVar4)[0x2]
++ ((uw_object_hdr_t *)iVar4)->chain_word
+|
+- *(undefined2 *)((undefined2 *)iVar4 + 0x2)
++ ((uw_object_hdr_t *)iVar4)->chain_word
+|
+- *(undefined2 *)(iVar4 + 0x4)
++ ((uw_object_hdr_t *)iVar4)->chain_word
+)
+...>
+}
+
+
+@receiver_7_w_4_34_word_short@
+type R;
+identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -9167,15 +12773,18 @@ R F(...) {
 |
 - *(short *)((short *)iVar4 + 0x2)
 + ((uw_object_hdr_t *)iVar4)->chain_word_signed
+|
+- *(short *)(iVar4 + 0x4)
++ ((uw_object_hdr_t *)iVar4)->chain_word_signed
 )
 ...>
 }
 
 
-@receiver_7_w_4_28_byte_4_byte@
+@receiver_7_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -9194,15 +12803,18 @@ R F(...) {
 |
 - (byte)((ushort *)iVar4)[0x2]
 + ((uw_object_hdr_t *)iVar4)->chain_word_low
+|
+- *(byte *)(iVar4 + 0x4)
++ ((uw_object_hdr_t *)iVar4)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_7_w_4_28_byte_4_undefined1@
+@receiver_7_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -9221,15 +12833,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)iVar4)[0x2]
 + ((uw_object_hdr_t *)iVar4)->chain_word_low
+|
+- *(undefined1 *)(iVar4 + 0x4)
++ ((uw_object_hdr_t *)iVar4)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_7_w_4_28_store_4@
+@receiver_7_w_4_34_address_4@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)iVar4 + 0x4)
++ (char *)&((uw_object_hdr_t *)iVar4)->chain_word_low
+|
+- &*(char *)((byte *)iVar4 + 0x4)
++ (char *)&((uw_object_hdr_t *)iVar4)->chain_word_low
+|
+- &((char *)iVar4)[0x4]
++ (char *)&((uw_object_hdr_t *)iVar4)->chain_word_low
+|
+- &*(char *)((ushort *)iVar4 + 0x2)
++ (char *)&((uw_object_hdr_t *)iVar4)->chain_word_low
+|
+- &*(char *)(iVar4 + 0x4)
++ (char *)&((uw_object_hdr_t *)iVar4)->chain_word_low
+|
+- &iVar4[0x4]
++ (char *)&((uw_object_hdr_t *)iVar4)->chain_word_low
+)
+...>
+}
+
+
+@receiver_7_w_4_34_store_4@
+type R;
+identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -9246,15 +12891,21 @@ R F(...) {
 |
 - *(char *)((ushort *)iVar4 + 0x2) = E;
 + ((uw_object_hdr_t *)iVar4)->chain_word_low = (byte)E;
+|
+- *(char *)(iVar4 + 0x4) = E;
++ ((uw_object_hdr_t *)iVar4)->chain_word_low = (byte)E;
+|
+- iVar4[0x4] = E;
++ ((uw_object_hdr_t *)iVar4)->chain_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_7_w_4_28_byte_4_char@
+@receiver_7_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -9273,15 +12924,21 @@ R F(...) {
 |
 - (char)((ushort *)iVar4)[0x2]
 + (char)((uw_object_hdr_t *)iVar4)->chain_word_low
+|
+- *(char *)(iVar4 + 0x4)
++ (char)((uw_object_hdr_t *)iVar4)->chain_word_low
+|
+- iVar4[0x4]
++ (char)((uw_object_hdr_t *)iVar4)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_7_w_4_28_byte_5_byte@
+@receiver_7_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -9294,15 +12951,18 @@ R F(...) {
 |
 - ((byte *)iVar4)[0x5]
 + ((uw_object_hdr_t *)iVar4)->chain_word_high
+|
+- *(byte *)(iVar4 + 0x5)
++ ((uw_object_hdr_t *)iVar4)->chain_word_high
 )
 ...>
 }
 
 
-@receiver_7_w_4_28_byte_5_undefined1@
+@receiver_7_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -9315,15 +12975,45 @@ R F(...) {
 |
 - ((undefined1 *)iVar4)[0x5]
 + ((uw_object_hdr_t *)iVar4)->chain_word_high
+|
+- *(undefined1 *)(iVar4 + 0x5)
++ ((uw_object_hdr_t *)iVar4)->chain_word_high
 )
 ...>
 }
 
 
-@receiver_7_w_4_28_store_5@
+@receiver_7_w_4_34_address_5@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)iVar4 + 0x5)
++ (char *)&((uw_object_hdr_t *)iVar4)->chain_word_high
+|
+- &*(char *)((byte *)iVar4 + 0x5)
++ (char *)&((uw_object_hdr_t *)iVar4)->chain_word_high
+|
+- &((char *)iVar4)[0x5]
++ (char *)&((uw_object_hdr_t *)iVar4)->chain_word_high
+|
+- &*(char *)(iVar4 + 0x5)
++ (char *)&((uw_object_hdr_t *)iVar4)->chain_word_high
+|
+- &iVar4[0x5]
++ (char *)&((uw_object_hdr_t *)iVar4)->chain_word_high
+)
+...>
+}
+
+
+@receiver_7_w_4_34_store_5@
+type R;
+identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -9337,15 +13027,21 @@ R F(...) {
 |
 - ((char *)iVar4)[0x5] = E;
 + ((uw_object_hdr_t *)iVar4)->chain_word_high = (byte)E;
+|
+- *(char *)(iVar4 + 0x5) = E;
++ ((uw_object_hdr_t *)iVar4)->chain_word_high = (byte)E;
+|
+- iVar4[0x5] = E;
++ ((uw_object_hdr_t *)iVar4)->chain_word_high = (byte)E;
 )
 ...>
 }
 
 
-@receiver_7_w_4_28_byte_5_char@
+@receiver_7_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -9358,12 +13054,18 @@ R F(...) {
 |
 - ((char *)iVar4)[0x5]
 + (char)((uw_object_hdr_t *)iVar4)->chain_word_high
+|
+- *(char *)(iVar4 + 0x5)
++ (char)((uw_object_hdr_t *)iVar4)->chain_word_high
+|
+- iVar4[0x5]
++ (char)((uw_object_hdr_t *)iVar4)->chain_word_high
 )
 ...>
 }
 
 
-@receiver_7_w_6_42_pair_char_char@
+@receiver_7_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9378,7 +13080,7 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_6_42_pair_char_byte@
+@receiver_7_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9393,7 +13095,7 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_6_42_pair_byte_char@
+@receiver_7_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9408,7 +13110,7 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_6_42_pair_byte_byte@
+@receiver_7_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9423,10 +13125,10 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_6_42_word_ushort@
+@receiver_7_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -9442,15 +13144,45 @@ R F(...) {
 |
 - *(ushort *)((ushort *)iVar4 + 0x3)
 + ((uw_object_hdr_t *)iVar4)->link_word
+|
+- *(ushort *)(iVar4 + 0x6)
++ ((uw_object_hdr_t *)iVar4)->link_word
 )
 ...>
 }
 
 
-@receiver_7_w_6_42_word_short@
+@receiver_7_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)iVar4 + 0x6)
++ ((uw_object_hdr_t *)iVar4)->link_word
+|
+- *(undefined2 *)((byte *)iVar4 + 0x6)
++ ((uw_object_hdr_t *)iVar4)->link_word
+|
+- ((undefined2 *)iVar4)[0x3]
++ ((uw_object_hdr_t *)iVar4)->link_word
+|
+- *(undefined2 *)((undefined2 *)iVar4 + 0x3)
++ ((uw_object_hdr_t *)iVar4)->link_word
+|
+- *(undefined2 *)(iVar4 + 0x6)
++ ((uw_object_hdr_t *)iVar4)->link_word
+)
+...>
+}
+
+
+@receiver_7_w_6_51_word_short@
+type R;
+identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -9466,15 +13198,18 @@ R F(...) {
 |
 - *(short *)((short *)iVar4 + 0x3)
 + ((uw_object_hdr_t *)iVar4)->link_word_signed
+|
+- *(short *)(iVar4 + 0x6)
++ ((uw_object_hdr_t *)iVar4)->link_word_signed
 )
 ...>
 }
 
 
-@receiver_7_w_6_42_byte_6_byte@
+@receiver_7_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -9493,15 +13228,18 @@ R F(...) {
 |
 - (byte)((ushort *)iVar4)[0x3]
 + ((uw_object_hdr_t *)iVar4)->link_word_low
+|
+- *(byte *)(iVar4 + 0x6)
++ ((uw_object_hdr_t *)iVar4)->link_word_low
 )
 ...>
 }
 
 
-@receiver_7_w_6_42_byte_6_undefined1@
+@receiver_7_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -9520,15 +13258,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)iVar4)[0x3]
 + ((uw_object_hdr_t *)iVar4)->link_word_low
+|
+- *(undefined1 *)(iVar4 + 0x6)
++ ((uw_object_hdr_t *)iVar4)->link_word_low
 )
 ...>
 }
 
 
-@receiver_7_w_6_42_store_6@
+@receiver_7_w_6_51_address_6@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)iVar4 + 0x6)
++ (char *)&((uw_object_hdr_t *)iVar4)->link_word_low
+|
+- &*(char *)((byte *)iVar4 + 0x6)
++ (char *)&((uw_object_hdr_t *)iVar4)->link_word_low
+|
+- &((char *)iVar4)[0x6]
++ (char *)&((uw_object_hdr_t *)iVar4)->link_word_low
+|
+- &*(char *)((ushort *)iVar4 + 0x3)
++ (char *)&((uw_object_hdr_t *)iVar4)->link_word_low
+|
+- &*(char *)(iVar4 + 0x6)
++ (char *)&((uw_object_hdr_t *)iVar4)->link_word_low
+|
+- &iVar4[0x6]
++ (char *)&((uw_object_hdr_t *)iVar4)->link_word_low
+)
+...>
+}
+
+
+@receiver_7_w_6_51_store_6@
+type R;
+identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -9545,15 +13316,21 @@ R F(...) {
 |
 - *(char *)((ushort *)iVar4 + 0x3) = E;
 + ((uw_object_hdr_t *)iVar4)->link_word_low = (byte)E;
+|
+- *(char *)(iVar4 + 0x6) = E;
++ ((uw_object_hdr_t *)iVar4)->link_word_low = (byte)E;
+|
+- iVar4[0x6] = E;
++ ((uw_object_hdr_t *)iVar4)->link_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_7_w_6_42_byte_6_char@
+@receiver_7_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -9572,15 +13349,21 @@ R F(...) {
 |
 - (char)((ushort *)iVar4)[0x3]
 + (char)((uw_object_hdr_t *)iVar4)->link_word_low
+|
+- *(char *)(iVar4 + 0x6)
++ (char)((uw_object_hdr_t *)iVar4)->link_word_low
+|
+- iVar4[0x6]
++ (char)((uw_object_hdr_t *)iVar4)->link_word_low
 )
 ...>
 }
 
 
-@receiver_7_w_6_42_byte_7_byte@
+@receiver_7_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -9593,15 +13376,18 @@ R F(...) {
 |
 - ((byte *)iVar4)[0x7]
 + ((uw_object_hdr_t *)iVar4)->link_word_high
+|
+- *(byte *)(iVar4 + 0x7)
++ ((uw_object_hdr_t *)iVar4)->link_word_high
 )
 ...>
 }
 
 
-@receiver_7_w_6_42_byte_7_undefined1@
+@receiver_7_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -9614,15 +13400,45 @@ R F(...) {
 |
 - ((undefined1 *)iVar4)[0x7]
 + ((uw_object_hdr_t *)iVar4)->link_word_high
+|
+- *(undefined1 *)(iVar4 + 0x7)
++ ((uw_object_hdr_t *)iVar4)->link_word_high
 )
 ...>
 }
 
 
-@receiver_7_w_6_42_store_7@
+@receiver_7_w_6_51_address_7@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)iVar4 + 0x7)
++ (char *)&((uw_object_hdr_t *)iVar4)->link_word_high
+|
+- &*(char *)((byte *)iVar4 + 0x7)
++ (char *)&((uw_object_hdr_t *)iVar4)->link_word_high
+|
+- &((char *)iVar4)[0x7]
++ (char *)&((uw_object_hdr_t *)iVar4)->link_word_high
+|
+- &*(char *)(iVar4 + 0x7)
++ (char *)&((uw_object_hdr_t *)iVar4)->link_word_high
+|
+- &iVar4[0x7]
++ (char *)&((uw_object_hdr_t *)iVar4)->link_word_high
+)
+...>
+}
+
+
+@receiver_7_w_6_51_store_7@
+type R;
+identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -9636,15 +13452,21 @@ R F(...) {
 |
 - ((char *)iVar4)[0x7] = E;
 + ((uw_object_hdr_t *)iVar4)->link_word_high = (byte)E;
+|
+- *(char *)(iVar4 + 0x7) = E;
++ ((uw_object_hdr_t *)iVar4)->link_word_high = (byte)E;
+|
+- iVar4[0x7] = E;
++ ((uw_object_hdr_t *)iVar4)->link_word_high = (byte)E;
 )
 ...>
 }
 
 
-@receiver_7_w_6_42_byte_7_char@
+@receiver_7_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\|scroll_container_grid_down\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -9656,6 +13478,12 @@ R F(...) {
 + (char)((uw_object_hdr_t *)iVar4)->link_word_high
 |
 - ((char *)iVar4)[0x7]
++ (char)((uw_object_hdr_t *)iVar4)->link_word_high
+|
+- *(char *)(iVar4 + 0x7)
++ (char)((uw_object_hdr_t *)iVar4)->link_word_high
+|
+- iVar4[0x7]
 + (char)((uw_object_hdr_t *)iVar4)->link_word_high
 )
 ...>
@@ -9725,7 +13553,7 @@ R F(...) {
 @receiver_8_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -9741,6 +13569,48 @@ R F(...) {
 |
 - *(ushort *)((ushort *)puVar4 + 0x0)
 + ((uw_object_hdr_t *)puVar4)->type_flags
+|
+- *(ushort *)(puVar4 + 0x0)
++ ((uw_object_hdr_t *)puVar4)->type_flags
+|
+- puVar4[0x0]
++ ((uw_object_hdr_t *)puVar4)->type_flags
+|
+- *puVar4
++ ((uw_object_hdr_t *)puVar4)->type_flags
+)
+...>
+}
+
+
+@receiver_8_w_0_0_word_undefined2@
+type R;
+identifier F =~ "^\(auto_place_in_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar4 + 0x0)
++ ((uw_object_hdr_t *)puVar4)->type_flags
+|
+- *(undefined2 *)((byte *)puVar4 + 0x0)
++ ((uw_object_hdr_t *)puVar4)->type_flags
+|
+- ((undefined2 *)puVar4)[0x0]
++ ((uw_object_hdr_t *)puVar4)->type_flags
+|
+- *(undefined2 *)((undefined2 *)puVar4 + 0x0)
++ ((uw_object_hdr_t *)puVar4)->type_flags
+|
+- *(undefined2 *)(puVar4 + 0x0)
++ ((uw_object_hdr_t *)puVar4)->type_flags
+|
+- puVar4[0x0]
++ ((uw_object_hdr_t *)puVar4)->type_flags
+|
+- *puVar4
++ ((uw_object_hdr_t *)puVar4)->type_flags
 )
 ...>
 }
@@ -9749,7 +13619,7 @@ R F(...) {
 @receiver_8_w_0_0_word_short@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -9765,6 +13635,9 @@ R F(...) {
 |
 - *(short *)((short *)puVar4 + 0x0)
 + ((uw_object_hdr_t *)puVar4)->type_flags_signed
+|
+- *(short *)(puVar4 + 0x0)
++ ((uw_object_hdr_t *)puVar4)->type_flags_signed
 )
 ...>
 }
@@ -9773,7 +13646,7 @@ R F(...) {
 @receiver_8_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -9795,6 +13668,12 @@ R F(...) {
 |
 - *(byte *)puVar4
 + ((uw_object_hdr_t *)puVar4)->type_flags_low
+|
+- *(byte *)(puVar4 + 0x0)
++ ((uw_object_hdr_t *)puVar4)->type_flags_low
+|
+- (byte)puVar4[0x0]
++ ((uw_object_hdr_t *)puVar4)->type_flags_low
 )
 ...>
 }
@@ -9803,7 +13682,7 @@ R F(...) {
 @receiver_8_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -9825,6 +13704,42 @@ R F(...) {
 |
 - *(undefined1 *)puVar4
 + ((uw_object_hdr_t *)puVar4)->type_flags_low
+|
+- *(undefined1 *)(puVar4 + 0x0)
++ ((uw_object_hdr_t *)puVar4)->type_flags_low
+|
+- (undefined1)puVar4[0x0]
++ ((uw_object_hdr_t *)puVar4)->type_flags_low
+)
+...>
+}
+
+
+@receiver_8_w_0_0_address_0@
+type R;
+identifier F =~ "^\(auto_place_in_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar4 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar4)->type_flags_low
+|
+- &*(char *)((byte *)puVar4 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar4)->type_flags_low
+|
+- &((char *)puVar4)[0x0]
++ (char *)&((uw_object_hdr_t *)puVar4)->type_flags_low
+|
+- &*(char *)((ushort *)puVar4 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar4)->type_flags_low
+|
+- &*(char *)puVar4
++ (char *)&((uw_object_hdr_t *)puVar4)->type_flags_low
+|
+- &*(char *)(puVar4 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar4)->type_flags_low
 )
 ...>
 }
@@ -9833,7 +13748,7 @@ R F(...) {
 @receiver_8_w_0_0_store_0@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -9853,6 +13768,9 @@ R F(...) {
 |
 - *(char *)puVar4 = E;
 + ((uw_object_hdr_t *)puVar4)->type_flags_low = (byte)E;
+|
+- *(char *)(puVar4 + 0x0) = E;
++ ((uw_object_hdr_t *)puVar4)->type_flags_low = (byte)E;
 )
 ...>
 }
@@ -9861,7 +13779,7 @@ R F(...) {
 @receiver_8_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -9883,6 +13801,12 @@ R F(...) {
 |
 - *(char *)puVar4
 + (char)((uw_object_hdr_t *)puVar4)->type_flags_low
+|
+- *(char *)(puVar4 + 0x0)
++ (char)((uw_object_hdr_t *)puVar4)->type_flags_low
+|
+- (char)puVar4[0x0]
++ (char)((uw_object_hdr_t *)puVar4)->type_flags_low
 )
 ...>
 }
@@ -9891,7 +13815,7 @@ R F(...) {
 @receiver_8_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -9912,7 +13836,7 @@ R F(...) {
 @receiver_8_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -9930,10 +13854,31 @@ R F(...) {
 }
 
 
+@receiver_8_w_0_0_address_1@
+type R;
+identifier F =~ "^\(auto_place_in_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar4 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar4)->type_flags_high
+|
+- &*(char *)((byte *)puVar4 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar4)->type_flags_high
+|
+- &((char *)puVar4)[0x1]
++ (char *)&((uw_object_hdr_t *)puVar4)->type_flags_high
+)
+...>
+}
+
+
 @receiver_8_w_0_0_store_1@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -9955,7 +13900,7 @@ R F(...) {
 @receiver_8_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -9973,7 +13918,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_2_14_pair_char_char@
+@receiver_8_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9988,7 +13933,7 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_2_14_pair_char_byte@
+@receiver_8_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10003,7 +13948,7 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_2_14_pair_byte_char@
+@receiver_8_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10018,7 +13963,7 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_2_14_pair_byte_byte@
+@receiver_8_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10033,10 +13978,10 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_2_14_word_ushort@
+@receiver_8_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -10052,15 +13997,51 @@ R F(...) {
 |
 - *(ushort *)((ushort *)puVar4 + 0x1)
 + ((uw_object_hdr_t *)puVar4)->position_word
+|
+- *(ushort *)(puVar4 + 0x1)
++ ((uw_object_hdr_t *)puVar4)->position_word
+|
+- puVar4[0x1]
++ ((uw_object_hdr_t *)puVar4)->position_word
 )
 ...>
 }
 
 
-@receiver_8_w_2_14_word_short@
+@receiver_8_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar4 + 0x2)
++ ((uw_object_hdr_t *)puVar4)->position_word
+|
+- *(undefined2 *)((byte *)puVar4 + 0x2)
++ ((uw_object_hdr_t *)puVar4)->position_word
+|
+- ((undefined2 *)puVar4)[0x1]
++ ((uw_object_hdr_t *)puVar4)->position_word
+|
+- *(undefined2 *)((undefined2 *)puVar4 + 0x1)
++ ((uw_object_hdr_t *)puVar4)->position_word
+|
+- *(undefined2 *)(puVar4 + 0x1)
++ ((uw_object_hdr_t *)puVar4)->position_word
+|
+- puVar4[0x1]
++ ((uw_object_hdr_t *)puVar4)->position_word
+)
+...>
+}
+
+
+@receiver_8_w_2_17_word_short@
+type R;
+identifier F =~ "^\(auto_place_in_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -10076,15 +14057,18 @@ R F(...) {
 |
 - *(short *)((short *)puVar4 + 0x1)
 + ((uw_object_hdr_t *)puVar4)->position_word_signed
+|
+- *(short *)(puVar4 + 0x1)
++ ((uw_object_hdr_t *)puVar4)->position_word_signed
 )
 ...>
 }
 
 
-@receiver_8_w_2_14_byte_2_byte@
+@receiver_8_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -10103,15 +14087,21 @@ R F(...) {
 |
 - (byte)((ushort *)puVar4)[0x1]
 + ((uw_object_hdr_t *)puVar4)->position_word_low
+|
+- *(byte *)(puVar4 + 0x1)
++ ((uw_object_hdr_t *)puVar4)->position_word_low
+|
+- (byte)puVar4[0x1]
++ ((uw_object_hdr_t *)puVar4)->position_word_low
 )
 ...>
 }
 
 
-@receiver_8_w_2_14_byte_2_undefined1@
+@receiver_8_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -10130,15 +14120,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)puVar4)[0x1]
 + ((uw_object_hdr_t *)puVar4)->position_word_low
+|
+- *(undefined1 *)(puVar4 + 0x1)
++ ((uw_object_hdr_t *)puVar4)->position_word_low
+|
+- (undefined1)puVar4[0x1]
++ ((uw_object_hdr_t *)puVar4)->position_word_low
 )
 ...>
 }
 
 
-@receiver_8_w_2_14_store_2@
+@receiver_8_w_2_17_address_2@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar4 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar4)->position_word_low
+|
+- &*(char *)((byte *)puVar4 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar4)->position_word_low
+|
+- &((char *)puVar4)[0x2]
++ (char *)&((uw_object_hdr_t *)puVar4)->position_word_low
+|
+- &*(char *)((ushort *)puVar4 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar4)->position_word_low
+|
+- &*(char *)(puVar4 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar4)->position_word_low
+)
+...>
+}
+
+
+@receiver_8_w_2_17_store_2@
+type R;
+identifier F =~ "^\(auto_place_in_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -10155,15 +14178,18 @@ R F(...) {
 |
 - *(char *)((ushort *)puVar4 + 0x1) = E;
 + ((uw_object_hdr_t *)puVar4)->position_word_low = (byte)E;
+|
+- *(char *)(puVar4 + 0x1) = E;
++ ((uw_object_hdr_t *)puVar4)->position_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_8_w_2_14_byte_2_char@
+@receiver_8_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -10182,15 +14208,21 @@ R F(...) {
 |
 - (char)((ushort *)puVar4)[0x1]
 + (char)((uw_object_hdr_t *)puVar4)->position_word_low
+|
+- *(char *)(puVar4 + 0x1)
++ (char)((uw_object_hdr_t *)puVar4)->position_word_low
+|
+- (char)puVar4[0x1]
++ (char)((uw_object_hdr_t *)puVar4)->position_word_low
 )
 ...>
 }
 
 
-@receiver_8_w_2_14_byte_3_byte@
+@receiver_8_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -10208,10 +14240,10 @@ R F(...) {
 }
 
 
-@receiver_8_w_2_14_byte_3_undefined1@
+@receiver_8_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -10229,10 +14261,31 @@ R F(...) {
 }
 
 
-@receiver_8_w_2_14_store_3@
+@receiver_8_w_2_17_address_3@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar4 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar4)->position_word_high
+|
+- &*(char *)((byte *)puVar4 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar4)->position_word_high
+|
+- &((char *)puVar4)[0x3]
++ (char *)&((uw_object_hdr_t *)puVar4)->position_word_high
+)
+...>
+}
+
+
+@receiver_8_w_2_17_store_3@
+type R;
+identifier F =~ "^\(auto_place_in_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -10251,10 +14304,10 @@ R F(...) {
 }
 
 
-@receiver_8_w_2_14_byte_3_char@
+@receiver_8_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -10272,7 +14325,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_4_28_pair_char_char@
+@receiver_8_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10287,7 +14340,7 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_4_28_pair_char_byte@
+@receiver_8_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10302,7 +14355,7 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_4_28_pair_byte_char@
+@receiver_8_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10317,7 +14370,7 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_4_28_pair_byte_byte@
+@receiver_8_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10332,10 +14385,10 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_4_28_word_ushort@
+@receiver_8_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -10351,15 +14404,51 @@ R F(...) {
 |
 - *(ushort *)((ushort *)puVar4 + 0x2)
 + ((uw_object_hdr_t *)puVar4)->chain_word
+|
+- *(ushort *)(puVar4 + 0x2)
++ ((uw_object_hdr_t *)puVar4)->chain_word
+|
+- puVar4[0x2]
++ ((uw_object_hdr_t *)puVar4)->chain_word
 )
 ...>
 }
 
 
-@receiver_8_w_4_28_word_short@
+@receiver_8_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar4 + 0x4)
++ ((uw_object_hdr_t *)puVar4)->chain_word
+|
+- *(undefined2 *)((byte *)puVar4 + 0x4)
++ ((uw_object_hdr_t *)puVar4)->chain_word
+|
+- ((undefined2 *)puVar4)[0x2]
++ ((uw_object_hdr_t *)puVar4)->chain_word
+|
+- *(undefined2 *)((undefined2 *)puVar4 + 0x2)
++ ((uw_object_hdr_t *)puVar4)->chain_word
+|
+- *(undefined2 *)(puVar4 + 0x2)
++ ((uw_object_hdr_t *)puVar4)->chain_word
+|
+- puVar4[0x2]
++ ((uw_object_hdr_t *)puVar4)->chain_word
+)
+...>
+}
+
+
+@receiver_8_w_4_34_word_short@
+type R;
+identifier F =~ "^\(auto_place_in_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -10375,15 +14464,18 @@ R F(...) {
 |
 - *(short *)((short *)puVar4 + 0x2)
 + ((uw_object_hdr_t *)puVar4)->chain_word_signed
+|
+- *(short *)(puVar4 + 0x2)
++ ((uw_object_hdr_t *)puVar4)->chain_word_signed
 )
 ...>
 }
 
 
-@receiver_8_w_4_28_byte_4_byte@
+@receiver_8_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -10402,15 +14494,21 @@ R F(...) {
 |
 - (byte)((ushort *)puVar4)[0x2]
 + ((uw_object_hdr_t *)puVar4)->chain_word_low
+|
+- *(byte *)(puVar4 + 0x2)
++ ((uw_object_hdr_t *)puVar4)->chain_word_low
+|
+- (byte)puVar4[0x2]
++ ((uw_object_hdr_t *)puVar4)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_8_w_4_28_byte_4_undefined1@
+@receiver_8_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -10429,15 +14527,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)puVar4)[0x2]
 + ((uw_object_hdr_t *)puVar4)->chain_word_low
+|
+- *(undefined1 *)(puVar4 + 0x2)
++ ((uw_object_hdr_t *)puVar4)->chain_word_low
+|
+- (undefined1)puVar4[0x2]
++ ((uw_object_hdr_t *)puVar4)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_8_w_4_28_store_4@
+@receiver_8_w_4_34_address_4@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar4 + 0x4)
++ (char *)&((uw_object_hdr_t *)puVar4)->chain_word_low
+|
+- &*(char *)((byte *)puVar4 + 0x4)
++ (char *)&((uw_object_hdr_t *)puVar4)->chain_word_low
+|
+- &((char *)puVar4)[0x4]
++ (char *)&((uw_object_hdr_t *)puVar4)->chain_word_low
+|
+- &*(char *)((ushort *)puVar4 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar4)->chain_word_low
+|
+- &*(char *)(puVar4 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar4)->chain_word_low
+)
+...>
+}
+
+
+@receiver_8_w_4_34_store_4@
+type R;
+identifier F =~ "^\(auto_place_in_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -10454,15 +14585,18 @@ R F(...) {
 |
 - *(char *)((ushort *)puVar4 + 0x2) = E;
 + ((uw_object_hdr_t *)puVar4)->chain_word_low = (byte)E;
+|
+- *(char *)(puVar4 + 0x2) = E;
++ ((uw_object_hdr_t *)puVar4)->chain_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_8_w_4_28_byte_4_char@
+@receiver_8_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -10481,15 +14615,21 @@ R F(...) {
 |
 - (char)((ushort *)puVar4)[0x2]
 + (char)((uw_object_hdr_t *)puVar4)->chain_word_low
+|
+- *(char *)(puVar4 + 0x2)
++ (char)((uw_object_hdr_t *)puVar4)->chain_word_low
+|
+- (char)puVar4[0x2]
++ (char)((uw_object_hdr_t *)puVar4)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_8_w_4_28_byte_5_byte@
+@receiver_8_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -10507,10 +14647,10 @@ R F(...) {
 }
 
 
-@receiver_8_w_4_28_byte_5_undefined1@
+@receiver_8_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -10528,10 +14668,31 @@ R F(...) {
 }
 
 
-@receiver_8_w_4_28_store_5@
+@receiver_8_w_4_34_address_5@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar4 + 0x5)
++ (char *)&((uw_object_hdr_t *)puVar4)->chain_word_high
+|
+- &*(char *)((byte *)puVar4 + 0x5)
++ (char *)&((uw_object_hdr_t *)puVar4)->chain_word_high
+|
+- &((char *)puVar4)[0x5]
++ (char *)&((uw_object_hdr_t *)puVar4)->chain_word_high
+)
+...>
+}
+
+
+@receiver_8_w_4_34_store_5@
+type R;
+identifier F =~ "^\(auto_place_in_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -10550,10 +14711,10 @@ R F(...) {
 }
 
 
-@receiver_8_w_4_28_byte_5_char@
+@receiver_8_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -10571,7 +14732,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_6_42_pair_char_char@
+@receiver_8_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10586,7 +14747,7 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_6_42_pair_char_byte@
+@receiver_8_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10601,7 +14762,7 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_6_42_pair_byte_char@
+@receiver_8_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10616,7 +14777,7 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_6_42_pair_byte_byte@
+@receiver_8_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10631,10 +14792,10 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_6_42_word_ushort@
+@receiver_8_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -10650,15 +14811,51 @@ R F(...) {
 |
 - *(ushort *)((ushort *)puVar4 + 0x3)
 + ((uw_object_hdr_t *)puVar4)->link_word
+|
+- *(ushort *)(puVar4 + 0x3)
++ ((uw_object_hdr_t *)puVar4)->link_word
+|
+- puVar4[0x3]
++ ((uw_object_hdr_t *)puVar4)->link_word
 )
 ...>
 }
 
 
-@receiver_8_w_6_42_word_short@
+@receiver_8_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar4 + 0x6)
++ ((uw_object_hdr_t *)puVar4)->link_word
+|
+- *(undefined2 *)((byte *)puVar4 + 0x6)
++ ((uw_object_hdr_t *)puVar4)->link_word
+|
+- ((undefined2 *)puVar4)[0x3]
++ ((uw_object_hdr_t *)puVar4)->link_word
+|
+- *(undefined2 *)((undefined2 *)puVar4 + 0x3)
++ ((uw_object_hdr_t *)puVar4)->link_word
+|
+- *(undefined2 *)(puVar4 + 0x3)
++ ((uw_object_hdr_t *)puVar4)->link_word
+|
+- puVar4[0x3]
++ ((uw_object_hdr_t *)puVar4)->link_word
+)
+...>
+}
+
+
+@receiver_8_w_6_51_word_short@
+type R;
+identifier F =~ "^\(auto_place_in_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -10674,15 +14871,18 @@ R F(...) {
 |
 - *(short *)((short *)puVar4 + 0x3)
 + ((uw_object_hdr_t *)puVar4)->link_word_signed
+|
+- *(short *)(puVar4 + 0x3)
++ ((uw_object_hdr_t *)puVar4)->link_word_signed
 )
 ...>
 }
 
 
-@receiver_8_w_6_42_byte_6_byte@
+@receiver_8_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -10701,15 +14901,21 @@ R F(...) {
 |
 - (byte)((ushort *)puVar4)[0x3]
 + ((uw_object_hdr_t *)puVar4)->link_word_low
+|
+- *(byte *)(puVar4 + 0x3)
++ ((uw_object_hdr_t *)puVar4)->link_word_low
+|
+- (byte)puVar4[0x3]
++ ((uw_object_hdr_t *)puVar4)->link_word_low
 )
 ...>
 }
 
 
-@receiver_8_w_6_42_byte_6_undefined1@
+@receiver_8_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -10728,15 +14934,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)puVar4)[0x3]
 + ((uw_object_hdr_t *)puVar4)->link_word_low
+|
+- *(undefined1 *)(puVar4 + 0x3)
++ ((uw_object_hdr_t *)puVar4)->link_word_low
+|
+- (undefined1)puVar4[0x3]
++ ((uw_object_hdr_t *)puVar4)->link_word_low
 )
 ...>
 }
 
 
-@receiver_8_w_6_42_store_6@
+@receiver_8_w_6_51_address_6@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar4 + 0x6)
++ (char *)&((uw_object_hdr_t *)puVar4)->link_word_low
+|
+- &*(char *)((byte *)puVar4 + 0x6)
++ (char *)&((uw_object_hdr_t *)puVar4)->link_word_low
+|
+- &((char *)puVar4)[0x6]
++ (char *)&((uw_object_hdr_t *)puVar4)->link_word_low
+|
+- &*(char *)((ushort *)puVar4 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar4)->link_word_low
+|
+- &*(char *)(puVar4 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar4)->link_word_low
+)
+...>
+}
+
+
+@receiver_8_w_6_51_store_6@
+type R;
+identifier F =~ "^\(auto_place_in_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -10753,15 +14992,18 @@ R F(...) {
 |
 - *(char *)((ushort *)puVar4 + 0x3) = E;
 + ((uw_object_hdr_t *)puVar4)->link_word_low = (byte)E;
+|
+- *(char *)(puVar4 + 0x3) = E;
++ ((uw_object_hdr_t *)puVar4)->link_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_8_w_6_42_byte_6_char@
+@receiver_8_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -10780,15 +15022,21 @@ R F(...) {
 |
 - (char)((ushort *)puVar4)[0x3]
 + (char)((uw_object_hdr_t *)puVar4)->link_word_low
+|
+- *(char *)(puVar4 + 0x3)
++ (char)((uw_object_hdr_t *)puVar4)->link_word_low
+|
+- (char)puVar4[0x3]
++ (char)((uw_object_hdr_t *)puVar4)->link_word_low
 )
 ...>
 }
 
 
-@receiver_8_w_6_42_byte_7_byte@
+@receiver_8_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -10806,10 +15054,10 @@ R F(...) {
 }
 
 
-@receiver_8_w_6_42_byte_7_undefined1@
+@receiver_8_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -10827,10 +15075,31 @@ R F(...) {
 }
 
 
-@receiver_8_w_6_42_store_7@
+@receiver_8_w_6_51_address_7@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar4 + 0x7)
++ (char *)&((uw_object_hdr_t *)puVar4)->link_word_high
+|
+- &*(char *)((byte *)puVar4 + 0x7)
++ (char *)&((uw_object_hdr_t *)puVar4)->link_word_high
+|
+- &((char *)puVar4)[0x7]
++ (char *)&((uw_object_hdr_t *)puVar4)->link_word_high
+)
+...>
+}
+
+
+@receiver_8_w_6_51_store_7@
+type R;
+identifier F =~ "^\(auto_place_in_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -10849,10 +15118,10 @@ R F(...) {
 }
 
 
-@receiver_8_w_6_42_byte_7_char@
+@receiver_8_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(auto_place_in_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -10872,21 +15141,1508 @@ R F(...) {
 
 @receiver_9_w_0_0_pair_char_char@
 type R;
-identifier F =~ "^\(empty_container_into_world\)$";
+identifier F =~ "^\(sum_container_weight\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
 R F(...) {
 <...
-- *(char *)((char *)pNextLink + 0x0) = (char)V;
-- *(char *)((char *)pNextLink + 0x1) = (char)(V >> 8);
-+ ((uw_object_hdr_t *)pNextLink)->type_flags = (ushort)V;
+- *(char *)((char *)puVar2 + 0x0) = (char)V;
+- *(char *)((char *)puVar2 + 0x1) = (char)(V >> 8);
++ ((uw_object_hdr_t *)puVar2)->type_flags = (ushort)V;
 
 ...>
 }
 
 @receiver_9_w_0_0_pair_char_byte@
 type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)puVar2 + 0x0) = (char)V;
+- *(byte *)((char *)puVar2 + 0x1) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)puVar2)->type_flags = (ushort)V;
+
+...>
+}
+
+@receiver_9_w_0_0_pair_byte_char@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)puVar2 + 0x0) = (byte)V;
+- *(char *)((char *)puVar2 + 0x1) = (char)(V >> 8);
++ ((uw_object_hdr_t *)puVar2)->type_flags = (ushort)V;
+
+...>
+}
+
+@receiver_9_w_0_0_pair_byte_byte@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)puVar2 + 0x0) = (byte)V;
+- *(byte *)((char *)puVar2 + 0x1) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)puVar2)->type_flags = (ushort)V;
+
+...>
+}
+
+@receiver_9_w_0_0_word_ushort@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags
+|
+- *(ushort *)((byte *)puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags
+|
+- ((ushort *)puVar2)[0x0]
++ ((uw_object_hdr_t *)puVar2)->type_flags
+|
+- *(ushort *)((ushort *)puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags
+)
+...>
+}
+
+
+@receiver_9_w_0_0_word_undefined2@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags
+|
+- *(undefined2 *)((byte *)puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags
+|
+- ((undefined2 *)puVar2)[0x0]
++ ((uw_object_hdr_t *)puVar2)->type_flags
+|
+- *(undefined2 *)((undefined2 *)puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags
+)
+...>
+}
+
+
+@receiver_9_w_0_0_word_short@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(short *)((char *)puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags_signed
+|
+- *(short *)((byte *)puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags_signed
+|
+- ((short *)puVar2)[0x0]
++ ((uw_object_hdr_t *)puVar2)->type_flags_signed
+|
+- *(short *)((short *)puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags_signed
+)
+...>
+}
+
+
+@receiver_9_w_0_0_byte_0_byte@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- *(byte *)((byte *)puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- ((byte *)puVar2)[0x0]
++ ((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- *(byte *)((ushort *)puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- (byte)((ushort *)puVar2)[0x0]
++ ((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- *(byte *)puVar2
++ ((uw_object_hdr_t *)puVar2)->type_flags_low
+)
+...>
+}
+
+
+@receiver_9_w_0_0_byte_0_undefined1@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- *(undefined1 *)((byte *)puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- ((undefined1 *)puVar2)[0x0]
++ ((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- *(undefined1 *)((ushort *)puVar2 + 0x0)
++ ((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- (undefined1)((ushort *)puVar2)[0x0]
++ ((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- *(undefined1 *)puVar2
++ ((uw_object_hdr_t *)puVar2)->type_flags_low
+)
+...>
+}
+
+
+@receiver_9_w_0_0_address_0@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar2 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- &*(char *)((byte *)puVar2 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- &((char *)puVar2)[0x0]
++ (char *)&((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- &*(char *)((ushort *)puVar2 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- &*(char *)puVar2
++ (char *)&((uw_object_hdr_t *)puVar2)->type_flags_low
+)
+...>
+}
+
+
+@receiver_9_w_0_0_store_0@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar2 + 0x0) = E;
++ ((uw_object_hdr_t *)puVar2)->type_flags_low = (byte)E;
+|
+- *(char *)((byte *)puVar2 + 0x0) = E;
++ ((uw_object_hdr_t *)puVar2)->type_flags_low = (byte)E;
+|
+- ((char *)puVar2)[0x0] = E;
++ ((uw_object_hdr_t *)puVar2)->type_flags_low = (byte)E;
+|
+- *(char *)((ushort *)puVar2 + 0x0) = E;
++ ((uw_object_hdr_t *)puVar2)->type_flags_low = (byte)E;
+|
+- *(char *)puVar2 = E;
++ ((uw_object_hdr_t *)puVar2)->type_flags_low = (byte)E;
+)
+...>
+}
+
+
+@receiver_9_w_0_0_byte_0_char@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar2 + 0x0)
++ (char)((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- *(char *)((byte *)puVar2 + 0x0)
++ (char)((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- ((char *)puVar2)[0x0]
++ (char)((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- *(char *)((ushort *)puVar2 + 0x0)
++ (char)((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- (char)((ushort *)puVar2)[0x0]
++ (char)((uw_object_hdr_t *)puVar2)->type_flags_low
+|
+- *(char *)puVar2
++ (char)((uw_object_hdr_t *)puVar2)->type_flags_low
+)
+...>
+}
+
+
+@receiver_9_w_0_0_byte_1_byte@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)puVar2 + 0x1)
++ ((uw_object_hdr_t *)puVar2)->type_flags_high
+|
+- *(byte *)((byte *)puVar2 + 0x1)
++ ((uw_object_hdr_t *)puVar2)->type_flags_high
+|
+- ((byte *)puVar2)[0x1]
++ ((uw_object_hdr_t *)puVar2)->type_flags_high
+)
+...>
+}
+
+
+@receiver_9_w_0_0_byte_1_undefined1@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)puVar2 + 0x1)
++ ((uw_object_hdr_t *)puVar2)->type_flags_high
+|
+- *(undefined1 *)((byte *)puVar2 + 0x1)
++ ((uw_object_hdr_t *)puVar2)->type_flags_high
+|
+- ((undefined1 *)puVar2)[0x1]
++ ((uw_object_hdr_t *)puVar2)->type_flags_high
+)
+...>
+}
+
+
+@receiver_9_w_0_0_address_1@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar2 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar2)->type_flags_high
+|
+- &*(char *)((byte *)puVar2 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar2)->type_flags_high
+|
+- &((char *)puVar2)[0x1]
++ (char *)&((uw_object_hdr_t *)puVar2)->type_flags_high
+)
+...>
+}
+
+
+@receiver_9_w_0_0_store_1@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar2 + 0x1) = E;
++ ((uw_object_hdr_t *)puVar2)->type_flags_high = (byte)E;
+|
+- *(char *)((byte *)puVar2 + 0x1) = E;
++ ((uw_object_hdr_t *)puVar2)->type_flags_high = (byte)E;
+|
+- ((char *)puVar2)[0x1] = E;
++ ((uw_object_hdr_t *)puVar2)->type_flags_high = (byte)E;
+)
+...>
+}
+
+
+@receiver_9_w_0_0_byte_1_char@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar2 + 0x1)
++ (char)((uw_object_hdr_t *)puVar2)->type_flags_high
+|
+- *(char *)((byte *)puVar2 + 0x1)
++ (char)((uw_object_hdr_t *)puVar2)->type_flags_high
+|
+- ((char *)puVar2)[0x1]
++ (char)((uw_object_hdr_t *)puVar2)->type_flags_high
+)
+...>
+}
+
+
+@receiver_9_w_2_17_pair_char_char@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)puVar2 + 0x2) = (char)V;
+- *(char *)((char *)puVar2 + 0x3) = (char)(V >> 8);
++ ((uw_object_hdr_t *)puVar2)->position_word = (ushort)V;
+
+...>
+}
+
+@receiver_9_w_2_17_pair_char_byte@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)puVar2 + 0x2) = (char)V;
+- *(byte *)((char *)puVar2 + 0x3) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)puVar2)->position_word = (ushort)V;
+
+...>
+}
+
+@receiver_9_w_2_17_pair_byte_char@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)puVar2 + 0x2) = (byte)V;
+- *(char *)((char *)puVar2 + 0x3) = (char)(V >> 8);
++ ((uw_object_hdr_t *)puVar2)->position_word = (ushort)V;
+
+...>
+}
+
+@receiver_9_w_2_17_pair_byte_byte@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)puVar2 + 0x2) = (byte)V;
+- *(byte *)((char *)puVar2 + 0x3) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)puVar2)->position_word = (ushort)V;
+
+...>
+}
+
+@receiver_9_w_2_17_word_ushort@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->position_word
+|
+- *(ushort *)((byte *)puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->position_word
+|
+- ((ushort *)puVar2)[0x1]
++ ((uw_object_hdr_t *)puVar2)->position_word
+|
+- *(ushort *)((ushort *)puVar2 + 0x1)
++ ((uw_object_hdr_t *)puVar2)->position_word
+)
+...>
+}
+
+
+@receiver_9_w_2_17_word_undefined2@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->position_word
+|
+- *(undefined2 *)((byte *)puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->position_word
+|
+- ((undefined2 *)puVar2)[0x1]
++ ((uw_object_hdr_t *)puVar2)->position_word
+|
+- *(undefined2 *)((undefined2 *)puVar2 + 0x1)
++ ((uw_object_hdr_t *)puVar2)->position_word
+)
+...>
+}
+
+
+@receiver_9_w_2_17_word_short@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(short *)((char *)puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->position_word_signed
+|
+- *(short *)((byte *)puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->position_word_signed
+|
+- ((short *)puVar2)[0x1]
++ ((uw_object_hdr_t *)puVar2)->position_word_signed
+|
+- *(short *)((short *)puVar2 + 0x1)
++ ((uw_object_hdr_t *)puVar2)->position_word_signed
+)
+...>
+}
+
+
+@receiver_9_w_2_17_byte_2_byte@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- *(byte *)((byte *)puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- ((byte *)puVar2)[0x2]
++ ((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- *(byte *)((ushort *)puVar2 + 0x1)
++ ((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- (byte)((ushort *)puVar2)[0x1]
++ ((uw_object_hdr_t *)puVar2)->position_word_low
+)
+...>
+}
+
+
+@receiver_9_w_2_17_byte_2_undefined1@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- *(undefined1 *)((byte *)puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- ((undefined1 *)puVar2)[0x2]
++ ((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- *(undefined1 *)((ushort *)puVar2 + 0x1)
++ ((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- (undefined1)((ushort *)puVar2)[0x1]
++ ((uw_object_hdr_t *)puVar2)->position_word_low
+)
+...>
+}
+
+
+@receiver_9_w_2_17_address_2@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar2 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- &*(char *)((byte *)puVar2 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- &((char *)puVar2)[0x2]
++ (char *)&((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- &*(char *)((ushort *)puVar2 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar2)->position_word_low
+)
+...>
+}
+
+
+@receiver_9_w_2_17_store_2@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar2 + 0x2) = E;
++ ((uw_object_hdr_t *)puVar2)->position_word_low = (byte)E;
+|
+- *(char *)((byte *)puVar2 + 0x2) = E;
++ ((uw_object_hdr_t *)puVar2)->position_word_low = (byte)E;
+|
+- ((char *)puVar2)[0x2] = E;
++ ((uw_object_hdr_t *)puVar2)->position_word_low = (byte)E;
+|
+- *(char *)((ushort *)puVar2 + 0x1) = E;
++ ((uw_object_hdr_t *)puVar2)->position_word_low = (byte)E;
+)
+...>
+}
+
+
+@receiver_9_w_2_17_byte_2_char@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar2 + 0x2)
++ (char)((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- *(char *)((byte *)puVar2 + 0x2)
++ (char)((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- ((char *)puVar2)[0x2]
++ (char)((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- *(char *)((ushort *)puVar2 + 0x1)
++ (char)((uw_object_hdr_t *)puVar2)->position_word_low
+|
+- (char)((ushort *)puVar2)[0x1]
++ (char)((uw_object_hdr_t *)puVar2)->position_word_low
+)
+...>
+}
+
+
+@receiver_9_w_2_17_byte_3_byte@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)puVar2 + 0x3)
++ ((uw_object_hdr_t *)puVar2)->position_word_high
+|
+- *(byte *)((byte *)puVar2 + 0x3)
++ ((uw_object_hdr_t *)puVar2)->position_word_high
+|
+- ((byte *)puVar2)[0x3]
++ ((uw_object_hdr_t *)puVar2)->position_word_high
+)
+...>
+}
+
+
+@receiver_9_w_2_17_byte_3_undefined1@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)puVar2 + 0x3)
++ ((uw_object_hdr_t *)puVar2)->position_word_high
+|
+- *(undefined1 *)((byte *)puVar2 + 0x3)
++ ((uw_object_hdr_t *)puVar2)->position_word_high
+|
+- ((undefined1 *)puVar2)[0x3]
++ ((uw_object_hdr_t *)puVar2)->position_word_high
+)
+...>
+}
+
+
+@receiver_9_w_2_17_address_3@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar2 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar2)->position_word_high
+|
+- &*(char *)((byte *)puVar2 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar2)->position_word_high
+|
+- &((char *)puVar2)[0x3]
++ (char *)&((uw_object_hdr_t *)puVar2)->position_word_high
+)
+...>
+}
+
+
+@receiver_9_w_2_17_store_3@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar2 + 0x3) = E;
++ ((uw_object_hdr_t *)puVar2)->position_word_high = (byte)E;
+|
+- *(char *)((byte *)puVar2 + 0x3) = E;
++ ((uw_object_hdr_t *)puVar2)->position_word_high = (byte)E;
+|
+- ((char *)puVar2)[0x3] = E;
++ ((uw_object_hdr_t *)puVar2)->position_word_high = (byte)E;
+)
+...>
+}
+
+
+@receiver_9_w_2_17_byte_3_char@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar2 + 0x3)
++ (char)((uw_object_hdr_t *)puVar2)->position_word_high
+|
+- *(char *)((byte *)puVar2 + 0x3)
++ (char)((uw_object_hdr_t *)puVar2)->position_word_high
+|
+- ((char *)puVar2)[0x3]
++ (char)((uw_object_hdr_t *)puVar2)->position_word_high
+)
+...>
+}
+
+
+@receiver_9_w_4_34_pair_char_char@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)puVar2 + 0x4) = (char)V;
+- *(char *)((char *)puVar2 + 0x5) = (char)(V >> 8);
++ ((uw_object_hdr_t *)puVar2)->chain_word = (ushort)V;
+
+...>
+}
+
+@receiver_9_w_4_34_pair_char_byte@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)puVar2 + 0x4) = (char)V;
+- *(byte *)((char *)puVar2 + 0x5) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)puVar2)->chain_word = (ushort)V;
+
+...>
+}
+
+@receiver_9_w_4_34_pair_byte_char@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)puVar2 + 0x4) = (byte)V;
+- *(char *)((char *)puVar2 + 0x5) = (char)(V >> 8);
++ ((uw_object_hdr_t *)puVar2)->chain_word = (ushort)V;
+
+...>
+}
+
+@receiver_9_w_4_34_pair_byte_byte@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)puVar2 + 0x4) = (byte)V;
+- *(byte *)((char *)puVar2 + 0x5) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)puVar2)->chain_word = (ushort)V;
+
+...>
+}
+
+@receiver_9_w_4_34_word_ushort@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar2 + 0x4)
++ ((uw_object_hdr_t *)puVar2)->chain_word
+|
+- *(ushort *)((byte *)puVar2 + 0x4)
++ ((uw_object_hdr_t *)puVar2)->chain_word
+|
+- ((ushort *)puVar2)[0x2]
++ ((uw_object_hdr_t *)puVar2)->chain_word
+|
+- *(ushort *)((ushort *)puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->chain_word
+)
+...>
+}
+
+
+@receiver_9_w_4_34_word_undefined2@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar2 + 0x4)
++ ((uw_object_hdr_t *)puVar2)->chain_word
+|
+- *(undefined2 *)((byte *)puVar2 + 0x4)
++ ((uw_object_hdr_t *)puVar2)->chain_word
+|
+- ((undefined2 *)puVar2)[0x2]
++ ((uw_object_hdr_t *)puVar2)->chain_word
+|
+- *(undefined2 *)((undefined2 *)puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->chain_word
+)
+...>
+}
+
+
+@receiver_9_w_4_34_word_short@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(short *)((char *)puVar2 + 0x4)
++ ((uw_object_hdr_t *)puVar2)->chain_word_signed
+|
+- *(short *)((byte *)puVar2 + 0x4)
++ ((uw_object_hdr_t *)puVar2)->chain_word_signed
+|
+- ((short *)puVar2)[0x2]
++ ((uw_object_hdr_t *)puVar2)->chain_word_signed
+|
+- *(short *)((short *)puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->chain_word_signed
+)
+...>
+}
+
+
+@receiver_9_w_4_34_byte_4_byte@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)puVar2 + 0x4)
++ ((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- *(byte *)((byte *)puVar2 + 0x4)
++ ((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- ((byte *)puVar2)[0x4]
++ ((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- *(byte *)((ushort *)puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- (byte)((ushort *)puVar2)[0x2]
++ ((uw_object_hdr_t *)puVar2)->chain_word_low
+)
+...>
+}
+
+
+@receiver_9_w_4_34_byte_4_undefined1@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)puVar2 + 0x4)
++ ((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- *(undefined1 *)((byte *)puVar2 + 0x4)
++ ((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- ((undefined1 *)puVar2)[0x4]
++ ((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- *(undefined1 *)((ushort *)puVar2 + 0x2)
++ ((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- (undefined1)((ushort *)puVar2)[0x2]
++ ((uw_object_hdr_t *)puVar2)->chain_word_low
+)
+...>
+}
+
+
+@receiver_9_w_4_34_address_4@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar2 + 0x4)
++ (char *)&((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- &*(char *)((byte *)puVar2 + 0x4)
++ (char *)&((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- &((char *)puVar2)[0x4]
++ (char *)&((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- &*(char *)((ushort *)puVar2 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar2)->chain_word_low
+)
+...>
+}
+
+
+@receiver_9_w_4_34_store_4@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar2 + 0x4) = E;
++ ((uw_object_hdr_t *)puVar2)->chain_word_low = (byte)E;
+|
+- *(char *)((byte *)puVar2 + 0x4) = E;
++ ((uw_object_hdr_t *)puVar2)->chain_word_low = (byte)E;
+|
+- ((char *)puVar2)[0x4] = E;
++ ((uw_object_hdr_t *)puVar2)->chain_word_low = (byte)E;
+|
+- *(char *)((ushort *)puVar2 + 0x2) = E;
++ ((uw_object_hdr_t *)puVar2)->chain_word_low = (byte)E;
+)
+...>
+}
+
+
+@receiver_9_w_4_34_byte_4_char@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar2 + 0x4)
++ (char)((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- *(char *)((byte *)puVar2 + 0x4)
++ (char)((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- ((char *)puVar2)[0x4]
++ (char)((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- *(char *)((ushort *)puVar2 + 0x2)
++ (char)((uw_object_hdr_t *)puVar2)->chain_word_low
+|
+- (char)((ushort *)puVar2)[0x2]
++ (char)((uw_object_hdr_t *)puVar2)->chain_word_low
+)
+...>
+}
+
+
+@receiver_9_w_4_34_byte_5_byte@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)puVar2 + 0x5)
++ ((uw_object_hdr_t *)puVar2)->chain_word_high
+|
+- *(byte *)((byte *)puVar2 + 0x5)
++ ((uw_object_hdr_t *)puVar2)->chain_word_high
+|
+- ((byte *)puVar2)[0x5]
++ ((uw_object_hdr_t *)puVar2)->chain_word_high
+)
+...>
+}
+
+
+@receiver_9_w_4_34_byte_5_undefined1@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)puVar2 + 0x5)
++ ((uw_object_hdr_t *)puVar2)->chain_word_high
+|
+- *(undefined1 *)((byte *)puVar2 + 0x5)
++ ((uw_object_hdr_t *)puVar2)->chain_word_high
+|
+- ((undefined1 *)puVar2)[0x5]
++ ((uw_object_hdr_t *)puVar2)->chain_word_high
+)
+...>
+}
+
+
+@receiver_9_w_4_34_address_5@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar2 + 0x5)
++ (char *)&((uw_object_hdr_t *)puVar2)->chain_word_high
+|
+- &*(char *)((byte *)puVar2 + 0x5)
++ (char *)&((uw_object_hdr_t *)puVar2)->chain_word_high
+|
+- &((char *)puVar2)[0x5]
++ (char *)&((uw_object_hdr_t *)puVar2)->chain_word_high
+)
+...>
+}
+
+
+@receiver_9_w_4_34_store_5@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar2 + 0x5) = E;
++ ((uw_object_hdr_t *)puVar2)->chain_word_high = (byte)E;
+|
+- *(char *)((byte *)puVar2 + 0x5) = E;
++ ((uw_object_hdr_t *)puVar2)->chain_word_high = (byte)E;
+|
+- ((char *)puVar2)[0x5] = E;
++ ((uw_object_hdr_t *)puVar2)->chain_word_high = (byte)E;
+)
+...>
+}
+
+
+@receiver_9_w_4_34_byte_5_char@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar2 + 0x5)
++ (char)((uw_object_hdr_t *)puVar2)->chain_word_high
+|
+- *(char *)((byte *)puVar2 + 0x5)
++ (char)((uw_object_hdr_t *)puVar2)->chain_word_high
+|
+- ((char *)puVar2)[0x5]
++ (char)((uw_object_hdr_t *)puVar2)->chain_word_high
+)
+...>
+}
+
+
+@receiver_9_w_6_51_pair_char_char@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)puVar2 + 0x6) = (char)V;
+- *(char *)((char *)puVar2 + 0x7) = (char)(V >> 8);
++ ((uw_object_hdr_t *)puVar2)->link_word = (ushort)V;
+
+...>
+}
+
+@receiver_9_w_6_51_pair_char_byte@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)puVar2 + 0x6) = (char)V;
+- *(byte *)((char *)puVar2 + 0x7) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)puVar2)->link_word = (ushort)V;
+
+...>
+}
+
+@receiver_9_w_6_51_pair_byte_char@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)puVar2 + 0x6) = (byte)V;
+- *(char *)((char *)puVar2 + 0x7) = (char)(V >> 8);
++ ((uw_object_hdr_t *)puVar2)->link_word = (ushort)V;
+
+...>
+}
+
+@receiver_9_w_6_51_pair_byte_byte@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)puVar2 + 0x6) = (byte)V;
+- *(byte *)((char *)puVar2 + 0x7) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)puVar2)->link_word = (ushort)V;
+
+...>
+}
+
+@receiver_9_w_6_51_word_ushort@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar2 + 0x6)
++ ((uw_object_hdr_t *)puVar2)->link_word
+|
+- *(ushort *)((byte *)puVar2 + 0x6)
++ ((uw_object_hdr_t *)puVar2)->link_word
+|
+- ((ushort *)puVar2)[0x3]
++ ((uw_object_hdr_t *)puVar2)->link_word
+|
+- *(ushort *)((ushort *)puVar2 + 0x3)
++ ((uw_object_hdr_t *)puVar2)->link_word
+)
+...>
+}
+
+
+@receiver_9_w_6_51_word_undefined2@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar2 + 0x6)
++ ((uw_object_hdr_t *)puVar2)->link_word
+|
+- *(undefined2 *)((byte *)puVar2 + 0x6)
++ ((uw_object_hdr_t *)puVar2)->link_word
+|
+- ((undefined2 *)puVar2)[0x3]
++ ((uw_object_hdr_t *)puVar2)->link_word
+|
+- *(undefined2 *)((undefined2 *)puVar2 + 0x3)
++ ((uw_object_hdr_t *)puVar2)->link_word
+)
+...>
+}
+
+
+@receiver_9_w_6_51_word_short@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(short *)((char *)puVar2 + 0x6)
++ ((uw_object_hdr_t *)puVar2)->link_word_signed
+|
+- *(short *)((byte *)puVar2 + 0x6)
++ ((uw_object_hdr_t *)puVar2)->link_word_signed
+|
+- ((short *)puVar2)[0x3]
++ ((uw_object_hdr_t *)puVar2)->link_word_signed
+|
+- *(short *)((short *)puVar2 + 0x3)
++ ((uw_object_hdr_t *)puVar2)->link_word_signed
+)
+...>
+}
+
+
+@receiver_9_w_6_51_byte_6_byte@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)puVar2 + 0x6)
++ ((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- *(byte *)((byte *)puVar2 + 0x6)
++ ((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- ((byte *)puVar2)[0x6]
++ ((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- *(byte *)((ushort *)puVar2 + 0x3)
++ ((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- (byte)((ushort *)puVar2)[0x3]
++ ((uw_object_hdr_t *)puVar2)->link_word_low
+)
+...>
+}
+
+
+@receiver_9_w_6_51_byte_6_undefined1@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)puVar2 + 0x6)
++ ((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- *(undefined1 *)((byte *)puVar2 + 0x6)
++ ((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- ((undefined1 *)puVar2)[0x6]
++ ((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- *(undefined1 *)((ushort *)puVar2 + 0x3)
++ ((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- (undefined1)((ushort *)puVar2)[0x3]
++ ((uw_object_hdr_t *)puVar2)->link_word_low
+)
+...>
+}
+
+
+@receiver_9_w_6_51_address_6@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar2 + 0x6)
++ (char *)&((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- &*(char *)((byte *)puVar2 + 0x6)
++ (char *)&((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- &((char *)puVar2)[0x6]
++ (char *)&((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- &*(char *)((ushort *)puVar2 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar2)->link_word_low
+)
+...>
+}
+
+
+@receiver_9_w_6_51_store_6@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar2 + 0x6) = E;
++ ((uw_object_hdr_t *)puVar2)->link_word_low = (byte)E;
+|
+- *(char *)((byte *)puVar2 + 0x6) = E;
++ ((uw_object_hdr_t *)puVar2)->link_word_low = (byte)E;
+|
+- ((char *)puVar2)[0x6] = E;
++ ((uw_object_hdr_t *)puVar2)->link_word_low = (byte)E;
+|
+- *(char *)((ushort *)puVar2 + 0x3) = E;
++ ((uw_object_hdr_t *)puVar2)->link_word_low = (byte)E;
+)
+...>
+}
+
+
+@receiver_9_w_6_51_byte_6_char@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar2 + 0x6)
++ (char)((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- *(char *)((byte *)puVar2 + 0x6)
++ (char)((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- ((char *)puVar2)[0x6]
++ (char)((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- *(char *)((ushort *)puVar2 + 0x3)
++ (char)((uw_object_hdr_t *)puVar2)->link_word_low
+|
+- (char)((ushort *)puVar2)[0x3]
++ (char)((uw_object_hdr_t *)puVar2)->link_word_low
+)
+...>
+}
+
+
+@receiver_9_w_6_51_byte_7_byte@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)puVar2 + 0x7)
++ ((uw_object_hdr_t *)puVar2)->link_word_high
+|
+- *(byte *)((byte *)puVar2 + 0x7)
++ ((uw_object_hdr_t *)puVar2)->link_word_high
+|
+- ((byte *)puVar2)[0x7]
++ ((uw_object_hdr_t *)puVar2)->link_word_high
+)
+...>
+}
+
+
+@receiver_9_w_6_51_byte_7_undefined1@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)puVar2 + 0x7)
++ ((uw_object_hdr_t *)puVar2)->link_word_high
+|
+- *(undefined1 *)((byte *)puVar2 + 0x7)
++ ((uw_object_hdr_t *)puVar2)->link_word_high
+|
+- ((undefined1 *)puVar2)[0x7]
++ ((uw_object_hdr_t *)puVar2)->link_word_high
+)
+...>
+}
+
+
+@receiver_9_w_6_51_address_7@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar2 + 0x7)
++ (char *)&((uw_object_hdr_t *)puVar2)->link_word_high
+|
+- &*(char *)((byte *)puVar2 + 0x7)
++ (char *)&((uw_object_hdr_t *)puVar2)->link_word_high
+|
+- &((char *)puVar2)[0x7]
++ (char *)&((uw_object_hdr_t *)puVar2)->link_word_high
+)
+...>
+}
+
+
+@receiver_9_w_6_51_store_7@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar2 + 0x7) = E;
++ ((uw_object_hdr_t *)puVar2)->link_word_high = (byte)E;
+|
+- *(char *)((byte *)puVar2 + 0x7) = E;
++ ((uw_object_hdr_t *)puVar2)->link_word_high = (byte)E;
+|
+- ((char *)puVar2)[0x7] = E;
++ ((uw_object_hdr_t *)puVar2)->link_word_high = (byte)E;
+)
+...>
+}
+
+
+@receiver_9_w_6_51_byte_7_char@
+type R;
+identifier F =~ "^\(sum_container_weight\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)puVar2 + 0x7)
++ (char)((uw_object_hdr_t *)puVar2)->link_word_high
+|
+- *(char *)((byte *)puVar2 + 0x7)
++ (char)((uw_object_hdr_t *)puVar2)->link_word_high
+|
+- ((char *)puVar2)[0x7]
++ (char)((uw_object_hdr_t *)puVar2)->link_word_high
+)
+...>
+}
+
+
+@receiver_10_w_0_0_pair_char_char@
+type R;
+identifier F =~ "^\(empty_container_into_world\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)pNextLink + 0x0) = (char)V;
+- *(char *)((char *)pNextLink + 0x1) = (char)(V >> 8);
++ ((uw_object_hdr_t *)pNextLink)->type_flags = (ushort)V;
+
+...>
+}
+
+@receiver_10_w_0_0_pair_char_byte@
+type R;
 identifier F =~ "^\(empty_container_into_world\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
@@ -10900,7 +16656,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_0_0_pair_byte_char@
+@receiver_10_w_0_0_pair_byte_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10915,7 +16671,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_0_0_pair_byte_byte@
+@receiver_10_w_0_0_pair_byte_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10930,10 +16686,10 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_0_0_word_ushort@
+@receiver_10_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -10949,15 +16705,45 @@ R F(...) {
 |
 - *(ushort *)((ushort *)pNextLink + 0x0)
 + ((uw_object_hdr_t *)pNextLink)->type_flags
+|
+- *(ushort *)(pNextLink + 0x0)
++ ((uw_object_hdr_t *)pNextLink)->type_flags
 )
 ...>
 }
 
 
-@receiver_9_w_0_0_word_short@
+@receiver_10_w_0_0_word_undefined2@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)pNextLink + 0x0)
++ ((uw_object_hdr_t *)pNextLink)->type_flags
+|
+- *(undefined2 *)((byte *)pNextLink + 0x0)
++ ((uw_object_hdr_t *)pNextLink)->type_flags
+|
+- ((undefined2 *)pNextLink)[0x0]
++ ((uw_object_hdr_t *)pNextLink)->type_flags
+|
+- *(undefined2 *)((undefined2 *)pNextLink + 0x0)
++ ((uw_object_hdr_t *)pNextLink)->type_flags
+|
+- *(undefined2 *)(pNextLink + 0x0)
++ ((uw_object_hdr_t *)pNextLink)->type_flags
+)
+...>
+}
+
+
+@receiver_10_w_0_0_word_short@
+type R;
+identifier F =~ "^\(empty_container_into_world\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -10973,15 +16759,18 @@ R F(...) {
 |
 - *(short *)((short *)pNextLink + 0x0)
 + ((uw_object_hdr_t *)pNextLink)->type_flags_signed
+|
+- *(short *)(pNextLink + 0x0)
++ ((uw_object_hdr_t *)pNextLink)->type_flags_signed
 )
 ...>
 }
 
 
-@receiver_9_w_0_0_byte_0_byte@
+@receiver_10_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11003,15 +16792,18 @@ R F(...) {
 |
 - *(byte *)pNextLink
 + ((uw_object_hdr_t *)pNextLink)->type_flags_low
+|
+- *(byte *)(pNextLink + 0x0)
++ ((uw_object_hdr_t *)pNextLink)->type_flags_low
 )
 ...>
 }
 
 
-@receiver_9_w_0_0_byte_0_undefined1@
+@receiver_10_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11033,15 +16825,54 @@ R F(...) {
 |
 - *(undefined1 *)pNextLink
 + ((uw_object_hdr_t *)pNextLink)->type_flags_low
+|
+- *(undefined1 *)(pNextLink + 0x0)
++ ((uw_object_hdr_t *)pNextLink)->type_flags_low
 )
 ...>
 }
 
 
-@receiver_9_w_0_0_store_0@
+@receiver_10_w_0_0_address_0@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)pNextLink + 0x0)
++ (char *)&((uw_object_hdr_t *)pNextLink)->type_flags_low
+|
+- &*(char *)((byte *)pNextLink + 0x0)
++ (char *)&((uw_object_hdr_t *)pNextLink)->type_flags_low
+|
+- &((char *)pNextLink)[0x0]
++ (char *)&((uw_object_hdr_t *)pNextLink)->type_flags_low
+|
+- &*(char *)((ushort *)pNextLink + 0x0)
++ (char *)&((uw_object_hdr_t *)pNextLink)->type_flags_low
+|
+- &*(char *)pNextLink
++ (char *)&((uw_object_hdr_t *)pNextLink)->type_flags_low
+|
+- &*(char *)(pNextLink + 0x0)
++ (char *)&((uw_object_hdr_t *)pNextLink)->type_flags_low
+|
+- &pNextLink[0x0]
++ (char *)&((uw_object_hdr_t *)pNextLink)->type_flags_low
+|
+- &*pNextLink
++ (char *)&((uw_object_hdr_t *)pNextLink)->type_flags_low
+)
+...>
+}
+
+
+@receiver_10_w_0_0_store_0@
+type R;
+identifier F =~ "^\(empty_container_into_world\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -11061,15 +16892,24 @@ R F(...) {
 |
 - *(char *)pNextLink = E;
 + ((uw_object_hdr_t *)pNextLink)->type_flags_low = (byte)E;
+|
+- *(char *)(pNextLink + 0x0) = E;
++ ((uw_object_hdr_t *)pNextLink)->type_flags_low = (byte)E;
+|
+- pNextLink[0x0] = E;
++ ((uw_object_hdr_t *)pNextLink)->type_flags_low = (byte)E;
+|
+- *pNextLink = E;
++ ((uw_object_hdr_t *)pNextLink)->type_flags_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_9_w_0_0_byte_0_char@
+@receiver_10_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11091,15 +16931,24 @@ R F(...) {
 |
 - *(char *)pNextLink
 + (char)((uw_object_hdr_t *)pNextLink)->type_flags_low
+|
+- *(char *)(pNextLink + 0x0)
++ (char)((uw_object_hdr_t *)pNextLink)->type_flags_low
+|
+- pNextLink[0x0]
++ (char)((uw_object_hdr_t *)pNextLink)->type_flags_low
+|
+- *pNextLink
++ (char)((uw_object_hdr_t *)pNextLink)->type_flags_low
 )
 ...>
 }
 
 
-@receiver_9_w_0_0_byte_1_byte@
+@receiver_10_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11112,15 +16961,18 @@ R F(...) {
 |
 - ((byte *)pNextLink)[0x1]
 + ((uw_object_hdr_t *)pNextLink)->type_flags_high
+|
+- *(byte *)(pNextLink + 0x1)
++ ((uw_object_hdr_t *)pNextLink)->type_flags_high
 )
 ...>
 }
 
 
-@receiver_9_w_0_0_byte_1_undefined1@
+@receiver_10_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11133,15 +16985,45 @@ R F(...) {
 |
 - ((undefined1 *)pNextLink)[0x1]
 + ((uw_object_hdr_t *)pNextLink)->type_flags_high
+|
+- *(undefined1 *)(pNextLink + 0x1)
++ ((uw_object_hdr_t *)pNextLink)->type_flags_high
 )
 ...>
 }
 
 
-@receiver_9_w_0_0_store_1@
+@receiver_10_w_0_0_address_1@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)pNextLink + 0x1)
++ (char *)&((uw_object_hdr_t *)pNextLink)->type_flags_high
+|
+- &*(char *)((byte *)pNextLink + 0x1)
++ (char *)&((uw_object_hdr_t *)pNextLink)->type_flags_high
+|
+- &((char *)pNextLink)[0x1]
++ (char *)&((uw_object_hdr_t *)pNextLink)->type_flags_high
+|
+- &*(char *)(pNextLink + 0x1)
++ (char *)&((uw_object_hdr_t *)pNextLink)->type_flags_high
+|
+- &pNextLink[0x1]
++ (char *)&((uw_object_hdr_t *)pNextLink)->type_flags_high
+)
+...>
+}
+
+
+@receiver_10_w_0_0_store_1@
+type R;
+identifier F =~ "^\(empty_container_into_world\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -11155,15 +17037,21 @@ R F(...) {
 |
 - ((char *)pNextLink)[0x1] = E;
 + ((uw_object_hdr_t *)pNextLink)->type_flags_high = (byte)E;
+|
+- *(char *)(pNextLink + 0x1) = E;
++ ((uw_object_hdr_t *)pNextLink)->type_flags_high = (byte)E;
+|
+- pNextLink[0x1] = E;
++ ((uw_object_hdr_t *)pNextLink)->type_flags_high = (byte)E;
 )
 ...>
 }
 
 
-@receiver_9_w_0_0_byte_1_char@
+@receiver_10_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11176,12 +17064,18 @@ R F(...) {
 |
 - ((char *)pNextLink)[0x1]
 + (char)((uw_object_hdr_t *)pNextLink)->type_flags_high
+|
+- *(char *)(pNextLink + 0x1)
++ (char)((uw_object_hdr_t *)pNextLink)->type_flags_high
+|
+- pNextLink[0x1]
++ (char)((uw_object_hdr_t *)pNextLink)->type_flags_high
 )
 ...>
 }
 
 
-@receiver_9_w_2_14_pair_char_char@
+@receiver_10_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11196,7 +17090,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_2_14_pair_char_byte@
+@receiver_10_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11211,7 +17105,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_2_14_pair_byte_char@
+@receiver_10_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11226,7 +17120,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_2_14_pair_byte_byte@
+@receiver_10_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11241,10 +17135,10 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_2_14_word_ushort@
+@receiver_10_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11260,15 +17154,45 @@ R F(...) {
 |
 - *(ushort *)((ushort *)pNextLink + 0x1)
 + ((uw_object_hdr_t *)pNextLink)->position_word
+|
+- *(ushort *)(pNextLink + 0x2)
++ ((uw_object_hdr_t *)pNextLink)->position_word
 )
 ...>
 }
 
 
-@receiver_9_w_2_14_word_short@
+@receiver_10_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)pNextLink + 0x2)
++ ((uw_object_hdr_t *)pNextLink)->position_word
+|
+- *(undefined2 *)((byte *)pNextLink + 0x2)
++ ((uw_object_hdr_t *)pNextLink)->position_word
+|
+- ((undefined2 *)pNextLink)[0x1]
++ ((uw_object_hdr_t *)pNextLink)->position_word
+|
+- *(undefined2 *)((undefined2 *)pNextLink + 0x1)
++ ((uw_object_hdr_t *)pNextLink)->position_word
+|
+- *(undefined2 *)(pNextLink + 0x2)
++ ((uw_object_hdr_t *)pNextLink)->position_word
+)
+...>
+}
+
+
+@receiver_10_w_2_17_word_short@
+type R;
+identifier F =~ "^\(empty_container_into_world\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11284,15 +17208,18 @@ R F(...) {
 |
 - *(short *)((short *)pNextLink + 0x1)
 + ((uw_object_hdr_t *)pNextLink)->position_word_signed
+|
+- *(short *)(pNextLink + 0x2)
++ ((uw_object_hdr_t *)pNextLink)->position_word_signed
 )
 ...>
 }
 
 
-@receiver_9_w_2_14_byte_2_byte@
+@receiver_10_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11311,15 +17238,18 @@ R F(...) {
 |
 - (byte)((ushort *)pNextLink)[0x1]
 + ((uw_object_hdr_t *)pNextLink)->position_word_low
+|
+- *(byte *)(pNextLink + 0x2)
++ ((uw_object_hdr_t *)pNextLink)->position_word_low
 )
 ...>
 }
 
 
-@receiver_9_w_2_14_byte_2_undefined1@
+@receiver_10_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11338,15 +17268,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)pNextLink)[0x1]
 + ((uw_object_hdr_t *)pNextLink)->position_word_low
+|
+- *(undefined1 *)(pNextLink + 0x2)
++ ((uw_object_hdr_t *)pNextLink)->position_word_low
 )
 ...>
 }
 
 
-@receiver_9_w_2_14_store_2@
+@receiver_10_w_2_17_address_2@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)pNextLink + 0x2)
++ (char *)&((uw_object_hdr_t *)pNextLink)->position_word_low
+|
+- &*(char *)((byte *)pNextLink + 0x2)
++ (char *)&((uw_object_hdr_t *)pNextLink)->position_word_low
+|
+- &((char *)pNextLink)[0x2]
++ (char *)&((uw_object_hdr_t *)pNextLink)->position_word_low
+|
+- &*(char *)((ushort *)pNextLink + 0x1)
++ (char *)&((uw_object_hdr_t *)pNextLink)->position_word_low
+|
+- &*(char *)(pNextLink + 0x2)
++ (char *)&((uw_object_hdr_t *)pNextLink)->position_word_low
+|
+- &pNextLink[0x2]
++ (char *)&((uw_object_hdr_t *)pNextLink)->position_word_low
+)
+...>
+}
+
+
+@receiver_10_w_2_17_store_2@
+type R;
+identifier F =~ "^\(empty_container_into_world\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -11363,15 +17326,21 @@ R F(...) {
 |
 - *(char *)((ushort *)pNextLink + 0x1) = E;
 + ((uw_object_hdr_t *)pNextLink)->position_word_low = (byte)E;
+|
+- *(char *)(pNextLink + 0x2) = E;
++ ((uw_object_hdr_t *)pNextLink)->position_word_low = (byte)E;
+|
+- pNextLink[0x2] = E;
++ ((uw_object_hdr_t *)pNextLink)->position_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_9_w_2_14_byte_2_char@
+@receiver_10_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11390,15 +17359,21 @@ R F(...) {
 |
 - (char)((ushort *)pNextLink)[0x1]
 + (char)((uw_object_hdr_t *)pNextLink)->position_word_low
+|
+- *(char *)(pNextLink + 0x2)
++ (char)((uw_object_hdr_t *)pNextLink)->position_word_low
+|
+- pNextLink[0x2]
++ (char)((uw_object_hdr_t *)pNextLink)->position_word_low
 )
 ...>
 }
 
 
-@receiver_9_w_2_14_byte_3_byte@
+@receiver_10_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11411,15 +17386,18 @@ R F(...) {
 |
 - ((byte *)pNextLink)[0x3]
 + ((uw_object_hdr_t *)pNextLink)->position_word_high
+|
+- *(byte *)(pNextLink + 0x3)
++ ((uw_object_hdr_t *)pNextLink)->position_word_high
 )
 ...>
 }
 
 
-@receiver_9_w_2_14_byte_3_undefined1@
+@receiver_10_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11432,15 +17410,45 @@ R F(...) {
 |
 - ((undefined1 *)pNextLink)[0x3]
 + ((uw_object_hdr_t *)pNextLink)->position_word_high
+|
+- *(undefined1 *)(pNextLink + 0x3)
++ ((uw_object_hdr_t *)pNextLink)->position_word_high
 )
 ...>
 }
 
 
-@receiver_9_w_2_14_store_3@
+@receiver_10_w_2_17_address_3@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)pNextLink + 0x3)
++ (char *)&((uw_object_hdr_t *)pNextLink)->position_word_high
+|
+- &*(char *)((byte *)pNextLink + 0x3)
++ (char *)&((uw_object_hdr_t *)pNextLink)->position_word_high
+|
+- &((char *)pNextLink)[0x3]
++ (char *)&((uw_object_hdr_t *)pNextLink)->position_word_high
+|
+- &*(char *)(pNextLink + 0x3)
++ (char *)&((uw_object_hdr_t *)pNextLink)->position_word_high
+|
+- &pNextLink[0x3]
++ (char *)&((uw_object_hdr_t *)pNextLink)->position_word_high
+)
+...>
+}
+
+
+@receiver_10_w_2_17_store_3@
+type R;
+identifier F =~ "^\(empty_container_into_world\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -11454,15 +17462,21 @@ R F(...) {
 |
 - ((char *)pNextLink)[0x3] = E;
 + ((uw_object_hdr_t *)pNextLink)->position_word_high = (byte)E;
+|
+- *(char *)(pNextLink + 0x3) = E;
++ ((uw_object_hdr_t *)pNextLink)->position_word_high = (byte)E;
+|
+- pNextLink[0x3] = E;
++ ((uw_object_hdr_t *)pNextLink)->position_word_high = (byte)E;
 )
 ...>
 }
 
 
-@receiver_9_w_2_14_byte_3_char@
+@receiver_10_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11475,12 +17489,18 @@ R F(...) {
 |
 - ((char *)pNextLink)[0x3]
 + (char)((uw_object_hdr_t *)pNextLink)->position_word_high
+|
+- *(char *)(pNextLink + 0x3)
++ (char)((uw_object_hdr_t *)pNextLink)->position_word_high
+|
+- pNextLink[0x3]
++ (char)((uw_object_hdr_t *)pNextLink)->position_word_high
 )
 ...>
 }
 
 
-@receiver_9_w_4_28_pair_char_char@
+@receiver_10_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11495,7 +17515,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_4_28_pair_char_byte@
+@receiver_10_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11510,7 +17530,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_4_28_pair_byte_char@
+@receiver_10_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11525,7 +17545,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_4_28_pair_byte_byte@
+@receiver_10_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11540,10 +17560,10 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_4_28_word_ushort@
+@receiver_10_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11559,15 +17579,45 @@ R F(...) {
 |
 - *(ushort *)((ushort *)pNextLink + 0x2)
 + ((uw_object_hdr_t *)pNextLink)->chain_word
+|
+- *(ushort *)(pNextLink + 0x4)
++ ((uw_object_hdr_t *)pNextLink)->chain_word
 )
 ...>
 }
 
 
-@receiver_9_w_4_28_word_short@
+@receiver_10_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)pNextLink + 0x4)
++ ((uw_object_hdr_t *)pNextLink)->chain_word
+|
+- *(undefined2 *)((byte *)pNextLink + 0x4)
++ ((uw_object_hdr_t *)pNextLink)->chain_word
+|
+- ((undefined2 *)pNextLink)[0x2]
++ ((uw_object_hdr_t *)pNextLink)->chain_word
+|
+- *(undefined2 *)((undefined2 *)pNextLink + 0x2)
++ ((uw_object_hdr_t *)pNextLink)->chain_word
+|
+- *(undefined2 *)(pNextLink + 0x4)
++ ((uw_object_hdr_t *)pNextLink)->chain_word
+)
+...>
+}
+
+
+@receiver_10_w_4_34_word_short@
+type R;
+identifier F =~ "^\(empty_container_into_world\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11583,15 +17633,18 @@ R F(...) {
 |
 - *(short *)((short *)pNextLink + 0x2)
 + ((uw_object_hdr_t *)pNextLink)->chain_word_signed
+|
+- *(short *)(pNextLink + 0x4)
++ ((uw_object_hdr_t *)pNextLink)->chain_word_signed
 )
 ...>
 }
 
 
-@receiver_9_w_4_28_byte_4_byte@
+@receiver_10_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11610,15 +17663,18 @@ R F(...) {
 |
 - (byte)((ushort *)pNextLink)[0x2]
 + ((uw_object_hdr_t *)pNextLink)->chain_word_low
+|
+- *(byte *)(pNextLink + 0x4)
++ ((uw_object_hdr_t *)pNextLink)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_9_w_4_28_byte_4_undefined1@
+@receiver_10_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11637,15 +17693,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)pNextLink)[0x2]
 + ((uw_object_hdr_t *)pNextLink)->chain_word_low
+|
+- *(undefined1 *)(pNextLink + 0x4)
++ ((uw_object_hdr_t *)pNextLink)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_9_w_4_28_store_4@
+@receiver_10_w_4_34_address_4@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)pNextLink + 0x4)
++ (char *)&((uw_object_hdr_t *)pNextLink)->chain_word_low
+|
+- &*(char *)((byte *)pNextLink + 0x4)
++ (char *)&((uw_object_hdr_t *)pNextLink)->chain_word_low
+|
+- &((char *)pNextLink)[0x4]
++ (char *)&((uw_object_hdr_t *)pNextLink)->chain_word_low
+|
+- &*(char *)((ushort *)pNextLink + 0x2)
++ (char *)&((uw_object_hdr_t *)pNextLink)->chain_word_low
+|
+- &*(char *)(pNextLink + 0x4)
++ (char *)&((uw_object_hdr_t *)pNextLink)->chain_word_low
+|
+- &pNextLink[0x4]
++ (char *)&((uw_object_hdr_t *)pNextLink)->chain_word_low
+)
+...>
+}
+
+
+@receiver_10_w_4_34_store_4@
+type R;
+identifier F =~ "^\(empty_container_into_world\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -11662,15 +17751,21 @@ R F(...) {
 |
 - *(char *)((ushort *)pNextLink + 0x2) = E;
 + ((uw_object_hdr_t *)pNextLink)->chain_word_low = (byte)E;
+|
+- *(char *)(pNextLink + 0x4) = E;
++ ((uw_object_hdr_t *)pNextLink)->chain_word_low = (byte)E;
+|
+- pNextLink[0x4] = E;
++ ((uw_object_hdr_t *)pNextLink)->chain_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_9_w_4_28_byte_4_char@
+@receiver_10_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11689,15 +17784,21 @@ R F(...) {
 |
 - (char)((ushort *)pNextLink)[0x2]
 + (char)((uw_object_hdr_t *)pNextLink)->chain_word_low
+|
+- *(char *)(pNextLink + 0x4)
++ (char)((uw_object_hdr_t *)pNextLink)->chain_word_low
+|
+- pNextLink[0x4]
++ (char)((uw_object_hdr_t *)pNextLink)->chain_word_low
 )
 ...>
 }
 
 
-@receiver_9_w_4_28_byte_5_byte@
+@receiver_10_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11710,15 +17811,18 @@ R F(...) {
 |
 - ((byte *)pNextLink)[0x5]
 + ((uw_object_hdr_t *)pNextLink)->chain_word_high
+|
+- *(byte *)(pNextLink + 0x5)
++ ((uw_object_hdr_t *)pNextLink)->chain_word_high
 )
 ...>
 }
 
 
-@receiver_9_w_4_28_byte_5_undefined1@
+@receiver_10_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11731,15 +17835,45 @@ R F(...) {
 |
 - ((undefined1 *)pNextLink)[0x5]
 + ((uw_object_hdr_t *)pNextLink)->chain_word_high
+|
+- *(undefined1 *)(pNextLink + 0x5)
++ ((uw_object_hdr_t *)pNextLink)->chain_word_high
 )
 ...>
 }
 
 
-@receiver_9_w_4_28_store_5@
+@receiver_10_w_4_34_address_5@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)pNextLink + 0x5)
++ (char *)&((uw_object_hdr_t *)pNextLink)->chain_word_high
+|
+- &*(char *)((byte *)pNextLink + 0x5)
++ (char *)&((uw_object_hdr_t *)pNextLink)->chain_word_high
+|
+- &((char *)pNextLink)[0x5]
++ (char *)&((uw_object_hdr_t *)pNextLink)->chain_word_high
+|
+- &*(char *)(pNextLink + 0x5)
++ (char *)&((uw_object_hdr_t *)pNextLink)->chain_word_high
+|
+- &pNextLink[0x5]
++ (char *)&((uw_object_hdr_t *)pNextLink)->chain_word_high
+)
+...>
+}
+
+
+@receiver_10_w_4_34_store_5@
+type R;
+identifier F =~ "^\(empty_container_into_world\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -11753,15 +17887,21 @@ R F(...) {
 |
 - ((char *)pNextLink)[0x5] = E;
 + ((uw_object_hdr_t *)pNextLink)->chain_word_high = (byte)E;
+|
+- *(char *)(pNextLink + 0x5) = E;
++ ((uw_object_hdr_t *)pNextLink)->chain_word_high = (byte)E;
+|
+- pNextLink[0x5] = E;
++ ((uw_object_hdr_t *)pNextLink)->chain_word_high = (byte)E;
 )
 ...>
 }
 
 
-@receiver_9_w_4_28_byte_5_char@
+@receiver_10_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11774,12 +17914,18 @@ R F(...) {
 |
 - ((char *)pNextLink)[0x5]
 + (char)((uw_object_hdr_t *)pNextLink)->chain_word_high
+|
+- *(char *)(pNextLink + 0x5)
++ (char)((uw_object_hdr_t *)pNextLink)->chain_word_high
+|
+- pNextLink[0x5]
++ (char)((uw_object_hdr_t *)pNextLink)->chain_word_high
 )
 ...>
 }
 
 
-@receiver_9_w_6_42_pair_char_char@
+@receiver_10_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11794,7 +17940,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_6_42_pair_char_byte@
+@receiver_10_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11809,7 +17955,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_6_42_pair_byte_char@
+@receiver_10_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11824,7 +17970,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_6_42_pair_byte_byte@
+@receiver_10_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11839,10 +17985,10 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_6_42_word_ushort@
+@receiver_10_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11858,15 +18004,45 @@ R F(...) {
 |
 - *(ushort *)((ushort *)pNextLink + 0x3)
 + ((uw_object_hdr_t *)pNextLink)->link_word
+|
+- *(ushort *)(pNextLink + 0x6)
++ ((uw_object_hdr_t *)pNextLink)->link_word
 )
 ...>
 }
 
 
-@receiver_9_w_6_42_word_short@
+@receiver_10_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)pNextLink + 0x6)
++ ((uw_object_hdr_t *)pNextLink)->link_word
+|
+- *(undefined2 *)((byte *)pNextLink + 0x6)
++ ((uw_object_hdr_t *)pNextLink)->link_word
+|
+- ((undefined2 *)pNextLink)[0x3]
++ ((uw_object_hdr_t *)pNextLink)->link_word
+|
+- *(undefined2 *)((undefined2 *)pNextLink + 0x3)
++ ((uw_object_hdr_t *)pNextLink)->link_word
+|
+- *(undefined2 *)(pNextLink + 0x6)
++ ((uw_object_hdr_t *)pNextLink)->link_word
+)
+...>
+}
+
+
+@receiver_10_w_6_51_word_short@
+type R;
+identifier F =~ "^\(empty_container_into_world\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11882,15 +18058,18 @@ R F(...) {
 |
 - *(short *)((short *)pNextLink + 0x3)
 + ((uw_object_hdr_t *)pNextLink)->link_word_signed
+|
+- *(short *)(pNextLink + 0x6)
++ ((uw_object_hdr_t *)pNextLink)->link_word_signed
 )
 ...>
 }
 
 
-@receiver_9_w_6_42_byte_6_byte@
+@receiver_10_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11909,15 +18088,18 @@ R F(...) {
 |
 - (byte)((ushort *)pNextLink)[0x3]
 + ((uw_object_hdr_t *)pNextLink)->link_word_low
+|
+- *(byte *)(pNextLink + 0x6)
++ ((uw_object_hdr_t *)pNextLink)->link_word_low
 )
 ...>
 }
 
 
-@receiver_9_w_6_42_byte_6_undefined1@
+@receiver_10_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11936,15 +18118,48 @@ R F(...) {
 |
 - (undefined1)((ushort *)pNextLink)[0x3]
 + ((uw_object_hdr_t *)pNextLink)->link_word_low
+|
+- *(undefined1 *)(pNextLink + 0x6)
++ ((uw_object_hdr_t *)pNextLink)->link_word_low
 )
 ...>
 }
 
 
-@receiver_9_w_6_42_store_6@
+@receiver_10_w_6_51_address_6@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)pNextLink + 0x6)
++ (char *)&((uw_object_hdr_t *)pNextLink)->link_word_low
+|
+- &*(char *)((byte *)pNextLink + 0x6)
++ (char *)&((uw_object_hdr_t *)pNextLink)->link_word_low
+|
+- &((char *)pNextLink)[0x6]
++ (char *)&((uw_object_hdr_t *)pNextLink)->link_word_low
+|
+- &*(char *)((ushort *)pNextLink + 0x3)
++ (char *)&((uw_object_hdr_t *)pNextLink)->link_word_low
+|
+- &*(char *)(pNextLink + 0x6)
++ (char *)&((uw_object_hdr_t *)pNextLink)->link_word_low
+|
+- &pNextLink[0x6]
++ (char *)&((uw_object_hdr_t *)pNextLink)->link_word_low
+)
+...>
+}
+
+
+@receiver_10_w_6_51_store_6@
+type R;
+identifier F =~ "^\(empty_container_into_world\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -11961,15 +18176,21 @@ R F(...) {
 |
 - *(char *)((ushort *)pNextLink + 0x3) = E;
 + ((uw_object_hdr_t *)pNextLink)->link_word_low = (byte)E;
+|
+- *(char *)(pNextLink + 0x6) = E;
++ ((uw_object_hdr_t *)pNextLink)->link_word_low = (byte)E;
+|
+- pNextLink[0x6] = E;
++ ((uw_object_hdr_t *)pNextLink)->link_word_low = (byte)E;
 )
 ...>
 }
 
 
-@receiver_9_w_6_42_byte_6_char@
+@receiver_10_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -11988,15 +18209,21 @@ R F(...) {
 |
 - (char)((ushort *)pNextLink)[0x3]
 + (char)((uw_object_hdr_t *)pNextLink)->link_word_low
+|
+- *(char *)(pNextLink + 0x6)
++ (char)((uw_object_hdr_t *)pNextLink)->link_word_low
+|
+- pNextLink[0x6]
++ (char)((uw_object_hdr_t *)pNextLink)->link_word_low
 )
 ...>
 }
 
 
-@receiver_9_w_6_42_byte_7_byte@
+@receiver_10_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12009,15 +18236,18 @@ R F(...) {
 |
 - ((byte *)pNextLink)[0x7]
 + ((uw_object_hdr_t *)pNextLink)->link_word_high
+|
+- *(byte *)(pNextLink + 0x7)
++ ((uw_object_hdr_t *)pNextLink)->link_word_high
 )
 ...>
 }
 
 
-@receiver_9_w_6_42_byte_7_undefined1@
+@receiver_10_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12030,15 +18260,45 @@ R F(...) {
 |
 - ((undefined1 *)pNextLink)[0x7]
 + ((uw_object_hdr_t *)pNextLink)->link_word_high
+|
+- *(undefined1 *)(pNextLink + 0x7)
++ ((uw_object_hdr_t *)pNextLink)->link_word_high
 )
 ...>
 }
 
 
-@receiver_9_w_6_42_store_7@
+@receiver_10_w_6_51_address_7@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)pNextLink + 0x7)
++ (char *)&((uw_object_hdr_t *)pNextLink)->link_word_high
+|
+- &*(char *)((byte *)pNextLink + 0x7)
++ (char *)&((uw_object_hdr_t *)pNextLink)->link_word_high
+|
+- &((char *)pNextLink)[0x7]
++ (char *)&((uw_object_hdr_t *)pNextLink)->link_word_high
+|
+- &*(char *)(pNextLink + 0x7)
++ (char *)&((uw_object_hdr_t *)pNextLink)->link_word_high
+|
+- &pNextLink[0x7]
++ (char *)&((uw_object_hdr_t *)pNextLink)->link_word_high
+)
+...>
+}
+
+
+@receiver_10_w_6_51_store_7@
+type R;
+identifier F =~ "^\(empty_container_into_world\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -12052,15 +18312,21 @@ R F(...) {
 |
 - ((char *)pNextLink)[0x7] = E;
 + ((uw_object_hdr_t *)pNextLink)->link_word_high = (byte)E;
+|
+- *(char *)(pNextLink + 0x7) = E;
++ ((uw_object_hdr_t *)pNextLink)->link_word_high = (byte)E;
+|
+- pNextLink[0x7] = E;
++ ((uw_object_hdr_t *)pNextLink)->link_word_high = (byte)E;
 )
 ...>
 }
 
 
-@receiver_9_w_6_42_byte_7_char@
+@receiver_10_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(empty_container_into_world\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12073,14 +18339,20 @@ R F(...) {
 |
 - ((char *)pNextLink)[0x7]
 + (char)((uw_object_hdr_t *)pNextLink)->link_word_high
+|
+- *(char *)(pNextLink + 0x7)
++ (char)((uw_object_hdr_t *)pNextLink)->link_word_high
+|
+- pNextLink[0x7]
++ (char)((uw_object_hdr_t *)pNextLink)->link_word_high
 )
 ...>
 }
 
 
-@receiver_10_w_0_0_pair_char_char@
+@receiver_11_w_0_0_pair_char_char@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -12093,9 +18365,9 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_0_0_pair_char_byte@
+@receiver_11_w_0_0_pair_char_byte@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -12108,9 +18380,9 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_0_0_pair_byte_char@
+@receiver_11_w_0_0_pair_byte_char@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -12123,9 +18395,9 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_0_0_pair_byte_byte@
+@receiver_11_w_0_0_pair_byte_byte@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -12138,10 +18410,10 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_0_0_word_ushort@
+@receiver_11_w_0_0_word_ushort@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12162,10 +18434,34 @@ R F(...) {
 }
 
 
-@receiver_10_w_0_0_word_short@
+@receiver_11_w_0_0_word_undefined2@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)container + 0x0)
++ ((uw_object_hdr_t *)container)->type_flags
+|
+- *(undefined2 *)((byte *)container + 0x0)
++ ((uw_object_hdr_t *)container)->type_flags
+|
+- ((undefined2 *)container)[0x0]
++ ((uw_object_hdr_t *)container)->type_flags
+|
+- *(undefined2 *)((undefined2 *)container + 0x0)
++ ((uw_object_hdr_t *)container)->type_flags
+)
+...>
+}
+
+
+@receiver_11_w_0_0_word_short@
+type R;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12186,10 +18482,10 @@ R F(...) {
 }
 
 
-@receiver_10_w_0_0_byte_0_byte@
+@receiver_11_w_0_0_byte_0_byte@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12216,10 +18512,10 @@ R F(...) {
 }
 
 
-@receiver_10_w_0_0_byte_0_undefined1@
+@receiver_11_w_0_0_byte_0_undefined1@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12246,10 +18542,37 @@ R F(...) {
 }
 
 
-@receiver_10_w_0_0_store_0@
+@receiver_11_w_0_0_address_0@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)container + 0x0)
++ (char *)&((uw_object_hdr_t *)container)->type_flags_low
+|
+- &*(char *)((byte *)container + 0x0)
++ (char *)&((uw_object_hdr_t *)container)->type_flags_low
+|
+- &((char *)container)[0x0]
++ (char *)&((uw_object_hdr_t *)container)->type_flags_low
+|
+- &*(char *)((ushort *)container + 0x0)
++ (char *)&((uw_object_hdr_t *)container)->type_flags_low
+|
+- &*(char *)container
++ (char *)&((uw_object_hdr_t *)container)->type_flags_low
+)
+...>
+}
+
+
+@receiver_11_w_0_0_store_0@
+type R;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -12274,10 +18597,10 @@ R F(...) {
 }
 
 
-@receiver_10_w_0_0_byte_0_char@
+@receiver_11_w_0_0_byte_0_char@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12304,10 +18627,10 @@ R F(...) {
 }
 
 
-@receiver_10_w_0_0_byte_1_byte@
+@receiver_11_w_0_0_byte_1_byte@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12325,10 +18648,10 @@ R F(...) {
 }
 
 
-@receiver_10_w_0_0_byte_1_undefined1@
+@receiver_11_w_0_0_byte_1_undefined1@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12346,10 +18669,31 @@ R F(...) {
 }
 
 
-@receiver_10_w_0_0_store_1@
+@receiver_11_w_0_0_address_1@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)container + 0x1)
++ (char *)&((uw_object_hdr_t *)container)->type_flags_high
+|
+- &*(char *)((byte *)container + 0x1)
++ (char *)&((uw_object_hdr_t *)container)->type_flags_high
+|
+- &((char *)container)[0x1]
++ (char *)&((uw_object_hdr_t *)container)->type_flags_high
+)
+...>
+}
+
+
+@receiver_11_w_0_0_store_1@
+type R;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -12368,10 +18712,10 @@ R F(...) {
 }
 
 
-@receiver_10_w_0_0_byte_1_char@
+@receiver_11_w_0_0_byte_1_char@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12389,9 +18733,9 @@ R F(...) {
 }
 
 
-@receiver_10_w_2_14_pair_char_char@
+@receiver_11_w_2_17_pair_char_char@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -12404,9 +18748,9 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_2_14_pair_char_byte@
+@receiver_11_w_2_17_pair_char_byte@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -12419,9 +18763,9 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_2_14_pair_byte_char@
+@receiver_11_w_2_17_pair_byte_char@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -12434,9 +18778,9 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_2_14_pair_byte_byte@
+@receiver_11_w_2_17_pair_byte_byte@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -12449,10 +18793,10 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_2_14_word_ushort@
+@receiver_11_w_2_17_word_ushort@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12473,10 +18817,34 @@ R F(...) {
 }
 
 
-@receiver_10_w_2_14_word_short@
+@receiver_11_w_2_17_word_undefined2@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)container + 0x2)
++ ((uw_object_hdr_t *)container)->position_word
+|
+- *(undefined2 *)((byte *)container + 0x2)
++ ((uw_object_hdr_t *)container)->position_word
+|
+- ((undefined2 *)container)[0x1]
++ ((uw_object_hdr_t *)container)->position_word
+|
+- *(undefined2 *)((undefined2 *)container + 0x1)
++ ((uw_object_hdr_t *)container)->position_word
+)
+...>
+}
+
+
+@receiver_11_w_2_17_word_short@
+type R;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12497,10 +18865,10 @@ R F(...) {
 }
 
 
-@receiver_10_w_2_14_byte_2_byte@
+@receiver_11_w_2_17_byte_2_byte@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12524,10 +18892,10 @@ R F(...) {
 }
 
 
-@receiver_10_w_2_14_byte_2_undefined1@
+@receiver_11_w_2_17_byte_2_undefined1@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12551,10 +18919,34 @@ R F(...) {
 }
 
 
-@receiver_10_w_2_14_store_2@
+@receiver_11_w_2_17_address_2@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)container + 0x2)
++ (char *)&((uw_object_hdr_t *)container)->position_word_low
+|
+- &*(char *)((byte *)container + 0x2)
++ (char *)&((uw_object_hdr_t *)container)->position_word_low
+|
+- &((char *)container)[0x2]
++ (char *)&((uw_object_hdr_t *)container)->position_word_low
+|
+- &*(char *)((ushort *)container + 0x1)
++ (char *)&((uw_object_hdr_t *)container)->position_word_low
+)
+...>
+}
+
+
+@receiver_11_w_2_17_store_2@
+type R;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -12576,10 +18968,10 @@ R F(...) {
 }
 
 
-@receiver_10_w_2_14_byte_2_char@
+@receiver_11_w_2_17_byte_2_char@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12603,10 +18995,10 @@ R F(...) {
 }
 
 
-@receiver_10_w_2_14_byte_3_byte@
+@receiver_11_w_2_17_byte_3_byte@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12624,10 +19016,10 @@ R F(...) {
 }
 
 
-@receiver_10_w_2_14_byte_3_undefined1@
+@receiver_11_w_2_17_byte_3_undefined1@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12645,10 +19037,31 @@ R F(...) {
 }
 
 
-@receiver_10_w_2_14_store_3@
+@receiver_11_w_2_17_address_3@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)container + 0x3)
++ (char *)&((uw_object_hdr_t *)container)->position_word_high
+|
+- &*(char *)((byte *)container + 0x3)
++ (char *)&((uw_object_hdr_t *)container)->position_word_high
+|
+- &((char *)container)[0x3]
++ (char *)&((uw_object_hdr_t *)container)->position_word_high
+)
+...>
+}
+
+
+@receiver_11_w_2_17_store_3@
+type R;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -12667,10 +19080,10 @@ R F(...) {
 }
 
 
-@receiver_10_w_2_14_byte_3_char@
+@receiver_11_w_2_17_byte_3_char@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12688,9 +19101,9 @@ R F(...) {
 }
 
 
-@receiver_10_w_4_28_pair_char_char@
+@receiver_11_w_4_34_pair_char_char@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -12703,9 +19116,9 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_4_28_pair_char_byte@
+@receiver_11_w_4_34_pair_char_byte@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -12718,9 +19131,9 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_4_28_pair_byte_char@
+@receiver_11_w_4_34_pair_byte_char@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -12733,9 +19146,9 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_4_28_pair_byte_byte@
+@receiver_11_w_4_34_pair_byte_byte@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -12748,10 +19161,10 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_4_28_word_ushort@
+@receiver_11_w_4_34_word_ushort@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12772,10 +19185,34 @@ R F(...) {
 }
 
 
-@receiver_10_w_4_28_word_short@
+@receiver_11_w_4_34_word_undefined2@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)container + 0x4)
++ ((uw_object_hdr_t *)container)->chain_word
+|
+- *(undefined2 *)((byte *)container + 0x4)
++ ((uw_object_hdr_t *)container)->chain_word
+|
+- ((undefined2 *)container)[0x2]
++ ((uw_object_hdr_t *)container)->chain_word
+|
+- *(undefined2 *)((undefined2 *)container + 0x2)
++ ((uw_object_hdr_t *)container)->chain_word
+)
+...>
+}
+
+
+@receiver_11_w_4_34_word_short@
+type R;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12796,10 +19233,10 @@ R F(...) {
 }
 
 
-@receiver_10_w_4_28_byte_4_byte@
+@receiver_11_w_4_34_byte_4_byte@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12823,10 +19260,10 @@ R F(...) {
 }
 
 
-@receiver_10_w_4_28_byte_4_undefined1@
+@receiver_11_w_4_34_byte_4_undefined1@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12850,10 +19287,34 @@ R F(...) {
 }
 
 
-@receiver_10_w_4_28_store_4@
+@receiver_11_w_4_34_address_4@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)container + 0x4)
++ (char *)&((uw_object_hdr_t *)container)->chain_word_low
+|
+- &*(char *)((byte *)container + 0x4)
++ (char *)&((uw_object_hdr_t *)container)->chain_word_low
+|
+- &((char *)container)[0x4]
++ (char *)&((uw_object_hdr_t *)container)->chain_word_low
+|
+- &*(char *)((ushort *)container + 0x2)
++ (char *)&((uw_object_hdr_t *)container)->chain_word_low
+)
+...>
+}
+
+
+@receiver_11_w_4_34_store_4@
+type R;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -12875,10 +19336,10 @@ R F(...) {
 }
 
 
-@receiver_10_w_4_28_byte_4_char@
+@receiver_11_w_4_34_byte_4_char@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12902,10 +19363,10 @@ R F(...) {
 }
 
 
-@receiver_10_w_4_28_byte_5_byte@
+@receiver_11_w_4_34_byte_5_byte@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12923,10 +19384,10 @@ R F(...) {
 }
 
 
-@receiver_10_w_4_28_byte_5_undefined1@
+@receiver_11_w_4_34_byte_5_undefined1@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12944,10 +19405,31 @@ R F(...) {
 }
 
 
-@receiver_10_w_4_28_store_5@
+@receiver_11_w_4_34_address_5@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)container + 0x5)
++ (char *)&((uw_object_hdr_t *)container)->chain_word_high
+|
+- &*(char *)((byte *)container + 0x5)
++ (char *)&((uw_object_hdr_t *)container)->chain_word_high
+|
+- &((char *)container)[0x5]
++ (char *)&((uw_object_hdr_t *)container)->chain_word_high
+)
+...>
+}
+
+
+@receiver_11_w_4_34_store_5@
+type R;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -12966,10 +19448,10 @@ R F(...) {
 }
 
 
-@receiver_10_w_4_28_byte_5_char@
+@receiver_11_w_4_34_byte_5_char@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -12987,9 +19469,9 @@ R F(...) {
 }
 
 
-@receiver_10_w_6_42_pair_char_char@
+@receiver_11_w_6_51_pair_char_char@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -13002,9 +19484,9 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_6_42_pair_char_byte@
+@receiver_11_w_6_51_pair_char_byte@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -13017,9 +19499,9 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_6_42_pair_byte_char@
+@receiver_11_w_6_51_pair_byte_char@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -13032,9 +19514,9 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_6_42_pair_byte_byte@
+@receiver_11_w_6_51_pair_byte_byte@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
@@ -13047,10 +19529,10 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_6_42_word_ushort@
+@receiver_11_w_6_51_word_ushort@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -13071,10 +19553,34 @@ R F(...) {
 }
 
 
-@receiver_10_w_6_42_word_short@
+@receiver_11_w_6_51_word_undefined2@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef ushort, byte, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)container + 0x6)
++ ((uw_object_hdr_t *)container)->link_word
+|
+- *(undefined2 *)((byte *)container + 0x6)
++ ((uw_object_hdr_t *)container)->link_word
+|
+- ((undefined2 *)container)[0x3]
++ ((uw_object_hdr_t *)container)->link_word
+|
+- *(undefined2 *)((undefined2 *)container + 0x3)
++ ((uw_object_hdr_t *)container)->link_word
+)
+...>
+}
+
+
+@receiver_11_w_6_51_word_short@
+type R;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -13095,10 +19601,10 @@ R F(...) {
 }
 
 
-@receiver_10_w_6_42_byte_6_byte@
+@receiver_11_w_6_51_byte_6_byte@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -13122,10 +19628,10 @@ R F(...) {
 }
 
 
-@receiver_10_w_6_42_byte_6_undefined1@
+@receiver_11_w_6_51_byte_6_undefined1@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -13149,10 +19655,34 @@ R F(...) {
 }
 
 
-@receiver_10_w_6_42_store_6@
+@receiver_11_w_6_51_address_6@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)container + 0x6)
++ (char *)&((uw_object_hdr_t *)container)->link_word_low
+|
+- &*(char *)((byte *)container + 0x6)
++ (char *)&((uw_object_hdr_t *)container)->link_word_low
+|
+- &((char *)container)[0x6]
++ (char *)&((uw_object_hdr_t *)container)->link_word_low
+|
+- &*(char *)((ushort *)container + 0x3)
++ (char *)&((uw_object_hdr_t *)container)->link_word_low
+)
+...>
+}
+
+
+@receiver_11_w_6_51_store_6@
+type R;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -13174,10 +19704,10 @@ R F(...) {
 }
 
 
-@receiver_10_w_6_42_byte_6_char@
+@receiver_11_w_6_51_byte_6_char@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -13201,10 +19731,10 @@ R F(...) {
 }
 
 
-@receiver_10_w_6_42_byte_7_byte@
+@receiver_11_w_6_51_byte_7_byte@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -13222,10 +19752,10 @@ R F(...) {
 }
 
 
-@receiver_10_w_6_42_byte_7_undefined1@
+@receiver_11_w_6_51_byte_7_undefined1@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -13243,10 +19773,31 @@ R F(...) {
 }
 
 
-@receiver_10_w_6_42_store_7@
+@receiver_11_w_6_51_address_7@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)container + 0x7)
++ (char *)&((uw_object_hdr_t *)container)->link_word_high
+|
+- &*(char *)((byte *)container + 0x7)
++ (char *)&((uw_object_hdr_t *)container)->link_word_high
+|
+- &((char *)container)[0x7]
++ (char *)&((uw_object_hdr_t *)container)->link_word_high
+)
+...>
+}
+
+
+@receiver_11_w_6_51_store_7@
+type R;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -13265,10 +19816,10 @@ R F(...) {
 }
 
 
-@receiver_10_w_6_42_byte_7_char@
+@receiver_11_w_6_51_byte_7_char@
 type R;
-identifier F =~ "^\(try_empty_container\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+identifier F =~ "^\(discard_container_contents\|try_empty_container\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -13286,7 +19837,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_0_0_pair_char_char@
+@receiver_12_w_0_0_pair_char_char@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13301,7 +19852,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_0_0_pair_char_byte@
+@receiver_12_w_0_0_pair_char_byte@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13316,7 +19867,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_0_0_pair_byte_char@
+@receiver_12_w_0_0_pair_byte_char@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13331,7 +19882,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_0_0_pair_byte_byte@
+@receiver_12_w_0_0_pair_byte_byte@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13346,10 +19897,10 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_0_0_word_ushort@
+@receiver_12_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -13370,10 +19921,34 @@ R F(...) {
 }
 
 
-@receiver_11_w_0_0_word_short@
+@receiver_12_w_0_0_word_undefined2@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar1 + 0x0)
++ ((uw_object_hdr_t *)puVar1)->type_flags
+|
+- *(undefined2 *)((byte *)puVar1 + 0x0)
++ ((uw_object_hdr_t *)puVar1)->type_flags
+|
+- ((undefined2 *)puVar1)[0x0]
++ ((uw_object_hdr_t *)puVar1)->type_flags
+|
+- *(undefined2 *)((undefined2 *)puVar1 + 0x0)
++ ((uw_object_hdr_t *)puVar1)->type_flags
+)
+...>
+}
+
+
+@receiver_12_w_0_0_word_short@
+type R;
+identifier F =~ "^\(discard_container_contents\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -13394,10 +19969,10 @@ R F(...) {
 }
 
 
-@receiver_11_w_0_0_byte_0_byte@
+@receiver_12_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -13424,10 +19999,10 @@ R F(...) {
 }
 
 
-@receiver_11_w_0_0_byte_0_undefined1@
+@receiver_12_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -13454,10 +20029,37 @@ R F(...) {
 }
 
 
-@receiver_11_w_0_0_store_0@
+@receiver_12_w_0_0_address_0@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar1 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar1)->type_flags_low
+|
+- &*(char *)((byte *)puVar1 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar1)->type_flags_low
+|
+- &((char *)puVar1)[0x0]
++ (char *)&((uw_object_hdr_t *)puVar1)->type_flags_low
+|
+- &*(char *)((ushort *)puVar1 + 0x0)
++ (char *)&((uw_object_hdr_t *)puVar1)->type_flags_low
+|
+- &*(char *)puVar1
++ (char *)&((uw_object_hdr_t *)puVar1)->type_flags_low
+)
+...>
+}
+
+
+@receiver_12_w_0_0_store_0@
+type R;
+identifier F =~ "^\(discard_container_contents\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -13482,10 +20084,10 @@ R F(...) {
 }
 
 
-@receiver_11_w_0_0_byte_0_char@
+@receiver_12_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -13512,10 +20114,10 @@ R F(...) {
 }
 
 
-@receiver_11_w_0_0_byte_1_byte@
+@receiver_12_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -13533,10 +20135,10 @@ R F(...) {
 }
 
 
-@receiver_11_w_0_0_byte_1_undefined1@
+@receiver_12_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -13554,10 +20156,31 @@ R F(...) {
 }
 
 
-@receiver_11_w_0_0_store_1@
+@receiver_12_w_0_0_address_1@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar1 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar1)->type_flags_high
+|
+- &*(char *)((byte *)puVar1 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar1)->type_flags_high
+|
+- &((char *)puVar1)[0x1]
++ (char *)&((uw_object_hdr_t *)puVar1)->type_flags_high
+)
+...>
+}
+
+
+@receiver_12_w_0_0_store_1@
+type R;
+identifier F =~ "^\(discard_container_contents\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -13576,10 +20199,10 @@ R F(...) {
 }
 
 
-@receiver_11_w_0_0_byte_1_char@
+@receiver_12_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -13597,7 +20220,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_2_14_pair_char_char@
+@receiver_12_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13612,7 +20235,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_2_14_pair_char_byte@
+@receiver_12_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13627,7 +20250,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_2_14_pair_byte_char@
+@receiver_12_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13642,7 +20265,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_2_14_pair_byte_byte@
+@receiver_12_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13657,10 +20280,10 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_2_14_word_ushort@
+@receiver_12_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -13681,10 +20304,34 @@ R F(...) {
 }
 
 
-@receiver_11_w_2_14_word_short@
+@receiver_12_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar1 + 0x2)
++ ((uw_object_hdr_t *)puVar1)->position_word
+|
+- *(undefined2 *)((byte *)puVar1 + 0x2)
++ ((uw_object_hdr_t *)puVar1)->position_word
+|
+- ((undefined2 *)puVar1)[0x1]
++ ((uw_object_hdr_t *)puVar1)->position_word
+|
+- *(undefined2 *)((undefined2 *)puVar1 + 0x1)
++ ((uw_object_hdr_t *)puVar1)->position_word
+)
+...>
+}
+
+
+@receiver_12_w_2_17_word_short@
+type R;
+identifier F =~ "^\(discard_container_contents\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -13705,10 +20352,10 @@ R F(...) {
 }
 
 
-@receiver_11_w_2_14_byte_2_byte@
+@receiver_12_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -13732,10 +20379,10 @@ R F(...) {
 }
 
 
-@receiver_11_w_2_14_byte_2_undefined1@
+@receiver_12_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -13759,10 +20406,34 @@ R F(...) {
 }
 
 
-@receiver_11_w_2_14_store_2@
+@receiver_12_w_2_17_address_2@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar1 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar1)->position_word_low
+|
+- &*(char *)((byte *)puVar1 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar1)->position_word_low
+|
+- &((char *)puVar1)[0x2]
++ (char *)&((uw_object_hdr_t *)puVar1)->position_word_low
+|
+- &*(char *)((ushort *)puVar1 + 0x1)
++ (char *)&((uw_object_hdr_t *)puVar1)->position_word_low
+)
+...>
+}
+
+
+@receiver_12_w_2_17_store_2@
+type R;
+identifier F =~ "^\(discard_container_contents\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -13784,10 +20455,10 @@ R F(...) {
 }
 
 
-@receiver_11_w_2_14_byte_2_char@
+@receiver_12_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -13811,10 +20482,10 @@ R F(...) {
 }
 
 
-@receiver_11_w_2_14_byte_3_byte@
+@receiver_12_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -13832,10 +20503,10 @@ R F(...) {
 }
 
 
-@receiver_11_w_2_14_byte_3_undefined1@
+@receiver_12_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -13853,10 +20524,31 @@ R F(...) {
 }
 
 
-@receiver_11_w_2_14_store_3@
+@receiver_12_w_2_17_address_3@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar1 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar1)->position_word_high
+|
+- &*(char *)((byte *)puVar1 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar1)->position_word_high
+|
+- &((char *)puVar1)[0x3]
++ (char *)&((uw_object_hdr_t *)puVar1)->position_word_high
+)
+...>
+}
+
+
+@receiver_12_w_2_17_store_3@
+type R;
+identifier F =~ "^\(discard_container_contents\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -13875,10 +20567,10 @@ R F(...) {
 }
 
 
-@receiver_11_w_2_14_byte_3_char@
+@receiver_12_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -13896,7 +20588,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_4_28_pair_char_char@
+@receiver_12_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13911,7 +20603,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_4_28_pair_char_byte@
+@receiver_12_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13926,7 +20618,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_4_28_pair_byte_char@
+@receiver_12_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13941,7 +20633,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_4_28_pair_byte_byte@
+@receiver_12_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13956,10 +20648,10 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_4_28_word_ushort@
+@receiver_12_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -13980,10 +20672,34 @@ R F(...) {
 }
 
 
-@receiver_11_w_4_28_word_short@
+@receiver_12_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar1 + 0x4)
++ ((uw_object_hdr_t *)puVar1)->chain_word
+|
+- *(undefined2 *)((byte *)puVar1 + 0x4)
++ ((uw_object_hdr_t *)puVar1)->chain_word
+|
+- ((undefined2 *)puVar1)[0x2]
++ ((uw_object_hdr_t *)puVar1)->chain_word
+|
+- *(undefined2 *)((undefined2 *)puVar1 + 0x2)
++ ((uw_object_hdr_t *)puVar1)->chain_word
+)
+...>
+}
+
+
+@receiver_12_w_4_34_word_short@
+type R;
+identifier F =~ "^\(discard_container_contents\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -14004,10 +20720,10 @@ R F(...) {
 }
 
 
-@receiver_11_w_4_28_byte_4_byte@
+@receiver_12_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -14031,10 +20747,10 @@ R F(...) {
 }
 
 
-@receiver_11_w_4_28_byte_4_undefined1@
+@receiver_12_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -14058,10 +20774,34 @@ R F(...) {
 }
 
 
-@receiver_11_w_4_28_store_4@
+@receiver_12_w_4_34_address_4@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar1 + 0x4)
++ (char *)&((uw_object_hdr_t *)puVar1)->chain_word_low
+|
+- &*(char *)((byte *)puVar1 + 0x4)
++ (char *)&((uw_object_hdr_t *)puVar1)->chain_word_low
+|
+- &((char *)puVar1)[0x4]
++ (char *)&((uw_object_hdr_t *)puVar1)->chain_word_low
+|
+- &*(char *)((ushort *)puVar1 + 0x2)
++ (char *)&((uw_object_hdr_t *)puVar1)->chain_word_low
+)
+...>
+}
+
+
+@receiver_12_w_4_34_store_4@
+type R;
+identifier F =~ "^\(discard_container_contents\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -14083,10 +20823,10 @@ R F(...) {
 }
 
 
-@receiver_11_w_4_28_byte_4_char@
+@receiver_12_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -14110,10 +20850,10 @@ R F(...) {
 }
 
 
-@receiver_11_w_4_28_byte_5_byte@
+@receiver_12_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -14131,10 +20871,10 @@ R F(...) {
 }
 
 
-@receiver_11_w_4_28_byte_5_undefined1@
+@receiver_12_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -14152,10 +20892,31 @@ R F(...) {
 }
 
 
-@receiver_11_w_4_28_store_5@
+@receiver_12_w_4_34_address_5@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar1 + 0x5)
++ (char *)&((uw_object_hdr_t *)puVar1)->chain_word_high
+|
+- &*(char *)((byte *)puVar1 + 0x5)
++ (char *)&((uw_object_hdr_t *)puVar1)->chain_word_high
+|
+- &((char *)puVar1)[0x5]
++ (char *)&((uw_object_hdr_t *)puVar1)->chain_word_high
+)
+...>
+}
+
+
+@receiver_12_w_4_34_store_5@
+type R;
+identifier F =~ "^\(discard_container_contents\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -14174,10 +20935,10 @@ R F(...) {
 }
 
 
-@receiver_11_w_4_28_byte_5_char@
+@receiver_12_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -14195,7 +20956,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_6_42_pair_char_char@
+@receiver_12_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -14210,7 +20971,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_6_42_pair_char_byte@
+@receiver_12_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -14225,7 +20986,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_6_42_pair_byte_char@
+@receiver_12_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -14240,7 +21001,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_6_42_pair_byte_byte@
+@receiver_12_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -14255,10 +21016,10 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_6_42_word_ushort@
+@receiver_12_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -14279,10 +21040,34 @@ R F(...) {
 }
 
 
-@receiver_11_w_6_42_word_short@
+@receiver_12_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef ushort, byte, uw_object_hdr_t;
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)puVar1 + 0x6)
++ ((uw_object_hdr_t *)puVar1)->link_word
+|
+- *(undefined2 *)((byte *)puVar1 + 0x6)
++ ((uw_object_hdr_t *)puVar1)->link_word
+|
+- ((undefined2 *)puVar1)[0x3]
++ ((uw_object_hdr_t *)puVar1)->link_word
+|
+- *(undefined2 *)((undefined2 *)puVar1 + 0x3)
++ ((uw_object_hdr_t *)puVar1)->link_word
+)
+...>
+}
+
+
+@receiver_12_w_6_51_word_short@
+type R;
+identifier F =~ "^\(discard_container_contents\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -14303,10 +21088,10 @@ R F(...) {
 }
 
 
-@receiver_11_w_6_42_byte_6_byte@
+@receiver_12_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -14330,10 +21115,10 @@ R F(...) {
 }
 
 
-@receiver_11_w_6_42_byte_6_undefined1@
+@receiver_12_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -14357,10 +21142,34 @@ R F(...) {
 }
 
 
-@receiver_11_w_6_42_store_6@
+@receiver_12_w_6_51_address_6@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar1 + 0x6)
++ (char *)&((uw_object_hdr_t *)puVar1)->link_word_low
+|
+- &*(char *)((byte *)puVar1 + 0x6)
++ (char *)&((uw_object_hdr_t *)puVar1)->link_word_low
+|
+- &((char *)puVar1)[0x6]
++ (char *)&((uw_object_hdr_t *)puVar1)->link_word_low
+|
+- &*(char *)((ushort *)puVar1 + 0x3)
++ (char *)&((uw_object_hdr_t *)puVar1)->link_word_low
+)
+...>
+}
+
+
+@receiver_12_w_6_51_store_6@
+type R;
+identifier F =~ "^\(discard_container_contents\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -14382,10 +21191,10 @@ R F(...) {
 }
 
 
-@receiver_11_w_6_42_byte_6_char@
+@receiver_12_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -14409,10 +21218,10 @@ R F(...) {
 }
 
 
-@receiver_11_w_6_42_byte_7_byte@
+@receiver_12_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -14430,10 +21239,10 @@ R F(...) {
 }
 
 
-@receiver_11_w_6_42_byte_7_undefined1@
+@receiver_12_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -14451,10 +21260,31 @@ R F(...) {
 }
 
 
-@receiver_11_w_6_42_store_7@
+@receiver_12_w_6_51_address_7@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, uw_object_hdr_t;
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)puVar1 + 0x7)
++ (char *)&((uw_object_hdr_t *)puVar1)->link_word_high
+|
+- &*(char *)((byte *)puVar1 + 0x7)
++ (char *)&((uw_object_hdr_t *)puVar1)->link_word_high
+|
+- &((char *)puVar1)[0x7]
++ (char *)&((uw_object_hdr_t *)puVar1)->link_word_high
+)
+...>
+}
+
+
+@receiver_12_w_6_51_store_7@
+type R;
+identifier F =~ "^\(discard_container_contents\)$";
+typedef byte, ushort, uw_object_hdr_t;
 expression E;
 @@
 R F(...) {
@@ -14473,10 +21303,10 @@ R F(...) {
 }
 
 
-@receiver_11_w_6_42_byte_7_char@
+@receiver_12_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(discard_container_contents\)$";
-typedef byte, undefined1, uw_object_hdr_t;
+typedef byte, undefined1, ushort, uw_object_hdr_t;
 @@
 R F(...) {
 <...
@@ -14489,6 +21319,1493 @@ R F(...) {
 |
 - ((char *)puVar1)[0x7]
 + (char)((uw_object_hdr_t *)puVar1)->link_word_high
+)
+...>
+}
+
+
+@receiver_13_w_0_0_pair_char_char@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)rune_object + 0x0) = (char)V;
+- *(char *)((char *)rune_object + 0x1) = (char)(V >> 8);
++ ((uw_object_hdr_t *)rune_object)->type_flags = (ushort)V;
+
+...>
+}
+
+@receiver_13_w_0_0_pair_char_byte@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)rune_object + 0x0) = (char)V;
+- *(byte *)((char *)rune_object + 0x1) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)rune_object)->type_flags = (ushort)V;
+
+...>
+}
+
+@receiver_13_w_0_0_pair_byte_char@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)rune_object + 0x0) = (byte)V;
+- *(char *)((char *)rune_object + 0x1) = (char)(V >> 8);
++ ((uw_object_hdr_t *)rune_object)->type_flags = (ushort)V;
+
+...>
+}
+
+@receiver_13_w_0_0_pair_byte_byte@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)rune_object + 0x0) = (byte)V;
+- *(byte *)((char *)rune_object + 0x1) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)rune_object)->type_flags = (ushort)V;
+
+...>
+}
+
+@receiver_13_w_0_0_word_ushort@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)rune_object + 0x0)
++ ((uw_object_hdr_t *)rune_object)->type_flags
+|
+- *(ushort *)((byte *)rune_object + 0x0)
++ ((uw_object_hdr_t *)rune_object)->type_flags
+|
+- ((ushort *)rune_object)[0x0]
++ ((uw_object_hdr_t *)rune_object)->type_flags
+|
+- *(ushort *)((ushort *)rune_object + 0x0)
++ ((uw_object_hdr_t *)rune_object)->type_flags
+)
+...>
+}
+
+
+@receiver_13_w_0_0_word_undefined2@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)rune_object + 0x0)
++ ((uw_object_hdr_t *)rune_object)->type_flags
+|
+- *(undefined2 *)((byte *)rune_object + 0x0)
++ ((uw_object_hdr_t *)rune_object)->type_flags
+|
+- ((undefined2 *)rune_object)[0x0]
++ ((uw_object_hdr_t *)rune_object)->type_flags
+|
+- *(undefined2 *)((undefined2 *)rune_object + 0x0)
++ ((uw_object_hdr_t *)rune_object)->type_flags
+)
+...>
+}
+
+
+@receiver_13_w_0_0_word_short@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(short *)((char *)rune_object + 0x0)
++ ((uw_object_hdr_t *)rune_object)->type_flags_signed
+|
+- *(short *)((byte *)rune_object + 0x0)
++ ((uw_object_hdr_t *)rune_object)->type_flags_signed
+|
+- ((short *)rune_object)[0x0]
++ ((uw_object_hdr_t *)rune_object)->type_flags_signed
+|
+- *(short *)((short *)rune_object + 0x0)
++ ((uw_object_hdr_t *)rune_object)->type_flags_signed
+)
+...>
+}
+
+
+@receiver_13_w_0_0_byte_0_byte@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)rune_object + 0x0)
++ ((uw_object_hdr_t *)rune_object)->type_flags_low
+|
+- *(byte *)((byte *)rune_object + 0x0)
++ ((uw_object_hdr_t *)rune_object)->type_flags_low
+|
+- ((byte *)rune_object)[0x0]
++ ((uw_object_hdr_t *)rune_object)->type_flags_low
+|
+- *(byte *)((ushort *)rune_object + 0x0)
++ ((uw_object_hdr_t *)rune_object)->type_flags_low
+|
+- (byte)((ushort *)rune_object)[0x0]
++ ((uw_object_hdr_t *)rune_object)->type_flags_low
+|
+- *(byte *)rune_object
++ ((uw_object_hdr_t *)rune_object)->type_flags_low
+)
+...>
+}
+
+
+@receiver_13_w_0_0_byte_0_undefined1@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)rune_object + 0x0)
++ ((uw_object_hdr_t *)rune_object)->type_flags_low
+|
+- *(undefined1 *)((byte *)rune_object + 0x0)
++ ((uw_object_hdr_t *)rune_object)->type_flags_low
+|
+- ((undefined1 *)rune_object)[0x0]
++ ((uw_object_hdr_t *)rune_object)->type_flags_low
+|
+- *(undefined1 *)((ushort *)rune_object + 0x0)
++ ((uw_object_hdr_t *)rune_object)->type_flags_low
+|
+- (undefined1)((ushort *)rune_object)[0x0]
++ ((uw_object_hdr_t *)rune_object)->type_flags_low
+|
+- *(undefined1 *)rune_object
++ ((uw_object_hdr_t *)rune_object)->type_flags_low
+)
+...>
+}
+
+
+@receiver_13_w_0_0_address_0@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)rune_object + 0x0)
++ (char *)&((uw_object_hdr_t *)rune_object)->type_flags_low
+|
+- &*(char *)((byte *)rune_object + 0x0)
++ (char *)&((uw_object_hdr_t *)rune_object)->type_flags_low
+|
+- &((char *)rune_object)[0x0]
++ (char *)&((uw_object_hdr_t *)rune_object)->type_flags_low
+|
+- &*(char *)((ushort *)rune_object + 0x0)
++ (char *)&((uw_object_hdr_t *)rune_object)->type_flags_low
+|
+- &*(char *)rune_object
++ (char *)&((uw_object_hdr_t *)rune_object)->type_flags_low
+)
+...>
+}
+
+
+@receiver_13_w_0_0_store_0@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)rune_object + 0x0) = E;
++ ((uw_object_hdr_t *)rune_object)->type_flags_low = (byte)E;
+|
+- *(char *)((byte *)rune_object + 0x0) = E;
++ ((uw_object_hdr_t *)rune_object)->type_flags_low = (byte)E;
+|
+- ((char *)rune_object)[0x0] = E;
++ ((uw_object_hdr_t *)rune_object)->type_flags_low = (byte)E;
+|
+- *(char *)((ushort *)rune_object + 0x0) = E;
++ ((uw_object_hdr_t *)rune_object)->type_flags_low = (byte)E;
+|
+- *(char *)rune_object = E;
++ ((uw_object_hdr_t *)rune_object)->type_flags_low = (byte)E;
+)
+...>
+}
+
+
+@receiver_13_w_0_0_byte_0_char@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)rune_object + 0x0)
++ (char)((uw_object_hdr_t *)rune_object)->type_flags_low
+|
+- *(char *)((byte *)rune_object + 0x0)
++ (char)((uw_object_hdr_t *)rune_object)->type_flags_low
+|
+- ((char *)rune_object)[0x0]
++ (char)((uw_object_hdr_t *)rune_object)->type_flags_low
+|
+- *(char *)((ushort *)rune_object + 0x0)
++ (char)((uw_object_hdr_t *)rune_object)->type_flags_low
+|
+- (char)((ushort *)rune_object)[0x0]
++ (char)((uw_object_hdr_t *)rune_object)->type_flags_low
+|
+- *(char *)rune_object
++ (char)((uw_object_hdr_t *)rune_object)->type_flags_low
+)
+...>
+}
+
+
+@receiver_13_w_0_0_byte_1_byte@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)rune_object + 0x1)
++ ((uw_object_hdr_t *)rune_object)->type_flags_high
+|
+- *(byte *)((byte *)rune_object + 0x1)
++ ((uw_object_hdr_t *)rune_object)->type_flags_high
+|
+- ((byte *)rune_object)[0x1]
++ ((uw_object_hdr_t *)rune_object)->type_flags_high
+)
+...>
+}
+
+
+@receiver_13_w_0_0_byte_1_undefined1@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)rune_object + 0x1)
++ ((uw_object_hdr_t *)rune_object)->type_flags_high
+|
+- *(undefined1 *)((byte *)rune_object + 0x1)
++ ((uw_object_hdr_t *)rune_object)->type_flags_high
+|
+- ((undefined1 *)rune_object)[0x1]
++ ((uw_object_hdr_t *)rune_object)->type_flags_high
+)
+...>
+}
+
+
+@receiver_13_w_0_0_address_1@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)rune_object + 0x1)
++ (char *)&((uw_object_hdr_t *)rune_object)->type_flags_high
+|
+- &*(char *)((byte *)rune_object + 0x1)
++ (char *)&((uw_object_hdr_t *)rune_object)->type_flags_high
+|
+- &((char *)rune_object)[0x1]
++ (char *)&((uw_object_hdr_t *)rune_object)->type_flags_high
+)
+...>
+}
+
+
+@receiver_13_w_0_0_store_1@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)rune_object + 0x1) = E;
++ ((uw_object_hdr_t *)rune_object)->type_flags_high = (byte)E;
+|
+- *(char *)((byte *)rune_object + 0x1) = E;
++ ((uw_object_hdr_t *)rune_object)->type_flags_high = (byte)E;
+|
+- ((char *)rune_object)[0x1] = E;
++ ((uw_object_hdr_t *)rune_object)->type_flags_high = (byte)E;
+)
+...>
+}
+
+
+@receiver_13_w_0_0_byte_1_char@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)rune_object + 0x1)
++ (char)((uw_object_hdr_t *)rune_object)->type_flags_high
+|
+- *(char *)((byte *)rune_object + 0x1)
++ (char)((uw_object_hdr_t *)rune_object)->type_flags_high
+|
+- ((char *)rune_object)[0x1]
++ (char)((uw_object_hdr_t *)rune_object)->type_flags_high
+)
+...>
+}
+
+
+@receiver_13_w_2_17_pair_char_char@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)rune_object + 0x2) = (char)V;
+- *(char *)((char *)rune_object + 0x3) = (char)(V >> 8);
++ ((uw_object_hdr_t *)rune_object)->position_word = (ushort)V;
+
+...>
+}
+
+@receiver_13_w_2_17_pair_char_byte@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)rune_object + 0x2) = (char)V;
+- *(byte *)((char *)rune_object + 0x3) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)rune_object)->position_word = (ushort)V;
+
+...>
+}
+
+@receiver_13_w_2_17_pair_byte_char@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)rune_object + 0x2) = (byte)V;
+- *(char *)((char *)rune_object + 0x3) = (char)(V >> 8);
++ ((uw_object_hdr_t *)rune_object)->position_word = (ushort)V;
+
+...>
+}
+
+@receiver_13_w_2_17_pair_byte_byte@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)rune_object + 0x2) = (byte)V;
+- *(byte *)((char *)rune_object + 0x3) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)rune_object)->position_word = (ushort)V;
+
+...>
+}
+
+@receiver_13_w_2_17_word_ushort@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)rune_object + 0x2)
++ ((uw_object_hdr_t *)rune_object)->position_word
+|
+- *(ushort *)((byte *)rune_object + 0x2)
++ ((uw_object_hdr_t *)rune_object)->position_word
+|
+- ((ushort *)rune_object)[0x1]
++ ((uw_object_hdr_t *)rune_object)->position_word
+|
+- *(ushort *)((ushort *)rune_object + 0x1)
++ ((uw_object_hdr_t *)rune_object)->position_word
+)
+...>
+}
+
+
+@receiver_13_w_2_17_word_undefined2@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)rune_object + 0x2)
++ ((uw_object_hdr_t *)rune_object)->position_word
+|
+- *(undefined2 *)((byte *)rune_object + 0x2)
++ ((uw_object_hdr_t *)rune_object)->position_word
+|
+- ((undefined2 *)rune_object)[0x1]
++ ((uw_object_hdr_t *)rune_object)->position_word
+|
+- *(undefined2 *)((undefined2 *)rune_object + 0x1)
++ ((uw_object_hdr_t *)rune_object)->position_word
+)
+...>
+}
+
+
+@receiver_13_w_2_17_word_short@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(short *)((char *)rune_object + 0x2)
++ ((uw_object_hdr_t *)rune_object)->position_word_signed
+|
+- *(short *)((byte *)rune_object + 0x2)
++ ((uw_object_hdr_t *)rune_object)->position_word_signed
+|
+- ((short *)rune_object)[0x1]
++ ((uw_object_hdr_t *)rune_object)->position_word_signed
+|
+- *(short *)((short *)rune_object + 0x1)
++ ((uw_object_hdr_t *)rune_object)->position_word_signed
+)
+...>
+}
+
+
+@receiver_13_w_2_17_byte_2_byte@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)rune_object + 0x2)
++ ((uw_object_hdr_t *)rune_object)->position_word_low
+|
+- *(byte *)((byte *)rune_object + 0x2)
++ ((uw_object_hdr_t *)rune_object)->position_word_low
+|
+- ((byte *)rune_object)[0x2]
++ ((uw_object_hdr_t *)rune_object)->position_word_low
+|
+- *(byte *)((ushort *)rune_object + 0x1)
++ ((uw_object_hdr_t *)rune_object)->position_word_low
+|
+- (byte)((ushort *)rune_object)[0x1]
++ ((uw_object_hdr_t *)rune_object)->position_word_low
+)
+...>
+}
+
+
+@receiver_13_w_2_17_byte_2_undefined1@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)rune_object + 0x2)
++ ((uw_object_hdr_t *)rune_object)->position_word_low
+|
+- *(undefined1 *)((byte *)rune_object + 0x2)
++ ((uw_object_hdr_t *)rune_object)->position_word_low
+|
+- ((undefined1 *)rune_object)[0x2]
++ ((uw_object_hdr_t *)rune_object)->position_word_low
+|
+- *(undefined1 *)((ushort *)rune_object + 0x1)
++ ((uw_object_hdr_t *)rune_object)->position_word_low
+|
+- (undefined1)((ushort *)rune_object)[0x1]
++ ((uw_object_hdr_t *)rune_object)->position_word_low
+)
+...>
+}
+
+
+@receiver_13_w_2_17_address_2@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)rune_object + 0x2)
++ (char *)&((uw_object_hdr_t *)rune_object)->position_word_low
+|
+- &*(char *)((byte *)rune_object + 0x2)
++ (char *)&((uw_object_hdr_t *)rune_object)->position_word_low
+|
+- &((char *)rune_object)[0x2]
++ (char *)&((uw_object_hdr_t *)rune_object)->position_word_low
+|
+- &*(char *)((ushort *)rune_object + 0x1)
++ (char *)&((uw_object_hdr_t *)rune_object)->position_word_low
+)
+...>
+}
+
+
+@receiver_13_w_2_17_store_2@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)rune_object + 0x2) = E;
++ ((uw_object_hdr_t *)rune_object)->position_word_low = (byte)E;
+|
+- *(char *)((byte *)rune_object + 0x2) = E;
++ ((uw_object_hdr_t *)rune_object)->position_word_low = (byte)E;
+|
+- ((char *)rune_object)[0x2] = E;
++ ((uw_object_hdr_t *)rune_object)->position_word_low = (byte)E;
+|
+- *(char *)((ushort *)rune_object + 0x1) = E;
++ ((uw_object_hdr_t *)rune_object)->position_word_low = (byte)E;
+)
+...>
+}
+
+
+@receiver_13_w_2_17_byte_2_char@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)rune_object + 0x2)
++ (char)((uw_object_hdr_t *)rune_object)->position_word_low
+|
+- *(char *)((byte *)rune_object + 0x2)
++ (char)((uw_object_hdr_t *)rune_object)->position_word_low
+|
+- ((char *)rune_object)[0x2]
++ (char)((uw_object_hdr_t *)rune_object)->position_word_low
+|
+- *(char *)((ushort *)rune_object + 0x1)
++ (char)((uw_object_hdr_t *)rune_object)->position_word_low
+|
+- (char)((ushort *)rune_object)[0x1]
++ (char)((uw_object_hdr_t *)rune_object)->position_word_low
+)
+...>
+}
+
+
+@receiver_13_w_2_17_byte_3_byte@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)rune_object + 0x3)
++ ((uw_object_hdr_t *)rune_object)->position_word_high
+|
+- *(byte *)((byte *)rune_object + 0x3)
++ ((uw_object_hdr_t *)rune_object)->position_word_high
+|
+- ((byte *)rune_object)[0x3]
++ ((uw_object_hdr_t *)rune_object)->position_word_high
+)
+...>
+}
+
+
+@receiver_13_w_2_17_byte_3_undefined1@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)rune_object + 0x3)
++ ((uw_object_hdr_t *)rune_object)->position_word_high
+|
+- *(undefined1 *)((byte *)rune_object + 0x3)
++ ((uw_object_hdr_t *)rune_object)->position_word_high
+|
+- ((undefined1 *)rune_object)[0x3]
++ ((uw_object_hdr_t *)rune_object)->position_word_high
+)
+...>
+}
+
+
+@receiver_13_w_2_17_address_3@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)rune_object + 0x3)
++ (char *)&((uw_object_hdr_t *)rune_object)->position_word_high
+|
+- &*(char *)((byte *)rune_object + 0x3)
++ (char *)&((uw_object_hdr_t *)rune_object)->position_word_high
+|
+- &((char *)rune_object)[0x3]
++ (char *)&((uw_object_hdr_t *)rune_object)->position_word_high
+)
+...>
+}
+
+
+@receiver_13_w_2_17_store_3@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)rune_object + 0x3) = E;
++ ((uw_object_hdr_t *)rune_object)->position_word_high = (byte)E;
+|
+- *(char *)((byte *)rune_object + 0x3) = E;
++ ((uw_object_hdr_t *)rune_object)->position_word_high = (byte)E;
+|
+- ((char *)rune_object)[0x3] = E;
++ ((uw_object_hdr_t *)rune_object)->position_word_high = (byte)E;
+)
+...>
+}
+
+
+@receiver_13_w_2_17_byte_3_char@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)rune_object + 0x3)
++ (char)((uw_object_hdr_t *)rune_object)->position_word_high
+|
+- *(char *)((byte *)rune_object + 0x3)
++ (char)((uw_object_hdr_t *)rune_object)->position_word_high
+|
+- ((char *)rune_object)[0x3]
++ (char)((uw_object_hdr_t *)rune_object)->position_word_high
+)
+...>
+}
+
+
+@receiver_13_w_4_34_pair_char_char@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)rune_object + 0x4) = (char)V;
+- *(char *)((char *)rune_object + 0x5) = (char)(V >> 8);
++ ((uw_object_hdr_t *)rune_object)->chain_word = (ushort)V;
+
+...>
+}
+
+@receiver_13_w_4_34_pair_char_byte@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)rune_object + 0x4) = (char)V;
+- *(byte *)((char *)rune_object + 0x5) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)rune_object)->chain_word = (ushort)V;
+
+...>
+}
+
+@receiver_13_w_4_34_pair_byte_char@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)rune_object + 0x4) = (byte)V;
+- *(char *)((char *)rune_object + 0x5) = (char)(V >> 8);
++ ((uw_object_hdr_t *)rune_object)->chain_word = (ushort)V;
+
+...>
+}
+
+@receiver_13_w_4_34_pair_byte_byte@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)rune_object + 0x4) = (byte)V;
+- *(byte *)((char *)rune_object + 0x5) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)rune_object)->chain_word = (ushort)V;
+
+...>
+}
+
+@receiver_13_w_4_34_word_ushort@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)rune_object + 0x4)
++ ((uw_object_hdr_t *)rune_object)->chain_word
+|
+- *(ushort *)((byte *)rune_object + 0x4)
++ ((uw_object_hdr_t *)rune_object)->chain_word
+|
+- ((ushort *)rune_object)[0x2]
++ ((uw_object_hdr_t *)rune_object)->chain_word
+|
+- *(ushort *)((ushort *)rune_object + 0x2)
++ ((uw_object_hdr_t *)rune_object)->chain_word
+)
+...>
+}
+
+
+@receiver_13_w_4_34_word_undefined2@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)rune_object + 0x4)
++ ((uw_object_hdr_t *)rune_object)->chain_word
+|
+- *(undefined2 *)((byte *)rune_object + 0x4)
++ ((uw_object_hdr_t *)rune_object)->chain_word
+|
+- ((undefined2 *)rune_object)[0x2]
++ ((uw_object_hdr_t *)rune_object)->chain_word
+|
+- *(undefined2 *)((undefined2 *)rune_object + 0x2)
++ ((uw_object_hdr_t *)rune_object)->chain_word
+)
+...>
+}
+
+
+@receiver_13_w_4_34_word_short@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(short *)((char *)rune_object + 0x4)
++ ((uw_object_hdr_t *)rune_object)->chain_word_signed
+|
+- *(short *)((byte *)rune_object + 0x4)
++ ((uw_object_hdr_t *)rune_object)->chain_word_signed
+|
+- ((short *)rune_object)[0x2]
++ ((uw_object_hdr_t *)rune_object)->chain_word_signed
+|
+- *(short *)((short *)rune_object + 0x2)
++ ((uw_object_hdr_t *)rune_object)->chain_word_signed
+)
+...>
+}
+
+
+@receiver_13_w_4_34_byte_4_byte@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)rune_object + 0x4)
++ ((uw_object_hdr_t *)rune_object)->chain_word_low
+|
+- *(byte *)((byte *)rune_object + 0x4)
++ ((uw_object_hdr_t *)rune_object)->chain_word_low
+|
+- ((byte *)rune_object)[0x4]
++ ((uw_object_hdr_t *)rune_object)->chain_word_low
+|
+- *(byte *)((ushort *)rune_object + 0x2)
++ ((uw_object_hdr_t *)rune_object)->chain_word_low
+|
+- (byte)((ushort *)rune_object)[0x2]
++ ((uw_object_hdr_t *)rune_object)->chain_word_low
+)
+...>
+}
+
+
+@receiver_13_w_4_34_byte_4_undefined1@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)rune_object + 0x4)
++ ((uw_object_hdr_t *)rune_object)->chain_word_low
+|
+- *(undefined1 *)((byte *)rune_object + 0x4)
++ ((uw_object_hdr_t *)rune_object)->chain_word_low
+|
+- ((undefined1 *)rune_object)[0x4]
++ ((uw_object_hdr_t *)rune_object)->chain_word_low
+|
+- *(undefined1 *)((ushort *)rune_object + 0x2)
++ ((uw_object_hdr_t *)rune_object)->chain_word_low
+|
+- (undefined1)((ushort *)rune_object)[0x2]
++ ((uw_object_hdr_t *)rune_object)->chain_word_low
+)
+...>
+}
+
+
+@receiver_13_w_4_34_address_4@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)rune_object + 0x4)
++ (char *)&((uw_object_hdr_t *)rune_object)->chain_word_low
+|
+- &*(char *)((byte *)rune_object + 0x4)
++ (char *)&((uw_object_hdr_t *)rune_object)->chain_word_low
+|
+- &((char *)rune_object)[0x4]
++ (char *)&((uw_object_hdr_t *)rune_object)->chain_word_low
+|
+- &*(char *)((ushort *)rune_object + 0x2)
++ (char *)&((uw_object_hdr_t *)rune_object)->chain_word_low
+)
+...>
+}
+
+
+@receiver_13_w_4_34_store_4@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)rune_object + 0x4) = E;
++ ((uw_object_hdr_t *)rune_object)->chain_word_low = (byte)E;
+|
+- *(char *)((byte *)rune_object + 0x4) = E;
++ ((uw_object_hdr_t *)rune_object)->chain_word_low = (byte)E;
+|
+- ((char *)rune_object)[0x4] = E;
++ ((uw_object_hdr_t *)rune_object)->chain_word_low = (byte)E;
+|
+- *(char *)((ushort *)rune_object + 0x2) = E;
++ ((uw_object_hdr_t *)rune_object)->chain_word_low = (byte)E;
+)
+...>
+}
+
+
+@receiver_13_w_4_34_byte_4_char@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)rune_object + 0x4)
++ (char)((uw_object_hdr_t *)rune_object)->chain_word_low
+|
+- *(char *)((byte *)rune_object + 0x4)
++ (char)((uw_object_hdr_t *)rune_object)->chain_word_low
+|
+- ((char *)rune_object)[0x4]
++ (char)((uw_object_hdr_t *)rune_object)->chain_word_low
+|
+- *(char *)((ushort *)rune_object + 0x2)
++ (char)((uw_object_hdr_t *)rune_object)->chain_word_low
+|
+- (char)((ushort *)rune_object)[0x2]
++ (char)((uw_object_hdr_t *)rune_object)->chain_word_low
+)
+...>
+}
+
+
+@receiver_13_w_4_34_byte_5_byte@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)rune_object + 0x5)
++ ((uw_object_hdr_t *)rune_object)->chain_word_high
+|
+- *(byte *)((byte *)rune_object + 0x5)
++ ((uw_object_hdr_t *)rune_object)->chain_word_high
+|
+- ((byte *)rune_object)[0x5]
++ ((uw_object_hdr_t *)rune_object)->chain_word_high
+)
+...>
+}
+
+
+@receiver_13_w_4_34_byte_5_undefined1@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)rune_object + 0x5)
++ ((uw_object_hdr_t *)rune_object)->chain_word_high
+|
+- *(undefined1 *)((byte *)rune_object + 0x5)
++ ((uw_object_hdr_t *)rune_object)->chain_word_high
+|
+- ((undefined1 *)rune_object)[0x5]
++ ((uw_object_hdr_t *)rune_object)->chain_word_high
+)
+...>
+}
+
+
+@receiver_13_w_4_34_address_5@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)rune_object + 0x5)
++ (char *)&((uw_object_hdr_t *)rune_object)->chain_word_high
+|
+- &*(char *)((byte *)rune_object + 0x5)
++ (char *)&((uw_object_hdr_t *)rune_object)->chain_word_high
+|
+- &((char *)rune_object)[0x5]
++ (char *)&((uw_object_hdr_t *)rune_object)->chain_word_high
+)
+...>
+}
+
+
+@receiver_13_w_4_34_store_5@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)rune_object + 0x5) = E;
++ ((uw_object_hdr_t *)rune_object)->chain_word_high = (byte)E;
+|
+- *(char *)((byte *)rune_object + 0x5) = E;
++ ((uw_object_hdr_t *)rune_object)->chain_word_high = (byte)E;
+|
+- ((char *)rune_object)[0x5] = E;
++ ((uw_object_hdr_t *)rune_object)->chain_word_high = (byte)E;
+)
+...>
+}
+
+
+@receiver_13_w_4_34_byte_5_char@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)rune_object + 0x5)
++ (char)((uw_object_hdr_t *)rune_object)->chain_word_high
+|
+- *(char *)((byte *)rune_object + 0x5)
++ (char)((uw_object_hdr_t *)rune_object)->chain_word_high
+|
+- ((char *)rune_object)[0x5]
++ (char)((uw_object_hdr_t *)rune_object)->chain_word_high
+)
+...>
+}
+
+
+@receiver_13_w_6_51_pair_char_char@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)rune_object + 0x6) = (char)V;
+- *(char *)((char *)rune_object + 0x7) = (char)(V >> 8);
++ ((uw_object_hdr_t *)rune_object)->link_word = (ushort)V;
+
+...>
+}
+
+@receiver_13_w_6_51_pair_char_byte@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)rune_object + 0x6) = (char)V;
+- *(byte *)((char *)rune_object + 0x7) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)rune_object)->link_word = (ushort)V;
+
+...>
+}
+
+@receiver_13_w_6_51_pair_byte_char@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)rune_object + 0x6) = (byte)V;
+- *(char *)((char *)rune_object + 0x7) = (char)(V >> 8);
++ ((uw_object_hdr_t *)rune_object)->link_word = (ushort)V;
+
+...>
+}
+
+@receiver_13_w_6_51_pair_byte_byte@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)rune_object + 0x6) = (byte)V;
+- *(byte *)((char *)rune_object + 0x7) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)rune_object)->link_word = (ushort)V;
+
+...>
+}
+
+@receiver_13_w_6_51_word_ushort@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)rune_object + 0x6)
++ ((uw_object_hdr_t *)rune_object)->link_word
+|
+- *(ushort *)((byte *)rune_object + 0x6)
++ ((uw_object_hdr_t *)rune_object)->link_word
+|
+- ((ushort *)rune_object)[0x3]
++ ((uw_object_hdr_t *)rune_object)->link_word
+|
+- *(ushort *)((ushort *)rune_object + 0x3)
++ ((uw_object_hdr_t *)rune_object)->link_word
+)
+...>
+}
+
+
+@receiver_13_w_6_51_word_undefined2@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)rune_object + 0x6)
++ ((uw_object_hdr_t *)rune_object)->link_word
+|
+- *(undefined2 *)((byte *)rune_object + 0x6)
++ ((uw_object_hdr_t *)rune_object)->link_word
+|
+- ((undefined2 *)rune_object)[0x3]
++ ((uw_object_hdr_t *)rune_object)->link_word
+|
+- *(undefined2 *)((undefined2 *)rune_object + 0x3)
++ ((uw_object_hdr_t *)rune_object)->link_word
+)
+...>
+}
+
+
+@receiver_13_w_6_51_word_short@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(short *)((char *)rune_object + 0x6)
++ ((uw_object_hdr_t *)rune_object)->link_word_signed
+|
+- *(short *)((byte *)rune_object + 0x6)
++ ((uw_object_hdr_t *)rune_object)->link_word_signed
+|
+- ((short *)rune_object)[0x3]
++ ((uw_object_hdr_t *)rune_object)->link_word_signed
+|
+- *(short *)((short *)rune_object + 0x3)
++ ((uw_object_hdr_t *)rune_object)->link_word_signed
+)
+...>
+}
+
+
+@receiver_13_w_6_51_byte_6_byte@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)rune_object + 0x6)
++ ((uw_object_hdr_t *)rune_object)->link_word_low
+|
+- *(byte *)((byte *)rune_object + 0x6)
++ ((uw_object_hdr_t *)rune_object)->link_word_low
+|
+- ((byte *)rune_object)[0x6]
++ ((uw_object_hdr_t *)rune_object)->link_word_low
+|
+- *(byte *)((ushort *)rune_object + 0x3)
++ ((uw_object_hdr_t *)rune_object)->link_word_low
+|
+- (byte)((ushort *)rune_object)[0x3]
++ ((uw_object_hdr_t *)rune_object)->link_word_low
+)
+...>
+}
+
+
+@receiver_13_w_6_51_byte_6_undefined1@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)rune_object + 0x6)
++ ((uw_object_hdr_t *)rune_object)->link_word_low
+|
+- *(undefined1 *)((byte *)rune_object + 0x6)
++ ((uw_object_hdr_t *)rune_object)->link_word_low
+|
+- ((undefined1 *)rune_object)[0x6]
++ ((uw_object_hdr_t *)rune_object)->link_word_low
+|
+- *(undefined1 *)((ushort *)rune_object + 0x3)
++ ((uw_object_hdr_t *)rune_object)->link_word_low
+|
+- (undefined1)((ushort *)rune_object)[0x3]
++ ((uw_object_hdr_t *)rune_object)->link_word_low
+)
+...>
+}
+
+
+@receiver_13_w_6_51_address_6@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)rune_object + 0x6)
++ (char *)&((uw_object_hdr_t *)rune_object)->link_word_low
+|
+- &*(char *)((byte *)rune_object + 0x6)
++ (char *)&((uw_object_hdr_t *)rune_object)->link_word_low
+|
+- &((char *)rune_object)[0x6]
++ (char *)&((uw_object_hdr_t *)rune_object)->link_word_low
+|
+- &*(char *)((ushort *)rune_object + 0x3)
++ (char *)&((uw_object_hdr_t *)rune_object)->link_word_low
+)
+...>
+}
+
+
+@receiver_13_w_6_51_store_6@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)rune_object + 0x6) = E;
++ ((uw_object_hdr_t *)rune_object)->link_word_low = (byte)E;
+|
+- *(char *)((byte *)rune_object + 0x6) = E;
++ ((uw_object_hdr_t *)rune_object)->link_word_low = (byte)E;
+|
+- ((char *)rune_object)[0x6] = E;
++ ((uw_object_hdr_t *)rune_object)->link_word_low = (byte)E;
+|
+- *(char *)((ushort *)rune_object + 0x3) = E;
++ ((uw_object_hdr_t *)rune_object)->link_word_low = (byte)E;
+)
+...>
+}
+
+
+@receiver_13_w_6_51_byte_6_char@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)rune_object + 0x6)
++ (char)((uw_object_hdr_t *)rune_object)->link_word_low
+|
+- *(char *)((byte *)rune_object + 0x6)
++ (char)((uw_object_hdr_t *)rune_object)->link_word_low
+|
+- ((char *)rune_object)[0x6]
++ (char)((uw_object_hdr_t *)rune_object)->link_word_low
+|
+- *(char *)((ushort *)rune_object + 0x3)
++ (char)((uw_object_hdr_t *)rune_object)->link_word_low
+|
+- (char)((ushort *)rune_object)[0x3]
++ (char)((uw_object_hdr_t *)rune_object)->link_word_low
+)
+...>
+}
+
+
+@receiver_13_w_6_51_byte_7_byte@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)rune_object + 0x7)
++ ((uw_object_hdr_t *)rune_object)->link_word_high
+|
+- *(byte *)((byte *)rune_object + 0x7)
++ ((uw_object_hdr_t *)rune_object)->link_word_high
+|
+- ((byte *)rune_object)[0x7]
++ ((uw_object_hdr_t *)rune_object)->link_word_high
+)
+...>
+}
+
+
+@receiver_13_w_6_51_byte_7_undefined1@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)rune_object + 0x7)
++ ((uw_object_hdr_t *)rune_object)->link_word_high
+|
+- *(undefined1 *)((byte *)rune_object + 0x7)
++ ((uw_object_hdr_t *)rune_object)->link_word_high
+|
+- ((undefined1 *)rune_object)[0x7]
++ ((uw_object_hdr_t *)rune_object)->link_word_high
+)
+...>
+}
+
+
+@receiver_13_w_6_51_address_7@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)rune_object + 0x7)
++ (char *)&((uw_object_hdr_t *)rune_object)->link_word_high
+|
+- &*(char *)((byte *)rune_object + 0x7)
++ (char *)&((uw_object_hdr_t *)rune_object)->link_word_high
+|
+- &((char *)rune_object)[0x7]
++ (char *)&((uw_object_hdr_t *)rune_object)->link_word_high
+)
+...>
+}
+
+
+@receiver_13_w_6_51_store_7@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)rune_object + 0x7) = E;
++ ((uw_object_hdr_t *)rune_object)->link_word_high = (byte)E;
+|
+- *(char *)((byte *)rune_object + 0x7) = E;
++ ((uw_object_hdr_t *)rune_object)->link_word_high = (byte)E;
+|
+- ((char *)rune_object)[0x7] = E;
++ ((uw_object_hdr_t *)rune_object)->link_word_high = (byte)E;
+)
+...>
+}
+
+
+@receiver_13_w_6_51_byte_7_char@
+type R;
+identifier F =~ "^\(place_rune_in_bag\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)rune_object + 0x7)
++ (char)((uw_object_hdr_t *)rune_object)->link_word_high
+|
+- *(char *)((byte *)rune_object + 0x7)
++ (char)((uw_object_hdr_t *)rune_object)->link_word_high
+|
+- ((char *)rune_object)[0x7]
++ (char)((uw_object_hdr_t *)rune_object)->link_word_high
 )
 ...>
 }

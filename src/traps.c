@@ -139,11 +139,11 @@ int dispatch_trap_type_effect(ushort *trap_record, int tile_x, int tile_y)
       if (iVar16 == 0) {
         ((uw_object_hdr_t *)puVar8)->type_flags_low = (byte)(char)*puVar12;
         ((uw_object_hdr_t *)puVar8)->type_flags_high = *(undefined1 *)((char *)puVar12 + 1);
-        *(char *)(puVar8 + 1) = (char)puVar12[1];
+        ((uw_object_hdr_t *)puVar8)->position_word_low = (byte)(char)puVar12[1];
         ((uw_object_hdr_t *)puVar8)->position_word_high = *(undefined1 *)((char *)puVar12 + 3);
-        *(char *)(puVar8 + 2) = (char)puVar12[2];
+        ((uw_object_hdr_t *)puVar8)->chain_word_low = (byte)(char)puVar12[2];
         ((uw_object_hdr_t *)puVar8)->chain_word_high = *(undefined1 *)((char *)puVar12 + 5);
-        *(char *)(puVar8 + 3) = (char)puVar12[3];
+        ((uw_object_hdr_t *)puVar8)->link_word_low = (byte)(char)puVar12[3];
         ((uw_object_hdr_t *)puVar8)->link_word_high = *(undefined1 *)((char *)puVar12 + 7);
       }
       else {
@@ -168,24 +168,24 @@ int dispatch_trap_type_effect(ushort *trap_record, int tile_x, int tile_y)
         if (((((uw_object_hdr_t *)puVar8)->is_quant == 0) && (((uw_object_hdr_t *)puVar8)->link != 0)) &&
             (puVar9 = (undefined1 *)alloc_object_slot(0), puVar9 != (undefined1 *)0x0)) {
           puVar10 = (undefined1 *)get_object_record_by_slot_index(((uw_object_hdr_t *)puVar8)->link);
-          *puVar9 = *puVar10;
-          puVar9[1] = puVar10[1];
-          puVar9[2] = puVar10[2];
-          puVar9[3] = puVar10[3];
-          puVar9[4] = puVar10[4];
-          puVar9[5] = puVar10[5];
-          puVar9[6] = puVar10[6];
-          puVar9[7] = puVar10[7];
+          ((uw_object_hdr_t *)puVar9)->type_flags_low = ((uw_object_hdr_t *)puVar10)->type_flags_low;
+          ((uw_object_hdr_t *)puVar9)->type_flags_high = ((uw_object_hdr_t *)puVar10)->type_flags_high;
+          ((uw_object_hdr_t *)puVar9)->position_word_low = ((uw_object_hdr_t *)puVar10)->position_word_low;
+          ((uw_object_hdr_t *)puVar9)->position_word_high = ((uw_object_hdr_t *)puVar10)->position_word_high;
+          ((uw_object_hdr_t *)puVar9)->chain_word_low = ((uw_object_hdr_t *)puVar10)->chain_word_low;
+          ((uw_object_hdr_t *)puVar9)->chain_word_high = ((uw_object_hdr_t *)puVar10)->chain_word_high;
+          ((uw_object_hdr_t *)puVar9)->link_word_low = ((uw_object_hdr_t *)puVar10)->link_word_low;
+          ((uw_object_hdr_t *)puVar9)->link_word_high = ((uw_object_hdr_t *)puVar10)->link_word_high;
           uVar14 = encode_object_slot_index(puVar9);
-          *(byte *)(puVar8 + 3) = ((uw_object_hdr_t *)puVar8)->owner | (byte)((uVar14 & 0x3ff) << 6);
+          ((uw_object_hdr_t *)puVar8)->link_word_low = ((uw_object_hdr_t *)puVar8)->owner | (byte)((uVar14 & 0x3ff) << 6);
           ((uw_object_hdr_t *)puVar8)->link_word_high = (byte)(char)((uVar14 << 0x16) >> 0x18);
           if (((uw_object_hdr_t *)puVar9)->next != 0) {
-            puVar9[5] = 0;
-            puVar9[4] = ((uw_object_hdr_t *)puVar9)->quality;
+            ((uw_object_hdr_t *)puVar9)->chain_word_high = 0;
+            ((uw_object_hdr_t *)puVar9)->chain_word_low = ((uw_object_hdr_t *)puVar9)->quality;
           }
-          if (((puVar9[1] & 0x80) == 0) && (((uw_object_hdr_t *)puVar9)->link != 0)) {
-            puVar9[6] = ((uw_object_hdr_t *)puVar9)->owner;
-            puVar9[7] = 0;
+          if ((((uw_object_hdr_t *)puVar9)->is_quant == 0) && (((uw_object_hdr_t *)puVar9)->link != 0)) {
+            ((uw_object_hdr_t *)puVar9)->link_word_low = ((uw_object_hdr_t *)puVar9)->owner;
+            ((uw_object_hdr_t *)puVar9)->link_word_high = 0;
           }
         }
         if ((((uw_object_hdr_t *)puVar8)->type_flags & 0x1c0) == 0x1c0) {
@@ -236,14 +236,14 @@ int dispatch_trap_type_effect(ushort *trap_record, int tile_x, int tile_y)
         puVar9 = (undefined1 *)resolve_object_link(trap_record + 3);
         puVar10 = (undefined1 *)alloc_object_slot(0);
         if (puVar10 != (undefined1 *)0x0) {
-          *puVar10 = *puVar9;
-          puVar10[1] = puVar9[1];
-          puVar10[2] = puVar9[2];
-          puVar10[3] = puVar9[3];
-          puVar10[4] = puVar9[4];
-          puVar10[5] = puVar9[5];
-          puVar10[6] = puVar9[6];
-          puVar10[7] = puVar9[7];
+          ((uw_object_hdr_t *)puVar10)->type_flags_low = ((uw_object_hdr_t *)puVar9)->type_flags_low;
+          ((uw_object_hdr_t *)puVar10)->type_flags_high = ((uw_object_hdr_t *)puVar9)->type_flags_high;
+          ((uw_object_hdr_t *)puVar10)->position_word_low = ((uw_object_hdr_t *)puVar9)->position_word_low;
+          ((uw_object_hdr_t *)puVar10)->position_word_high = ((uw_object_hdr_t *)puVar9)->position_word_high;
+          ((uw_object_hdr_t *)puVar10)->chain_word_low = ((uw_object_hdr_t *)puVar9)->chain_word_low;
+          ((uw_object_hdr_t *)puVar10)->chain_word_high = ((uw_object_hdr_t *)puVar9)->chain_word_high;
+          ((uw_object_hdr_t *)puVar10)->link_word_low = ((uw_object_hdr_t *)puVar9)->link_word_low;
+          ((uw_object_hdr_t *)puVar10)->link_word_high = ((uw_object_hdr_t *)puVar9)->link_word_high;
           /* HACK: was a bare `object_list_insert_head(local_34);` -- dropped second argument, same
              class as this file's other Ghidra-decompiled dropped-argument calls. */
           object_list_insert_head(local_34,puVar10);
@@ -307,9 +307,9 @@ LAB_0007dce4:
     if (equipped_item == 0) {
       return 2;
     }
-    if ((((((byte)trap_record[1] & 0x7f) != 0) && ((*(byte *)(equipped_item + 1) & 0x80) != 0)) &&
-        ((*(ushort *)(equipped_item + 6) & 0x8000) == 0)) &&
-       (*(ushort *)(equipped_item + 6) >> 6 < ((byte)trap_record[1] & 0x7f))) {
+    if ((((((byte)trap_record[1] & 0x7f) != 0) && (((uw_object_hdr_t *)equipped_item)->is_quant != 0)) &&
+         ((((uw_object_hdr_t *)equipped_item)->link_word & 0x8000) == 0)) &&
+        (((uw_object_hdr_t *)equipped_item)->link < ((byte)trap_record[1] & 0x7f))) {
       return 2;
     }
     break;
@@ -536,27 +536,26 @@ int create_scripted_trap_pair_at_tile(int tile_x, int tile_y, uint code)
       pbVar6 = (byte *)tilemap_lookup(tile_x,tile_y);
       uVar2 = ((uw_object_hdr_t *)puVar4)->type_flags;
       uVar7 = uVar2 & 0xffa0 | 0x61a0;
-      ((uw_object_hdr_t *)puVar4)->type_flags_low = (byte)(char)uVar7;
-      ((uw_object_hdr_t *)puVar4)->type_flags_high = (byte)(char)(uVar7 >> 8);
+      ((uw_object_hdr_t *)puVar4)->type_flags = (ushort)uVar7;
       uVar7 = ((uw_object_hdr_t *)puVar4)->position_word & 0xff80;
       bVar9 = *pbVar6 >> 1 & 0x78;
-      *(byte *)(puVar4 + 1) = (byte)uVar7 | bVar9;
+      ((uw_object_hdr_t *)puVar4)->position_word_low = (byte)uVar7 | bVar9;
       ((uw_object_hdr_t *)puVar4)->position_word_high = (byte)(char)(uVar7 >> 8);
-      *(byte *)(puVar4 + 1) = bVar9;
+      ((uw_object_hdr_t *)puVar4)->position_word_low = bVar9;
       ((uw_object_hdr_t *)puVar4)->position_word_high = 0x6c;
       uVar7 = uVar2 & 0xf3a0 | 0x61a0;
       ((uw_object_hdr_t *)puVar4)->type_flags_low = (byte)(char)uVar7;
       ((uw_object_hdr_t *)puVar4)->type_flags_high = (byte)(uVar7 >> 8) | 0x90;
-      *(undefined1 *)(puVar4 + 2) = 0;
+      ((uw_object_hdr_t *)puVar4)->chain_word_low = 0;
       ((uw_object_hdr_t *)puVar4)->chain_word_high = 0;
       uVar7 = encode_object_slot_index(puVar5);
       iVar1 = (uVar7 & 0x3ff) << 6;
       bVar3 = ((uw_object_hdr_t *)puVar4)->owner | (byte)iVar1;
       uVar2 = ((uw_object_hdr_t *)puVar4)->chain_word;
       bVar9 = (byte)uVar2;
-      *(byte *)(puVar4 + 2) = (bVar9 ^ (byte)tile_x) & 0x3f ^ bVar9;
+      ((uw_object_hdr_t *)puVar4)->chain_word_low = (bVar9 ^ (byte)tile_x) & 0x3f ^ bVar9;
       ((uw_object_hdr_t *)puVar4)->chain_word_high = (byte)(char)(uVar2 >> 8);
-      *(byte *)(puVar4 + 3) = (bVar3 ^ (byte)tile_y) & 0x3f ^ bVar3;
+      ((uw_object_hdr_t *)puVar4)->link_word_low = (bVar3 ^ (byte)tile_y) & 0x3f ^ bVar3;
       ((uw_object_hdr_t *)puVar4)->link_word_high = (byte)(char)((uint)iVar1 >> 8);
       object_list_insert_head(pbVar6 + 2,puVar4);
       uVar7 = ((uw_object_hdr_t *)puVar5)->type_flags & 0xff8f | 0x180;
@@ -566,14 +565,14 @@ int create_scripted_trap_pair_at_tile(int tile_x, int tile_y, uint code)
       bVar9 = *pbVar6 >> 1 & 0x78;
       uVar7 = (uint)((uw_object_hdr_t *)puVar5)->position_word;
       uVar10 = uVar7 & 0xff80;
-      *(byte *)(puVar5 + 1) = bVar9 | (byte)uVar10;
+      ((uw_object_hdr_t *)puVar5)->position_word_low = bVar9 | (byte)uVar10;
       ((uw_object_hdr_t *)puVar5)->position_word_high = (byte)(char)(uVar10 >> 8);
       uVar7 = uVar7 & 0x380;
-      *(byte *)(puVar5 + 1) = bVar9 | (byte)uVar7;
+      ((uw_object_hdr_t *)puVar5)->position_word_low = bVar9 | (byte)uVar7;
       ((uw_object_hdr_t *)puVar5)->position_word_high = (byte)(uVar7 >> 8) | 0x6c;
-      *(byte *)(puVar5 + 3) = ((uw_object_hdr_t *)puVar5)->owner;
+      ((uw_object_hdr_t *)puVar5)->link_word_low = ((uw_object_hdr_t *)puVar5)->owner;
       ((uw_object_hdr_t *)puVar5)->link_word_high = 0;
-      *(undefined1 *)(puVar5 + 2) = 0x3f;
+      ((uw_object_hdr_t *)puVar5)->chain_word_low = 0x3f;
       ((uw_object_hdr_t *)puVar5)->chain_word_high = 0;
       uVar11 = uVar11 & 0xe3ff;
       ((uw_object_hdr_t *)puVar5)->type_flags_low = (byte)(char)uVar11;
@@ -752,8 +751,8 @@ void tick_ambient_doors_and_scheduler(int target_present)
     /* was folded into `int iVar2` (reused below for unrelated int
        values) -- truncated tilemap_lookup's real `void *` return */
     char *_tile2 = (char *)tilemap_lookup((int)local_1c,(int)local_1a);
-    if ((((*(byte *)(_tile2 + 1) & 0x80) == 0) && (7 < (*pbVar1 & 0xf))) &&
-       (iVar2 = rand_below(10), iVar2 < 3)) {
+    if ((((*(byte *)(_tile2 + 1) & 0x80) == 0) && (7 < (((uw_object_hdr_t *)pbVar1)->type_flags_low & 0xf))) &&
+        (iVar2 = rand_below(10), iVar2 < 3)) {
       DAT_002020a0 = local_1c;
       DAT_002020a4 = local_1a;
       /* HACK: was a bare `FUN_0007e6e0(target_present);` -- dropped arguments, the same class of bug fixed
@@ -1089,8 +1088,7 @@ void try_combine_shrine_markers(int unused, int tile_x, int tile_y)
     pNew = (char *)spawn_new_object(0xfd,0);
     pTile = (char *)tilemap_lookup(tile_x,tile_y + 1);
     uVar4 = ((uw_object_hdr_t *)pNew)->heading << 7 | 0x6c40;
-    *(char *)(pNew + 2) = (char)uVar4;
-    *(char *)(pNew + 3) = (char)(uVar4 >> 8);
+    ((uw_object_hdr_t *)pNew)->position_word = (ushort)uVar4;
     object_list_insert_head(pTile + 2,pNew);
     settle_dropped_object(pNew,tile_x,tile_y + 1,1);
     iVar5 = 0;

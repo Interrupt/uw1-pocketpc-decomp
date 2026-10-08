@@ -1455,6 +1455,535 @@ typedef ushort, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
+- *(ushort *)((char *)iVar5 + 0x0) & 0x1ff
++ ((uw_object_hdr_t *)iVar5)->item_id
+|
+- ((ushort *)iVar5)[0] & 0x1ff
++ ((uw_object_hdr_t *)iVar5)->item_id
+|
+- *(ushort *)iVar5 & 0x1ff
++ ((uw_object_hdr_t *)iVar5)->item_id
+|
+- *(ushort *)(iVar5 + 0x0) & 0x1ff
++ ((uw_object_hdr_t *)iVar5)->item_id
+|
+- CONCAT11(iVar5[1], *iVar5) & 0x1ff
++ ((uw_object_hdr_t *)iVar5)->item_id
+|
+- CONCAT11(iVar5[1], iVar5[0]) & 0x1ff
++ ((uw_object_hdr_t *)iVar5)->item_id
+)
+...>
+}
+
+@field_3_flags_res@
+type R;
+identifier F =~ "^\(spawn_scheduled_effect_object\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar5 + 0x0) >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar5)->flags_res
+|
+- (*(ushort *)((char *)iVar5 + 0x0) & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar5)->flags_res
+|
+- (((ushort *)iVar5)[0] >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar5)->flags_res
+|
+- (((ushort *)iVar5)[0] & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar5)->flags_res
+|
+- (*(ushort *)iVar5 >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar5)->flags_res
+|
+- (*(ushort *)iVar5 & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar5)->flags_res
+|
+- (*(ushort *)(iVar5 + 0x0) >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar5)->flags_res
+|
+- (*(ushort *)(iVar5 + 0x0) & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar5)->flags_res
+|
+- (CONCAT11(iVar5[1], *iVar5) >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar5)->flags_res
+|
+- (CONCAT11(iVar5[1], *iVar5) & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar5)->flags_res
+|
+- (CONCAT11(iVar5[1], iVar5[0]) >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar5)->flags_res
+|
+- (CONCAT11(iVar5[1], iVar5[0]) & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar5)->flags_res
+|
+- (*(byte *)((char *)iVar5 + 0x1) >> 1) & 0x7
++ ((uw_object_hdr_t *)iVar5)->flags_res
+|
+- (*(byte *)((char *)iVar5 + 0x1) & 0xe) >> 1
++ ((uw_object_hdr_t *)iVar5)->flags_res
+)
+...>
+}
+
+@field_3_enchanted@
+type R;
+identifier F =~ "^\(spawn_scheduled_effect_object\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar5 + 0x0) >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar5)->enchanted
+|
+- (*(ushort *)((char *)iVar5 + 0x0) & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar5)->enchanted
+|
+- (((ushort *)iVar5)[0] >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar5)->enchanted
+|
+- (((ushort *)iVar5)[0] & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar5)->enchanted
+|
+- (*(ushort *)iVar5 >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar5)->enchanted
+|
+- (*(ushort *)iVar5 & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar5)->enchanted
+|
+- (*(ushort *)(iVar5 + 0x0) >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar5)->enchanted
+|
+- (*(ushort *)(iVar5 + 0x0) & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar5)->enchanted
+|
+- (CONCAT11(iVar5[1], *iVar5) >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar5)->enchanted
+|
+- (CONCAT11(iVar5[1], *iVar5) & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar5)->enchanted
+|
+- (CONCAT11(iVar5[1], iVar5[0]) >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar5)->enchanted
+|
+- (CONCAT11(iVar5[1], iVar5[0]) & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar5)->enchanted
+|
+- (*(byte *)((char *)iVar5 + 0x1) >> 4) & 0x1
++ ((uw_object_hdr_t *)iVar5)->enchanted
+|
+- (*(byte *)((char *)iVar5 + 0x1) & 0x10) >> 4
++ ((uw_object_hdr_t *)iVar5)->enchanted
+)
+...>
+}
+
+@field_3_doordir@
+type R;
+identifier F =~ "^\(spawn_scheduled_effect_object\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar5 + 0x0) >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar5)->doordir
+|
+- (*(ushort *)((char *)iVar5 + 0x0) & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar5)->doordir
+|
+- (((ushort *)iVar5)[0] >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar5)->doordir
+|
+- (((ushort *)iVar5)[0] & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar5)->doordir
+|
+- (*(ushort *)iVar5 >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar5)->doordir
+|
+- (*(ushort *)iVar5 & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar5)->doordir
+|
+- (*(ushort *)(iVar5 + 0x0) >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar5)->doordir
+|
+- (*(ushort *)(iVar5 + 0x0) & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar5)->doordir
+|
+- (CONCAT11(iVar5[1], *iVar5) >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar5)->doordir
+|
+- (CONCAT11(iVar5[1], *iVar5) & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar5)->doordir
+|
+- (CONCAT11(iVar5[1], iVar5[0]) >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar5)->doordir
+|
+- (CONCAT11(iVar5[1], iVar5[0]) & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar5)->doordir
+|
+- (*(byte *)((char *)iVar5 + 0x1) >> 5) & 0x1
++ ((uw_object_hdr_t *)iVar5)->doordir
+|
+- (*(byte *)((char *)iVar5 + 0x1) & 0x20) >> 5
++ ((uw_object_hdr_t *)iVar5)->doordir
+)
+...>
+}
+
+@field_3_invisible@
+type R;
+identifier F =~ "^\(spawn_scheduled_effect_object\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar5 + 0x0) >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar5)->invisible
+|
+- (*(ushort *)((char *)iVar5 + 0x0) & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar5)->invisible
+|
+- (((ushort *)iVar5)[0] >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar5)->invisible
+|
+- (((ushort *)iVar5)[0] & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar5)->invisible
+|
+- (*(ushort *)iVar5 >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar5)->invisible
+|
+- (*(ushort *)iVar5 & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar5)->invisible
+|
+- (*(ushort *)(iVar5 + 0x0) >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar5)->invisible
+|
+- (*(ushort *)(iVar5 + 0x0) & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar5)->invisible
+|
+- (CONCAT11(iVar5[1], *iVar5) >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar5)->invisible
+|
+- (CONCAT11(iVar5[1], *iVar5) & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar5)->invisible
+|
+- (CONCAT11(iVar5[1], iVar5[0]) >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar5)->invisible
+|
+- (CONCAT11(iVar5[1], iVar5[0]) & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar5)->invisible
+|
+- (*(byte *)((char *)iVar5 + 0x1) >> 6) & 0x1
++ ((uw_object_hdr_t *)iVar5)->invisible
+|
+- (*(byte *)((char *)iVar5 + 0x1) & 0x40) >> 6
++ ((uw_object_hdr_t *)iVar5)->invisible
+)
+...>
+}
+
+@field_3_is_quant@
+type R;
+identifier F =~ "^\(spawn_scheduled_effect_object\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar5 + 0x0) >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar5)->is_quant
+|
+- (*(ushort *)((char *)iVar5 + 0x0) & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar5)->is_quant
+|
+- (((ushort *)iVar5)[0] >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar5)->is_quant
+|
+- (((ushort *)iVar5)[0] & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar5)->is_quant
+|
+- (*(ushort *)iVar5 >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar5)->is_quant
+|
+- (*(ushort *)iVar5 & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar5)->is_quant
+|
+- (*(ushort *)(iVar5 + 0x0) >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar5)->is_quant
+|
+- (*(ushort *)(iVar5 + 0x0) & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar5)->is_quant
+|
+- (CONCAT11(iVar5[1], *iVar5) >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar5)->is_quant
+|
+- (CONCAT11(iVar5[1], *iVar5) & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar5)->is_quant
+|
+- (CONCAT11(iVar5[1], iVar5[0]) >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar5)->is_quant
+|
+- (CONCAT11(iVar5[1], iVar5[0]) & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar5)->is_quant
+|
+- (*(byte *)((char *)iVar5 + 0x1) >> 7) & 0x1
++ ((uw_object_hdr_t *)iVar5)->is_quant
+|
+- (*(byte *)((char *)iVar5 + 0x1) & 0x80) >> 7
++ ((uw_object_hdr_t *)iVar5)->is_quant
+)
+...>
+}
+
+@field_3_zpos@
+type R;
+identifier F =~ "^\(spawn_scheduled_effect_object\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar5 + 0x2) & 0x7f
++ ((uw_object_hdr_t *)iVar5)->zpos
+|
+- ((ushort *)iVar5)[1] & 0x7f
++ ((uw_object_hdr_t *)iVar5)->zpos
+|
+- *(ushort *)(iVar5 + 0x2) & 0x7f
++ ((uw_object_hdr_t *)iVar5)->zpos
+|
+- *(byte *)((char *)iVar5 + 0x2) & 0x7f
++ ((uw_object_hdr_t *)iVar5)->zpos
+|
+- iVar5[2] & 0x7f
++ ((uw_object_hdr_t *)iVar5)->zpos
+)
+...>
+}
+
+@field_3_heading@
+type R;
+identifier F =~ "^\(spawn_scheduled_effect_object\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar5 + 0x2) >> 7) & 0x7
++ ((uw_object_hdr_t *)iVar5)->heading
+|
+- (*(ushort *)((char *)iVar5 + 0x2) & 0x380) >> 7
++ ((uw_object_hdr_t *)iVar5)->heading
+|
+- (((ushort *)iVar5)[1] >> 7) & 0x7
++ ((uw_object_hdr_t *)iVar5)->heading
+|
+- (((ushort *)iVar5)[1] & 0x380) >> 7
++ ((uw_object_hdr_t *)iVar5)->heading
+|
+- (*(ushort *)(iVar5 + 0x2) >> 7) & 0x7
++ ((uw_object_hdr_t *)iVar5)->heading
+|
+- (*(ushort *)(iVar5 + 0x2) & 0x380) >> 7
++ ((uw_object_hdr_t *)iVar5)->heading
+)
+...>
+}
+
+@field_3_ypos@
+type R;
+identifier F =~ "^\(spawn_scheduled_effect_object\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar5 + 0x2) >> 10) & 0x7
++ ((uw_object_hdr_t *)iVar5)->ypos
+|
+- (*(ushort *)((char *)iVar5 + 0x2) & 0x1c00) >> 10
++ ((uw_object_hdr_t *)iVar5)->ypos
+|
+- (((ushort *)iVar5)[1] >> 10) & 0x7
++ ((uw_object_hdr_t *)iVar5)->ypos
+|
+- (((ushort *)iVar5)[1] & 0x1c00) >> 10
++ ((uw_object_hdr_t *)iVar5)->ypos
+|
+- (*(ushort *)(iVar5 + 0x2) >> 10) & 0x7
++ ((uw_object_hdr_t *)iVar5)->ypos
+|
+- (*(ushort *)(iVar5 + 0x2) & 0x1c00) >> 10
++ ((uw_object_hdr_t *)iVar5)->ypos
+|
+- (*(byte *)((char *)iVar5 + 0x3) >> 2) & 0x7
++ ((uw_object_hdr_t *)iVar5)->ypos
+|
+- (*(byte *)((char *)iVar5 + 0x3) & 0x1c) >> 2
++ ((uw_object_hdr_t *)iVar5)->ypos
+)
+...>
+}
+
+@field_3_xpos@
+type R;
+identifier F =~ "^\(spawn_scheduled_effect_object\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar5 + 0x2) >> 13) & 0x7
++ ((uw_object_hdr_t *)iVar5)->xpos
+|
+- (*(ushort *)((char *)iVar5 + 0x2) & 0xe000) >> 13
++ ((uw_object_hdr_t *)iVar5)->xpos
+|
+- (((ushort *)iVar5)[1] >> 13) & 0x7
++ ((uw_object_hdr_t *)iVar5)->xpos
+|
+- (((ushort *)iVar5)[1] & 0xe000) >> 13
++ ((uw_object_hdr_t *)iVar5)->xpos
+|
+- (*(ushort *)(iVar5 + 0x2) >> 13) & 0x7
++ ((uw_object_hdr_t *)iVar5)->xpos
+|
+- (*(ushort *)(iVar5 + 0x2) & 0xe000) >> 13
++ ((uw_object_hdr_t *)iVar5)->xpos
+|
+- (*(byte *)((char *)iVar5 + 0x3) >> 5) & 0x7
++ ((uw_object_hdr_t *)iVar5)->xpos
+|
+- (*(byte *)((char *)iVar5 + 0x3) & 0xe0) >> 5
++ ((uw_object_hdr_t *)iVar5)->xpos
+)
+...>
+}
+
+@field_3_quality@
+type R;
+identifier F =~ "^\(spawn_scheduled_effect_object\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar5 + 0x4) & 0x3f
++ ((uw_object_hdr_t *)iVar5)->quality
+|
+- ((ushort *)iVar5)[2] & 0x3f
++ ((uw_object_hdr_t *)iVar5)->quality
+|
+- *(ushort *)(iVar5 + 0x4) & 0x3f
++ ((uw_object_hdr_t *)iVar5)->quality
+|
+- *(byte *)((char *)iVar5 + 0x4) & 0x3f
++ ((uw_object_hdr_t *)iVar5)->quality
+|
+- iVar5[4] & 0x3f
++ ((uw_object_hdr_t *)iVar5)->quality
+)
+...>
+}
+
+@field_3_next@
+type R;
+identifier F =~ "^\(spawn_scheduled_effect_object\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar5 + 0x4) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar5)->next
+|
+- (*(ushort *)((char *)iVar5 + 0x4) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar5)->next
+|
+- (((ushort *)iVar5)[2] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar5)->next
+|
+- (((ushort *)iVar5)[2] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar5)->next
+|
+- (*(ushort *)(iVar5 + 0x4) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar5)->next
+|
+- (*(ushort *)(iVar5 + 0x4) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar5)->next
+)
+...>
+}
+
+@field_3_owner@
+type R;
+identifier F =~ "^\(spawn_scheduled_effect_object\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar5 + 0x6) & 0x3f
++ ((uw_object_hdr_t *)iVar5)->owner
+|
+- ((ushort *)iVar5)[3] & 0x3f
++ ((uw_object_hdr_t *)iVar5)->owner
+|
+- *(ushort *)(iVar5 + 0x6) & 0x3f
++ ((uw_object_hdr_t *)iVar5)->owner
+|
+- *(byte *)((char *)iVar5 + 0x6) & 0x3f
++ ((uw_object_hdr_t *)iVar5)->owner
+|
+- iVar5[6] & 0x3f
++ ((uw_object_hdr_t *)iVar5)->owner
+)
+...>
+}
+
+@field_3_link@
+type R;
+identifier F =~ "^\(spawn_scheduled_effect_object\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar5 + 0x6) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar5)->link
+|
+- (*(ushort *)((char *)iVar5 + 0x6) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar5)->link
+|
+- (((ushort *)iVar5)[3] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar5)->link
+|
+- (((ushort *)iVar5)[3] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar5)->link
+|
+- (*(ushort *)(iVar5 + 0x6) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar5)->link
+|
+- (*(ushort *)(iVar5 + 0x6) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar5)->link
+)
+...>
+}
+
+@field_4_item_id@
+type R;
+identifier F =~ "^\(spawn_scheduled_effect_object\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
 - *(ushort *)((char *)source_object + 0x0) & 0x1ff
 + ((uw_object_hdr_t *)source_object)->item_id
 |
@@ -1473,7 +2002,7 @@ R F(...) {
 ...>
 }
 
-@field_3_flags_res@
+@field_4_flags_res@
 type R;
 identifier F =~ "^\(spawn_scheduled_effect_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1520,7 +2049,7 @@ R F(...) {
 ...>
 }
 
-@field_3_enchanted@
+@field_4_enchanted@
 type R;
 identifier F =~ "^\(spawn_scheduled_effect_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1567,7 +2096,7 @@ R F(...) {
 ...>
 }
 
-@field_3_doordir@
+@field_4_doordir@
 type R;
 identifier F =~ "^\(spawn_scheduled_effect_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1614,7 +2143,7 @@ R F(...) {
 ...>
 }
 
-@field_3_invisible@
+@field_4_invisible@
 type R;
 identifier F =~ "^\(spawn_scheduled_effect_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1661,7 +2190,7 @@ R F(...) {
 ...>
 }
 
-@field_3_is_quant@
+@field_4_is_quant@
 type R;
 identifier F =~ "^\(spawn_scheduled_effect_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1723,7 +2252,7 @@ R F(...) {
 ...>
 }
 
-@field_3_zpos@
+@field_4_zpos@
 type R;
 identifier F =~ "^\(spawn_scheduled_effect_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1749,7 +2278,7 @@ R F(...) {
 ...>
 }
 
-@field_3_heading@
+@field_4_heading@
 type R;
 identifier F =~ "^\(spawn_scheduled_effect_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1778,7 +2307,7 @@ R F(...) {
 ...>
 }
 
-@field_3_ypos@
+@field_4_ypos@
 type R;
 identifier F =~ "^\(spawn_scheduled_effect_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1813,7 +2342,7 @@ R F(...) {
 ...>
 }
 
-@field_3_xpos@
+@field_4_xpos@
 type R;
 identifier F =~ "^\(spawn_scheduled_effect_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1857,7 +2386,7 @@ R F(...) {
 ...>
 }
 
-@field_3_quality@
+@field_4_quality@
 type R;
 identifier F =~ "^\(spawn_scheduled_effect_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1883,7 +2412,7 @@ R F(...) {
 ...>
 }
 
-@field_3_next@
+@field_4_next@
 type R;
 identifier F =~ "^\(spawn_scheduled_effect_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1921,7 +2450,7 @@ R F(...) {
 ...>
 }
 
-@field_3_owner@
+@field_4_owner@
 type R;
 identifier F =~ "^\(spawn_scheduled_effect_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1947,7 +2476,7 @@ R F(...) {
 ...>
 }
 
-@field_3_link@
+@field_4_link@
 type R;
 identifier F =~ "^\(spawn_scheduled_effect_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1981,535 +2510,6 @@ R F(...) {
 |
 - source_object[3] >> 6
 + ((uw_object_hdr_t *)source_object)->link
-)
-...>
-}
-
-@field_4_item_id@
-type R;
-identifier F =~ "^\(spawn_scheduled_effect_object\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)iVar5 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar5)->item_id
-|
-- ((ushort *)iVar5)[0] & 0x1ff
-+ ((uw_object_hdr_t *)iVar5)->item_id
-|
-- *(ushort *)iVar5 & 0x1ff
-+ ((uw_object_hdr_t *)iVar5)->item_id
-|
-- *(ushort *)(iVar5 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar5)->item_id
-|
-- CONCAT11(iVar5[1], *iVar5) & 0x1ff
-+ ((uw_object_hdr_t *)iVar5)->item_id
-|
-- CONCAT11(iVar5[1], iVar5[0]) & 0x1ff
-+ ((uw_object_hdr_t *)iVar5)->item_id
-)
-...>
-}
-
-@field_4_flags_res@
-type R;
-identifier F =~ "^\(spawn_scheduled_effect_object\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)iVar5 + 0x0) >> 9) & 0x7
-+ ((uw_object_hdr_t *)iVar5)->flags_res
-|
-- (*(ushort *)((char *)iVar5 + 0x0) & 0xe00) >> 9
-+ ((uw_object_hdr_t *)iVar5)->flags_res
-|
-- (((ushort *)iVar5)[0] >> 9) & 0x7
-+ ((uw_object_hdr_t *)iVar5)->flags_res
-|
-- (((ushort *)iVar5)[0] & 0xe00) >> 9
-+ ((uw_object_hdr_t *)iVar5)->flags_res
-|
-- (*(ushort *)iVar5 >> 9) & 0x7
-+ ((uw_object_hdr_t *)iVar5)->flags_res
-|
-- (*(ushort *)iVar5 & 0xe00) >> 9
-+ ((uw_object_hdr_t *)iVar5)->flags_res
-|
-- (*(ushort *)(iVar5 + 0x0) >> 9) & 0x7
-+ ((uw_object_hdr_t *)iVar5)->flags_res
-|
-- (*(ushort *)(iVar5 + 0x0) & 0xe00) >> 9
-+ ((uw_object_hdr_t *)iVar5)->flags_res
-|
-- (CONCAT11(iVar5[1], *iVar5) >> 9) & 0x7
-+ ((uw_object_hdr_t *)iVar5)->flags_res
-|
-- (CONCAT11(iVar5[1], *iVar5) & 0xe00) >> 9
-+ ((uw_object_hdr_t *)iVar5)->flags_res
-|
-- (CONCAT11(iVar5[1], iVar5[0]) >> 9) & 0x7
-+ ((uw_object_hdr_t *)iVar5)->flags_res
-|
-- (CONCAT11(iVar5[1], iVar5[0]) & 0xe00) >> 9
-+ ((uw_object_hdr_t *)iVar5)->flags_res
-|
-- (*(byte *)((char *)iVar5 + 0x1) >> 1) & 0x7
-+ ((uw_object_hdr_t *)iVar5)->flags_res
-|
-- (*(byte *)((char *)iVar5 + 0x1) & 0xe) >> 1
-+ ((uw_object_hdr_t *)iVar5)->flags_res
-)
-...>
-}
-
-@field_4_enchanted@
-type R;
-identifier F =~ "^\(spawn_scheduled_effect_object\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)iVar5 + 0x0) >> 12) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->enchanted
-|
-- (*(ushort *)((char *)iVar5 + 0x0) & 0x1000) >> 12
-+ ((uw_object_hdr_t *)iVar5)->enchanted
-|
-- (((ushort *)iVar5)[0] >> 12) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->enchanted
-|
-- (((ushort *)iVar5)[0] & 0x1000) >> 12
-+ ((uw_object_hdr_t *)iVar5)->enchanted
-|
-- (*(ushort *)iVar5 >> 12) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->enchanted
-|
-- (*(ushort *)iVar5 & 0x1000) >> 12
-+ ((uw_object_hdr_t *)iVar5)->enchanted
-|
-- (*(ushort *)(iVar5 + 0x0) >> 12) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->enchanted
-|
-- (*(ushort *)(iVar5 + 0x0) & 0x1000) >> 12
-+ ((uw_object_hdr_t *)iVar5)->enchanted
-|
-- (CONCAT11(iVar5[1], *iVar5) >> 12) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->enchanted
-|
-- (CONCAT11(iVar5[1], *iVar5) & 0x1000) >> 12
-+ ((uw_object_hdr_t *)iVar5)->enchanted
-|
-- (CONCAT11(iVar5[1], iVar5[0]) >> 12) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->enchanted
-|
-- (CONCAT11(iVar5[1], iVar5[0]) & 0x1000) >> 12
-+ ((uw_object_hdr_t *)iVar5)->enchanted
-|
-- (*(byte *)((char *)iVar5 + 0x1) >> 4) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->enchanted
-|
-- (*(byte *)((char *)iVar5 + 0x1) & 0x10) >> 4
-+ ((uw_object_hdr_t *)iVar5)->enchanted
-)
-...>
-}
-
-@field_4_doordir@
-type R;
-identifier F =~ "^\(spawn_scheduled_effect_object\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)iVar5 + 0x0) >> 13) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->doordir
-|
-- (*(ushort *)((char *)iVar5 + 0x0) & 0x2000) >> 13
-+ ((uw_object_hdr_t *)iVar5)->doordir
-|
-- (((ushort *)iVar5)[0] >> 13) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->doordir
-|
-- (((ushort *)iVar5)[0] & 0x2000) >> 13
-+ ((uw_object_hdr_t *)iVar5)->doordir
-|
-- (*(ushort *)iVar5 >> 13) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->doordir
-|
-- (*(ushort *)iVar5 & 0x2000) >> 13
-+ ((uw_object_hdr_t *)iVar5)->doordir
-|
-- (*(ushort *)(iVar5 + 0x0) >> 13) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->doordir
-|
-- (*(ushort *)(iVar5 + 0x0) & 0x2000) >> 13
-+ ((uw_object_hdr_t *)iVar5)->doordir
-|
-- (CONCAT11(iVar5[1], *iVar5) >> 13) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->doordir
-|
-- (CONCAT11(iVar5[1], *iVar5) & 0x2000) >> 13
-+ ((uw_object_hdr_t *)iVar5)->doordir
-|
-- (CONCAT11(iVar5[1], iVar5[0]) >> 13) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->doordir
-|
-- (CONCAT11(iVar5[1], iVar5[0]) & 0x2000) >> 13
-+ ((uw_object_hdr_t *)iVar5)->doordir
-|
-- (*(byte *)((char *)iVar5 + 0x1) >> 5) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->doordir
-|
-- (*(byte *)((char *)iVar5 + 0x1) & 0x20) >> 5
-+ ((uw_object_hdr_t *)iVar5)->doordir
-)
-...>
-}
-
-@field_4_invisible@
-type R;
-identifier F =~ "^\(spawn_scheduled_effect_object\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)iVar5 + 0x0) >> 14) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->invisible
-|
-- (*(ushort *)((char *)iVar5 + 0x0) & 0x4000) >> 14
-+ ((uw_object_hdr_t *)iVar5)->invisible
-|
-- (((ushort *)iVar5)[0] >> 14) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->invisible
-|
-- (((ushort *)iVar5)[0] & 0x4000) >> 14
-+ ((uw_object_hdr_t *)iVar5)->invisible
-|
-- (*(ushort *)iVar5 >> 14) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->invisible
-|
-- (*(ushort *)iVar5 & 0x4000) >> 14
-+ ((uw_object_hdr_t *)iVar5)->invisible
-|
-- (*(ushort *)(iVar5 + 0x0) >> 14) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->invisible
-|
-- (*(ushort *)(iVar5 + 0x0) & 0x4000) >> 14
-+ ((uw_object_hdr_t *)iVar5)->invisible
-|
-- (CONCAT11(iVar5[1], *iVar5) >> 14) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->invisible
-|
-- (CONCAT11(iVar5[1], *iVar5) & 0x4000) >> 14
-+ ((uw_object_hdr_t *)iVar5)->invisible
-|
-- (CONCAT11(iVar5[1], iVar5[0]) >> 14) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->invisible
-|
-- (CONCAT11(iVar5[1], iVar5[0]) & 0x4000) >> 14
-+ ((uw_object_hdr_t *)iVar5)->invisible
-|
-- (*(byte *)((char *)iVar5 + 0x1) >> 6) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->invisible
-|
-- (*(byte *)((char *)iVar5 + 0x1) & 0x40) >> 6
-+ ((uw_object_hdr_t *)iVar5)->invisible
-)
-...>
-}
-
-@field_4_is_quant@
-type R;
-identifier F =~ "^\(spawn_scheduled_effect_object\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)iVar5 + 0x0) >> 15) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->is_quant
-|
-- (*(ushort *)((char *)iVar5 + 0x0) & 0x8000) >> 15
-+ ((uw_object_hdr_t *)iVar5)->is_quant
-|
-- (((ushort *)iVar5)[0] >> 15) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->is_quant
-|
-- (((ushort *)iVar5)[0] & 0x8000) >> 15
-+ ((uw_object_hdr_t *)iVar5)->is_quant
-|
-- (*(ushort *)iVar5 >> 15) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->is_quant
-|
-- (*(ushort *)iVar5 & 0x8000) >> 15
-+ ((uw_object_hdr_t *)iVar5)->is_quant
-|
-- (*(ushort *)(iVar5 + 0x0) >> 15) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->is_quant
-|
-- (*(ushort *)(iVar5 + 0x0) & 0x8000) >> 15
-+ ((uw_object_hdr_t *)iVar5)->is_quant
-|
-- (CONCAT11(iVar5[1], *iVar5) >> 15) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->is_quant
-|
-- (CONCAT11(iVar5[1], *iVar5) & 0x8000) >> 15
-+ ((uw_object_hdr_t *)iVar5)->is_quant
-|
-- (CONCAT11(iVar5[1], iVar5[0]) >> 15) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->is_quant
-|
-- (CONCAT11(iVar5[1], iVar5[0]) & 0x8000) >> 15
-+ ((uw_object_hdr_t *)iVar5)->is_quant
-|
-- (*(byte *)((char *)iVar5 + 0x1) >> 7) & 0x1
-+ ((uw_object_hdr_t *)iVar5)->is_quant
-|
-- (*(byte *)((char *)iVar5 + 0x1) & 0x80) >> 7
-+ ((uw_object_hdr_t *)iVar5)->is_quant
-)
-...>
-}
-
-@field_4_zpos@
-type R;
-identifier F =~ "^\(spawn_scheduled_effect_object\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)iVar5 + 0x2) & 0x7f
-+ ((uw_object_hdr_t *)iVar5)->zpos
-|
-- ((ushort *)iVar5)[1] & 0x7f
-+ ((uw_object_hdr_t *)iVar5)->zpos
-|
-- *(ushort *)(iVar5 + 0x2) & 0x7f
-+ ((uw_object_hdr_t *)iVar5)->zpos
-|
-- *(byte *)((char *)iVar5 + 0x2) & 0x7f
-+ ((uw_object_hdr_t *)iVar5)->zpos
-|
-- iVar5[2] & 0x7f
-+ ((uw_object_hdr_t *)iVar5)->zpos
-)
-...>
-}
-
-@field_4_heading@
-type R;
-identifier F =~ "^\(spawn_scheduled_effect_object\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)iVar5 + 0x2) >> 7) & 0x7
-+ ((uw_object_hdr_t *)iVar5)->heading
-|
-- (*(ushort *)((char *)iVar5 + 0x2) & 0x380) >> 7
-+ ((uw_object_hdr_t *)iVar5)->heading
-|
-- (((ushort *)iVar5)[1] >> 7) & 0x7
-+ ((uw_object_hdr_t *)iVar5)->heading
-|
-- (((ushort *)iVar5)[1] & 0x380) >> 7
-+ ((uw_object_hdr_t *)iVar5)->heading
-|
-- (*(ushort *)(iVar5 + 0x2) >> 7) & 0x7
-+ ((uw_object_hdr_t *)iVar5)->heading
-|
-- (*(ushort *)(iVar5 + 0x2) & 0x380) >> 7
-+ ((uw_object_hdr_t *)iVar5)->heading
-)
-...>
-}
-
-@field_4_ypos@
-type R;
-identifier F =~ "^\(spawn_scheduled_effect_object\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)iVar5 + 0x2) >> 10) & 0x7
-+ ((uw_object_hdr_t *)iVar5)->ypos
-|
-- (*(ushort *)((char *)iVar5 + 0x2) & 0x1c00) >> 10
-+ ((uw_object_hdr_t *)iVar5)->ypos
-|
-- (((ushort *)iVar5)[1] >> 10) & 0x7
-+ ((uw_object_hdr_t *)iVar5)->ypos
-|
-- (((ushort *)iVar5)[1] & 0x1c00) >> 10
-+ ((uw_object_hdr_t *)iVar5)->ypos
-|
-- (*(ushort *)(iVar5 + 0x2) >> 10) & 0x7
-+ ((uw_object_hdr_t *)iVar5)->ypos
-|
-- (*(ushort *)(iVar5 + 0x2) & 0x1c00) >> 10
-+ ((uw_object_hdr_t *)iVar5)->ypos
-|
-- (*(byte *)((char *)iVar5 + 0x3) >> 2) & 0x7
-+ ((uw_object_hdr_t *)iVar5)->ypos
-|
-- (*(byte *)((char *)iVar5 + 0x3) & 0x1c) >> 2
-+ ((uw_object_hdr_t *)iVar5)->ypos
-)
-...>
-}
-
-@field_4_xpos@
-type R;
-identifier F =~ "^\(spawn_scheduled_effect_object\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)iVar5 + 0x2) >> 13) & 0x7
-+ ((uw_object_hdr_t *)iVar5)->xpos
-|
-- (*(ushort *)((char *)iVar5 + 0x2) & 0xe000) >> 13
-+ ((uw_object_hdr_t *)iVar5)->xpos
-|
-- (((ushort *)iVar5)[1] >> 13) & 0x7
-+ ((uw_object_hdr_t *)iVar5)->xpos
-|
-- (((ushort *)iVar5)[1] & 0xe000) >> 13
-+ ((uw_object_hdr_t *)iVar5)->xpos
-|
-- (*(ushort *)(iVar5 + 0x2) >> 13) & 0x7
-+ ((uw_object_hdr_t *)iVar5)->xpos
-|
-- (*(ushort *)(iVar5 + 0x2) & 0xe000) >> 13
-+ ((uw_object_hdr_t *)iVar5)->xpos
-|
-- (*(byte *)((char *)iVar5 + 0x3) >> 5) & 0x7
-+ ((uw_object_hdr_t *)iVar5)->xpos
-|
-- (*(byte *)((char *)iVar5 + 0x3) & 0xe0) >> 5
-+ ((uw_object_hdr_t *)iVar5)->xpos
-)
-...>
-}
-
-@field_4_quality@
-type R;
-identifier F =~ "^\(spawn_scheduled_effect_object\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)iVar5 + 0x4) & 0x3f
-+ ((uw_object_hdr_t *)iVar5)->quality
-|
-- ((ushort *)iVar5)[2] & 0x3f
-+ ((uw_object_hdr_t *)iVar5)->quality
-|
-- *(ushort *)(iVar5 + 0x4) & 0x3f
-+ ((uw_object_hdr_t *)iVar5)->quality
-|
-- *(byte *)((char *)iVar5 + 0x4) & 0x3f
-+ ((uw_object_hdr_t *)iVar5)->quality
-|
-- iVar5[4] & 0x3f
-+ ((uw_object_hdr_t *)iVar5)->quality
-)
-...>
-}
-
-@field_4_next@
-type R;
-identifier F =~ "^\(spawn_scheduled_effect_object\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)iVar5 + 0x4) >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)iVar5)->next
-|
-- (*(ushort *)((char *)iVar5 + 0x4) & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)iVar5)->next
-|
-- (((ushort *)iVar5)[2] >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)iVar5)->next
-|
-- (((ushort *)iVar5)[2] & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)iVar5)->next
-|
-- (*(ushort *)(iVar5 + 0x4) >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)iVar5)->next
-|
-- (*(ushort *)(iVar5 + 0x4) & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)iVar5)->next
-)
-...>
-}
-
-@field_4_owner@
-type R;
-identifier F =~ "^\(spawn_scheduled_effect_object\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)iVar5 + 0x6) & 0x3f
-+ ((uw_object_hdr_t *)iVar5)->owner
-|
-- ((ushort *)iVar5)[3] & 0x3f
-+ ((uw_object_hdr_t *)iVar5)->owner
-|
-- *(ushort *)(iVar5 + 0x6) & 0x3f
-+ ((uw_object_hdr_t *)iVar5)->owner
-|
-- *(byte *)((char *)iVar5 + 0x6) & 0x3f
-+ ((uw_object_hdr_t *)iVar5)->owner
-|
-- iVar5[6] & 0x3f
-+ ((uw_object_hdr_t *)iVar5)->owner
-)
-...>
-}
-
-@field_4_link@
-type R;
-identifier F =~ "^\(spawn_scheduled_effect_object\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)iVar5 + 0x6) >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)iVar5)->link
-|
-- (*(ushort *)((char *)iVar5 + 0x6) & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)iVar5)->link
-|
-- (((ushort *)iVar5)[3] >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)iVar5)->link
-|
-- (((ushort *)iVar5)[3] & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)iVar5)->link
-|
-- (*(ushort *)(iVar5 + 0x6) >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)iVar5)->link
-|
-- (*(ushort *)(iVar5 + 0x6) & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)iVar5)->link
 )
 ...>
 }

@@ -1,6 +1,2357 @@
 @field_0_item_id@
 type R;
-identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\)$";
+identifier F =~ "^\(npc_combat_approach_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar5_rec + 0x0) & 0x1ff
++ ((uw_object_hdr_t *)iVar5_rec)->item_id
+|
+- ((ushort *)iVar5_rec)[0] & 0x1ff
++ ((uw_object_hdr_t *)iVar5_rec)->item_id
+|
+- *(ushort *)iVar5_rec & 0x1ff
++ ((uw_object_hdr_t *)iVar5_rec)->item_id
+|
+- *(ushort *)(iVar5_rec + 0x0) & 0x1ff
++ ((uw_object_hdr_t *)iVar5_rec)->item_id
+|
+- CONCAT11(iVar5_rec[1], *iVar5_rec) & 0x1ff
++ ((uw_object_hdr_t *)iVar5_rec)->item_id
+|
+- CONCAT11(iVar5_rec[1], iVar5_rec[0]) & 0x1ff
++ ((uw_object_hdr_t *)iVar5_rec)->item_id
+)
+...>
+}
+
+@field_0_flags_res@
+type R;
+identifier F =~ "^\(npc_combat_approach_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar5_rec + 0x0) >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar5_rec)->flags_res
+|
+- (*(ushort *)((char *)iVar5_rec + 0x0) & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar5_rec)->flags_res
+|
+- (((ushort *)iVar5_rec)[0] >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar5_rec)->flags_res
+|
+- (((ushort *)iVar5_rec)[0] & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar5_rec)->flags_res
+|
+- (*(ushort *)iVar5_rec >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar5_rec)->flags_res
+|
+- (*(ushort *)iVar5_rec & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar5_rec)->flags_res
+|
+- (*(ushort *)(iVar5_rec + 0x0) >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar5_rec)->flags_res
+|
+- (*(ushort *)(iVar5_rec + 0x0) & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar5_rec)->flags_res
+|
+- (CONCAT11(iVar5_rec[1], *iVar5_rec) >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar5_rec)->flags_res
+|
+- (CONCAT11(iVar5_rec[1], *iVar5_rec) & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar5_rec)->flags_res
+|
+- (CONCAT11(iVar5_rec[1], iVar5_rec[0]) >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar5_rec)->flags_res
+|
+- (CONCAT11(iVar5_rec[1], iVar5_rec[0]) & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar5_rec)->flags_res
+|
+- (*(byte *)((char *)iVar5_rec + 0x1) >> 1) & 0x7
++ ((uw_object_hdr_t *)iVar5_rec)->flags_res
+|
+- (*(byte *)((char *)iVar5_rec + 0x1) & 0xe) >> 1
++ ((uw_object_hdr_t *)iVar5_rec)->flags_res
+)
+...>
+}
+
+@field_0_enchanted@
+type R;
+identifier F =~ "^\(npc_combat_approach_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar5_rec + 0x0) >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->enchanted
+|
+- (*(ushort *)((char *)iVar5_rec + 0x0) & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar5_rec)->enchanted
+|
+- (((ushort *)iVar5_rec)[0] >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->enchanted
+|
+- (((ushort *)iVar5_rec)[0] & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar5_rec)->enchanted
+|
+- (*(ushort *)iVar5_rec >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->enchanted
+|
+- (*(ushort *)iVar5_rec & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar5_rec)->enchanted
+|
+- (*(ushort *)(iVar5_rec + 0x0) >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->enchanted
+|
+- (*(ushort *)(iVar5_rec + 0x0) & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar5_rec)->enchanted
+|
+- (CONCAT11(iVar5_rec[1], *iVar5_rec) >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->enchanted
+|
+- (CONCAT11(iVar5_rec[1], *iVar5_rec) & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar5_rec)->enchanted
+|
+- (CONCAT11(iVar5_rec[1], iVar5_rec[0]) >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->enchanted
+|
+- (CONCAT11(iVar5_rec[1], iVar5_rec[0]) & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar5_rec)->enchanted
+|
+- (*(byte *)((char *)iVar5_rec + 0x1) >> 4) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->enchanted
+|
+- (*(byte *)((char *)iVar5_rec + 0x1) & 0x10) >> 4
++ ((uw_object_hdr_t *)iVar5_rec)->enchanted
+)
+...>
+}
+
+@field_0_doordir@
+type R;
+identifier F =~ "^\(npc_combat_approach_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar5_rec + 0x0) >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->doordir
+|
+- (*(ushort *)((char *)iVar5_rec + 0x0) & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar5_rec)->doordir
+|
+- (((ushort *)iVar5_rec)[0] >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->doordir
+|
+- (((ushort *)iVar5_rec)[0] & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar5_rec)->doordir
+|
+- (*(ushort *)iVar5_rec >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->doordir
+|
+- (*(ushort *)iVar5_rec & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar5_rec)->doordir
+|
+- (*(ushort *)(iVar5_rec + 0x0) >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->doordir
+|
+- (*(ushort *)(iVar5_rec + 0x0) & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar5_rec)->doordir
+|
+- (CONCAT11(iVar5_rec[1], *iVar5_rec) >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->doordir
+|
+- (CONCAT11(iVar5_rec[1], *iVar5_rec) & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar5_rec)->doordir
+|
+- (CONCAT11(iVar5_rec[1], iVar5_rec[0]) >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->doordir
+|
+- (CONCAT11(iVar5_rec[1], iVar5_rec[0]) & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar5_rec)->doordir
+|
+- (*(byte *)((char *)iVar5_rec + 0x1) >> 5) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->doordir
+|
+- (*(byte *)((char *)iVar5_rec + 0x1) & 0x20) >> 5
++ ((uw_object_hdr_t *)iVar5_rec)->doordir
+)
+...>
+}
+
+@field_0_invisible@
+type R;
+identifier F =~ "^\(npc_combat_approach_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar5_rec + 0x0) >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->invisible
+|
+- (*(ushort *)((char *)iVar5_rec + 0x0) & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar5_rec)->invisible
+|
+- (((ushort *)iVar5_rec)[0] >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->invisible
+|
+- (((ushort *)iVar5_rec)[0] & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar5_rec)->invisible
+|
+- (*(ushort *)iVar5_rec >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->invisible
+|
+- (*(ushort *)iVar5_rec & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar5_rec)->invisible
+|
+- (*(ushort *)(iVar5_rec + 0x0) >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->invisible
+|
+- (*(ushort *)(iVar5_rec + 0x0) & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar5_rec)->invisible
+|
+- (CONCAT11(iVar5_rec[1], *iVar5_rec) >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->invisible
+|
+- (CONCAT11(iVar5_rec[1], *iVar5_rec) & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar5_rec)->invisible
+|
+- (CONCAT11(iVar5_rec[1], iVar5_rec[0]) >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->invisible
+|
+- (CONCAT11(iVar5_rec[1], iVar5_rec[0]) & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar5_rec)->invisible
+|
+- (*(byte *)((char *)iVar5_rec + 0x1) >> 6) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->invisible
+|
+- (*(byte *)((char *)iVar5_rec + 0x1) & 0x40) >> 6
++ ((uw_object_hdr_t *)iVar5_rec)->invisible
+)
+...>
+}
+
+@field_0_is_quant@
+type R;
+identifier F =~ "^\(npc_combat_approach_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar5_rec + 0x0) >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->is_quant
+|
+- (*(ushort *)((char *)iVar5_rec + 0x0) & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar5_rec)->is_quant
+|
+- (((ushort *)iVar5_rec)[0] >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->is_quant
+|
+- (((ushort *)iVar5_rec)[0] & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar5_rec)->is_quant
+|
+- (*(ushort *)iVar5_rec >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->is_quant
+|
+- (*(ushort *)iVar5_rec & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar5_rec)->is_quant
+|
+- (*(ushort *)(iVar5_rec + 0x0) >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->is_quant
+|
+- (*(ushort *)(iVar5_rec + 0x0) & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar5_rec)->is_quant
+|
+- (CONCAT11(iVar5_rec[1], *iVar5_rec) >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->is_quant
+|
+- (CONCAT11(iVar5_rec[1], *iVar5_rec) & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar5_rec)->is_quant
+|
+- (CONCAT11(iVar5_rec[1], iVar5_rec[0]) >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->is_quant
+|
+- (CONCAT11(iVar5_rec[1], iVar5_rec[0]) & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar5_rec)->is_quant
+|
+- (*(byte *)((char *)iVar5_rec + 0x1) >> 7) & 0x1
++ ((uw_object_hdr_t *)iVar5_rec)->is_quant
+|
+- (*(byte *)((char *)iVar5_rec + 0x1) & 0x80) >> 7
++ ((uw_object_hdr_t *)iVar5_rec)->is_quant
+)
+...>
+}
+
+@field_0_zpos@
+type R;
+identifier F =~ "^\(npc_combat_approach_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar5_rec + 0x2) & 0x7f
++ ((uw_object_hdr_t *)iVar5_rec)->zpos
+|
+- ((ushort *)iVar5_rec)[1] & 0x7f
++ ((uw_object_hdr_t *)iVar5_rec)->zpos
+|
+- *(ushort *)(iVar5_rec + 0x2) & 0x7f
++ ((uw_object_hdr_t *)iVar5_rec)->zpos
+|
+- *(byte *)((char *)iVar5_rec + 0x2) & 0x7f
++ ((uw_object_hdr_t *)iVar5_rec)->zpos
+|
+- iVar5_rec[2] & 0x7f
++ ((uw_object_hdr_t *)iVar5_rec)->zpos
+)
+...>
+}
+
+@field_0_heading@
+type R;
+identifier F =~ "^\(npc_combat_approach_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar5_rec + 0x2) >> 7) & 0x7
++ ((uw_object_hdr_t *)iVar5_rec)->heading
+|
+- (*(ushort *)((char *)iVar5_rec + 0x2) & 0x380) >> 7
++ ((uw_object_hdr_t *)iVar5_rec)->heading
+|
+- (((ushort *)iVar5_rec)[1] >> 7) & 0x7
++ ((uw_object_hdr_t *)iVar5_rec)->heading
+|
+- (((ushort *)iVar5_rec)[1] & 0x380) >> 7
++ ((uw_object_hdr_t *)iVar5_rec)->heading
+|
+- (*(ushort *)(iVar5_rec + 0x2) >> 7) & 0x7
++ ((uw_object_hdr_t *)iVar5_rec)->heading
+|
+- (*(ushort *)(iVar5_rec + 0x2) & 0x380) >> 7
++ ((uw_object_hdr_t *)iVar5_rec)->heading
+)
+...>
+}
+
+@field_0_ypos@
+type R;
+identifier F =~ "^\(npc_combat_approach_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar5_rec + 0x2) >> 10) & 0x7
++ ((uw_object_hdr_t *)iVar5_rec)->ypos
+|
+- (*(ushort *)((char *)iVar5_rec + 0x2) & 0x1c00) >> 10
++ ((uw_object_hdr_t *)iVar5_rec)->ypos
+|
+- (((ushort *)iVar5_rec)[1] >> 10) & 0x7
++ ((uw_object_hdr_t *)iVar5_rec)->ypos
+|
+- (((ushort *)iVar5_rec)[1] & 0x1c00) >> 10
++ ((uw_object_hdr_t *)iVar5_rec)->ypos
+|
+- (*(ushort *)(iVar5_rec + 0x2) >> 10) & 0x7
++ ((uw_object_hdr_t *)iVar5_rec)->ypos
+|
+- (*(ushort *)(iVar5_rec + 0x2) & 0x1c00) >> 10
++ ((uw_object_hdr_t *)iVar5_rec)->ypos
+|
+- (*(byte *)((char *)iVar5_rec + 0x3) >> 2) & 0x7
++ ((uw_object_hdr_t *)iVar5_rec)->ypos
+|
+- (*(byte *)((char *)iVar5_rec + 0x3) & 0x1c) >> 2
++ ((uw_object_hdr_t *)iVar5_rec)->ypos
+)
+...>
+}
+
+@field_0_xpos@
+type R;
+identifier F =~ "^\(npc_combat_approach_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar5_rec + 0x2) >> 13) & 0x7
++ ((uw_object_hdr_t *)iVar5_rec)->xpos
+|
+- (*(ushort *)((char *)iVar5_rec + 0x2) & 0xe000) >> 13
++ ((uw_object_hdr_t *)iVar5_rec)->xpos
+|
+- (((ushort *)iVar5_rec)[1] >> 13) & 0x7
++ ((uw_object_hdr_t *)iVar5_rec)->xpos
+|
+- (((ushort *)iVar5_rec)[1] & 0xe000) >> 13
++ ((uw_object_hdr_t *)iVar5_rec)->xpos
+|
+- (*(ushort *)(iVar5_rec + 0x2) >> 13) & 0x7
++ ((uw_object_hdr_t *)iVar5_rec)->xpos
+|
+- (*(ushort *)(iVar5_rec + 0x2) & 0xe000) >> 13
++ ((uw_object_hdr_t *)iVar5_rec)->xpos
+|
+- (*(byte *)((char *)iVar5_rec + 0x3) >> 5) & 0x7
++ ((uw_object_hdr_t *)iVar5_rec)->xpos
+|
+- (*(byte *)((char *)iVar5_rec + 0x3) & 0xe0) >> 5
++ ((uw_object_hdr_t *)iVar5_rec)->xpos
+)
+...>
+}
+
+@field_0_quality@
+type R;
+identifier F =~ "^\(npc_combat_approach_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar5_rec + 0x4) & 0x3f
++ ((uw_object_hdr_t *)iVar5_rec)->quality
+|
+- ((ushort *)iVar5_rec)[2] & 0x3f
++ ((uw_object_hdr_t *)iVar5_rec)->quality
+|
+- *(ushort *)(iVar5_rec + 0x4) & 0x3f
++ ((uw_object_hdr_t *)iVar5_rec)->quality
+|
+- *(byte *)((char *)iVar5_rec + 0x4) & 0x3f
++ ((uw_object_hdr_t *)iVar5_rec)->quality
+|
+- iVar5_rec[4] & 0x3f
++ ((uw_object_hdr_t *)iVar5_rec)->quality
+)
+...>
+}
+
+@field_0_next@
+type R;
+identifier F =~ "^\(npc_combat_approach_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar5_rec + 0x4) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar5_rec)->next
+|
+- (*(ushort *)((char *)iVar5_rec + 0x4) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar5_rec)->next
+|
+- (((ushort *)iVar5_rec)[2] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar5_rec)->next
+|
+- (((ushort *)iVar5_rec)[2] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar5_rec)->next
+|
+- (*(ushort *)(iVar5_rec + 0x4) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar5_rec)->next
+|
+- (*(ushort *)(iVar5_rec + 0x4) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar5_rec)->next
+)
+...>
+}
+
+@field_0_owner@
+type R;
+identifier F =~ "^\(npc_combat_approach_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar5_rec + 0x6) & 0x3f
++ ((uw_object_hdr_t *)iVar5_rec)->owner
+|
+- ((ushort *)iVar5_rec)[3] & 0x3f
++ ((uw_object_hdr_t *)iVar5_rec)->owner
+|
+- *(ushort *)(iVar5_rec + 0x6) & 0x3f
++ ((uw_object_hdr_t *)iVar5_rec)->owner
+|
+- *(byte *)((char *)iVar5_rec + 0x6) & 0x3f
++ ((uw_object_hdr_t *)iVar5_rec)->owner
+|
+- iVar5_rec[6] & 0x3f
++ ((uw_object_hdr_t *)iVar5_rec)->owner
+)
+...>
+}
+
+@field_0_link@
+type R;
+identifier F =~ "^\(npc_combat_approach_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar5_rec + 0x6) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar5_rec)->link
+|
+- (*(ushort *)((char *)iVar5_rec + 0x6) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar5_rec)->link
+|
+- (((ushort *)iVar5_rec)[3] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar5_rec)->link
+|
+- (((ushort *)iVar5_rec)[3] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar5_rec)->link
+|
+- (*(ushort *)(iVar5_rec + 0x6) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar5_rec)->link
+|
+- (*(ushort *)(iVar5_rec + 0x6) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar5_rec)->link
+)
+...>
+}
+
+@field_1_item_id@
+type R;
+identifier F =~ "^\(npc_combat_engage_close_tick\|npc_combat_set_stance\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar6_rec + 0x0) & 0x1ff
++ ((uw_object_hdr_t *)iVar6_rec)->item_id
+|
+- ((ushort *)iVar6_rec)[0] & 0x1ff
++ ((uw_object_hdr_t *)iVar6_rec)->item_id
+|
+- *(ushort *)iVar6_rec & 0x1ff
++ ((uw_object_hdr_t *)iVar6_rec)->item_id
+|
+- *(ushort *)(iVar6_rec + 0x0) & 0x1ff
++ ((uw_object_hdr_t *)iVar6_rec)->item_id
+|
+- CONCAT11(iVar6_rec[1], *iVar6_rec) & 0x1ff
++ ((uw_object_hdr_t *)iVar6_rec)->item_id
+|
+- CONCAT11(iVar6_rec[1], iVar6_rec[0]) & 0x1ff
++ ((uw_object_hdr_t *)iVar6_rec)->item_id
+)
+...>
+}
+
+@field_1_flags_res@
+type R;
+identifier F =~ "^\(npc_combat_engage_close_tick\|npc_combat_set_stance\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar6_rec + 0x0) >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar6_rec)->flags_res
+|
+- (*(ushort *)((char *)iVar6_rec + 0x0) & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar6_rec)->flags_res
+|
+- (((ushort *)iVar6_rec)[0] >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar6_rec)->flags_res
+|
+- (((ushort *)iVar6_rec)[0] & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar6_rec)->flags_res
+|
+- (*(ushort *)iVar6_rec >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar6_rec)->flags_res
+|
+- (*(ushort *)iVar6_rec & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar6_rec)->flags_res
+|
+- (*(ushort *)(iVar6_rec + 0x0) >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar6_rec)->flags_res
+|
+- (*(ushort *)(iVar6_rec + 0x0) & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar6_rec)->flags_res
+|
+- (CONCAT11(iVar6_rec[1], *iVar6_rec) >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar6_rec)->flags_res
+|
+- (CONCAT11(iVar6_rec[1], *iVar6_rec) & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar6_rec)->flags_res
+|
+- (CONCAT11(iVar6_rec[1], iVar6_rec[0]) >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar6_rec)->flags_res
+|
+- (CONCAT11(iVar6_rec[1], iVar6_rec[0]) & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar6_rec)->flags_res
+|
+- (*(byte *)((char *)iVar6_rec + 0x1) >> 1) & 0x7
++ ((uw_object_hdr_t *)iVar6_rec)->flags_res
+|
+- (*(byte *)((char *)iVar6_rec + 0x1) & 0xe) >> 1
++ ((uw_object_hdr_t *)iVar6_rec)->flags_res
+)
+...>
+}
+
+@field_1_enchanted@
+type R;
+identifier F =~ "^\(npc_combat_engage_close_tick\|npc_combat_set_stance\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar6_rec + 0x0) >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->enchanted
+|
+- (*(ushort *)((char *)iVar6_rec + 0x0) & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar6_rec)->enchanted
+|
+- (((ushort *)iVar6_rec)[0] >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->enchanted
+|
+- (((ushort *)iVar6_rec)[0] & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar6_rec)->enchanted
+|
+- (*(ushort *)iVar6_rec >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->enchanted
+|
+- (*(ushort *)iVar6_rec & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar6_rec)->enchanted
+|
+- (*(ushort *)(iVar6_rec + 0x0) >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->enchanted
+|
+- (*(ushort *)(iVar6_rec + 0x0) & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar6_rec)->enchanted
+|
+- (CONCAT11(iVar6_rec[1], *iVar6_rec) >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->enchanted
+|
+- (CONCAT11(iVar6_rec[1], *iVar6_rec) & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar6_rec)->enchanted
+|
+- (CONCAT11(iVar6_rec[1], iVar6_rec[0]) >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->enchanted
+|
+- (CONCAT11(iVar6_rec[1], iVar6_rec[0]) & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar6_rec)->enchanted
+|
+- (*(byte *)((char *)iVar6_rec + 0x1) >> 4) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->enchanted
+|
+- (*(byte *)((char *)iVar6_rec + 0x1) & 0x10) >> 4
++ ((uw_object_hdr_t *)iVar6_rec)->enchanted
+)
+...>
+}
+
+@field_1_doordir@
+type R;
+identifier F =~ "^\(npc_combat_engage_close_tick\|npc_combat_set_stance\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar6_rec + 0x0) >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->doordir
+|
+- (*(ushort *)((char *)iVar6_rec + 0x0) & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar6_rec)->doordir
+|
+- (((ushort *)iVar6_rec)[0] >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->doordir
+|
+- (((ushort *)iVar6_rec)[0] & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar6_rec)->doordir
+|
+- (*(ushort *)iVar6_rec >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->doordir
+|
+- (*(ushort *)iVar6_rec & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar6_rec)->doordir
+|
+- (*(ushort *)(iVar6_rec + 0x0) >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->doordir
+|
+- (*(ushort *)(iVar6_rec + 0x0) & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar6_rec)->doordir
+|
+- (CONCAT11(iVar6_rec[1], *iVar6_rec) >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->doordir
+|
+- (CONCAT11(iVar6_rec[1], *iVar6_rec) & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar6_rec)->doordir
+|
+- (CONCAT11(iVar6_rec[1], iVar6_rec[0]) >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->doordir
+|
+- (CONCAT11(iVar6_rec[1], iVar6_rec[0]) & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar6_rec)->doordir
+|
+- (*(byte *)((char *)iVar6_rec + 0x1) >> 5) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->doordir
+|
+- (*(byte *)((char *)iVar6_rec + 0x1) & 0x20) >> 5
++ ((uw_object_hdr_t *)iVar6_rec)->doordir
+)
+...>
+}
+
+@field_1_invisible@
+type R;
+identifier F =~ "^\(npc_combat_engage_close_tick\|npc_combat_set_stance\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar6_rec + 0x0) >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->invisible
+|
+- (*(ushort *)((char *)iVar6_rec + 0x0) & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar6_rec)->invisible
+|
+- (((ushort *)iVar6_rec)[0] >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->invisible
+|
+- (((ushort *)iVar6_rec)[0] & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar6_rec)->invisible
+|
+- (*(ushort *)iVar6_rec >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->invisible
+|
+- (*(ushort *)iVar6_rec & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar6_rec)->invisible
+|
+- (*(ushort *)(iVar6_rec + 0x0) >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->invisible
+|
+- (*(ushort *)(iVar6_rec + 0x0) & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar6_rec)->invisible
+|
+- (CONCAT11(iVar6_rec[1], *iVar6_rec) >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->invisible
+|
+- (CONCAT11(iVar6_rec[1], *iVar6_rec) & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar6_rec)->invisible
+|
+- (CONCAT11(iVar6_rec[1], iVar6_rec[0]) >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->invisible
+|
+- (CONCAT11(iVar6_rec[1], iVar6_rec[0]) & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar6_rec)->invisible
+|
+- (*(byte *)((char *)iVar6_rec + 0x1) >> 6) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->invisible
+|
+- (*(byte *)((char *)iVar6_rec + 0x1) & 0x40) >> 6
++ ((uw_object_hdr_t *)iVar6_rec)->invisible
+)
+...>
+}
+
+@field_1_is_quant@
+type R;
+identifier F =~ "^\(npc_combat_engage_close_tick\|npc_combat_set_stance\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar6_rec + 0x0) >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->is_quant
+|
+- (*(ushort *)((char *)iVar6_rec + 0x0) & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar6_rec)->is_quant
+|
+- (((ushort *)iVar6_rec)[0] >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->is_quant
+|
+- (((ushort *)iVar6_rec)[0] & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar6_rec)->is_quant
+|
+- (*(ushort *)iVar6_rec >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->is_quant
+|
+- (*(ushort *)iVar6_rec & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar6_rec)->is_quant
+|
+- (*(ushort *)(iVar6_rec + 0x0) >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->is_quant
+|
+- (*(ushort *)(iVar6_rec + 0x0) & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar6_rec)->is_quant
+|
+- (CONCAT11(iVar6_rec[1], *iVar6_rec) >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->is_quant
+|
+- (CONCAT11(iVar6_rec[1], *iVar6_rec) & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar6_rec)->is_quant
+|
+- (CONCAT11(iVar6_rec[1], iVar6_rec[0]) >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->is_quant
+|
+- (CONCAT11(iVar6_rec[1], iVar6_rec[0]) & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar6_rec)->is_quant
+|
+- (*(byte *)((char *)iVar6_rec + 0x1) >> 7) & 0x1
++ ((uw_object_hdr_t *)iVar6_rec)->is_quant
+|
+- (*(byte *)((char *)iVar6_rec + 0x1) & 0x80) >> 7
++ ((uw_object_hdr_t *)iVar6_rec)->is_quant
+)
+...>
+}
+
+@field_1_zpos@
+type R;
+identifier F =~ "^\(npc_combat_engage_close_tick\|npc_combat_set_stance\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar6_rec + 0x2) & 0x7f
++ ((uw_object_hdr_t *)iVar6_rec)->zpos
+|
+- ((ushort *)iVar6_rec)[1] & 0x7f
++ ((uw_object_hdr_t *)iVar6_rec)->zpos
+|
+- *(ushort *)(iVar6_rec + 0x2) & 0x7f
++ ((uw_object_hdr_t *)iVar6_rec)->zpos
+|
+- *(byte *)((char *)iVar6_rec + 0x2) & 0x7f
++ ((uw_object_hdr_t *)iVar6_rec)->zpos
+|
+- iVar6_rec[2] & 0x7f
++ ((uw_object_hdr_t *)iVar6_rec)->zpos
+)
+...>
+}
+
+@field_1_heading@
+type R;
+identifier F =~ "^\(npc_combat_engage_close_tick\|npc_combat_set_stance\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar6_rec + 0x2) >> 7) & 0x7
++ ((uw_object_hdr_t *)iVar6_rec)->heading
+|
+- (*(ushort *)((char *)iVar6_rec + 0x2) & 0x380) >> 7
++ ((uw_object_hdr_t *)iVar6_rec)->heading
+|
+- (((ushort *)iVar6_rec)[1] >> 7) & 0x7
++ ((uw_object_hdr_t *)iVar6_rec)->heading
+|
+- (((ushort *)iVar6_rec)[1] & 0x380) >> 7
++ ((uw_object_hdr_t *)iVar6_rec)->heading
+|
+- (*(ushort *)(iVar6_rec + 0x2) >> 7) & 0x7
++ ((uw_object_hdr_t *)iVar6_rec)->heading
+|
+- (*(ushort *)(iVar6_rec + 0x2) & 0x380) >> 7
++ ((uw_object_hdr_t *)iVar6_rec)->heading
+)
+...>
+}
+
+@field_1_ypos@
+type R;
+identifier F =~ "^\(npc_combat_engage_close_tick\|npc_combat_set_stance\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar6_rec + 0x2) >> 10) & 0x7
++ ((uw_object_hdr_t *)iVar6_rec)->ypos
+|
+- (*(ushort *)((char *)iVar6_rec + 0x2) & 0x1c00) >> 10
++ ((uw_object_hdr_t *)iVar6_rec)->ypos
+|
+- (((ushort *)iVar6_rec)[1] >> 10) & 0x7
++ ((uw_object_hdr_t *)iVar6_rec)->ypos
+|
+- (((ushort *)iVar6_rec)[1] & 0x1c00) >> 10
++ ((uw_object_hdr_t *)iVar6_rec)->ypos
+|
+- (*(ushort *)(iVar6_rec + 0x2) >> 10) & 0x7
++ ((uw_object_hdr_t *)iVar6_rec)->ypos
+|
+- (*(ushort *)(iVar6_rec + 0x2) & 0x1c00) >> 10
++ ((uw_object_hdr_t *)iVar6_rec)->ypos
+|
+- (*(byte *)((char *)iVar6_rec + 0x3) >> 2) & 0x7
++ ((uw_object_hdr_t *)iVar6_rec)->ypos
+|
+- (*(byte *)((char *)iVar6_rec + 0x3) & 0x1c) >> 2
++ ((uw_object_hdr_t *)iVar6_rec)->ypos
+)
+...>
+}
+
+@field_1_xpos@
+type R;
+identifier F =~ "^\(npc_combat_engage_close_tick\|npc_combat_set_stance\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar6_rec + 0x2) >> 13) & 0x7
++ ((uw_object_hdr_t *)iVar6_rec)->xpos
+|
+- (*(ushort *)((char *)iVar6_rec + 0x2) & 0xe000) >> 13
++ ((uw_object_hdr_t *)iVar6_rec)->xpos
+|
+- (((ushort *)iVar6_rec)[1] >> 13) & 0x7
++ ((uw_object_hdr_t *)iVar6_rec)->xpos
+|
+- (((ushort *)iVar6_rec)[1] & 0xe000) >> 13
++ ((uw_object_hdr_t *)iVar6_rec)->xpos
+|
+- (*(ushort *)(iVar6_rec + 0x2) >> 13) & 0x7
++ ((uw_object_hdr_t *)iVar6_rec)->xpos
+|
+- (*(ushort *)(iVar6_rec + 0x2) & 0xe000) >> 13
++ ((uw_object_hdr_t *)iVar6_rec)->xpos
+|
+- (*(byte *)((char *)iVar6_rec + 0x3) >> 5) & 0x7
++ ((uw_object_hdr_t *)iVar6_rec)->xpos
+|
+- (*(byte *)((char *)iVar6_rec + 0x3) & 0xe0) >> 5
++ ((uw_object_hdr_t *)iVar6_rec)->xpos
+)
+...>
+}
+
+@field_1_quality@
+type R;
+identifier F =~ "^\(npc_combat_engage_close_tick\|npc_combat_set_stance\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar6_rec + 0x4) & 0x3f
++ ((uw_object_hdr_t *)iVar6_rec)->quality
+|
+- ((ushort *)iVar6_rec)[2] & 0x3f
++ ((uw_object_hdr_t *)iVar6_rec)->quality
+|
+- *(ushort *)(iVar6_rec + 0x4) & 0x3f
++ ((uw_object_hdr_t *)iVar6_rec)->quality
+|
+- *(byte *)((char *)iVar6_rec + 0x4) & 0x3f
++ ((uw_object_hdr_t *)iVar6_rec)->quality
+|
+- iVar6_rec[4] & 0x3f
++ ((uw_object_hdr_t *)iVar6_rec)->quality
+)
+...>
+}
+
+@field_1_next@
+type R;
+identifier F =~ "^\(npc_combat_engage_close_tick\|npc_combat_set_stance\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar6_rec + 0x4) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar6_rec)->next
+|
+- (*(ushort *)((char *)iVar6_rec + 0x4) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar6_rec)->next
+|
+- (((ushort *)iVar6_rec)[2] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar6_rec)->next
+|
+- (((ushort *)iVar6_rec)[2] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar6_rec)->next
+|
+- (*(ushort *)(iVar6_rec + 0x4) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar6_rec)->next
+|
+- (*(ushort *)(iVar6_rec + 0x4) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar6_rec)->next
+)
+...>
+}
+
+@field_1_owner@
+type R;
+identifier F =~ "^\(npc_combat_engage_close_tick\|npc_combat_set_stance\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar6_rec + 0x6) & 0x3f
++ ((uw_object_hdr_t *)iVar6_rec)->owner
+|
+- ((ushort *)iVar6_rec)[3] & 0x3f
++ ((uw_object_hdr_t *)iVar6_rec)->owner
+|
+- *(ushort *)(iVar6_rec + 0x6) & 0x3f
++ ((uw_object_hdr_t *)iVar6_rec)->owner
+|
+- *(byte *)((char *)iVar6_rec + 0x6) & 0x3f
++ ((uw_object_hdr_t *)iVar6_rec)->owner
+|
+- iVar6_rec[6] & 0x3f
++ ((uw_object_hdr_t *)iVar6_rec)->owner
+)
+...>
+}
+
+@field_1_link@
+type R;
+identifier F =~ "^\(npc_combat_engage_close_tick\|npc_combat_set_stance\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar6_rec + 0x6) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar6_rec)->link
+|
+- (*(ushort *)((char *)iVar6_rec + 0x6) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar6_rec)->link
+|
+- (((ushort *)iVar6_rec)[3] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar6_rec)->link
+|
+- (((ushort *)iVar6_rec)[3] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar6_rec)->link
+|
+- (*(ushort *)(iVar6_rec + 0x6) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar6_rec)->link
+|
+- (*(ushort *)(iVar6_rec + 0x6) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar6_rec)->link
+)
+...>
+}
+
+@field_2_item_id@
+type R;
+identifier F =~ "^\(npc_combat_engage_wide_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar2_rec + 0x0) & 0x1ff
++ ((uw_object_hdr_t *)iVar2_rec)->item_id
+|
+- ((ushort *)iVar2_rec)[0] & 0x1ff
++ ((uw_object_hdr_t *)iVar2_rec)->item_id
+|
+- *(ushort *)iVar2_rec & 0x1ff
++ ((uw_object_hdr_t *)iVar2_rec)->item_id
+|
+- *(ushort *)(iVar2_rec + 0x0) & 0x1ff
++ ((uw_object_hdr_t *)iVar2_rec)->item_id
+|
+- CONCAT11(iVar2_rec[1], *iVar2_rec) & 0x1ff
++ ((uw_object_hdr_t *)iVar2_rec)->item_id
+|
+- CONCAT11(iVar2_rec[1], iVar2_rec[0]) & 0x1ff
++ ((uw_object_hdr_t *)iVar2_rec)->item_id
+)
+...>
+}
+
+@field_2_flags_res@
+type R;
+identifier F =~ "^\(npc_combat_engage_wide_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar2_rec + 0x0) >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar2_rec)->flags_res
+|
+- (*(ushort *)((char *)iVar2_rec + 0x0) & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar2_rec)->flags_res
+|
+- (((ushort *)iVar2_rec)[0] >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar2_rec)->flags_res
+|
+- (((ushort *)iVar2_rec)[0] & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar2_rec)->flags_res
+|
+- (*(ushort *)iVar2_rec >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar2_rec)->flags_res
+|
+- (*(ushort *)iVar2_rec & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar2_rec)->flags_res
+|
+- (*(ushort *)(iVar2_rec + 0x0) >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar2_rec)->flags_res
+|
+- (*(ushort *)(iVar2_rec + 0x0) & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar2_rec)->flags_res
+|
+- (CONCAT11(iVar2_rec[1], *iVar2_rec) >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar2_rec)->flags_res
+|
+- (CONCAT11(iVar2_rec[1], *iVar2_rec) & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar2_rec)->flags_res
+|
+- (CONCAT11(iVar2_rec[1], iVar2_rec[0]) >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar2_rec)->flags_res
+|
+- (CONCAT11(iVar2_rec[1], iVar2_rec[0]) & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar2_rec)->flags_res
+|
+- (*(byte *)((char *)iVar2_rec + 0x1) >> 1) & 0x7
++ ((uw_object_hdr_t *)iVar2_rec)->flags_res
+|
+- (*(byte *)((char *)iVar2_rec + 0x1) & 0xe) >> 1
++ ((uw_object_hdr_t *)iVar2_rec)->flags_res
+)
+...>
+}
+
+@field_2_enchanted@
+type R;
+identifier F =~ "^\(npc_combat_engage_wide_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar2_rec + 0x0) >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->enchanted
+|
+- (*(ushort *)((char *)iVar2_rec + 0x0) & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar2_rec)->enchanted
+|
+- (((ushort *)iVar2_rec)[0] >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->enchanted
+|
+- (((ushort *)iVar2_rec)[0] & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar2_rec)->enchanted
+|
+- (*(ushort *)iVar2_rec >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->enchanted
+|
+- (*(ushort *)iVar2_rec & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar2_rec)->enchanted
+|
+- (*(ushort *)(iVar2_rec + 0x0) >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->enchanted
+|
+- (*(ushort *)(iVar2_rec + 0x0) & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar2_rec)->enchanted
+|
+- (CONCAT11(iVar2_rec[1], *iVar2_rec) >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->enchanted
+|
+- (CONCAT11(iVar2_rec[1], *iVar2_rec) & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar2_rec)->enchanted
+|
+- (CONCAT11(iVar2_rec[1], iVar2_rec[0]) >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->enchanted
+|
+- (CONCAT11(iVar2_rec[1], iVar2_rec[0]) & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar2_rec)->enchanted
+|
+- (*(byte *)((char *)iVar2_rec + 0x1) >> 4) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->enchanted
+|
+- (*(byte *)((char *)iVar2_rec + 0x1) & 0x10) >> 4
++ ((uw_object_hdr_t *)iVar2_rec)->enchanted
+)
+...>
+}
+
+@field_2_doordir@
+type R;
+identifier F =~ "^\(npc_combat_engage_wide_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar2_rec + 0x0) >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->doordir
+|
+- (*(ushort *)((char *)iVar2_rec + 0x0) & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar2_rec)->doordir
+|
+- (((ushort *)iVar2_rec)[0] >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->doordir
+|
+- (((ushort *)iVar2_rec)[0] & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar2_rec)->doordir
+|
+- (*(ushort *)iVar2_rec >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->doordir
+|
+- (*(ushort *)iVar2_rec & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar2_rec)->doordir
+|
+- (*(ushort *)(iVar2_rec + 0x0) >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->doordir
+|
+- (*(ushort *)(iVar2_rec + 0x0) & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar2_rec)->doordir
+|
+- (CONCAT11(iVar2_rec[1], *iVar2_rec) >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->doordir
+|
+- (CONCAT11(iVar2_rec[1], *iVar2_rec) & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar2_rec)->doordir
+|
+- (CONCAT11(iVar2_rec[1], iVar2_rec[0]) >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->doordir
+|
+- (CONCAT11(iVar2_rec[1], iVar2_rec[0]) & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar2_rec)->doordir
+|
+- (*(byte *)((char *)iVar2_rec + 0x1) >> 5) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->doordir
+|
+- (*(byte *)((char *)iVar2_rec + 0x1) & 0x20) >> 5
++ ((uw_object_hdr_t *)iVar2_rec)->doordir
+)
+...>
+}
+
+@field_2_invisible@
+type R;
+identifier F =~ "^\(npc_combat_engage_wide_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar2_rec + 0x0) >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->invisible
+|
+- (*(ushort *)((char *)iVar2_rec + 0x0) & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar2_rec)->invisible
+|
+- (((ushort *)iVar2_rec)[0] >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->invisible
+|
+- (((ushort *)iVar2_rec)[0] & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar2_rec)->invisible
+|
+- (*(ushort *)iVar2_rec >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->invisible
+|
+- (*(ushort *)iVar2_rec & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar2_rec)->invisible
+|
+- (*(ushort *)(iVar2_rec + 0x0) >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->invisible
+|
+- (*(ushort *)(iVar2_rec + 0x0) & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar2_rec)->invisible
+|
+- (CONCAT11(iVar2_rec[1], *iVar2_rec) >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->invisible
+|
+- (CONCAT11(iVar2_rec[1], *iVar2_rec) & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar2_rec)->invisible
+|
+- (CONCAT11(iVar2_rec[1], iVar2_rec[0]) >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->invisible
+|
+- (CONCAT11(iVar2_rec[1], iVar2_rec[0]) & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar2_rec)->invisible
+|
+- (*(byte *)((char *)iVar2_rec + 0x1) >> 6) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->invisible
+|
+- (*(byte *)((char *)iVar2_rec + 0x1) & 0x40) >> 6
++ ((uw_object_hdr_t *)iVar2_rec)->invisible
+)
+...>
+}
+
+@field_2_is_quant@
+type R;
+identifier F =~ "^\(npc_combat_engage_wide_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar2_rec + 0x0) >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->is_quant
+|
+- (*(ushort *)((char *)iVar2_rec + 0x0) & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar2_rec)->is_quant
+|
+- (((ushort *)iVar2_rec)[0] >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->is_quant
+|
+- (((ushort *)iVar2_rec)[0] & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar2_rec)->is_quant
+|
+- (*(ushort *)iVar2_rec >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->is_quant
+|
+- (*(ushort *)iVar2_rec & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar2_rec)->is_quant
+|
+- (*(ushort *)(iVar2_rec + 0x0) >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->is_quant
+|
+- (*(ushort *)(iVar2_rec + 0x0) & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar2_rec)->is_quant
+|
+- (CONCAT11(iVar2_rec[1], *iVar2_rec) >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->is_quant
+|
+- (CONCAT11(iVar2_rec[1], *iVar2_rec) & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar2_rec)->is_quant
+|
+- (CONCAT11(iVar2_rec[1], iVar2_rec[0]) >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->is_quant
+|
+- (CONCAT11(iVar2_rec[1], iVar2_rec[0]) & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar2_rec)->is_quant
+|
+- (*(byte *)((char *)iVar2_rec + 0x1) >> 7) & 0x1
++ ((uw_object_hdr_t *)iVar2_rec)->is_quant
+|
+- (*(byte *)((char *)iVar2_rec + 0x1) & 0x80) >> 7
++ ((uw_object_hdr_t *)iVar2_rec)->is_quant
+)
+...>
+}
+
+@field_2_zpos@
+type R;
+identifier F =~ "^\(npc_combat_engage_wide_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar2_rec + 0x2) & 0x7f
++ ((uw_object_hdr_t *)iVar2_rec)->zpos
+|
+- ((ushort *)iVar2_rec)[1] & 0x7f
++ ((uw_object_hdr_t *)iVar2_rec)->zpos
+|
+- *(ushort *)(iVar2_rec + 0x2) & 0x7f
++ ((uw_object_hdr_t *)iVar2_rec)->zpos
+|
+- *(byte *)((char *)iVar2_rec + 0x2) & 0x7f
++ ((uw_object_hdr_t *)iVar2_rec)->zpos
+|
+- iVar2_rec[2] & 0x7f
++ ((uw_object_hdr_t *)iVar2_rec)->zpos
+)
+...>
+}
+
+@field_2_heading@
+type R;
+identifier F =~ "^\(npc_combat_engage_wide_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar2_rec + 0x2) >> 7) & 0x7
++ ((uw_object_hdr_t *)iVar2_rec)->heading
+|
+- (*(ushort *)((char *)iVar2_rec + 0x2) & 0x380) >> 7
++ ((uw_object_hdr_t *)iVar2_rec)->heading
+|
+- (((ushort *)iVar2_rec)[1] >> 7) & 0x7
++ ((uw_object_hdr_t *)iVar2_rec)->heading
+|
+- (((ushort *)iVar2_rec)[1] & 0x380) >> 7
++ ((uw_object_hdr_t *)iVar2_rec)->heading
+|
+- (*(ushort *)(iVar2_rec + 0x2) >> 7) & 0x7
++ ((uw_object_hdr_t *)iVar2_rec)->heading
+|
+- (*(ushort *)(iVar2_rec + 0x2) & 0x380) >> 7
++ ((uw_object_hdr_t *)iVar2_rec)->heading
+)
+...>
+}
+
+@field_2_ypos@
+type R;
+identifier F =~ "^\(npc_combat_engage_wide_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar2_rec + 0x2) >> 10) & 0x7
++ ((uw_object_hdr_t *)iVar2_rec)->ypos
+|
+- (*(ushort *)((char *)iVar2_rec + 0x2) & 0x1c00) >> 10
++ ((uw_object_hdr_t *)iVar2_rec)->ypos
+|
+- (((ushort *)iVar2_rec)[1] >> 10) & 0x7
++ ((uw_object_hdr_t *)iVar2_rec)->ypos
+|
+- (((ushort *)iVar2_rec)[1] & 0x1c00) >> 10
++ ((uw_object_hdr_t *)iVar2_rec)->ypos
+|
+- (*(ushort *)(iVar2_rec + 0x2) >> 10) & 0x7
++ ((uw_object_hdr_t *)iVar2_rec)->ypos
+|
+- (*(ushort *)(iVar2_rec + 0x2) & 0x1c00) >> 10
++ ((uw_object_hdr_t *)iVar2_rec)->ypos
+|
+- (*(byte *)((char *)iVar2_rec + 0x3) >> 2) & 0x7
++ ((uw_object_hdr_t *)iVar2_rec)->ypos
+|
+- (*(byte *)((char *)iVar2_rec + 0x3) & 0x1c) >> 2
++ ((uw_object_hdr_t *)iVar2_rec)->ypos
+)
+...>
+}
+
+@field_2_xpos@
+type R;
+identifier F =~ "^\(npc_combat_engage_wide_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar2_rec + 0x2) >> 13) & 0x7
++ ((uw_object_hdr_t *)iVar2_rec)->xpos
+|
+- (*(ushort *)((char *)iVar2_rec + 0x2) & 0xe000) >> 13
++ ((uw_object_hdr_t *)iVar2_rec)->xpos
+|
+- (((ushort *)iVar2_rec)[1] >> 13) & 0x7
++ ((uw_object_hdr_t *)iVar2_rec)->xpos
+|
+- (((ushort *)iVar2_rec)[1] & 0xe000) >> 13
++ ((uw_object_hdr_t *)iVar2_rec)->xpos
+|
+- (*(ushort *)(iVar2_rec + 0x2) >> 13) & 0x7
++ ((uw_object_hdr_t *)iVar2_rec)->xpos
+|
+- (*(ushort *)(iVar2_rec + 0x2) & 0xe000) >> 13
++ ((uw_object_hdr_t *)iVar2_rec)->xpos
+|
+- (*(byte *)((char *)iVar2_rec + 0x3) >> 5) & 0x7
++ ((uw_object_hdr_t *)iVar2_rec)->xpos
+|
+- (*(byte *)((char *)iVar2_rec + 0x3) & 0xe0) >> 5
++ ((uw_object_hdr_t *)iVar2_rec)->xpos
+)
+...>
+}
+
+@field_2_quality@
+type R;
+identifier F =~ "^\(npc_combat_engage_wide_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar2_rec + 0x4) & 0x3f
++ ((uw_object_hdr_t *)iVar2_rec)->quality
+|
+- ((ushort *)iVar2_rec)[2] & 0x3f
++ ((uw_object_hdr_t *)iVar2_rec)->quality
+|
+- *(ushort *)(iVar2_rec + 0x4) & 0x3f
++ ((uw_object_hdr_t *)iVar2_rec)->quality
+|
+- *(byte *)((char *)iVar2_rec + 0x4) & 0x3f
++ ((uw_object_hdr_t *)iVar2_rec)->quality
+|
+- iVar2_rec[4] & 0x3f
++ ((uw_object_hdr_t *)iVar2_rec)->quality
+)
+...>
+}
+
+@field_2_next@
+type R;
+identifier F =~ "^\(npc_combat_engage_wide_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar2_rec + 0x4) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar2_rec)->next
+|
+- (*(ushort *)((char *)iVar2_rec + 0x4) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar2_rec)->next
+|
+- (((ushort *)iVar2_rec)[2] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar2_rec)->next
+|
+- (((ushort *)iVar2_rec)[2] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar2_rec)->next
+|
+- (*(ushort *)(iVar2_rec + 0x4) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar2_rec)->next
+|
+- (*(ushort *)(iVar2_rec + 0x4) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar2_rec)->next
+)
+...>
+}
+
+@field_2_owner@
+type R;
+identifier F =~ "^\(npc_combat_engage_wide_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar2_rec + 0x6) & 0x3f
++ ((uw_object_hdr_t *)iVar2_rec)->owner
+|
+- ((ushort *)iVar2_rec)[3] & 0x3f
++ ((uw_object_hdr_t *)iVar2_rec)->owner
+|
+- *(ushort *)(iVar2_rec + 0x6) & 0x3f
++ ((uw_object_hdr_t *)iVar2_rec)->owner
+|
+- *(byte *)((char *)iVar2_rec + 0x6) & 0x3f
++ ((uw_object_hdr_t *)iVar2_rec)->owner
+|
+- iVar2_rec[6] & 0x3f
++ ((uw_object_hdr_t *)iVar2_rec)->owner
+)
+...>
+}
+
+@field_2_link@
+type R;
+identifier F =~ "^\(npc_combat_engage_wide_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar2_rec + 0x6) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar2_rec)->link
+|
+- (*(ushort *)((char *)iVar2_rec + 0x6) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar2_rec)->link
+|
+- (((ushort *)iVar2_rec)[3] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar2_rec)->link
+|
+- (((ushort *)iVar2_rec)[3] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar2_rec)->link
+|
+- (*(ushort *)(iVar2_rec + 0x6) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar2_rec)->link
+|
+- (*(ushort *)(iVar2_rec + 0x6) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar2_rec)->link
+)
+...>
+}
+
+@field_3_item_id@
+type R;
+identifier F =~ "^\(npc_combat_position_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar7_rec + 0x0) & 0x1ff
++ ((uw_object_hdr_t *)iVar7_rec)->item_id
+|
+- ((ushort *)iVar7_rec)[0] & 0x1ff
++ ((uw_object_hdr_t *)iVar7_rec)->item_id
+|
+- *(ushort *)iVar7_rec & 0x1ff
++ ((uw_object_hdr_t *)iVar7_rec)->item_id
+)
+...>
+}
+
+@field_3_flags_res@
+type R;
+identifier F =~ "^\(npc_combat_position_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar7_rec + 0x0) >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar7_rec)->flags_res
+|
+- (*(ushort *)((char *)iVar7_rec + 0x0) & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar7_rec)->flags_res
+|
+- (((ushort *)iVar7_rec)[0] >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar7_rec)->flags_res
+|
+- (((ushort *)iVar7_rec)[0] & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar7_rec)->flags_res
+|
+- (*(ushort *)iVar7_rec >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar7_rec)->flags_res
+|
+- (*(ushort *)iVar7_rec & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar7_rec)->flags_res
+|
+- (*(byte *)((char *)iVar7_rec + 0x1) >> 1) & 0x7
++ ((uw_object_hdr_t *)iVar7_rec)->flags_res
+|
+- (*(byte *)((char *)iVar7_rec + 0x1) & 0xe) >> 1
++ ((uw_object_hdr_t *)iVar7_rec)->flags_res
+)
+...>
+}
+
+@field_3_enchanted@
+type R;
+identifier F =~ "^\(npc_combat_position_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar7_rec + 0x0) >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar7_rec)->enchanted
+|
+- (*(ushort *)((char *)iVar7_rec + 0x0) & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar7_rec)->enchanted
+|
+- (((ushort *)iVar7_rec)[0] >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar7_rec)->enchanted
+|
+- (((ushort *)iVar7_rec)[0] & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar7_rec)->enchanted
+|
+- (*(ushort *)iVar7_rec >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar7_rec)->enchanted
+|
+- (*(ushort *)iVar7_rec & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar7_rec)->enchanted
+|
+- (*(byte *)((char *)iVar7_rec + 0x1) >> 4) & 0x1
++ ((uw_object_hdr_t *)iVar7_rec)->enchanted
+|
+- (*(byte *)((char *)iVar7_rec + 0x1) & 0x10) >> 4
++ ((uw_object_hdr_t *)iVar7_rec)->enchanted
+)
+...>
+}
+
+@field_3_doordir@
+type R;
+identifier F =~ "^\(npc_combat_position_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar7_rec + 0x0) >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar7_rec)->doordir
+|
+- (*(ushort *)((char *)iVar7_rec + 0x0) & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar7_rec)->doordir
+|
+- (((ushort *)iVar7_rec)[0] >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar7_rec)->doordir
+|
+- (((ushort *)iVar7_rec)[0] & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar7_rec)->doordir
+|
+- (*(ushort *)iVar7_rec >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar7_rec)->doordir
+|
+- (*(ushort *)iVar7_rec & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar7_rec)->doordir
+|
+- (*(byte *)((char *)iVar7_rec + 0x1) >> 5) & 0x1
++ ((uw_object_hdr_t *)iVar7_rec)->doordir
+|
+- (*(byte *)((char *)iVar7_rec + 0x1) & 0x20) >> 5
++ ((uw_object_hdr_t *)iVar7_rec)->doordir
+)
+...>
+}
+
+@field_3_invisible@
+type R;
+identifier F =~ "^\(npc_combat_position_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar7_rec + 0x0) >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar7_rec)->invisible
+|
+- (*(ushort *)((char *)iVar7_rec + 0x0) & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar7_rec)->invisible
+|
+- (((ushort *)iVar7_rec)[0] >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar7_rec)->invisible
+|
+- (((ushort *)iVar7_rec)[0] & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar7_rec)->invisible
+|
+- (*(ushort *)iVar7_rec >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar7_rec)->invisible
+|
+- (*(ushort *)iVar7_rec & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar7_rec)->invisible
+|
+- (*(byte *)((char *)iVar7_rec + 0x1) >> 6) & 0x1
++ ((uw_object_hdr_t *)iVar7_rec)->invisible
+|
+- (*(byte *)((char *)iVar7_rec + 0x1) & 0x40) >> 6
++ ((uw_object_hdr_t *)iVar7_rec)->invisible
+)
+...>
+}
+
+@field_3_is_quant@
+type R;
+identifier F =~ "^\(npc_combat_position_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar7_rec + 0x0) >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar7_rec)->is_quant
+|
+- (*(ushort *)((char *)iVar7_rec + 0x0) & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar7_rec)->is_quant
+|
+- (((ushort *)iVar7_rec)[0] >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar7_rec)->is_quant
+|
+- (((ushort *)iVar7_rec)[0] & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar7_rec)->is_quant
+|
+- (*(ushort *)iVar7_rec >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar7_rec)->is_quant
+|
+- (*(ushort *)iVar7_rec & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar7_rec)->is_quant
+|
+- (*(byte *)((char *)iVar7_rec + 0x1) >> 7) & 0x1
++ ((uw_object_hdr_t *)iVar7_rec)->is_quant
+|
+- (*(byte *)((char *)iVar7_rec + 0x1) & 0x80) >> 7
++ ((uw_object_hdr_t *)iVar7_rec)->is_quant
+)
+...>
+}
+
+@field_3_zpos@
+type R;
+identifier F =~ "^\(npc_combat_position_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar7_rec + 0x2) & 0x7f
++ ((uw_object_hdr_t *)iVar7_rec)->zpos
+|
+- ((ushort *)iVar7_rec)[1] & 0x7f
++ ((uw_object_hdr_t *)iVar7_rec)->zpos
+|
+- *(byte *)((char *)iVar7_rec + 0x2) & 0x7f
++ ((uw_object_hdr_t *)iVar7_rec)->zpos
+)
+...>
+}
+
+@field_3_heading@
+type R;
+identifier F =~ "^\(npc_combat_position_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar7_rec + 0x2) >> 7) & 0x7
++ ((uw_object_hdr_t *)iVar7_rec)->heading
+|
+- (*(ushort *)((char *)iVar7_rec + 0x2) & 0x380) >> 7
++ ((uw_object_hdr_t *)iVar7_rec)->heading
+|
+- (((ushort *)iVar7_rec)[1] >> 7) & 0x7
++ ((uw_object_hdr_t *)iVar7_rec)->heading
+|
+- (((ushort *)iVar7_rec)[1] & 0x380) >> 7
++ ((uw_object_hdr_t *)iVar7_rec)->heading
+)
+...>
+}
+
+@field_3_ypos@
+type R;
+identifier F =~ "^\(npc_combat_position_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar7_rec + 0x2) >> 10) & 0x7
++ ((uw_object_hdr_t *)iVar7_rec)->ypos
+|
+- (*(ushort *)((char *)iVar7_rec + 0x2) & 0x1c00) >> 10
++ ((uw_object_hdr_t *)iVar7_rec)->ypos
+|
+- (((ushort *)iVar7_rec)[1] >> 10) & 0x7
++ ((uw_object_hdr_t *)iVar7_rec)->ypos
+|
+- (((ushort *)iVar7_rec)[1] & 0x1c00) >> 10
++ ((uw_object_hdr_t *)iVar7_rec)->ypos
+|
+- (*(byte *)((char *)iVar7_rec + 0x3) >> 2) & 0x7
++ ((uw_object_hdr_t *)iVar7_rec)->ypos
+|
+- (*(byte *)((char *)iVar7_rec + 0x3) & 0x1c) >> 2
++ ((uw_object_hdr_t *)iVar7_rec)->ypos
+)
+...>
+}
+
+@field_3_xpos@
+type R;
+identifier F =~ "^\(npc_combat_position_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar7_rec + 0x2) >> 13) & 0x7
++ ((uw_object_hdr_t *)iVar7_rec)->xpos
+|
+- (*(ushort *)((char *)iVar7_rec + 0x2) & 0xe000) >> 13
++ ((uw_object_hdr_t *)iVar7_rec)->xpos
+|
+- (((ushort *)iVar7_rec)[1] >> 13) & 0x7
++ ((uw_object_hdr_t *)iVar7_rec)->xpos
+|
+- (((ushort *)iVar7_rec)[1] & 0xe000) >> 13
++ ((uw_object_hdr_t *)iVar7_rec)->xpos
+|
+- (*(byte *)((char *)iVar7_rec + 0x3) >> 5) & 0x7
++ ((uw_object_hdr_t *)iVar7_rec)->xpos
+|
+- (*(byte *)((char *)iVar7_rec + 0x3) & 0xe0) >> 5
++ ((uw_object_hdr_t *)iVar7_rec)->xpos
+)
+...>
+}
+
+@field_3_quality@
+type R;
+identifier F =~ "^\(npc_combat_position_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar7_rec + 0x4) & 0x3f
++ ((uw_object_hdr_t *)iVar7_rec)->quality
+|
+- ((ushort *)iVar7_rec)[2] & 0x3f
++ ((uw_object_hdr_t *)iVar7_rec)->quality
+|
+- *(byte *)((char *)iVar7_rec + 0x4) & 0x3f
++ ((uw_object_hdr_t *)iVar7_rec)->quality
+)
+...>
+}
+
+@field_3_next@
+type R;
+identifier F =~ "^\(npc_combat_position_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar7_rec + 0x4) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar7_rec)->next
+|
+- (*(ushort *)((char *)iVar7_rec + 0x4) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar7_rec)->next
+|
+- (((ushort *)iVar7_rec)[2] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar7_rec)->next
+|
+- (((ushort *)iVar7_rec)[2] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar7_rec)->next
+)
+...>
+}
+
+@field_3_owner@
+type R;
+identifier F =~ "^\(npc_combat_position_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar7_rec + 0x6) & 0x3f
++ ((uw_object_hdr_t *)iVar7_rec)->owner
+|
+- ((ushort *)iVar7_rec)[3] & 0x3f
++ ((uw_object_hdr_t *)iVar7_rec)->owner
+|
+- *(byte *)((char *)iVar7_rec + 0x6) & 0x3f
++ ((uw_object_hdr_t *)iVar7_rec)->owner
+)
+...>
+}
+
+@field_3_link@
+type R;
+identifier F =~ "^\(npc_combat_position_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar7_rec + 0x6) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar7_rec)->link
+|
+- (*(ushort *)((char *)iVar7_rec + 0x6) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar7_rec)->link
+|
+- (((ushort *)iVar7_rec)[3] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar7_rec)->link
+|
+- (((ushort *)iVar7_rec)[3] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar7_rec)->link
+)
+...>
+}
+
+@field_4_item_id@
+type R;
+identifier F =~ "^\(npc_combat_disengage_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar2 + 0x0) & 0x1ff
++ ((uw_object_hdr_t *)iVar2)->item_id
+|
+- ((ushort *)iVar2)[0] & 0x1ff
++ ((uw_object_hdr_t *)iVar2)->item_id
+|
+- *(ushort *)iVar2 & 0x1ff
++ ((uw_object_hdr_t *)iVar2)->item_id
+)
+...>
+}
+
+@field_4_flags_res@
+type R;
+identifier F =~ "^\(npc_combat_disengage_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar2 + 0x0) >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar2)->flags_res
+|
+- (*(ushort *)((char *)iVar2 + 0x0) & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar2)->flags_res
+|
+- (((ushort *)iVar2)[0] >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar2)->flags_res
+|
+- (((ushort *)iVar2)[0] & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar2)->flags_res
+|
+- (*(ushort *)iVar2 >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar2)->flags_res
+|
+- (*(ushort *)iVar2 & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar2)->flags_res
+|
+- (*(byte *)((char *)iVar2 + 0x1) >> 1) & 0x7
++ ((uw_object_hdr_t *)iVar2)->flags_res
+|
+- (*(byte *)((char *)iVar2 + 0x1) & 0xe) >> 1
++ ((uw_object_hdr_t *)iVar2)->flags_res
+)
+...>
+}
+
+@field_4_enchanted@
+type R;
+identifier F =~ "^\(npc_combat_disengage_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar2 + 0x0) >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar2)->enchanted
+|
+- (*(ushort *)((char *)iVar2 + 0x0) & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar2)->enchanted
+|
+- (((ushort *)iVar2)[0] >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar2)->enchanted
+|
+- (((ushort *)iVar2)[0] & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar2)->enchanted
+|
+- (*(ushort *)iVar2 >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar2)->enchanted
+|
+- (*(ushort *)iVar2 & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar2)->enchanted
+|
+- (*(byte *)((char *)iVar2 + 0x1) >> 4) & 0x1
++ ((uw_object_hdr_t *)iVar2)->enchanted
+|
+- (*(byte *)((char *)iVar2 + 0x1) & 0x10) >> 4
++ ((uw_object_hdr_t *)iVar2)->enchanted
+)
+...>
+}
+
+@field_4_doordir@
+type R;
+identifier F =~ "^\(npc_combat_disengage_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar2 + 0x0) >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar2)->doordir
+|
+- (*(ushort *)((char *)iVar2 + 0x0) & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar2)->doordir
+|
+- (((ushort *)iVar2)[0] >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar2)->doordir
+|
+- (((ushort *)iVar2)[0] & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar2)->doordir
+|
+- (*(ushort *)iVar2 >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar2)->doordir
+|
+- (*(ushort *)iVar2 & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar2)->doordir
+|
+- (*(byte *)((char *)iVar2 + 0x1) >> 5) & 0x1
++ ((uw_object_hdr_t *)iVar2)->doordir
+|
+- (*(byte *)((char *)iVar2 + 0x1) & 0x20) >> 5
++ ((uw_object_hdr_t *)iVar2)->doordir
+)
+...>
+}
+
+@field_4_invisible@
+type R;
+identifier F =~ "^\(npc_combat_disengage_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar2 + 0x0) >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar2)->invisible
+|
+- (*(ushort *)((char *)iVar2 + 0x0) & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar2)->invisible
+|
+- (((ushort *)iVar2)[0] >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar2)->invisible
+|
+- (((ushort *)iVar2)[0] & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar2)->invisible
+|
+- (*(ushort *)iVar2 >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar2)->invisible
+|
+- (*(ushort *)iVar2 & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar2)->invisible
+|
+- (*(byte *)((char *)iVar2 + 0x1) >> 6) & 0x1
++ ((uw_object_hdr_t *)iVar2)->invisible
+|
+- (*(byte *)((char *)iVar2 + 0x1) & 0x40) >> 6
++ ((uw_object_hdr_t *)iVar2)->invisible
+)
+...>
+}
+
+@field_4_is_quant@
+type R;
+identifier F =~ "^\(npc_combat_disengage_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar2 + 0x0) >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar2)->is_quant
+|
+- (*(ushort *)((char *)iVar2 + 0x0) & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar2)->is_quant
+|
+- (((ushort *)iVar2)[0] >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar2)->is_quant
+|
+- (((ushort *)iVar2)[0] & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar2)->is_quant
+|
+- (*(ushort *)iVar2 >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar2)->is_quant
+|
+- (*(ushort *)iVar2 & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar2)->is_quant
+|
+- (*(byte *)((char *)iVar2 + 0x1) >> 7) & 0x1
++ ((uw_object_hdr_t *)iVar2)->is_quant
+|
+- (*(byte *)((char *)iVar2 + 0x1) & 0x80) >> 7
++ ((uw_object_hdr_t *)iVar2)->is_quant
+)
+...>
+}
+
+@field_4_zpos@
+type R;
+identifier F =~ "^\(npc_combat_disengage_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar2 + 0x2) & 0x7f
++ ((uw_object_hdr_t *)iVar2)->zpos
+|
+- ((ushort *)iVar2)[1] & 0x7f
++ ((uw_object_hdr_t *)iVar2)->zpos
+|
+- *(byte *)((char *)iVar2 + 0x2) & 0x7f
++ ((uw_object_hdr_t *)iVar2)->zpos
+)
+...>
+}
+
+@field_4_heading@
+type R;
+identifier F =~ "^\(npc_combat_disengage_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar2 + 0x2) >> 7) & 0x7
++ ((uw_object_hdr_t *)iVar2)->heading
+|
+- (*(ushort *)((char *)iVar2 + 0x2) & 0x380) >> 7
++ ((uw_object_hdr_t *)iVar2)->heading
+|
+- (((ushort *)iVar2)[1] >> 7) & 0x7
++ ((uw_object_hdr_t *)iVar2)->heading
+|
+- (((ushort *)iVar2)[1] & 0x380) >> 7
++ ((uw_object_hdr_t *)iVar2)->heading
+)
+...>
+}
+
+@field_4_ypos@
+type R;
+identifier F =~ "^\(npc_combat_disengage_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar2 + 0x2) >> 10) & 0x7
++ ((uw_object_hdr_t *)iVar2)->ypos
+|
+- (*(ushort *)((char *)iVar2 + 0x2) & 0x1c00) >> 10
++ ((uw_object_hdr_t *)iVar2)->ypos
+|
+- (((ushort *)iVar2)[1] >> 10) & 0x7
++ ((uw_object_hdr_t *)iVar2)->ypos
+|
+- (((ushort *)iVar2)[1] & 0x1c00) >> 10
++ ((uw_object_hdr_t *)iVar2)->ypos
+|
+- (*(byte *)((char *)iVar2 + 0x3) >> 2) & 0x7
++ ((uw_object_hdr_t *)iVar2)->ypos
+|
+- (*(byte *)((char *)iVar2 + 0x3) & 0x1c) >> 2
++ ((uw_object_hdr_t *)iVar2)->ypos
+)
+...>
+}
+
+@field_4_xpos@
+type R;
+identifier F =~ "^\(npc_combat_disengage_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar2 + 0x2) >> 13) & 0x7
++ ((uw_object_hdr_t *)iVar2)->xpos
+|
+- (*(ushort *)((char *)iVar2 + 0x2) & 0xe000) >> 13
++ ((uw_object_hdr_t *)iVar2)->xpos
+|
+- (((ushort *)iVar2)[1] >> 13) & 0x7
++ ((uw_object_hdr_t *)iVar2)->xpos
+|
+- (((ushort *)iVar2)[1] & 0xe000) >> 13
++ ((uw_object_hdr_t *)iVar2)->xpos
+|
+- (*(byte *)((char *)iVar2 + 0x3) >> 5) & 0x7
++ ((uw_object_hdr_t *)iVar2)->xpos
+|
+- (*(byte *)((char *)iVar2 + 0x3) & 0xe0) >> 5
++ ((uw_object_hdr_t *)iVar2)->xpos
+)
+...>
+}
+
+@field_4_quality@
+type R;
+identifier F =~ "^\(npc_combat_disengage_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar2 + 0x4) & 0x3f
++ ((uw_object_hdr_t *)iVar2)->quality
+|
+- ((ushort *)iVar2)[2] & 0x3f
++ ((uw_object_hdr_t *)iVar2)->quality
+|
+- *(byte *)((char *)iVar2 + 0x4) & 0x3f
++ ((uw_object_hdr_t *)iVar2)->quality
+)
+...>
+}
+
+@field_4_next@
+type R;
+identifier F =~ "^\(npc_combat_disengage_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar2 + 0x4) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar2)->next
+|
+- (*(ushort *)((char *)iVar2 + 0x4) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar2)->next
+|
+- (((ushort *)iVar2)[2] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar2)->next
+|
+- (((ushort *)iVar2)[2] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar2)->next
+)
+...>
+}
+
+@field_4_owner@
+type R;
+identifier F =~ "^\(npc_combat_disengage_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar2 + 0x6) & 0x3f
++ ((uw_object_hdr_t *)iVar2)->owner
+|
+- ((ushort *)iVar2)[3] & 0x3f
++ ((uw_object_hdr_t *)iVar2)->owner
+|
+- *(byte *)((char *)iVar2 + 0x6) & 0x3f
++ ((uw_object_hdr_t *)iVar2)->owner
+)
+...>
+}
+
+@field_4_link@
+type R;
+identifier F =~ "^\(npc_combat_disengage_tick\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar2 + 0x6) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar2)->link
+|
+- (*(ushort *)((char *)iVar2 + 0x6) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar2)->link
+|
+- (((ushort *)iVar2)[3] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar2)->link
+|
+- (((ushort *)iVar2)[3] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar2)->link
+)
+...>
+}
+
+@field_5_item_id@
+type R;
+identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\|play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -24,9 +2375,9 @@ R F(...) {
 ...>
 }
 
-@field_0_flags_res@
+@field_5_flags_res@
 type R;
-identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\)$";
+identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\|play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -71,9 +2422,9 @@ R F(...) {
 ...>
 }
 
-@field_0_enchanted@
+@field_5_enchanted@
 type R;
-identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\)$";
+identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\|play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -118,9 +2469,9 @@ R F(...) {
 ...>
 }
 
-@field_0_doordir@
+@field_5_doordir@
 type R;
-identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\)$";
+identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\|play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -165,9 +2516,9 @@ R F(...) {
 ...>
 }
 
-@field_0_invisible@
+@field_5_invisible@
 type R;
-identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\)$";
+identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\|play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -212,9 +2563,9 @@ R F(...) {
 ...>
 }
 
-@field_0_is_quant@
+@field_5_is_quant@
 type R;
-identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\)$";
+identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\|play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -274,9 +2625,9 @@ R F(...) {
 ...>
 }
 
-@field_0_zpos@
+@field_5_zpos@
 type R;
-identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\)$";
+identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\|play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -300,9 +2651,9 @@ R F(...) {
 ...>
 }
 
-@field_0_heading@
+@field_5_heading@
 type R;
-identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\)$";
+identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\|play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -329,9 +2680,9 @@ R F(...) {
 ...>
 }
 
-@field_0_ypos@
+@field_5_ypos@
 type R;
-identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\)$";
+identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\|play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -364,9 +2715,9 @@ R F(...) {
 ...>
 }
 
-@field_0_xpos@
+@field_5_xpos@
 type R;
-identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\)$";
+identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\|play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -408,9 +2759,9 @@ R F(...) {
 ...>
 }
 
-@field_0_quality@
+@field_5_quality@
 type R;
-identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\)$";
+identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\|play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -434,9 +2785,9 @@ R F(...) {
 ...>
 }
 
-@field_0_next@
+@field_5_next@
 type R;
-identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\)$";
+identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\|play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -472,9 +2823,9 @@ R F(...) {
 ...>
 }
 
-@field_0_owner@
+@field_5_owner@
 type R;
-identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\)$";
+identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\|play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -498,9 +2849,9 @@ R F(...) {
 ...>
 }
 
-@field_0_link@
+@field_5_link@
 type R;
-identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\)$";
+identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\|play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -536,7 +2887,7 @@ R F(...) {
 ...>
 }
 
-@field_1_item_id@
+@field_6_item_id@
 type R;
 identifier F =~ "^\(spawn_blood_splat_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -565,7 +2916,7 @@ R F(...) {
 ...>
 }
 
-@field_1_flags_res@
+@field_6_flags_res@
 type R;
 identifier F =~ "^\(spawn_blood_splat_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -618,7 +2969,7 @@ R F(...) {
 ...>
 }
 
-@field_1_enchanted@
+@field_6_enchanted@
 type R;
 identifier F =~ "^\(spawn_blood_splat_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -671,7 +3022,7 @@ R F(...) {
 ...>
 }
 
-@field_1_doordir@
+@field_6_doordir@
 type R;
 identifier F =~ "^\(spawn_blood_splat_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -724,7 +3075,7 @@ R F(...) {
 ...>
 }
 
-@field_1_invisible@
+@field_6_invisible@
 type R;
 identifier F =~ "^\(spawn_blood_splat_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -777,7 +3128,7 @@ R F(...) {
 ...>
 }
 
-@field_1_is_quant@
+@field_6_is_quant@
 type R;
 identifier F =~ "^\(spawn_blood_splat_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -830,7 +3181,7 @@ R F(...) {
 ...>
 }
 
-@field_1_zpos@
+@field_6_zpos@
 type R;
 identifier F =~ "^\(spawn_blood_splat_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -856,7 +3207,7 @@ R F(...) {
 ...>
 }
 
-@field_1_heading@
+@field_6_heading@
 type R;
 identifier F =~ "^\(spawn_blood_splat_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -885,7 +3236,7 @@ R F(...) {
 ...>
 }
 
-@field_1_ypos@
+@field_6_ypos@
 type R;
 identifier F =~ "^\(spawn_blood_splat_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -920,7 +3271,7 @@ R F(...) {
 ...>
 }
 
-@field_1_xpos@
+@field_6_xpos@
 type R;
 identifier F =~ "^\(spawn_blood_splat_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -955,7 +3306,7 @@ R F(...) {
 ...>
 }
 
-@field_1_quality@
+@field_6_quality@
 type R;
 identifier F =~ "^\(spawn_blood_splat_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -981,7 +3332,7 @@ R F(...) {
 ...>
 }
 
-@field_1_next@
+@field_6_next@
 type R;
 identifier F =~ "^\(spawn_blood_splat_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1010,7 +3361,7 @@ R F(...) {
 ...>
 }
 
-@field_1_owner@
+@field_6_owner@
 type R;
 identifier F =~ "^\(spawn_blood_splat_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1036,7 +3387,7 @@ R F(...) {
 ...>
 }
 
-@field_1_link@
+@field_6_link@
 type R;
 identifier F =~ "^\(spawn_blood_splat_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1065,7 +3416,7 @@ R F(...) {
 ...>
 }
 
-@field_2_item_id@
+@field_7_item_id@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1091,7 +3442,7 @@ R F(...) {
 ...>
 }
 
-@field_2_flags_res@
+@field_7_flags_res@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1138,7 +3489,7 @@ R F(...) {
 ...>
 }
 
-@field_2_enchanted@
+@field_7_enchanted@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1185,7 +3536,7 @@ R F(...) {
 ...>
 }
 
-@field_2_doordir@
+@field_7_doordir@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1232,7 +3583,7 @@ R F(...) {
 ...>
 }
 
-@field_2_invisible@
+@field_7_invisible@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1279,7 +3630,7 @@ R F(...) {
 ...>
 }
 
-@field_2_is_quant@
+@field_7_is_quant@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1341,7 +3692,7 @@ R F(...) {
 ...>
 }
 
-@field_2_zpos@
+@field_7_zpos@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1367,7 +3718,7 @@ R F(...) {
 ...>
 }
 
-@field_2_heading@
+@field_7_heading@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1396,7 +3747,7 @@ R F(...) {
 ...>
 }
 
-@field_2_ypos@
+@field_7_ypos@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1431,7 +3782,7 @@ R F(...) {
 ...>
 }
 
-@field_2_xpos@
+@field_7_xpos@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1475,7 +3826,7 @@ R F(...) {
 ...>
 }
 
-@field_2_quality@
+@field_7_quality@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1501,7 +3852,7 @@ R F(...) {
 ...>
 }
 
-@field_2_next@
+@field_7_next@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1539,7 +3890,7 @@ R F(...) {
 ...>
 }
 
-@field_2_owner@
+@field_7_owner@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1565,7 +3916,7 @@ R F(...) {
 ...>
 }
 
-@field_2_link@
+@field_7_link@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1603,7 +3954,7 @@ R F(...) {
 ...>
 }
 
-@field_3_item_id@
+@field_8_item_id@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1632,7 +3983,7 @@ R F(...) {
 ...>
 }
 
-@field_3_flags_res@
+@field_8_flags_res@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1685,7 +4036,7 @@ R F(...) {
 ...>
 }
 
-@field_3_enchanted@
+@field_8_enchanted@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1738,7 +4089,7 @@ R F(...) {
 ...>
 }
 
-@field_3_doordir@
+@field_8_doordir@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1791,7 +4142,7 @@ R F(...) {
 ...>
 }
 
-@field_3_invisible@
+@field_8_invisible@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1844,7 +4195,7 @@ R F(...) {
 ...>
 }
 
-@field_3_is_quant@
+@field_8_is_quant@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1897,7 +4248,7 @@ R F(...) {
 ...>
 }
 
-@field_3_zpos@
+@field_8_zpos@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1923,7 +4274,7 @@ R F(...) {
 ...>
 }
 
-@field_3_heading@
+@field_8_heading@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1952,7 +4303,7 @@ R F(...) {
 ...>
 }
 
-@field_3_ypos@
+@field_8_ypos@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1987,7 +4338,7 @@ R F(...) {
 ...>
 }
 
-@field_3_xpos@
+@field_8_xpos@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2022,7 +4373,7 @@ R F(...) {
 ...>
 }
 
-@field_3_quality@
+@field_8_quality@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2048,7 +4399,7 @@ R F(...) {
 ...>
 }
 
-@field_3_next@
+@field_8_next@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2077,7 +4428,7 @@ R F(...) {
 ...>
 }
 
-@field_3_owner@
+@field_8_owner@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2103,7 +4454,7 @@ R F(...) {
 ...>
 }
 
-@field_3_link@
+@field_8_link@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2132,7 +4483,7 @@ R F(...) {
 ...>
 }
 
-@field_4_item_id@
+@field_9_item_id@
 type R;
 identifier F =~ "^\(apply_melee_damage\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2158,7 +4509,7 @@ R F(...) {
 ...>
 }
 
-@field_4_flags_res@
+@field_9_flags_res@
 type R;
 identifier F =~ "^\(apply_melee_damage\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2205,7 +4556,7 @@ R F(...) {
 ...>
 }
 
-@field_4_enchanted@
+@field_9_enchanted@
 type R;
 identifier F =~ "^\(apply_melee_damage\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2252,7 +4603,7 @@ R F(...) {
 ...>
 }
 
-@field_4_doordir@
+@field_9_doordir@
 type R;
 identifier F =~ "^\(apply_melee_damage\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2299,7 +4650,7 @@ R F(...) {
 ...>
 }
 
-@field_4_invisible@
+@field_9_invisible@
 type R;
 identifier F =~ "^\(apply_melee_damage\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2346,7 +4697,7 @@ R F(...) {
 ...>
 }
 
-@field_4_is_quant@
+@field_9_is_quant@
 type R;
 identifier F =~ "^\(apply_melee_damage\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2408,7 +4759,7 @@ R F(...) {
 ...>
 }
 
-@field_4_zpos@
+@field_9_zpos@
 type R;
 identifier F =~ "^\(apply_melee_damage\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2434,7 +4785,7 @@ R F(...) {
 ...>
 }
 
-@field_4_heading@
+@field_9_heading@
 type R;
 identifier F =~ "^\(apply_melee_damage\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2463,7 +4814,7 @@ R F(...) {
 ...>
 }
 
-@field_4_ypos@
+@field_9_ypos@
 type R;
 identifier F =~ "^\(apply_melee_damage\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2498,7 +4849,7 @@ R F(...) {
 ...>
 }
 
-@field_4_xpos@
+@field_9_xpos@
 type R;
 identifier F =~ "^\(apply_melee_damage\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2542,7 +4893,7 @@ R F(...) {
 ...>
 }
 
-@field_4_quality@
+@field_9_quality@
 type R;
 identifier F =~ "^\(apply_melee_damage\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2568,7 +4919,7 @@ R F(...) {
 ...>
 }
 
-@field_4_next@
+@field_9_next@
 type R;
 identifier F =~ "^\(apply_melee_damage\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2606,7 +4957,7 @@ R F(...) {
 ...>
 }
 
-@field_4_owner@
+@field_9_owner@
 type R;
 identifier F =~ "^\(apply_melee_damage\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2632,7 +4983,7 @@ R F(...) {
 ...>
 }
 
-@field_4_link@
+@field_9_link@
 type R;
 identifier F =~ "^\(apply_melee_damage\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2670,7 +5021,7 @@ R F(...) {
 ...>
 }
 
-@field_5_item_id@
+@field_10_item_id@
 type R;
 identifier F =~ "^\(play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2690,7 +5041,7 @@ R F(...) {
 ...>
 }
 
-@field_5_flags_res@
+@field_10_flags_res@
 type R;
 identifier F =~ "^\(play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2725,7 +5076,7 @@ R F(...) {
 ...>
 }
 
-@field_5_enchanted@
+@field_10_enchanted@
 type R;
 identifier F =~ "^\(play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2760,7 +5111,7 @@ R F(...) {
 ...>
 }
 
-@field_5_doordir@
+@field_10_doordir@
 type R;
 identifier F =~ "^\(play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2795,7 +5146,7 @@ R F(...) {
 ...>
 }
 
-@field_5_invisible@
+@field_10_invisible@
 type R;
 identifier F =~ "^\(play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2830,7 +5181,7 @@ R F(...) {
 ...>
 }
 
-@field_5_is_quant@
+@field_10_is_quant@
 type R;
 identifier F =~ "^\(play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2865,7 +5216,7 @@ R F(...) {
 ...>
 }
 
-@field_5_zpos@
+@field_10_zpos@
 type R;
 identifier F =~ "^\(play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2885,7 +5236,7 @@ R F(...) {
 ...>
 }
 
-@field_5_heading@
+@field_10_heading@
 type R;
 identifier F =~ "^\(play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2908,7 +5259,7 @@ R F(...) {
 ...>
 }
 
-@field_5_ypos@
+@field_10_ypos@
 type R;
 identifier F =~ "^\(play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2937,7 +5288,7 @@ R F(...) {
 ...>
 }
 
-@field_5_xpos@
+@field_10_xpos@
 type R;
 identifier F =~ "^\(play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2966,7 +5317,7 @@ R F(...) {
 ...>
 }
 
-@field_5_quality@
+@field_10_quality@
 type R;
 identifier F =~ "^\(play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2986,7 +5337,7 @@ R F(...) {
 ...>
 }
 
-@field_5_next@
+@field_10_next@
 type R;
 identifier F =~ "^\(play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3009,7 +5360,7 @@ R F(...) {
 ...>
 }
 
-@field_5_owner@
+@field_10_owner@
 type R;
 identifier F =~ "^\(play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3029,7 +5380,7 @@ R F(...) {
 ...>
 }
 
-@field_5_link@
+@field_10_link@
 type R;
 identifier F =~ "^\(play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3052,7 +5403,7 @@ R F(...) {
 ...>
 }
 
-@field_6_item_id@
+@field_11_item_id@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3081,7 +5432,7 @@ R F(...) {
 ...>
 }
 
-@field_6_flags_res@
+@field_11_flags_res@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3134,7 +5485,7 @@ R F(...) {
 ...>
 }
 
-@field_6_enchanted@
+@field_11_enchanted@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3187,7 +5538,7 @@ R F(...) {
 ...>
 }
 
-@field_6_doordir@
+@field_11_doordir@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3240,7 +5591,7 @@ R F(...) {
 ...>
 }
 
-@field_6_invisible@
+@field_11_invisible@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3293,7 +5644,7 @@ R F(...) {
 ...>
 }
 
-@field_6_is_quant@
+@field_11_is_quant@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3346,7 +5697,7 @@ R F(...) {
 ...>
 }
 
-@field_6_zpos@
+@field_11_zpos@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3372,7 +5723,7 @@ R F(...) {
 ...>
 }
 
-@field_6_heading@
+@field_11_heading@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3401,7 +5752,7 @@ R F(...) {
 ...>
 }
 
-@field_6_ypos@
+@field_11_ypos@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3436,7 +5787,7 @@ R F(...) {
 ...>
 }
 
-@field_6_xpos@
+@field_11_xpos@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3471,7 +5822,7 @@ R F(...) {
 ...>
 }
 
-@field_6_quality@
+@field_11_quality@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3497,7 +5848,7 @@ R F(...) {
 ...>
 }
 
-@field_6_next@
+@field_11_next@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3526,7 +5877,7 @@ R F(...) {
 ...>
 }
 
-@field_6_owner@
+@field_11_owner@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3552,7 +5903,7 @@ R F(...) {
 ...>
 }
 
-@field_6_link@
+@field_11_link@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3581,7 +5932,7 @@ R F(...) {
 ...>
 }
 
-@field_7_item_id@
+@field_12_item_id@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3610,7 +5961,7 @@ R F(...) {
 ...>
 }
 
-@field_7_flags_res@
+@field_12_flags_res@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3663,7 +6014,7 @@ R F(...) {
 ...>
 }
 
-@field_7_enchanted@
+@field_12_enchanted@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3716,7 +6067,7 @@ R F(...) {
 ...>
 }
 
-@field_7_doordir@
+@field_12_doordir@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3769,7 +6120,7 @@ R F(...) {
 ...>
 }
 
-@field_7_invisible@
+@field_12_invisible@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3822,7 +6173,7 @@ R F(...) {
 ...>
 }
 
-@field_7_is_quant@
+@field_12_is_quant@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3875,7 +6226,7 @@ R F(...) {
 ...>
 }
 
-@field_7_zpos@
+@field_12_zpos@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3901,7 +6252,7 @@ R F(...) {
 ...>
 }
 
-@field_7_heading@
+@field_12_heading@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3930,7 +6281,7 @@ R F(...) {
 ...>
 }
 
-@field_7_ypos@
+@field_12_ypos@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3965,7 +6316,7 @@ R F(...) {
 ...>
 }
 
-@field_7_xpos@
+@field_12_xpos@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4000,7 +6351,7 @@ R F(...) {
 ...>
 }
 
-@field_7_quality@
+@field_12_quality@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4026,7 +6377,7 @@ R F(...) {
 ...>
 }
 
-@field_7_next@
+@field_12_next@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4055,7 +6406,7 @@ R F(...) {
 ...>
 }
 
-@field_7_owner@
+@field_12_owner@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4081,7 +6432,7 @@ R F(...) {
 ...>
 }
 
-@field_7_link@
+@field_12_link@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4110,7 +6461,7 @@ R F(...) {
 ...>
 }
 
-@field_8_item_id@
+@field_13_item_id@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4136,7 +6487,7 @@ R F(...) {
 ...>
 }
 
-@field_8_flags_res@
+@field_13_flags_res@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4183,7 +6534,7 @@ R F(...) {
 ...>
 }
 
-@field_8_enchanted@
+@field_13_enchanted@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4230,7 +6581,7 @@ R F(...) {
 ...>
 }
 
-@field_8_doordir@
+@field_13_doordir@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4277,7 +6628,7 @@ R F(...) {
 ...>
 }
 
-@field_8_invisible@
+@field_13_invisible@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4324,7 +6675,7 @@ R F(...) {
 ...>
 }
 
-@field_8_is_quant@
+@field_13_is_quant@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4386,7 +6737,7 @@ R F(...) {
 ...>
 }
 
-@field_8_zpos@
+@field_13_zpos@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4412,7 +6763,7 @@ R F(...) {
 ...>
 }
 
-@field_8_heading@
+@field_13_heading@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4441,7 +6792,7 @@ R F(...) {
 ...>
 }
 
-@field_8_ypos@
+@field_13_ypos@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4476,7 +6827,7 @@ R F(...) {
 ...>
 }
 
-@field_8_xpos@
+@field_13_xpos@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4520,7 +6871,7 @@ R F(...) {
 ...>
 }
 
-@field_8_quality@
+@field_13_quality@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4546,7 +6897,7 @@ R F(...) {
 ...>
 }
 
-@field_8_next@
+@field_13_next@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4584,7 +6935,7 @@ R F(...) {
 ...>
 }
 
-@field_8_owner@
+@field_13_owner@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4610,7 +6961,7 @@ R F(...) {
 ...>
 }
 
-@field_8_link@
+@field_13_link@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4648,7 +6999,7 @@ R F(...) {
 ...>
 }
 
-@field_9_item_id@
+@field_14_item_id@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4674,7 +7025,7 @@ R F(...) {
 ...>
 }
 
-@field_9_flags_res@
+@field_14_flags_res@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4721,7 +7072,7 @@ R F(...) {
 ...>
 }
 
-@field_9_enchanted@
+@field_14_enchanted@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4768,7 +7119,7 @@ R F(...) {
 ...>
 }
 
-@field_9_doordir@
+@field_14_doordir@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4815,7 +7166,7 @@ R F(...) {
 ...>
 }
 
-@field_9_invisible@
+@field_14_invisible@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4862,7 +7213,7 @@ R F(...) {
 ...>
 }
 
-@field_9_is_quant@
+@field_14_is_quant@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4924,7 +7275,7 @@ R F(...) {
 ...>
 }
 
-@field_9_zpos@
+@field_14_zpos@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4950,7 +7301,7 @@ R F(...) {
 ...>
 }
 
-@field_9_heading@
+@field_14_heading@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4979,7 +7330,7 @@ R F(...) {
 ...>
 }
 
-@field_9_ypos@
+@field_14_ypos@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5014,7 +7365,7 @@ R F(...) {
 ...>
 }
 
-@field_9_xpos@
+@field_14_xpos@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5058,7 +7409,7 @@ R F(...) {
 ...>
 }
 
-@field_9_quality@
+@field_14_quality@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5084,7 +7435,7 @@ R F(...) {
 ...>
 }
 
-@field_9_next@
+@field_14_next@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5122,7 +7473,7 @@ R F(...) {
 ...>
 }
 
-@field_9_owner@
+@field_14_owner@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5148,7 +7499,7 @@ R F(...) {
 ...>
 }
 
-@field_9_link@
+@field_14_link@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5186,7 +7537,7 @@ R F(...) {
 ...>
 }
 
-@field_10_item_id@
+@field_15_item_id@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5212,7 +7563,7 @@ R F(...) {
 ...>
 }
 
-@field_10_flags_res@
+@field_15_flags_res@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5259,7 +7610,7 @@ R F(...) {
 ...>
 }
 
-@field_10_enchanted@
+@field_15_enchanted@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5306,7 +7657,7 @@ R F(...) {
 ...>
 }
 
-@field_10_doordir@
+@field_15_doordir@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5353,7 +7704,7 @@ R F(...) {
 ...>
 }
 
-@field_10_invisible@
+@field_15_invisible@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5400,7 +7751,7 @@ R F(...) {
 ...>
 }
 
-@field_10_is_quant@
+@field_15_is_quant@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5462,7 +7813,7 @@ R F(...) {
 ...>
 }
 
-@field_10_zpos@
+@field_15_zpos@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5488,7 +7839,7 @@ R F(...) {
 ...>
 }
 
-@field_10_heading@
+@field_15_heading@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5517,7 +7868,7 @@ R F(...) {
 ...>
 }
 
-@field_10_ypos@
+@field_15_ypos@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5552,7 +7903,7 @@ R F(...) {
 ...>
 }
 
-@field_10_xpos@
+@field_15_xpos@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5596,7 +7947,7 @@ R F(...) {
 ...>
 }
 
-@field_10_quality@
+@field_15_quality@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5622,7 +7973,7 @@ R F(...) {
 ...>
 }
 
-@field_10_next@
+@field_15_next@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5660,7 +8011,7 @@ R F(...) {
 ...>
 }
 
-@field_10_owner@
+@field_15_owner@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5686,7 +8037,7 @@ R F(...) {
 ...>
 }
 
-@field_10_link@
+@field_15_link@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5724,7 +8075,7 @@ R F(...) {
 ...>
 }
 
-@field_11_item_id@
+@field_16_item_id@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5750,7 +8101,7 @@ R F(...) {
 ...>
 }
 
-@field_11_flags_res@
+@field_16_flags_res@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5797,7 +8148,7 @@ R F(...) {
 ...>
 }
 
-@field_11_enchanted@
+@field_16_enchanted@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5844,7 +8195,7 @@ R F(...) {
 ...>
 }
 
-@field_11_doordir@
+@field_16_doordir@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5891,7 +8242,7 @@ R F(...) {
 ...>
 }
 
-@field_11_invisible@
+@field_16_invisible@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5938,7 +8289,7 @@ R F(...) {
 ...>
 }
 
-@field_11_is_quant@
+@field_16_is_quant@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6000,7 +8351,7 @@ R F(...) {
 ...>
 }
 
-@field_11_zpos@
+@field_16_zpos@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6026,7 +8377,7 @@ R F(...) {
 ...>
 }
 
-@field_11_heading@
+@field_16_heading@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6055,7 +8406,7 @@ R F(...) {
 ...>
 }
 
-@field_11_ypos@
+@field_16_ypos@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6090,7 +8441,7 @@ R F(...) {
 ...>
 }
 
-@field_11_xpos@
+@field_16_xpos@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6134,7 +8485,7 @@ R F(...) {
 ...>
 }
 
-@field_11_quality@
+@field_16_quality@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6160,7 +8511,7 @@ R F(...) {
 ...>
 }
 
-@field_11_next@
+@field_16_next@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6198,7 +8549,7 @@ R F(...) {
 ...>
 }
 
-@field_11_owner@
+@field_16_owner@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6224,7 +8575,7 @@ R F(...) {
 ...>
 }
 
-@field_11_link@
+@field_16_link@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6262,7 +8613,545 @@ R F(...) {
 ...>
 }
 
-@field_12_item_id@
+@field_17_item_id@
+type R;
+identifier F =~ "^\(resolve_collision_candidate_interaction\|resolve_equipped_weapon_attack\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar4 + 0x0) & 0x1ff
++ ((uw_object_hdr_t *)puVar4)->item_id
+|
+- ((ushort *)puVar4)[0] & 0x1ff
++ ((uw_object_hdr_t *)puVar4)->item_id
+|
+- *(ushort *)puVar4 & 0x1ff
++ ((uw_object_hdr_t *)puVar4)->item_id
+|
+- puVar4[0] & 0x1ff
++ ((uw_object_hdr_t *)puVar4)->item_id
+|
+- *puVar4 & 0x1ff
++ ((uw_object_hdr_t *)puVar4)->item_id
+)
+...>
+}
+
+@field_17_flags_res@
+type R;
+identifier F =~ "^\(resolve_collision_candidate_interaction\|resolve_equipped_weapon_attack\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar4 + 0x0) >> 9) & 0x7
++ ((uw_object_hdr_t *)puVar4)->flags_res
+|
+- (*(ushort *)((char *)puVar4 + 0x0) & 0xe00) >> 9
++ ((uw_object_hdr_t *)puVar4)->flags_res
+|
+- (((ushort *)puVar4)[0] >> 9) & 0x7
++ ((uw_object_hdr_t *)puVar4)->flags_res
+|
+- (((ushort *)puVar4)[0] & 0xe00) >> 9
++ ((uw_object_hdr_t *)puVar4)->flags_res
+|
+- (*(ushort *)puVar4 >> 9) & 0x7
++ ((uw_object_hdr_t *)puVar4)->flags_res
+|
+- (*(ushort *)puVar4 & 0xe00) >> 9
++ ((uw_object_hdr_t *)puVar4)->flags_res
+|
+- (puVar4[0] >> 9) & 0x7
++ ((uw_object_hdr_t *)puVar4)->flags_res
+|
+- (puVar4[0] & 0xe00) >> 9
++ ((uw_object_hdr_t *)puVar4)->flags_res
+|
+- (*puVar4 >> 9) & 0x7
++ ((uw_object_hdr_t *)puVar4)->flags_res
+|
+- (*puVar4 & 0xe00) >> 9
++ ((uw_object_hdr_t *)puVar4)->flags_res
+|
+- (*(byte *)((char *)puVar4 + 0x1) >> 1) & 0x7
++ ((uw_object_hdr_t *)puVar4)->flags_res
+|
+- (*(byte *)((char *)puVar4 + 0x1) & 0xe) >> 1
++ ((uw_object_hdr_t *)puVar4)->flags_res
+)
+...>
+}
+
+@field_17_enchanted@
+type R;
+identifier F =~ "^\(resolve_collision_candidate_interaction\|resolve_equipped_weapon_attack\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar4 + 0x0) >> 12) & 0x1
++ ((uw_object_hdr_t *)puVar4)->enchanted
+|
+- (*(ushort *)((char *)puVar4 + 0x0) & 0x1000) >> 12
++ ((uw_object_hdr_t *)puVar4)->enchanted
+|
+- (((ushort *)puVar4)[0] >> 12) & 0x1
++ ((uw_object_hdr_t *)puVar4)->enchanted
+|
+- (((ushort *)puVar4)[0] & 0x1000) >> 12
++ ((uw_object_hdr_t *)puVar4)->enchanted
+|
+- (*(ushort *)puVar4 >> 12) & 0x1
++ ((uw_object_hdr_t *)puVar4)->enchanted
+|
+- (*(ushort *)puVar4 & 0x1000) >> 12
++ ((uw_object_hdr_t *)puVar4)->enchanted
+|
+- (puVar4[0] >> 12) & 0x1
++ ((uw_object_hdr_t *)puVar4)->enchanted
+|
+- (puVar4[0] & 0x1000) >> 12
++ ((uw_object_hdr_t *)puVar4)->enchanted
+|
+- (*puVar4 >> 12) & 0x1
++ ((uw_object_hdr_t *)puVar4)->enchanted
+|
+- (*puVar4 & 0x1000) >> 12
++ ((uw_object_hdr_t *)puVar4)->enchanted
+|
+- (*(byte *)((char *)puVar4 + 0x1) >> 4) & 0x1
++ ((uw_object_hdr_t *)puVar4)->enchanted
+|
+- (*(byte *)((char *)puVar4 + 0x1) & 0x10) >> 4
++ ((uw_object_hdr_t *)puVar4)->enchanted
+)
+...>
+}
+
+@field_17_doordir@
+type R;
+identifier F =~ "^\(resolve_collision_candidate_interaction\|resolve_equipped_weapon_attack\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar4 + 0x0) >> 13) & 0x1
++ ((uw_object_hdr_t *)puVar4)->doordir
+|
+- (*(ushort *)((char *)puVar4 + 0x0) & 0x2000) >> 13
++ ((uw_object_hdr_t *)puVar4)->doordir
+|
+- (((ushort *)puVar4)[0] >> 13) & 0x1
++ ((uw_object_hdr_t *)puVar4)->doordir
+|
+- (((ushort *)puVar4)[0] & 0x2000) >> 13
++ ((uw_object_hdr_t *)puVar4)->doordir
+|
+- (*(ushort *)puVar4 >> 13) & 0x1
++ ((uw_object_hdr_t *)puVar4)->doordir
+|
+- (*(ushort *)puVar4 & 0x2000) >> 13
++ ((uw_object_hdr_t *)puVar4)->doordir
+|
+- (puVar4[0] >> 13) & 0x1
++ ((uw_object_hdr_t *)puVar4)->doordir
+|
+- (puVar4[0] & 0x2000) >> 13
++ ((uw_object_hdr_t *)puVar4)->doordir
+|
+- (*puVar4 >> 13) & 0x1
++ ((uw_object_hdr_t *)puVar4)->doordir
+|
+- (*puVar4 & 0x2000) >> 13
++ ((uw_object_hdr_t *)puVar4)->doordir
+|
+- (*(byte *)((char *)puVar4 + 0x1) >> 5) & 0x1
++ ((uw_object_hdr_t *)puVar4)->doordir
+|
+- (*(byte *)((char *)puVar4 + 0x1) & 0x20) >> 5
++ ((uw_object_hdr_t *)puVar4)->doordir
+)
+...>
+}
+
+@field_17_invisible@
+type R;
+identifier F =~ "^\(resolve_collision_candidate_interaction\|resolve_equipped_weapon_attack\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar4 + 0x0) >> 14) & 0x1
++ ((uw_object_hdr_t *)puVar4)->invisible
+|
+- (*(ushort *)((char *)puVar4 + 0x0) & 0x4000) >> 14
++ ((uw_object_hdr_t *)puVar4)->invisible
+|
+- (((ushort *)puVar4)[0] >> 14) & 0x1
++ ((uw_object_hdr_t *)puVar4)->invisible
+|
+- (((ushort *)puVar4)[0] & 0x4000) >> 14
++ ((uw_object_hdr_t *)puVar4)->invisible
+|
+- (*(ushort *)puVar4 >> 14) & 0x1
++ ((uw_object_hdr_t *)puVar4)->invisible
+|
+- (*(ushort *)puVar4 & 0x4000) >> 14
++ ((uw_object_hdr_t *)puVar4)->invisible
+|
+- (puVar4[0] >> 14) & 0x1
++ ((uw_object_hdr_t *)puVar4)->invisible
+|
+- (puVar4[0] & 0x4000) >> 14
++ ((uw_object_hdr_t *)puVar4)->invisible
+|
+- (*puVar4 >> 14) & 0x1
++ ((uw_object_hdr_t *)puVar4)->invisible
+|
+- (*puVar4 & 0x4000) >> 14
++ ((uw_object_hdr_t *)puVar4)->invisible
+|
+- (*(byte *)((char *)puVar4 + 0x1) >> 6) & 0x1
++ ((uw_object_hdr_t *)puVar4)->invisible
+|
+- (*(byte *)((char *)puVar4 + 0x1) & 0x40) >> 6
++ ((uw_object_hdr_t *)puVar4)->invisible
+)
+...>
+}
+
+@field_17_is_quant@
+type R;
+identifier F =~ "^\(resolve_collision_candidate_interaction\|resolve_equipped_weapon_attack\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar4 + 0x0) >> 15) & 0x1
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- (*(ushort *)((char *)puVar4 + 0x0) & 0x8000) >> 15
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- *(ushort *)((char *)puVar4 + 0x0) >> 15
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- (((ushort *)puVar4)[0] >> 15) & 0x1
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- (((ushort *)puVar4)[0] & 0x8000) >> 15
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- ((ushort *)puVar4)[0] >> 15
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- (*(ushort *)puVar4 >> 15) & 0x1
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- (*(ushort *)puVar4 & 0x8000) >> 15
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- *(ushort *)puVar4 >> 15
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- (puVar4[0] >> 15) & 0x1
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- (puVar4[0] & 0x8000) >> 15
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- puVar4[0] >> 15
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- (*puVar4 >> 15) & 0x1
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- (*puVar4 & 0x8000) >> 15
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- *puVar4 >> 15
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- (*(byte *)((char *)puVar4 + 0x1) >> 7) & 0x1
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- (*(byte *)((char *)puVar4 + 0x1) & 0x80) >> 7
++ ((uw_object_hdr_t *)puVar4)->is_quant
+)
+...>
+}
+
+@field_17_zpos@
+type R;
+identifier F =~ "^\(resolve_collision_candidate_interaction\|resolve_equipped_weapon_attack\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar4 + 0x2) & 0x7f
++ ((uw_object_hdr_t *)puVar4)->zpos
+|
+- ((ushort *)puVar4)[1] & 0x7f
++ ((uw_object_hdr_t *)puVar4)->zpos
+|
+- puVar4[1] & 0x7f
++ ((uw_object_hdr_t *)puVar4)->zpos
+|
+- *(byte *)((char *)puVar4 + 0x2) & 0x7f
++ ((uw_object_hdr_t *)puVar4)->zpos
+|
+- (byte)puVar4[1] & 0x7f
++ ((uw_object_hdr_t *)puVar4)->zpos
+)
+...>
+}
+
+@field_17_heading@
+type R;
+identifier F =~ "^\(resolve_collision_candidate_interaction\|resolve_equipped_weapon_attack\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar4 + 0x2) >> 7) & 0x7
++ ((uw_object_hdr_t *)puVar4)->heading
+|
+- (*(ushort *)((char *)puVar4 + 0x2) & 0x380) >> 7
++ ((uw_object_hdr_t *)puVar4)->heading
+|
+- (((ushort *)puVar4)[1] >> 7) & 0x7
++ ((uw_object_hdr_t *)puVar4)->heading
+|
+- (((ushort *)puVar4)[1] & 0x380) >> 7
++ ((uw_object_hdr_t *)puVar4)->heading
+|
+- (puVar4[1] >> 7) & 0x7
++ ((uw_object_hdr_t *)puVar4)->heading
+|
+- (puVar4[1] & 0x380) >> 7
++ ((uw_object_hdr_t *)puVar4)->heading
+)
+...>
+}
+
+@field_17_ypos@
+type R;
+identifier F =~ "^\(resolve_collision_candidate_interaction\|resolve_equipped_weapon_attack\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar4 + 0x2) >> 10) & 0x7
++ ((uw_object_hdr_t *)puVar4)->ypos
+|
+- (*(ushort *)((char *)puVar4 + 0x2) & 0x1c00) >> 10
++ ((uw_object_hdr_t *)puVar4)->ypos
+|
+- (((ushort *)puVar4)[1] >> 10) & 0x7
++ ((uw_object_hdr_t *)puVar4)->ypos
+|
+- (((ushort *)puVar4)[1] & 0x1c00) >> 10
++ ((uw_object_hdr_t *)puVar4)->ypos
+|
+- (puVar4[1] >> 10) & 0x7
++ ((uw_object_hdr_t *)puVar4)->ypos
+|
+- (puVar4[1] & 0x1c00) >> 10
++ ((uw_object_hdr_t *)puVar4)->ypos
+|
+- (*(byte *)((char *)puVar4 + 0x3) >> 2) & 0x7
++ ((uw_object_hdr_t *)puVar4)->ypos
+|
+- (*(byte *)((char *)puVar4 + 0x3) & 0x1c) >> 2
++ ((uw_object_hdr_t *)puVar4)->ypos
+)
+...>
+}
+
+@field_17_xpos@
+type R;
+identifier F =~ "^\(resolve_collision_candidate_interaction\|resolve_equipped_weapon_attack\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar4 + 0x2) >> 13) & 0x7
++ ((uw_object_hdr_t *)puVar4)->xpos
+|
+- (*(ushort *)((char *)puVar4 + 0x2) & 0xe000) >> 13
++ ((uw_object_hdr_t *)puVar4)->xpos
+|
+- *(ushort *)((char *)puVar4 + 0x2) >> 13
++ ((uw_object_hdr_t *)puVar4)->xpos
+|
+- (((ushort *)puVar4)[1] >> 13) & 0x7
++ ((uw_object_hdr_t *)puVar4)->xpos
+|
+- (((ushort *)puVar4)[1] & 0xe000) >> 13
++ ((uw_object_hdr_t *)puVar4)->xpos
+|
+- ((ushort *)puVar4)[1] >> 13
++ ((uw_object_hdr_t *)puVar4)->xpos
+|
+- (puVar4[1] >> 13) & 0x7
++ ((uw_object_hdr_t *)puVar4)->xpos
+|
+- (puVar4[1] & 0xe000) >> 13
++ ((uw_object_hdr_t *)puVar4)->xpos
+|
+- puVar4[1] >> 13
++ ((uw_object_hdr_t *)puVar4)->xpos
+|
+- (*(byte *)((char *)puVar4 + 0x3) >> 5) & 0x7
++ ((uw_object_hdr_t *)puVar4)->xpos
+|
+- (*(byte *)((char *)puVar4 + 0x3) & 0xe0) >> 5
++ ((uw_object_hdr_t *)puVar4)->xpos
+)
+...>
+}
+
+@field_17_quality@
+type R;
+identifier F =~ "^\(resolve_collision_candidate_interaction\|resolve_equipped_weapon_attack\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar4 + 0x4) & 0x3f
++ ((uw_object_hdr_t *)puVar4)->quality
+|
+- ((ushort *)puVar4)[2] & 0x3f
++ ((uw_object_hdr_t *)puVar4)->quality
+|
+- puVar4[2] & 0x3f
++ ((uw_object_hdr_t *)puVar4)->quality
+|
+- *(byte *)((char *)puVar4 + 0x4) & 0x3f
++ ((uw_object_hdr_t *)puVar4)->quality
+|
+- (byte)puVar4[2] & 0x3f
++ ((uw_object_hdr_t *)puVar4)->quality
+)
+...>
+}
+
+@field_17_next@
+type R;
+identifier F =~ "^\(resolve_collision_candidate_interaction\|resolve_equipped_weapon_attack\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar4 + 0x4) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)puVar4)->next
+|
+- (*(ushort *)((char *)puVar4 + 0x4) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)puVar4)->next
+|
+- *(ushort *)((char *)puVar4 + 0x4) >> 6
++ ((uw_object_hdr_t *)puVar4)->next
+|
+- (((ushort *)puVar4)[2] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)puVar4)->next
+|
+- (((ushort *)puVar4)[2] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)puVar4)->next
+|
+- ((ushort *)puVar4)[2] >> 6
++ ((uw_object_hdr_t *)puVar4)->next
+|
+- (puVar4[2] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)puVar4)->next
+|
+- (puVar4[2] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)puVar4)->next
+|
+- puVar4[2] >> 6
++ ((uw_object_hdr_t *)puVar4)->next
+)
+...>
+}
+
+@field_17_owner@
+type R;
+identifier F =~ "^\(resolve_collision_candidate_interaction\|resolve_equipped_weapon_attack\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar4 + 0x6) & 0x3f
++ ((uw_object_hdr_t *)puVar4)->owner
+|
+- ((ushort *)puVar4)[3] & 0x3f
++ ((uw_object_hdr_t *)puVar4)->owner
+|
+- puVar4[3] & 0x3f
++ ((uw_object_hdr_t *)puVar4)->owner
+|
+- *(byte *)((char *)puVar4 + 0x6) & 0x3f
++ ((uw_object_hdr_t *)puVar4)->owner
+|
+- (byte)puVar4[3] & 0x3f
++ ((uw_object_hdr_t *)puVar4)->owner
+)
+...>
+}
+
+@field_17_link@
+type R;
+identifier F =~ "^\(resolve_collision_candidate_interaction\|resolve_equipped_weapon_attack\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar4 + 0x6) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)puVar4)->link
+|
+- (*(ushort *)((char *)puVar4 + 0x6) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)puVar4)->link
+|
+- *(ushort *)((char *)puVar4 + 0x6) >> 6
++ ((uw_object_hdr_t *)puVar4)->link
+|
+- (((ushort *)puVar4)[3] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)puVar4)->link
+|
+- (((ushort *)puVar4)[3] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)puVar4)->link
+|
+- ((ushort *)puVar4)[3] >> 6
++ ((uw_object_hdr_t *)puVar4)->link
+|
+- (puVar4[3] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)puVar4)->link
+|
+- (puVar4[3] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)puVar4)->link
+|
+- puVar4[3] >> 6
++ ((uw_object_hdr_t *)puVar4)->link
+)
+...>
+}
+
+@field_18_item_id@
 type R;
 identifier F =~ "^\(apply_direct_object_hit\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6288,7 +9177,7 @@ R F(...) {
 ...>
 }
 
-@field_12_flags_res@
+@field_18_flags_res@
 type R;
 identifier F =~ "^\(apply_direct_object_hit\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6335,7 +9224,7 @@ R F(...) {
 ...>
 }
 
-@field_12_enchanted@
+@field_18_enchanted@
 type R;
 identifier F =~ "^\(apply_direct_object_hit\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6382,7 +9271,7 @@ R F(...) {
 ...>
 }
 
-@field_12_doordir@
+@field_18_doordir@
 type R;
 identifier F =~ "^\(apply_direct_object_hit\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6429,7 +9318,7 @@ R F(...) {
 ...>
 }
 
-@field_12_invisible@
+@field_18_invisible@
 type R;
 identifier F =~ "^\(apply_direct_object_hit\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6476,7 +9365,7 @@ R F(...) {
 ...>
 }
 
-@field_12_is_quant@
+@field_18_is_quant@
 type R;
 identifier F =~ "^\(apply_direct_object_hit\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6538,7 +9427,7 @@ R F(...) {
 ...>
 }
 
-@field_12_zpos@
+@field_18_zpos@
 type R;
 identifier F =~ "^\(apply_direct_object_hit\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6564,7 +9453,7 @@ R F(...) {
 ...>
 }
 
-@field_12_heading@
+@field_18_heading@
 type R;
 identifier F =~ "^\(apply_direct_object_hit\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6593,7 +9482,7 @@ R F(...) {
 ...>
 }
 
-@field_12_ypos@
+@field_18_ypos@
 type R;
 identifier F =~ "^\(apply_direct_object_hit\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6628,7 +9517,7 @@ R F(...) {
 ...>
 }
 
-@field_12_xpos@
+@field_18_xpos@
 type R;
 identifier F =~ "^\(apply_direct_object_hit\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6672,7 +9561,7 @@ R F(...) {
 ...>
 }
 
-@field_12_quality@
+@field_18_quality@
 type R;
 identifier F =~ "^\(apply_direct_object_hit\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6698,7 +9587,7 @@ R F(...) {
 ...>
 }
 
-@field_12_next@
+@field_18_next@
 type R;
 identifier F =~ "^\(apply_direct_object_hit\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6736,7 +9625,7 @@ R F(...) {
 ...>
 }
 
-@field_12_owner@
+@field_18_owner@
 type R;
 identifier F =~ "^\(apply_direct_object_hit\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6762,7 +9651,7 @@ R F(...) {
 ...>
 }
 
-@field_12_link@
+@field_18_link@
 type R;
 identifier F =~ "^\(apply_direct_object_hit\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6800,7 +9689,536 @@ R F(...) {
 ...>
 }
 
-@field_13_item_id@
+@field_19_item_id@
+type R;
+identifier F =~ "^\(check_npc_target_alignment\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar4 + 0x0) & 0x1ff
++ ((uw_object_hdr_t *)iVar4)->item_id
+|
+- ((ushort *)iVar4)[0] & 0x1ff
++ ((uw_object_hdr_t *)iVar4)->item_id
+|
+- *(ushort *)iVar4 & 0x1ff
++ ((uw_object_hdr_t *)iVar4)->item_id
+|
+- *(ushort *)(iVar4 + 0x0) & 0x1ff
++ ((uw_object_hdr_t *)iVar4)->item_id
+|
+- CONCAT11(iVar4[1], *iVar4) & 0x1ff
++ ((uw_object_hdr_t *)iVar4)->item_id
+|
+- CONCAT11(iVar4[1], iVar4[0]) & 0x1ff
++ ((uw_object_hdr_t *)iVar4)->item_id
+)
+...>
+}
+
+@field_19_flags_res@
+type R;
+identifier F =~ "^\(check_npc_target_alignment\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar4 + 0x0) >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar4)->flags_res
+|
+- (*(ushort *)((char *)iVar4 + 0x0) & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar4)->flags_res
+|
+- (((ushort *)iVar4)[0] >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar4)->flags_res
+|
+- (((ushort *)iVar4)[0] & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar4)->flags_res
+|
+- (*(ushort *)iVar4 >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar4)->flags_res
+|
+- (*(ushort *)iVar4 & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar4)->flags_res
+|
+- (*(ushort *)(iVar4 + 0x0) >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar4)->flags_res
+|
+- (*(ushort *)(iVar4 + 0x0) & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar4)->flags_res
+|
+- (CONCAT11(iVar4[1], *iVar4) >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar4)->flags_res
+|
+- (CONCAT11(iVar4[1], *iVar4) & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar4)->flags_res
+|
+- (CONCAT11(iVar4[1], iVar4[0]) >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar4)->flags_res
+|
+- (CONCAT11(iVar4[1], iVar4[0]) & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar4)->flags_res
+|
+- (*(byte *)((char *)iVar4 + 0x1) >> 1) & 0x7
++ ((uw_object_hdr_t *)iVar4)->flags_res
+|
+- (*(byte *)((char *)iVar4 + 0x1) & 0xe) >> 1
++ ((uw_object_hdr_t *)iVar4)->flags_res
+)
+...>
+}
+
+@field_19_enchanted@
+type R;
+identifier F =~ "^\(check_npc_target_alignment\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar4 + 0x0) >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar4)->enchanted
+|
+- (*(ushort *)((char *)iVar4 + 0x0) & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar4)->enchanted
+|
+- (((ushort *)iVar4)[0] >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar4)->enchanted
+|
+- (((ushort *)iVar4)[0] & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar4)->enchanted
+|
+- (*(ushort *)iVar4 >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar4)->enchanted
+|
+- (*(ushort *)iVar4 & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar4)->enchanted
+|
+- (*(ushort *)(iVar4 + 0x0) >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar4)->enchanted
+|
+- (*(ushort *)(iVar4 + 0x0) & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar4)->enchanted
+|
+- (CONCAT11(iVar4[1], *iVar4) >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar4)->enchanted
+|
+- (CONCAT11(iVar4[1], *iVar4) & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar4)->enchanted
+|
+- (CONCAT11(iVar4[1], iVar4[0]) >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar4)->enchanted
+|
+- (CONCAT11(iVar4[1], iVar4[0]) & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar4)->enchanted
+|
+- (*(byte *)((char *)iVar4 + 0x1) >> 4) & 0x1
++ ((uw_object_hdr_t *)iVar4)->enchanted
+|
+- (*(byte *)((char *)iVar4 + 0x1) & 0x10) >> 4
++ ((uw_object_hdr_t *)iVar4)->enchanted
+)
+...>
+}
+
+@field_19_doordir@
+type R;
+identifier F =~ "^\(check_npc_target_alignment\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar4 + 0x0) >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar4)->doordir
+|
+- (*(ushort *)((char *)iVar4 + 0x0) & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar4)->doordir
+|
+- (((ushort *)iVar4)[0] >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar4)->doordir
+|
+- (((ushort *)iVar4)[0] & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar4)->doordir
+|
+- (*(ushort *)iVar4 >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar4)->doordir
+|
+- (*(ushort *)iVar4 & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar4)->doordir
+|
+- (*(ushort *)(iVar4 + 0x0) >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar4)->doordir
+|
+- (*(ushort *)(iVar4 + 0x0) & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar4)->doordir
+|
+- (CONCAT11(iVar4[1], *iVar4) >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar4)->doordir
+|
+- (CONCAT11(iVar4[1], *iVar4) & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar4)->doordir
+|
+- (CONCAT11(iVar4[1], iVar4[0]) >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar4)->doordir
+|
+- (CONCAT11(iVar4[1], iVar4[0]) & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar4)->doordir
+|
+- (*(byte *)((char *)iVar4 + 0x1) >> 5) & 0x1
++ ((uw_object_hdr_t *)iVar4)->doordir
+|
+- (*(byte *)((char *)iVar4 + 0x1) & 0x20) >> 5
++ ((uw_object_hdr_t *)iVar4)->doordir
+)
+...>
+}
+
+@field_19_invisible@
+type R;
+identifier F =~ "^\(check_npc_target_alignment\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar4 + 0x0) >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar4)->invisible
+|
+- (*(ushort *)((char *)iVar4 + 0x0) & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar4)->invisible
+|
+- (((ushort *)iVar4)[0] >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar4)->invisible
+|
+- (((ushort *)iVar4)[0] & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar4)->invisible
+|
+- (*(ushort *)iVar4 >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar4)->invisible
+|
+- (*(ushort *)iVar4 & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar4)->invisible
+|
+- (*(ushort *)(iVar4 + 0x0) >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar4)->invisible
+|
+- (*(ushort *)(iVar4 + 0x0) & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar4)->invisible
+|
+- (CONCAT11(iVar4[1], *iVar4) >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar4)->invisible
+|
+- (CONCAT11(iVar4[1], *iVar4) & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar4)->invisible
+|
+- (CONCAT11(iVar4[1], iVar4[0]) >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar4)->invisible
+|
+- (CONCAT11(iVar4[1], iVar4[0]) & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar4)->invisible
+|
+- (*(byte *)((char *)iVar4 + 0x1) >> 6) & 0x1
++ ((uw_object_hdr_t *)iVar4)->invisible
+|
+- (*(byte *)((char *)iVar4 + 0x1) & 0x40) >> 6
++ ((uw_object_hdr_t *)iVar4)->invisible
+)
+...>
+}
+
+@field_19_is_quant@
+type R;
+identifier F =~ "^\(check_npc_target_alignment\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar4 + 0x0) >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar4)->is_quant
+|
+- (*(ushort *)((char *)iVar4 + 0x0) & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar4)->is_quant
+|
+- (((ushort *)iVar4)[0] >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar4)->is_quant
+|
+- (((ushort *)iVar4)[0] & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar4)->is_quant
+|
+- (*(ushort *)iVar4 >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar4)->is_quant
+|
+- (*(ushort *)iVar4 & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar4)->is_quant
+|
+- (*(ushort *)(iVar4 + 0x0) >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar4)->is_quant
+|
+- (*(ushort *)(iVar4 + 0x0) & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar4)->is_quant
+|
+- (CONCAT11(iVar4[1], *iVar4) >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar4)->is_quant
+|
+- (CONCAT11(iVar4[1], *iVar4) & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar4)->is_quant
+|
+- (CONCAT11(iVar4[1], iVar4[0]) >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar4)->is_quant
+|
+- (CONCAT11(iVar4[1], iVar4[0]) & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar4)->is_quant
+|
+- (*(byte *)((char *)iVar4 + 0x1) >> 7) & 0x1
++ ((uw_object_hdr_t *)iVar4)->is_quant
+|
+- (*(byte *)((char *)iVar4 + 0x1) & 0x80) >> 7
++ ((uw_object_hdr_t *)iVar4)->is_quant
+)
+...>
+}
+
+@field_19_zpos@
+type R;
+identifier F =~ "^\(check_npc_target_alignment\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar4 + 0x2) & 0x7f
++ ((uw_object_hdr_t *)iVar4)->zpos
+|
+- ((ushort *)iVar4)[1] & 0x7f
++ ((uw_object_hdr_t *)iVar4)->zpos
+|
+- *(ushort *)(iVar4 + 0x2) & 0x7f
++ ((uw_object_hdr_t *)iVar4)->zpos
+|
+- *(byte *)((char *)iVar4 + 0x2) & 0x7f
++ ((uw_object_hdr_t *)iVar4)->zpos
+|
+- iVar4[2] & 0x7f
++ ((uw_object_hdr_t *)iVar4)->zpos
+)
+...>
+}
+
+@field_19_heading@
+type R;
+identifier F =~ "^\(check_npc_target_alignment\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar4 + 0x2) >> 7) & 0x7
++ ((uw_object_hdr_t *)iVar4)->heading
+|
+- (*(ushort *)((char *)iVar4 + 0x2) & 0x380) >> 7
++ ((uw_object_hdr_t *)iVar4)->heading
+|
+- (((ushort *)iVar4)[1] >> 7) & 0x7
++ ((uw_object_hdr_t *)iVar4)->heading
+|
+- (((ushort *)iVar4)[1] & 0x380) >> 7
++ ((uw_object_hdr_t *)iVar4)->heading
+|
+- (*(ushort *)(iVar4 + 0x2) >> 7) & 0x7
++ ((uw_object_hdr_t *)iVar4)->heading
+|
+- (*(ushort *)(iVar4 + 0x2) & 0x380) >> 7
++ ((uw_object_hdr_t *)iVar4)->heading
+)
+...>
+}
+
+@field_19_ypos@
+type R;
+identifier F =~ "^\(check_npc_target_alignment\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar4 + 0x2) >> 10) & 0x7
++ ((uw_object_hdr_t *)iVar4)->ypos
+|
+- (*(ushort *)((char *)iVar4 + 0x2) & 0x1c00) >> 10
++ ((uw_object_hdr_t *)iVar4)->ypos
+|
+- (((ushort *)iVar4)[1] >> 10) & 0x7
++ ((uw_object_hdr_t *)iVar4)->ypos
+|
+- (((ushort *)iVar4)[1] & 0x1c00) >> 10
++ ((uw_object_hdr_t *)iVar4)->ypos
+|
+- (*(ushort *)(iVar4 + 0x2) >> 10) & 0x7
++ ((uw_object_hdr_t *)iVar4)->ypos
+|
+- (*(ushort *)(iVar4 + 0x2) & 0x1c00) >> 10
++ ((uw_object_hdr_t *)iVar4)->ypos
+|
+- (*(byte *)((char *)iVar4 + 0x3) >> 2) & 0x7
++ ((uw_object_hdr_t *)iVar4)->ypos
+|
+- (*(byte *)((char *)iVar4 + 0x3) & 0x1c) >> 2
++ ((uw_object_hdr_t *)iVar4)->ypos
+)
+...>
+}
+
+@field_19_xpos@
+type R;
+identifier F =~ "^\(check_npc_target_alignment\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar4 + 0x2) >> 13) & 0x7
++ ((uw_object_hdr_t *)iVar4)->xpos
+|
+- (*(ushort *)((char *)iVar4 + 0x2) & 0xe000) >> 13
++ ((uw_object_hdr_t *)iVar4)->xpos
+|
+- (((ushort *)iVar4)[1] >> 13) & 0x7
++ ((uw_object_hdr_t *)iVar4)->xpos
+|
+- (((ushort *)iVar4)[1] & 0xe000) >> 13
++ ((uw_object_hdr_t *)iVar4)->xpos
+|
+- (*(ushort *)(iVar4 + 0x2) >> 13) & 0x7
++ ((uw_object_hdr_t *)iVar4)->xpos
+|
+- (*(ushort *)(iVar4 + 0x2) & 0xe000) >> 13
++ ((uw_object_hdr_t *)iVar4)->xpos
+|
+- (*(byte *)((char *)iVar4 + 0x3) >> 5) & 0x7
++ ((uw_object_hdr_t *)iVar4)->xpos
+|
+- (*(byte *)((char *)iVar4 + 0x3) & 0xe0) >> 5
++ ((uw_object_hdr_t *)iVar4)->xpos
+)
+...>
+}
+
+@field_19_quality@
+type R;
+identifier F =~ "^\(check_npc_target_alignment\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar4 + 0x4) & 0x3f
++ ((uw_object_hdr_t *)iVar4)->quality
+|
+- ((ushort *)iVar4)[2] & 0x3f
++ ((uw_object_hdr_t *)iVar4)->quality
+|
+- *(ushort *)(iVar4 + 0x4) & 0x3f
++ ((uw_object_hdr_t *)iVar4)->quality
+|
+- *(byte *)((char *)iVar4 + 0x4) & 0x3f
++ ((uw_object_hdr_t *)iVar4)->quality
+|
+- iVar4[4] & 0x3f
++ ((uw_object_hdr_t *)iVar4)->quality
+)
+...>
+}
+
+@field_19_next@
+type R;
+identifier F =~ "^\(check_npc_target_alignment\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar4 + 0x4) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar4)->next
+|
+- (*(ushort *)((char *)iVar4 + 0x4) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar4)->next
+|
+- (((ushort *)iVar4)[2] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar4)->next
+|
+- (((ushort *)iVar4)[2] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar4)->next
+|
+- (*(ushort *)(iVar4 + 0x4) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar4)->next
+|
+- (*(ushort *)(iVar4 + 0x4) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar4)->next
+)
+...>
+}
+
+@field_19_owner@
+type R;
+identifier F =~ "^\(check_npc_target_alignment\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar4 + 0x6) & 0x3f
++ ((uw_object_hdr_t *)iVar4)->owner
+|
+- ((ushort *)iVar4)[3] & 0x3f
++ ((uw_object_hdr_t *)iVar4)->owner
+|
+- *(ushort *)(iVar4 + 0x6) & 0x3f
++ ((uw_object_hdr_t *)iVar4)->owner
+|
+- *(byte *)((char *)iVar4 + 0x6) & 0x3f
++ ((uw_object_hdr_t *)iVar4)->owner
+|
+- iVar4[6] & 0x3f
++ ((uw_object_hdr_t *)iVar4)->owner
+)
+...>
+}
+
+@field_19_link@
+type R;
+identifier F =~ "^\(check_npc_target_alignment\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar4 + 0x6) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar4)->link
+|
+- (*(ushort *)((char *)iVar4 + 0x6) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar4)->link
+|
+- (((ushort *)iVar4)[3] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar4)->link
+|
+- (((ushort *)iVar4)[3] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar4)->link
+|
+- (*(ushort *)(iVar4 + 0x6) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar4)->link
+|
+- (*(ushort *)(iVar4 + 0x6) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar4)->link
+)
+...>
+}
+
+@field_20_item_id@
 type R;
 identifier F =~ "^\(apply_object_durability_damage\|resolve_damage_type_resistance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6826,7 +10244,7 @@ R F(...) {
 ...>
 }
 
-@field_13_flags_res@
+@field_20_flags_res@
 type R;
 identifier F =~ "^\(apply_object_durability_damage\|resolve_damage_type_resistance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6873,7 +10291,7 @@ R F(...) {
 ...>
 }
 
-@field_13_enchanted@
+@field_20_enchanted@
 type R;
 identifier F =~ "^\(apply_object_durability_damage\|resolve_damage_type_resistance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6920,7 +10338,7 @@ R F(...) {
 ...>
 }
 
-@field_13_doordir@
+@field_20_doordir@
 type R;
 identifier F =~ "^\(apply_object_durability_damage\|resolve_damage_type_resistance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6967,7 +10385,7 @@ R F(...) {
 ...>
 }
 
-@field_13_invisible@
+@field_20_invisible@
 type R;
 identifier F =~ "^\(apply_object_durability_damage\|resolve_damage_type_resistance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7014,7 +10432,7 @@ R F(...) {
 ...>
 }
 
-@field_13_is_quant@
+@field_20_is_quant@
 type R;
 identifier F =~ "^\(apply_object_durability_damage\|resolve_damage_type_resistance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7076,7 +10494,7 @@ R F(...) {
 ...>
 }
 
-@field_13_zpos@
+@field_20_zpos@
 type R;
 identifier F =~ "^\(apply_object_durability_damage\|resolve_damage_type_resistance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7102,7 +10520,7 @@ R F(...) {
 ...>
 }
 
-@field_13_heading@
+@field_20_heading@
 type R;
 identifier F =~ "^\(apply_object_durability_damage\|resolve_damage_type_resistance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7131,7 +10549,7 @@ R F(...) {
 ...>
 }
 
-@field_13_ypos@
+@field_20_ypos@
 type R;
 identifier F =~ "^\(apply_object_durability_damage\|resolve_damage_type_resistance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7166,7 +10584,7 @@ R F(...) {
 ...>
 }
 
-@field_13_xpos@
+@field_20_xpos@
 type R;
 identifier F =~ "^\(apply_object_durability_damage\|resolve_damage_type_resistance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7210,7 +10628,7 @@ R F(...) {
 ...>
 }
 
-@field_13_quality@
+@field_20_quality@
 type R;
 identifier F =~ "^\(apply_object_durability_damage\|resolve_damage_type_resistance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7236,7 +10654,7 @@ R F(...) {
 ...>
 }
 
-@field_13_next@
+@field_20_next@
 type R;
 identifier F =~ "^\(apply_object_durability_damage\|resolve_damage_type_resistance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7274,7 +10692,7 @@ R F(...) {
 ...>
 }
 
-@field_13_owner@
+@field_20_owner@
 type R;
 identifier F =~ "^\(apply_object_durability_damage\|resolve_damage_type_resistance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7300,7 +10718,7 @@ R F(...) {
 ...>
 }
 
-@field_13_link@
+@field_20_link@
 type R;
 identifier F =~ "^\(apply_object_durability_damage\|resolve_damage_type_resistance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7338,7 +10756,389 @@ R F(...) {
 ...>
 }
 
-@field_14_item_id@
+@field_21_item_id@
+type R;
+identifier F =~ "^\(damage_equipped_item_in_slot\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar5 + 0x0) & 0x1ff
++ ((uw_object_hdr_t *)puVar5)->item_id
+|
+- ((ushort *)puVar5)[0] & 0x1ff
++ ((uw_object_hdr_t *)puVar5)->item_id
+|
+- *(ushort *)puVar5 & 0x1ff
++ ((uw_object_hdr_t *)puVar5)->item_id
+)
+...>
+}
+
+@field_21_flags_res@
+type R;
+identifier F =~ "^\(damage_equipped_item_in_slot\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar5 + 0x0) >> 9) & 0x7
++ ((uw_object_hdr_t *)puVar5)->flags_res
+|
+- (*(ushort *)((char *)puVar5 + 0x0) & 0xe00) >> 9
++ ((uw_object_hdr_t *)puVar5)->flags_res
+|
+- (((ushort *)puVar5)[0] >> 9) & 0x7
++ ((uw_object_hdr_t *)puVar5)->flags_res
+|
+- (((ushort *)puVar5)[0] & 0xe00) >> 9
++ ((uw_object_hdr_t *)puVar5)->flags_res
+|
+- (*(ushort *)puVar5 >> 9) & 0x7
++ ((uw_object_hdr_t *)puVar5)->flags_res
+|
+- (*(ushort *)puVar5 & 0xe00) >> 9
++ ((uw_object_hdr_t *)puVar5)->flags_res
+|
+- (*(byte *)((char *)puVar5 + 0x1) >> 1) & 0x7
++ ((uw_object_hdr_t *)puVar5)->flags_res
+|
+- (*(byte *)((char *)puVar5 + 0x1) & 0xe) >> 1
++ ((uw_object_hdr_t *)puVar5)->flags_res
+)
+...>
+}
+
+@field_21_enchanted@
+type R;
+identifier F =~ "^\(damage_equipped_item_in_slot\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar5 + 0x0) >> 12) & 0x1
++ ((uw_object_hdr_t *)puVar5)->enchanted
+|
+- (*(ushort *)((char *)puVar5 + 0x0) & 0x1000) >> 12
++ ((uw_object_hdr_t *)puVar5)->enchanted
+|
+- (((ushort *)puVar5)[0] >> 12) & 0x1
++ ((uw_object_hdr_t *)puVar5)->enchanted
+|
+- (((ushort *)puVar5)[0] & 0x1000) >> 12
++ ((uw_object_hdr_t *)puVar5)->enchanted
+|
+- (*(ushort *)puVar5 >> 12) & 0x1
++ ((uw_object_hdr_t *)puVar5)->enchanted
+|
+- (*(ushort *)puVar5 & 0x1000) >> 12
++ ((uw_object_hdr_t *)puVar5)->enchanted
+|
+- (*(byte *)((char *)puVar5 + 0x1) >> 4) & 0x1
++ ((uw_object_hdr_t *)puVar5)->enchanted
+|
+- (*(byte *)((char *)puVar5 + 0x1) & 0x10) >> 4
++ ((uw_object_hdr_t *)puVar5)->enchanted
+)
+...>
+}
+
+@field_21_doordir@
+type R;
+identifier F =~ "^\(damage_equipped_item_in_slot\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar5 + 0x0) >> 13) & 0x1
++ ((uw_object_hdr_t *)puVar5)->doordir
+|
+- (*(ushort *)((char *)puVar5 + 0x0) & 0x2000) >> 13
++ ((uw_object_hdr_t *)puVar5)->doordir
+|
+- (((ushort *)puVar5)[0] >> 13) & 0x1
++ ((uw_object_hdr_t *)puVar5)->doordir
+|
+- (((ushort *)puVar5)[0] & 0x2000) >> 13
++ ((uw_object_hdr_t *)puVar5)->doordir
+|
+- (*(ushort *)puVar5 >> 13) & 0x1
++ ((uw_object_hdr_t *)puVar5)->doordir
+|
+- (*(ushort *)puVar5 & 0x2000) >> 13
++ ((uw_object_hdr_t *)puVar5)->doordir
+|
+- (*(byte *)((char *)puVar5 + 0x1) >> 5) & 0x1
++ ((uw_object_hdr_t *)puVar5)->doordir
+|
+- (*(byte *)((char *)puVar5 + 0x1) & 0x20) >> 5
++ ((uw_object_hdr_t *)puVar5)->doordir
+)
+...>
+}
+
+@field_21_invisible@
+type R;
+identifier F =~ "^\(damage_equipped_item_in_slot\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar5 + 0x0) >> 14) & 0x1
++ ((uw_object_hdr_t *)puVar5)->invisible
+|
+- (*(ushort *)((char *)puVar5 + 0x0) & 0x4000) >> 14
++ ((uw_object_hdr_t *)puVar5)->invisible
+|
+- (((ushort *)puVar5)[0] >> 14) & 0x1
++ ((uw_object_hdr_t *)puVar5)->invisible
+|
+- (((ushort *)puVar5)[0] & 0x4000) >> 14
++ ((uw_object_hdr_t *)puVar5)->invisible
+|
+- (*(ushort *)puVar5 >> 14) & 0x1
++ ((uw_object_hdr_t *)puVar5)->invisible
+|
+- (*(ushort *)puVar5 & 0x4000) >> 14
++ ((uw_object_hdr_t *)puVar5)->invisible
+|
+- (*(byte *)((char *)puVar5 + 0x1) >> 6) & 0x1
++ ((uw_object_hdr_t *)puVar5)->invisible
+|
+- (*(byte *)((char *)puVar5 + 0x1) & 0x40) >> 6
++ ((uw_object_hdr_t *)puVar5)->invisible
+)
+...>
+}
+
+@field_21_is_quant@
+type R;
+identifier F =~ "^\(damage_equipped_item_in_slot\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar5 + 0x0) >> 15) & 0x1
++ ((uw_object_hdr_t *)puVar5)->is_quant
+|
+- (*(ushort *)((char *)puVar5 + 0x0) & 0x8000) >> 15
++ ((uw_object_hdr_t *)puVar5)->is_quant
+|
+- (((ushort *)puVar5)[0] >> 15) & 0x1
++ ((uw_object_hdr_t *)puVar5)->is_quant
+|
+- (((ushort *)puVar5)[0] & 0x8000) >> 15
++ ((uw_object_hdr_t *)puVar5)->is_quant
+|
+- (*(ushort *)puVar5 >> 15) & 0x1
++ ((uw_object_hdr_t *)puVar5)->is_quant
+|
+- (*(ushort *)puVar5 & 0x8000) >> 15
++ ((uw_object_hdr_t *)puVar5)->is_quant
+|
+- (*(byte *)((char *)puVar5 + 0x1) >> 7) & 0x1
++ ((uw_object_hdr_t *)puVar5)->is_quant
+|
+- (*(byte *)((char *)puVar5 + 0x1) & 0x80) >> 7
++ ((uw_object_hdr_t *)puVar5)->is_quant
+)
+...>
+}
+
+@field_21_zpos@
+type R;
+identifier F =~ "^\(damage_equipped_item_in_slot\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar5 + 0x2) & 0x7f
++ ((uw_object_hdr_t *)puVar5)->zpos
+|
+- ((ushort *)puVar5)[1] & 0x7f
++ ((uw_object_hdr_t *)puVar5)->zpos
+|
+- *(byte *)((char *)puVar5 + 0x2) & 0x7f
++ ((uw_object_hdr_t *)puVar5)->zpos
+)
+...>
+}
+
+@field_21_heading@
+type R;
+identifier F =~ "^\(damage_equipped_item_in_slot\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar5 + 0x2) >> 7) & 0x7
++ ((uw_object_hdr_t *)puVar5)->heading
+|
+- (*(ushort *)((char *)puVar5 + 0x2) & 0x380) >> 7
++ ((uw_object_hdr_t *)puVar5)->heading
+|
+- (((ushort *)puVar5)[1] >> 7) & 0x7
++ ((uw_object_hdr_t *)puVar5)->heading
+|
+- (((ushort *)puVar5)[1] & 0x380) >> 7
++ ((uw_object_hdr_t *)puVar5)->heading
+)
+...>
+}
+
+@field_21_ypos@
+type R;
+identifier F =~ "^\(damage_equipped_item_in_slot\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar5 + 0x2) >> 10) & 0x7
++ ((uw_object_hdr_t *)puVar5)->ypos
+|
+- (*(ushort *)((char *)puVar5 + 0x2) & 0x1c00) >> 10
++ ((uw_object_hdr_t *)puVar5)->ypos
+|
+- (((ushort *)puVar5)[1] >> 10) & 0x7
++ ((uw_object_hdr_t *)puVar5)->ypos
+|
+- (((ushort *)puVar5)[1] & 0x1c00) >> 10
++ ((uw_object_hdr_t *)puVar5)->ypos
+|
+- (*(byte *)((char *)puVar5 + 0x3) >> 2) & 0x7
++ ((uw_object_hdr_t *)puVar5)->ypos
+|
+- (*(byte *)((char *)puVar5 + 0x3) & 0x1c) >> 2
++ ((uw_object_hdr_t *)puVar5)->ypos
+)
+...>
+}
+
+@field_21_xpos@
+type R;
+identifier F =~ "^\(damage_equipped_item_in_slot\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar5 + 0x2) >> 13) & 0x7
++ ((uw_object_hdr_t *)puVar5)->xpos
+|
+- (*(ushort *)((char *)puVar5 + 0x2) & 0xe000) >> 13
++ ((uw_object_hdr_t *)puVar5)->xpos
+|
+- (((ushort *)puVar5)[1] >> 13) & 0x7
++ ((uw_object_hdr_t *)puVar5)->xpos
+|
+- (((ushort *)puVar5)[1] & 0xe000) >> 13
++ ((uw_object_hdr_t *)puVar5)->xpos
+|
+- (*(byte *)((char *)puVar5 + 0x3) >> 5) & 0x7
++ ((uw_object_hdr_t *)puVar5)->xpos
+|
+- (*(byte *)((char *)puVar5 + 0x3) & 0xe0) >> 5
++ ((uw_object_hdr_t *)puVar5)->xpos
+)
+...>
+}
+
+@field_21_quality@
+type R;
+identifier F =~ "^\(damage_equipped_item_in_slot\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar5 + 0x4) & 0x3f
++ ((uw_object_hdr_t *)puVar5)->quality
+|
+- ((ushort *)puVar5)[2] & 0x3f
++ ((uw_object_hdr_t *)puVar5)->quality
+|
+- *(byte *)((char *)puVar5 + 0x4) & 0x3f
++ ((uw_object_hdr_t *)puVar5)->quality
+)
+...>
+}
+
+@field_21_next@
+type R;
+identifier F =~ "^\(damage_equipped_item_in_slot\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar5 + 0x4) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)puVar5)->next
+|
+- (*(ushort *)((char *)puVar5 + 0x4) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)puVar5)->next
+|
+- (((ushort *)puVar5)[2] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)puVar5)->next
+|
+- (((ushort *)puVar5)[2] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)puVar5)->next
+)
+...>
+}
+
+@field_21_owner@
+type R;
+identifier F =~ "^\(damage_equipped_item_in_slot\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar5 + 0x6) & 0x3f
++ ((uw_object_hdr_t *)puVar5)->owner
+|
+- ((ushort *)puVar5)[3] & 0x3f
++ ((uw_object_hdr_t *)puVar5)->owner
+|
+- *(byte *)((char *)puVar5 + 0x6) & 0x3f
++ ((uw_object_hdr_t *)puVar5)->owner
+)
+...>
+}
+
+@field_21_link@
+type R;
+identifier F =~ "^\(damage_equipped_item_in_slot\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)puVar5 + 0x6) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)puVar5)->link
+|
+- (*(ushort *)((char *)puVar5 + 0x6) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)puVar5)->link
+|
+- (((ushort *)puVar5)[3] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)puVar5)->link
+|
+- (((ushort *)puVar5)[3] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)puVar5)->link
+)
+...>
+}
+
+@field_22_item_id@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7367,7 +11167,7 @@ R F(...) {
 ...>
 }
 
-@field_14_flags_res@
+@field_22_flags_res@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7420,7 +11220,7 @@ R F(...) {
 ...>
 }
 
-@field_14_enchanted@
+@field_22_enchanted@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7473,7 +11273,7 @@ R F(...) {
 ...>
 }
 
-@field_14_doordir@
+@field_22_doordir@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7526,7 +11326,7 @@ R F(...) {
 ...>
 }
 
-@field_14_invisible@
+@field_22_invisible@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7579,7 +11379,7 @@ R F(...) {
 ...>
 }
 
-@field_14_is_quant@
+@field_22_is_quant@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7632,7 +11432,7 @@ R F(...) {
 ...>
 }
 
-@field_14_zpos@
+@field_22_zpos@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7658,7 +11458,7 @@ R F(...) {
 ...>
 }
 
-@field_14_heading@
+@field_22_heading@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7687,7 +11487,7 @@ R F(...) {
 ...>
 }
 
-@field_14_ypos@
+@field_22_ypos@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7722,7 +11522,7 @@ R F(...) {
 ...>
 }
 
-@field_14_xpos@
+@field_22_xpos@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7757,7 +11557,7 @@ R F(...) {
 ...>
 }
 
-@field_14_quality@
+@field_22_quality@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7783,7 +11583,7 @@ R F(...) {
 ...>
 }
 
-@field_14_next@
+@field_22_next@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7812,7 +11612,7 @@ R F(...) {
 ...>
 }
 
-@field_14_owner@
+@field_22_owner@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7838,7 +11638,7 @@ R F(...) {
 ...>
 }
 
-@field_14_link@
+@field_22_link@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7863,544 +11663,6 @@ R F(...) {
 |
 - (*(ushort *)(pDropObj + 0x6) & 0xffc0) >> 6
 + ((uw_object_hdr_t *)pDropObj)->link
-)
-...>
-}
-
-@field_15_item_id@
-type R;
-identifier F =~ "^\(resolve_collision_candidate_interaction\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)puVar4 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
-|
-- ((ushort *)puVar4)[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
-|
-- *(ushort *)puVar4 & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
-|
-- puVar4[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
-|
-- *puVar4 & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
-)
-...>
-}
-
-@field_15_flags_res@
-type R;
-identifier F =~ "^\(resolve_collision_candidate_interaction\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)puVar4 + 0x0) >> 9) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->flags_res
-|
-- (*(ushort *)((char *)puVar4 + 0x0) & 0xe00) >> 9
-+ ((uw_object_hdr_t *)puVar4)->flags_res
-|
-- (((ushort *)puVar4)[0] >> 9) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->flags_res
-|
-- (((ushort *)puVar4)[0] & 0xe00) >> 9
-+ ((uw_object_hdr_t *)puVar4)->flags_res
-|
-- (*(ushort *)puVar4 >> 9) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->flags_res
-|
-- (*(ushort *)puVar4 & 0xe00) >> 9
-+ ((uw_object_hdr_t *)puVar4)->flags_res
-|
-- (puVar4[0] >> 9) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->flags_res
-|
-- (puVar4[0] & 0xe00) >> 9
-+ ((uw_object_hdr_t *)puVar4)->flags_res
-|
-- (*puVar4 >> 9) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->flags_res
-|
-- (*puVar4 & 0xe00) >> 9
-+ ((uw_object_hdr_t *)puVar4)->flags_res
-|
-- (*(byte *)((char *)puVar4 + 0x1) >> 1) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->flags_res
-|
-- (*(byte *)((char *)puVar4 + 0x1) & 0xe) >> 1
-+ ((uw_object_hdr_t *)puVar4)->flags_res
-)
-...>
-}
-
-@field_15_enchanted@
-type R;
-identifier F =~ "^\(resolve_collision_candidate_interaction\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)puVar4 + 0x0) >> 12) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->enchanted
-|
-- (*(ushort *)((char *)puVar4 + 0x0) & 0x1000) >> 12
-+ ((uw_object_hdr_t *)puVar4)->enchanted
-|
-- (((ushort *)puVar4)[0] >> 12) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->enchanted
-|
-- (((ushort *)puVar4)[0] & 0x1000) >> 12
-+ ((uw_object_hdr_t *)puVar4)->enchanted
-|
-- (*(ushort *)puVar4 >> 12) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->enchanted
-|
-- (*(ushort *)puVar4 & 0x1000) >> 12
-+ ((uw_object_hdr_t *)puVar4)->enchanted
-|
-- (puVar4[0] >> 12) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->enchanted
-|
-- (puVar4[0] & 0x1000) >> 12
-+ ((uw_object_hdr_t *)puVar4)->enchanted
-|
-- (*puVar4 >> 12) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->enchanted
-|
-- (*puVar4 & 0x1000) >> 12
-+ ((uw_object_hdr_t *)puVar4)->enchanted
-|
-- (*(byte *)((char *)puVar4 + 0x1) >> 4) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->enchanted
-|
-- (*(byte *)((char *)puVar4 + 0x1) & 0x10) >> 4
-+ ((uw_object_hdr_t *)puVar4)->enchanted
-)
-...>
-}
-
-@field_15_doordir@
-type R;
-identifier F =~ "^\(resolve_collision_candidate_interaction\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)puVar4 + 0x0) >> 13) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->doordir
-|
-- (*(ushort *)((char *)puVar4 + 0x0) & 0x2000) >> 13
-+ ((uw_object_hdr_t *)puVar4)->doordir
-|
-- (((ushort *)puVar4)[0] >> 13) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->doordir
-|
-- (((ushort *)puVar4)[0] & 0x2000) >> 13
-+ ((uw_object_hdr_t *)puVar4)->doordir
-|
-- (*(ushort *)puVar4 >> 13) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->doordir
-|
-- (*(ushort *)puVar4 & 0x2000) >> 13
-+ ((uw_object_hdr_t *)puVar4)->doordir
-|
-- (puVar4[0] >> 13) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->doordir
-|
-- (puVar4[0] & 0x2000) >> 13
-+ ((uw_object_hdr_t *)puVar4)->doordir
-|
-- (*puVar4 >> 13) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->doordir
-|
-- (*puVar4 & 0x2000) >> 13
-+ ((uw_object_hdr_t *)puVar4)->doordir
-|
-- (*(byte *)((char *)puVar4 + 0x1) >> 5) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->doordir
-|
-- (*(byte *)((char *)puVar4 + 0x1) & 0x20) >> 5
-+ ((uw_object_hdr_t *)puVar4)->doordir
-)
-...>
-}
-
-@field_15_invisible@
-type R;
-identifier F =~ "^\(resolve_collision_candidate_interaction\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)puVar4 + 0x0) >> 14) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->invisible
-|
-- (*(ushort *)((char *)puVar4 + 0x0) & 0x4000) >> 14
-+ ((uw_object_hdr_t *)puVar4)->invisible
-|
-- (((ushort *)puVar4)[0] >> 14) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->invisible
-|
-- (((ushort *)puVar4)[0] & 0x4000) >> 14
-+ ((uw_object_hdr_t *)puVar4)->invisible
-|
-- (*(ushort *)puVar4 >> 14) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->invisible
-|
-- (*(ushort *)puVar4 & 0x4000) >> 14
-+ ((uw_object_hdr_t *)puVar4)->invisible
-|
-- (puVar4[0] >> 14) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->invisible
-|
-- (puVar4[0] & 0x4000) >> 14
-+ ((uw_object_hdr_t *)puVar4)->invisible
-|
-- (*puVar4 >> 14) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->invisible
-|
-- (*puVar4 & 0x4000) >> 14
-+ ((uw_object_hdr_t *)puVar4)->invisible
-|
-- (*(byte *)((char *)puVar4 + 0x1) >> 6) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->invisible
-|
-- (*(byte *)((char *)puVar4 + 0x1) & 0x40) >> 6
-+ ((uw_object_hdr_t *)puVar4)->invisible
-)
-...>
-}
-
-@field_15_is_quant@
-type R;
-identifier F =~ "^\(resolve_collision_candidate_interaction\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)puVar4 + 0x0) >> 15) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- (*(ushort *)((char *)puVar4 + 0x0) & 0x8000) >> 15
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- *(ushort *)((char *)puVar4 + 0x0) >> 15
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- (((ushort *)puVar4)[0] >> 15) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- (((ushort *)puVar4)[0] & 0x8000) >> 15
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- ((ushort *)puVar4)[0] >> 15
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- (*(ushort *)puVar4 >> 15) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- (*(ushort *)puVar4 & 0x8000) >> 15
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- *(ushort *)puVar4 >> 15
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- (puVar4[0] >> 15) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- (puVar4[0] & 0x8000) >> 15
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- puVar4[0] >> 15
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- (*puVar4 >> 15) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- (*puVar4 & 0x8000) >> 15
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- *puVar4 >> 15
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- (*(byte *)((char *)puVar4 + 0x1) >> 7) & 0x1
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-|
-- (*(byte *)((char *)puVar4 + 0x1) & 0x80) >> 7
-+ ((uw_object_hdr_t *)puVar4)->is_quant
-)
-...>
-}
-
-@field_15_zpos@
-type R;
-identifier F =~ "^\(resolve_collision_candidate_interaction\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)puVar4 + 0x2) & 0x7f
-+ ((uw_object_hdr_t *)puVar4)->zpos
-|
-- ((ushort *)puVar4)[1] & 0x7f
-+ ((uw_object_hdr_t *)puVar4)->zpos
-|
-- puVar4[1] & 0x7f
-+ ((uw_object_hdr_t *)puVar4)->zpos
-|
-- *(byte *)((char *)puVar4 + 0x2) & 0x7f
-+ ((uw_object_hdr_t *)puVar4)->zpos
-|
-- (byte)puVar4[1] & 0x7f
-+ ((uw_object_hdr_t *)puVar4)->zpos
-)
-...>
-}
-
-@field_15_heading@
-type R;
-identifier F =~ "^\(resolve_collision_candidate_interaction\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)puVar4 + 0x2) >> 7) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->heading
-|
-- (*(ushort *)((char *)puVar4 + 0x2) & 0x380) >> 7
-+ ((uw_object_hdr_t *)puVar4)->heading
-|
-- (((ushort *)puVar4)[1] >> 7) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->heading
-|
-- (((ushort *)puVar4)[1] & 0x380) >> 7
-+ ((uw_object_hdr_t *)puVar4)->heading
-|
-- (puVar4[1] >> 7) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->heading
-|
-- (puVar4[1] & 0x380) >> 7
-+ ((uw_object_hdr_t *)puVar4)->heading
-)
-...>
-}
-
-@field_15_ypos@
-type R;
-identifier F =~ "^\(resolve_collision_candidate_interaction\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)puVar4 + 0x2) >> 10) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->ypos
-|
-- (*(ushort *)((char *)puVar4 + 0x2) & 0x1c00) >> 10
-+ ((uw_object_hdr_t *)puVar4)->ypos
-|
-- (((ushort *)puVar4)[1] >> 10) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->ypos
-|
-- (((ushort *)puVar4)[1] & 0x1c00) >> 10
-+ ((uw_object_hdr_t *)puVar4)->ypos
-|
-- (puVar4[1] >> 10) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->ypos
-|
-- (puVar4[1] & 0x1c00) >> 10
-+ ((uw_object_hdr_t *)puVar4)->ypos
-|
-- (*(byte *)((char *)puVar4 + 0x3) >> 2) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->ypos
-|
-- (*(byte *)((char *)puVar4 + 0x3) & 0x1c) >> 2
-+ ((uw_object_hdr_t *)puVar4)->ypos
-)
-...>
-}
-
-@field_15_xpos@
-type R;
-identifier F =~ "^\(resolve_collision_candidate_interaction\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)puVar4 + 0x2) >> 13) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->xpos
-|
-- (*(ushort *)((char *)puVar4 + 0x2) & 0xe000) >> 13
-+ ((uw_object_hdr_t *)puVar4)->xpos
-|
-- *(ushort *)((char *)puVar4 + 0x2) >> 13
-+ ((uw_object_hdr_t *)puVar4)->xpos
-|
-- (((ushort *)puVar4)[1] >> 13) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->xpos
-|
-- (((ushort *)puVar4)[1] & 0xe000) >> 13
-+ ((uw_object_hdr_t *)puVar4)->xpos
-|
-- ((ushort *)puVar4)[1] >> 13
-+ ((uw_object_hdr_t *)puVar4)->xpos
-|
-- (puVar4[1] >> 13) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->xpos
-|
-- (puVar4[1] & 0xe000) >> 13
-+ ((uw_object_hdr_t *)puVar4)->xpos
-|
-- puVar4[1] >> 13
-+ ((uw_object_hdr_t *)puVar4)->xpos
-|
-- (*(byte *)((char *)puVar4 + 0x3) >> 5) & 0x7
-+ ((uw_object_hdr_t *)puVar4)->xpos
-|
-- (*(byte *)((char *)puVar4 + 0x3) & 0xe0) >> 5
-+ ((uw_object_hdr_t *)puVar4)->xpos
-)
-...>
-}
-
-@field_15_quality@
-type R;
-identifier F =~ "^\(resolve_collision_candidate_interaction\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)puVar4 + 0x4) & 0x3f
-+ ((uw_object_hdr_t *)puVar4)->quality
-|
-- ((ushort *)puVar4)[2] & 0x3f
-+ ((uw_object_hdr_t *)puVar4)->quality
-|
-- puVar4[2] & 0x3f
-+ ((uw_object_hdr_t *)puVar4)->quality
-|
-- *(byte *)((char *)puVar4 + 0x4) & 0x3f
-+ ((uw_object_hdr_t *)puVar4)->quality
-|
-- (byte)puVar4[2] & 0x3f
-+ ((uw_object_hdr_t *)puVar4)->quality
-)
-...>
-}
-
-@field_15_next@
-type R;
-identifier F =~ "^\(resolve_collision_candidate_interaction\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)puVar4 + 0x4) >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)puVar4)->next
-|
-- (*(ushort *)((char *)puVar4 + 0x4) & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)puVar4)->next
-|
-- *(ushort *)((char *)puVar4 + 0x4) >> 6
-+ ((uw_object_hdr_t *)puVar4)->next
-|
-- (((ushort *)puVar4)[2] >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)puVar4)->next
-|
-- (((ushort *)puVar4)[2] & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)puVar4)->next
-|
-- ((ushort *)puVar4)[2] >> 6
-+ ((uw_object_hdr_t *)puVar4)->next
-|
-- (puVar4[2] >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)puVar4)->next
-|
-- (puVar4[2] & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)puVar4)->next
-|
-- puVar4[2] >> 6
-+ ((uw_object_hdr_t *)puVar4)->next
-)
-...>
-}
-
-@field_15_owner@
-type R;
-identifier F =~ "^\(resolve_collision_candidate_interaction\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)puVar4 + 0x6) & 0x3f
-+ ((uw_object_hdr_t *)puVar4)->owner
-|
-- ((ushort *)puVar4)[3] & 0x3f
-+ ((uw_object_hdr_t *)puVar4)->owner
-|
-- puVar4[3] & 0x3f
-+ ((uw_object_hdr_t *)puVar4)->owner
-|
-- *(byte *)((char *)puVar4 + 0x6) & 0x3f
-+ ((uw_object_hdr_t *)puVar4)->owner
-|
-- (byte)puVar4[3] & 0x3f
-+ ((uw_object_hdr_t *)puVar4)->owner
-)
-...>
-}
-
-@field_15_link@
-type R;
-identifier F =~ "^\(resolve_collision_candidate_interaction\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)puVar4 + 0x6) >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)puVar4)->link
-|
-- (*(ushort *)((char *)puVar4 + 0x6) & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)puVar4)->link
-|
-- *(ushort *)((char *)puVar4 + 0x6) >> 6
-+ ((uw_object_hdr_t *)puVar4)->link
-|
-- (((ushort *)puVar4)[3] >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)puVar4)->link
-|
-- (((ushort *)puVar4)[3] & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)puVar4)->link
-|
-- ((ushort *)puVar4)[3] >> 6
-+ ((uw_object_hdr_t *)puVar4)->link
-|
-- (puVar4[3] >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)puVar4)->link
-|
-- (puVar4[3] & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)puVar4)->link
-|
-- puVar4[3] >> 6
-+ ((uw_object_hdr_t *)puVar4)->link
 )
 ...>
 }

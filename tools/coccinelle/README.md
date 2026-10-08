@@ -257,7 +257,7 @@ the repair leaves unrelated functions untouched.
 
 No game function is moved to a different source file during this work.
 
-Checkpoint validation: game build and all 56 CTest suites pass. The latest
+Checkpoint validation: game build and all 57 CTest suites pass. The latest
 AddressSanitizer pass covers 16 consumers: npc_state/npc_combat/npc_ai/creatures/
 combat/object_layout/object_core/movement/scheduler/spells/chargen/inventory/
 lighting/sleep/teleport/babl_vm. This is a checkpoint for continuing the full
@@ -364,3 +364,34 @@ requires conversion of every candidate, and verifies exclusions and idempotence.
 `current_object_aliases` uses the real Clang audit on a fixture, verifies mixed
 and reused-pointer exclusions, and executes both versions after switching the
 global current object to verify saved-pointer identity and word-offset scaling.
+
+## Packed copies and declaration-aware header aliases
+
+`generate_packed_store_rules.py` emits `packed-stores.cocci`. Adjacent low/high
+stores of the same scalar become one unsigned 16-bit assignment. Identifier
+receivers preserve evaluation counts, and an intervening statement or a
+mismatched source prevents conversion. These whole-word operations are genuine
+copies/encoding; the temporary remains unchanged. Property table casts use
+`uw_object_type_props_t`, rather than the mobile object layout.
+
+`packed_struct_stores` checks 234 combinations of receiver and cast spelling
+against the actual structs for all 65,536 low words and both signs, preserving
+neighboring storage. It requires coverage and idempotence and excludes mismatched
+sources and intervening modifications.
+
+The refreshed header generators consume the current Clang role audit, including
+saved current-object aliases. `generate_word_access_rules.py` groups aliases by
+both name and declaration type. It can therefore convert bare byte/word indexes
+and dereferences without guessing their scaling. A `ushort *` offset of one is
+two bytes; a `char *` offset of one is one byte. Signed char address-taking has
+its own rule, before read conversion, so the result remains an addressable
+lvalue. The semantic regression checks both pointer scales, signed stores,
+addresses, unrelated-function exclusions and repeatability.
+
+Named packed-write alternatives are grouped per receiver/property in the
+emitter. This retains the same match cases and temporary-preservation behavior
+while avoiding a separate rule for every spelling. Run the generators after
+refreshing pointer roles, apply header fields before header byte views, then
+apply packed stores, named reads and named writes. Review surviving snapshots,
+partial-field/multi-field updates, and noncanonical byte copies separately;
+these remain active migration work rather than blanket exceptions.

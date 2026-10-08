@@ -8,21 +8,39 @@ HEADER = {'type_flags', 'position_word', 'chain_word', 'link_word'}
 
 
 def rule(key, before, after):
-    names = ', '.join(name for name in ['P', 'H', 'V']
-                      if re.search(r'\b' + name + r'\b', before))
-    return f'''@{key}@
+    return key, before, after
+
+
+def emit(rules):
+    # Related alternatives share a rule. This avoids rebuilding the same
+    # receiver/field context for each possible spelling of a packed update.
+    groups = {}
+    for key, before, after in rules:
+        group = re.sub(r'_(?:direct_\d+|temporary_\d+_\d+|clear(?:_\d+)?|set(?:_\d+)?|byte_(?:insert|clear|set|xor_\d+))$', '', key)
+        groups.setdefault(group, []).append((before, after))
+    result = []
+    for key, variants in groups.items():
+        names = ', '.join(name for name in ['P', 'H', 'V']
+                          if any(re.search(r'\b' + name + r'\b', before)
+                                 for before, _ in variants))
+        changes = ['\n'.join('- ' + line for line in before.splitlines()) + '\n' +
+                   '\n'.join('+ ' + line for line in after.splitlines())
+                   for before, after in variants]
+        result.append(f'''@{key}@
 identifier {names};
-typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t;
+typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;
 @@
-''' + '\n'.join('- ' + line for line in before.splitlines()) + '\n' + \
-        '\n'.join('+ ' + line for line in after.splitlines()) + '\n'
+(
+''' + '\n|\n'.join(changes) + '\n)\n')
+    return '\n'.join(result).rstrip() + '\n'
 
 
 def receivers(word):
     if word in HEADER:
         return ['P->', 'P.', 'P->hdr.', 'P.hdr.',
                 '((uw_object_hdr_t *)P)->', '((uw_mobile_object_t *)P)->hdr.']
-    return ['P->', 'P.', '((uw_mobile_object_t *)P)->']
+    type_ = 'uw_object_type_props_t' if word == 'size_weight' else 'uw_mobile_object_t'
+    return ['P->', 'P.', f'(({type_} *)P)->']
 
 
 def generate():
@@ -72,7 +90,7 @@ def generate():
             for shift, width, field in fields:
                 rules += byte_rules(f'{word}_{r}_{field}', prefix + word,
                                     prefix + field, shift, width)
-    return '\n'.join(rules).rstrip() + '\n'
+    return emit(rules)
 
 
 def byte_rules(key, byte, dst, shift, width):

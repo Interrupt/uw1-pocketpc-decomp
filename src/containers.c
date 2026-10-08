@@ -262,7 +262,7 @@ void repopulate_container_grid_slots()
           (&g_equipped_items)[iVar5] = (&g_equipped_items)[iVar5] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
           (&DAT_00202951)[iVar5] = (char)((uVar4 << 0x16) >> 0x18);
           if (pContents != 0) {
-            if ((*(byte *)(pContents + 1) & 0x40) != 0) {
+            if (((uw_object_hdr_t *)pContents)->invisible != 0) {
               iVar6 = ((short)iVar6 + -1) * 0x10000 >> 0x10;
             }
             pContents = (char *)resolve_object_link((ushort *)(pContents + 4));
@@ -285,7 +285,7 @@ void repopulate_container_grid_slots()
     (&g_equipped_items)[iVar5] = (&g_equipped_items)[iVar5] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
     (&DAT_00202951)[iVar5] = (char)((uVar4 << 0x16) >> 0x18);
     if (pContents != 0) {
-      if ((*(byte *)(pContents + 1) & 0x40) != 0) {
+      if (((uw_object_hdr_t *)pContents)->invisible != 0) {
         iVar6 = ((short)iVar6 + -1) * 0x10000 >> 0x10;
       }
       pContents = (char *)resolve_object_link((ushort *)(pContents + 4));
@@ -308,7 +308,7 @@ void repopulate_container_grid_slots()
            (&g_equipped_items)[iVar5 * 2] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
       (&DAT_00202951)[iVar5 * 2] = (char)((uVar4 << 0x16) >> 0x18);
       if (pContents != 0) {
-        if ((*(byte *)(pContents + 1) & 0x40) != 0) {
+        if (((uw_object_hdr_t *)pContents)->invisible != 0) {
           iVar6 = (iVar5 + -1) * 0x10000 >> 0x10;
         }
         pContents = (char *)resolve_object_link((ushort *)(pContents + 4));

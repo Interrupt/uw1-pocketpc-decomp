@@ -631,11 +631,11 @@ int check_object_drop_height(ushort *object, ushort *reference)
     uVar7 = (uint)((uw_object_hdr_t *)object)->position_word;
     uVar6 = uVar7 & 0x1fff;
     bVar1 = (byte)((((byte)*DAT_00202c6c & 7) << 0xd) >> 8);
-    *(char *)(object + 1) = (char)uVar6;
+    ((uw_object_hdr_t *)object)->position_word_low = (byte)(char)uVar6;
     ((uw_object_hdr_t *)object)->position_word_high = (byte)(uVar6 >> 8) | bVar1;
     uVar2 = *(ushort *)(DAT_00202c6c + 2);
     uVar7 = uVar7 & 0x3ff;
-    *(char *)(object + 1) = (char)uVar7;
+    ((uw_object_hdr_t *)object)->position_word_low = (byte)(char)uVar7;
     uVar4 = 1;
     ((uw_object_hdr_t *)object)->position_word_high =
         (byte)(uVar7 >> 8) | bVar1 | (byte)((((byte)uVar2 & 7) << 10) >> 8);
@@ -700,8 +700,7 @@ LAB_0007c130:
       }
       else {
         uVar6 = ((uw_object_hdr_t *)puVar4)->type_flags & 0xfdff;
-        ((uw_object_hdr_t *)puVar4)->type_flags_low = (byte)(char)uVar6;
-        ((uw_object_hdr_t *)puVar4)->type_flags_high = (byte)(char)(uVar6 >> 8);
+        ((uw_object_hdr_t *)puVar4)->type_flags = (ushort)uVar6;
       }
       return 3;
     }
@@ -918,10 +917,10 @@ void *spawn_and_prime_spell_effect_object(int object_type, byte *source)
     extraout_r1 = (char)ordint_divmod(0x80 - uVar1,uVar5).rem;
     bVar6 = bVar6 + extraout_r1;
   }
-  uVar2 = *(undefined2 *)(iVar4 + 2);
+  uVar2 = ((uw_object_hdr_t *)iVar4)->position_word;
   bVar3 = (byte)uVar2;
-  *(byte *)(iVar4 + 2) = (bVar3 ^ bVar6) & 0x7f ^ bVar3;
-  *(char *)(iVar4 + 3) = (char)((ushort)uVar2 >> 8);
+  ((uw_object_hdr_t *)iVar4)->position_word_low = (bVar3 ^ bVar6) & 0x7f ^ bVar3;
+  ((uw_object_hdr_t *)iVar4)->position_word_high = (byte)(char)((ushort)uVar2 >> 8);
   return iVar4;
 }
 
@@ -1485,11 +1484,11 @@ void cast_summon_or_spawn_effect(void *caster, char variant)
       uVar2 = ((uw_object_hdr_t *)pObj)->position_word;
       uVar6 = uVar2 & 0x1fff;
       bVar1 = (byte)(((local_34 & 7) << 0xd) >> 8);
-      *(char *)(pObj + 2) = (char)uVar6;
-      *(byte *)(pObj + 3) = (byte)(uVar6 >> 8) | bVar1;
+      ((uw_object_hdr_t *)pObj)->position_word_low = (byte)(char)uVar6;
+      ((uw_object_hdr_t *)pObj)->position_word_high = (byte)(uVar6 >> 8) | bVar1;
       uVar6 = uVar2 & 0x3ff;
-      *(char *)(pObj + 2) = (char)uVar6;
-      *(byte *)(pObj + 3) = (byte)(uVar6 >> 8) | bVar1 | (byte)(((local_32 & 7) << 10) >> 8);
+      ((uw_object_hdr_t *)pObj)->position_word_low = (byte)(char)uVar6;
+      ((uw_object_hdr_t *)pObj)->position_word_high = (byte)(uVar6 >> 8) | bVar1 | (byte)(((local_32 & 7) << 10) >> 8);
       saved_scratch = g_scratch_object_ptr;
       if (variant == '\x04') {
         g_scratch_object_ptr = (uw_object_hdr_t *)pObj;
@@ -1525,14 +1524,14 @@ void cast_summon_or_spawn_effect(void *caster, char variant)
         }
       }
       else {
-        uVar7 = *(undefined2 *)(pObj + 4);
-        *(byte *)(pObj + 4) = (byte)uVar7 | 0x3f;
-        *(char *)(pObj + 5) = (char)((ushort)uVar7 >> 8);
+        uVar7 = ((uw_object_hdr_t *)pObj)->chain_word;
+        ((uw_object_hdr_t *)pObj)->chain_word_low = (byte)uVar7 | 0x3f;
+        ((uw_object_hdr_t *)pObj)->chain_word_high = (byte)(char)((ushort)uVar7 >> 8);
       }
-      uVar7 = *(undefined2 *)(pObj + 2);
+      uVar7 = ((uw_object_hdr_t *)pObj)->position_word;
       bVar1 = (byte)uVar7;
-      *(byte *)(pObj + 2) = (bVar1 ^ (byte)local_30) & 0x7f ^ bVar1;
-      *(char *)(pObj + 3) = (char)((ushort)uVar7 >> 8);
+      ((uw_object_hdr_t *)pObj)->position_word_low = (bVar1 ^ (byte)local_30) & 0x7f ^ bVar1;
+      ((uw_object_hdr_t *)pObj)->position_word_high = (byte)(char)((ushort)uVar7 >> 8);
       object_list_insert_head(pbVar5 + 2,pObj);
       if (variant == '\x04') {
         return;
@@ -1571,8 +1570,8 @@ int spawn_random_variant_object_at_tile(int tile_x, int tile_y)
   uw_ord2005_rem_157 = ((int)(uVar3)) % (3);
   iVar4 = (char *)spawn_new_object(uw_ord2005_rem_157 + 0x154,0);
   uVar6 = ((uw_object_hdr_t *)iVar4)->position_word & 0xffee;
-  *(byte *)(iVar4 + 2) = (byte)uVar6 | 0x6e;
-  *(char *)(iVar4 + 3) = (char)(uVar6 >> 8);
+  ((uw_object_hdr_t *)iVar4)->position_word_low = (byte)uVar6 | 0x6e;
+  ((uw_object_hdr_t *)iVar4)->position_word_high = (byte)(char)(uVar6 >> 8);
   iVar5 = place_object_in_world(tile_x * 8 + 3,tile_y * 8 + 3,0x6e,iVar4,0,0);
   if ((iVar5 != 0) && (iVar5 = object_ptr_in_arena(iVar4), iVar5 != 0)) {
     bVar1 = ce_rand();
@@ -1717,7 +1716,7 @@ void complete_pending_player_command_target(ushort *target)
     if (((uVar4 != 0x140) && (uVar4 != 0x40)) &&
        ((g_object_type_props[(((uw_object_hdr_t *)target)->item_id)].class_flags & 3) != 2)) {
       uVar1 = ((uw_object_hdr_t *)target)->position_word;
-      *(char *)(target + 1) = (char)(uVar1 | 0x380);
+      ((uw_object_hdr_t *)target)->position_word_low = (byte)(char)(uVar1 | 0x380);
       ((uw_object_hdr_t *)target)->position_word_high = (byte)(char)((uVar1 | 0x380) >> 8);
     }
   }
@@ -2255,17 +2254,16 @@ void spawn_effect_debris_burst(void *template_ptr, uint tile_x, int tile_y)
     puVar8 = (ushort *)alloc_object_slot(0);
     ((uw_object_hdr_t *)puVar8)->type_flags_low = *template;
     ((uw_object_hdr_t *)puVar8)->type_flags_high = template[1];
-    *(undefined1 *)(puVar8 + 1) = template[2];
+    ((uw_object_hdr_t *)puVar8)->position_word_low = template[2];
     ((uw_object_hdr_t *)puVar8)->position_word_high = template[3];
-    *(undefined1 *)(puVar8 + 2) = template[4];
+    ((uw_object_hdr_t *)puVar8)->chain_word_low = template[4];
     ((uw_object_hdr_t *)puVar8)->chain_word_high = template[5];
-    *(undefined1 *)(puVar8 + 3) = template[6];
+    ((uw_object_hdr_t *)puVar8)->link_word_low = template[6];
     ((uw_object_hdr_t *)puVar8)->link_word_high = template[7];
     uVar9 = ce_rand();
     uVar10 = (uint)((uw_object_hdr_t *)puVar8)->type_flags;
     uVar10 = ((uVar9 & 1) + uVar10 + 1 ^ uVar10) & 0x1ff ^ uVar10;
-    ((uw_object_hdr_t *)puVar8)->type_flags_low = (byte)(char)uVar10;
-    ((uw_object_hdr_t *)puVar8)->type_flags_high = (byte)(char)(uVar10 >> 8);
+    ((uw_object_hdr_t *)puVar8)->type_flags = (ushort)uVar10;
     bVar3 = ((uw_object_hdr_t *)puVar8)->xpos;
     do {
       do {
@@ -2276,7 +2274,7 @@ void spawn_effect_debris_burst(void *template_ptr, uint tile_x, int tile_y)
     } while (7 < iVar7);
     uVar9 = ((uw_object_hdr_t *)puVar8)->position_word & 0x1fff ^ (((int)uw_ord2005_rem_171 - 2U & 0xffff) + (uint)bVar3 & 0xffff) << 0xd
     ;
-    *(char *)(puVar8 + 1) = (char)(((uw_object_hdr_t *)puVar8)->position_word & 0x1fff);
+    ((uw_object_hdr_t *)puVar8)->position_word_low = (byte)(char)(((uw_object_hdr_t *)puVar8)->position_word & 0x1fff);
     ((uw_object_hdr_t *)puVar8)->position_word_high = (byte)(char)(uVar9 >> 8);
     uVar9 = (uVar9 & 0x1c00) >> 10;
     do {
@@ -2287,14 +2285,14 @@ void spawn_effect_debris_burst(void *template_ptr, uint tile_x, int tile_y)
       } while (iVar7 < 0);
     } while (7 < iVar7);
     bVar3 = (byte)(((uw_object_hdr_t *)puVar8)->position_word >> 8);
-    *(char *)(puVar8 + 1) = (char)((uw_object_hdr_t *)puVar8)->position_word;
+    ((uw_object_hdr_t *)puVar8)->position_word_low = (byte)(char)((uw_object_hdr_t *)puVar8)->position_word;
     ((uw_object_hdr_t *)puVar8)->position_word_high =
         (bVar3 ^ (byte)(((((int)uw_ord2005_rem_172 - 2U & 0xffff) + uVar9 & 0xffff) << 10) >> 8)) &
        0x1c ^ bVar3;
     bVar4 = ce_rand();
     uVar2 = ((uw_object_hdr_t *)puVar8)->position_word;
     bVar3 = (byte)uVar2;
-    *(byte *)(puVar8 + 1) = (((bVar4 & 0xf) + bVar3) - 8 ^ bVar3) & 0x7f ^ bVar3;
+    ((uw_object_hdr_t *)puVar8)->position_word_low = (((bVar4 & 0xf) + bVar3) - 8 ^ bVar3) & 0x7f ^ bVar3;
     ((uw_object_hdr_t *)puVar8)->position_word_high = (byte)(char)(uVar2 >> 8);
     /* was folded into `int iVar7` (this function's loop counter, reused
        immediately after this for unrelated int values) -- truncated
@@ -2351,13 +2349,13 @@ int init_monster_spawn_defaults()
   uVar1 = *(ushort *)(scratch_bytes + 0x16);
   scratch_bytes[0x16] = (byte)(uVar1 & 0xfe0f);
   scratch_bytes[0x17] = (byte)((uVar1 & 0xfe0f) >> 8) | 2;
-  uVar1 = *(ushort *)(scratch_bytes + 4);
-  scratch_bytes[4] = (byte)(uVar1 & 0xffc0) ^ 0x20;
-  scratch_bytes[5] = (byte)((uVar1 & 0xffc0) >> 8);
-  uVar1 = *(ushort *)(scratch_bytes + 6);
-  scratch_bytes[6] = (byte)(uVar1 & 0xffc0) ^ 0x20;
-  scratch_bytes[7] = (byte)((uVar1 & 0xffc0) >> 8);
-  DAT_001007c8 = &DAT_001007d0 + (*scratch_bytes & 0x3f) * 0x30;
+  uVar1 = ((uw_object_hdr_t *)scratch_bytes)->chain_word;
+  ((uw_object_hdr_t *)scratch_bytes)->chain_word_low = (byte)(uVar1 & 0xffc0) ^ 0x20;
+  ((uw_object_hdr_t *)scratch_bytes)->chain_word_high = (byte)((uVar1 & 0xffc0) >> 8);
+  uVar1 = ((uw_object_hdr_t *)scratch_bytes)->link_word;
+  ((uw_object_hdr_t *)scratch_bytes)->link_word_low = (byte)(uVar1 & 0xffc0) ^ 0x20;
+  ((uw_object_hdr_t *)scratch_bytes)->link_word_high = (byte)((uVar1 & 0xffc0) >> 8);
+  DAT_001007c8 = &DAT_001007d0 + (((uw_object_hdr_t *)scratch_bytes)->type_flags_low & 0x3f) * 0x30;
   uVar2 = ce_rand();
   uw_ord2005_rem_11 = ((int)(uVar2)) % (0x18);
   iVar3 = (uw_ord2005_rem_11 + 0x10) * (uint)(byte)DAT_001007c8[4];
@@ -2365,7 +2363,7 @@ int init_monster_spawn_defaults()
     iVar3 = iVar3 + 0x1f;
   }
   scratch_bytes[8] = (byte)(iVar3 >> 5);
-  scratch_bytes[9] = (byte)(*(ushort *)(scratch_bytes + 2) >> 2) & 0xe0;
+  scratch_bytes[9] = (byte)(((uw_object_hdr_t *)scratch_bytes)->position_word >> 2) & 0xe0;
   uVar1 = *(ushort *)(scratch_bytes + 0xb);
   scratch_bytes[0xb] = (byte)(uVar1 & 0xfff8) | 8;
   scratch_bytes[0xc] = (byte)((uVar1 & 0xfff8) >> 8);

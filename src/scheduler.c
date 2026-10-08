@@ -154,7 +154,7 @@ void scheduler_finish_entry(int entry_slot)
       if (iVar7 == 0) {
         uVar1 = ((uw_object_hdr_t *)puVar4)->link_word;
         bVar3 = (byte)uVar1;
-        *(byte *)(puVar4 + 3) = (bVar3 ^ (byte)uVar5) & 0x3f ^ bVar3;
+        ((uw_object_hdr_t *)puVar4)->link_word_low = (bVar3 ^ (byte)uVar5) & 0x3f ^ bVar3;
         ((uw_object_hdr_t *)puVar4)->link_word_high = (byte)(uVar1 >> 8);
         adjust_door_close_animation_delay(puVar4);
         return;
@@ -166,15 +166,14 @@ void scheduler_finish_entry(int entry_slot)
     }
     uVar2 = ((uw_object_hdr_t *)puVar4)->position_word;
     bVar3 = (byte)uVar2;
-    *(byte *)(puVar4 + 1) = (bVar3 ^ (byte)uVar8) & 0x7f ^ bVar3;
+    ((uw_object_hdr_t *)puVar4)->position_word_low = (bVar3 ^ (byte)uVar8) & 0x7f ^ bVar3;
     ((uw_object_hdr_t *)puVar4)->position_word_high = (byte)(uVar2 >> 8);
     uVar10 = ((uw_object_hdr_t *)puVar4)->type_flags & 0xff4f | (uVar10 | 0x14) << 4;
     uVar5 = (uVar10 ^ uVar5) & 0xf ^ uVar10;
     ((uw_object_hdr_t *)puVar4)->type_flags_low = (byte)uVar5;
     ((uw_object_hdr_t *)puVar4)->type_flags_high = (byte)(uVar10 >> 8);
     uVar10 = ((uw_object_hdr_t *)puVar4)->link << 6;
-    *(byte *)(puVar4 + 3) = (byte)uVar10;
-    ((uw_object_hdr_t *)puVar4)->link_word_high = (byte)(uVar10 >> 8);
+    ((uw_object_hdr_t *)puVar4)->link_word = (ushort)uVar10;
     uVar8 = (ushort)uVar5;
     if ((uVar5 & 0x1000) == 0) {
       uVar8 = ((uVar8 & 0xe00) - 0xe01 ^ uVar8) & 0x1e00 ^ uVar8;
@@ -182,8 +181,7 @@ void scheduler_finish_entry(int entry_slot)
     else {
       uVar8 = uVar8 & 0xefff;
     }
-    ((uw_object_hdr_t *)puVar4)->type_flags_low = (byte)uVar8;
-    ((uw_object_hdr_t *)puVar4)->type_flags_high = (byte)(uVar8 >> 8);
+    ((uw_object_hdr_t *)puVar4)->type_flags = (ushort)uVar8;
     if (getenv("UW_DEBUG_DOOR"))
       fprintf(stderr, "[door] scheduler_finish_entry: AFTER direction toggle, obj0=0x%04x dirbit=%d openbits=%d\n",
               (unsigned)((uw_object_hdr_t *)puVar4)->type_flags,
@@ -260,7 +258,7 @@ uint scheduler_add_entry(uint object_link, int delay, byte animation_offset, byt
     /* resolve_object_link legitimately returns NULL (every other one of this file's 140+ call sites
        guards for it -- e.g. the `!= (ushort*)0x0` checks throughout this file). */
     if (pbVar3 != (byte *)0x0) {
-      iVar4 = (*pbVar3 & 0xf) * 4;
+      iVar4 = (((uw_object_hdr_t *)pbVar3)->type_flags_low & 0xf) * 4;
       cVar1 = g_animation_type_props[(iVar4) / 4].start_frame;
       if (-1 < cVar1) {
         if (g_animation_type_props[(iVar4) / 4].frame_count == '\0') {
@@ -274,8 +272,7 @@ uint scheduler_add_entry(uint object_link, int delay, byte animation_offset, byt
              (divisor confirmed nonzero by the enclosing if/else). */
           uVar5 = (cVar1 + ordint_divmod(g_animation_type_props[(iVar4) / 4].frame_count,animation_offset).rem ^ uVar5) & 0x3f ^ uVar5;
         }
-        pbVar3[6] = (byte)uVar5;
-        pbVar3[7] = (byte)(uVar5 >> 8);
+        ((uw_object_hdr_t *)pbVar3)->link_word = (ushort)uVar5;
       }
     }
     DAT_0023b804 = 1;
@@ -342,8 +339,7 @@ void scheduler_step_entry(int entry_slot, int elapsed)
           uVar8 = ((short)(char) g_animation_type_props[(iVar1) / 4].start_frame ^ uVar8) & 0x3f ^ uVar8;
         }
 LAB_00081254:
-        *(char *)(puVar4 + 3) = (char)uVar8;
-        ((uw_object_hdr_t *)puVar4)->link_word_high = (byte)(char)(uVar8 >> 8);
+        ((uw_object_hdr_t *)puVar4)->link_word = (ushort)uVar8;
         if (getenv("UW_DEBUG_DOOR"))
           fprintf(stderr, "[door] scheduler_step_entry: quality_after=%d\n", (int)(uVar8 & 0x3f));
       }
@@ -368,7 +364,7 @@ LAB_00081254:
           if ((((uw_object_hdr_t *)puVar4)->link_word & 7) == 6) {
             uVar8 = ((uw_object_hdr_t *)puVar4)->position_word;
             bVar2 = (byte)uVar8;
-            *(byte *)(puVar4 + 1) = ((char)elapsed * '\x06' + bVar2 ^ bVar2) & 0x7f ^ bVar2;
+            ((uw_object_hdr_t *)puVar4)->position_word_low = ((char)elapsed * '\x06' + bVar2 ^ bVar2) & 0x7f ^ bVar2;
             ((uw_object_hdr_t *)puVar4)->position_word_high = (byte)(char)(uVar8 >> 8);
           }
           uVar5 = (uint)((uw_object_hdr_t *)puVar4)->type_flags;
@@ -470,28 +466,28 @@ int spawn_scheduled_effect_object(ushort *source_object, int effect_group, int d
   if (source_object != (ushort *)0x0) {
     uVar6 = (((uw_object_hdr_t *)iVar5)->position_word ^ ((uw_object_hdr_t *)source_object)->position_word) & 0x1fff ^ (uint)((uw_object_hdr_t *)source_object)->position_word;
     uVar1 = (undefined1)uVar6;
-    *(undefined1 *)(iVar5 + 2) = uVar1;
+    ((uw_object_hdr_t *)iVar5)->position_word_low = uVar1;
     bVar2 = (byte)(uVar6 >> 8);
-    *(byte *)(iVar5 + 3) = bVar2;
+    ((uw_object_hdr_t *)iVar5)->position_word_high = bVar2;
     bVar9 = ((uw_object_hdr_t *)source_object)->position_word_high;
-    *(undefined1 *)(iVar5 + 2) = uVar1;
-    *(byte *)(iVar5 + 3) = (bVar9 ^ bVar2) & 0x1c ^ bVar2;
+    ((uw_object_hdr_t *)iVar5)->position_word_low = uVar1;
+    ((uw_object_hdr_t *)iVar5)->position_word_high = (bVar9 ^ bVar2) & 0x1c ^ bVar2;
   }
   if ((short)heading_adjust < 0) {
-    uVar3 = *(undefined2 *)(iVar5 + 2);
+    uVar3 = ((uw_object_hdr_t *)iVar5)->position_word;
     bVar9 = (byte)uVar3 ^ (byte)((uint)heading_adjust * -0x10000 >> 0x10);
   }
   else {
     if (source_object == (ushort *)0x0) goto LAB_00081980;
     bVar9 = (byte) g_object_type_props[(((uw_object_hdr_t *)source_object)->item_id)].height >> 3;
-    uVar3 = *(undefined2 *)(iVar5 + 2);
+    uVar3 = ((uw_object_hdr_t *)iVar5)->position_word;
     if (bVar9 == 0) {
       bVar9 = 1;
     }
     bVar9 = (char)heading_adjust * bVar9 + (char)((uw_object_hdr_t *)source_object)->position_word ^ (byte)uVar3;
   }
-  *(byte *)(iVar5 + 2) = bVar9 & 0x7f ^ (byte)uVar3;
-  *(char *)(iVar5 + 3) = (char)((ushort)uVar3 >> 8);
+  ((uw_object_hdr_t *)iVar5)->position_word_low = bVar9 & 0x7f ^ (byte)uVar3;
+  ((uw_object_hdr_t *)iVar5)->position_word_high = (byte)(char)((ushort)uVar3 >> 8);
 LAB_00081980:
   uVar7 = encode_object_slot_index(iVar5);
   sVar4 = scheduler_add_entry(uVar7,delay,animation_offset,(int)tile_x & 0xff,(char)tile_y);

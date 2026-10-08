@@ -1105,13 +1105,13 @@ int sync_object_tile_position(ushort *object, void *position_ptr)
   }
   uVar7 = (uint)((uw_object_hdr_t *)object)->position_word;
   bVar9 = (byte)((int)(((int)(short)position[2] & 0x3f8U) << 0x10) >> 0x13);
-  *(byte *)(object + 1) = (byte)(uVar7 & 0xff80) | bVar9;
+  ((uw_object_hdr_t *)object)->position_word_low = (byte)(uVar7 & 0xff80) | bVar9;
   ((uw_object_hdr_t *)object)->position_word_high = (byte)(char)((uVar7 & 0xff80) >> 8);
   bVar3 = (byte)((uint)(((int)(short)(*position & 0xe0) >> 5) << 0xd) >> 8);
-  *(byte *)(object + 1) = (byte)(uVar7 & 0x1f80) | bVar9;
+  ((uw_object_hdr_t *)object)->position_word_low = (byte)(uVar7 & 0x1f80) | bVar9;
   ((uw_object_hdr_t *)object)->position_word_high = (byte)((uVar7 & 0x1f80) >> 8) | bVar3;
   uVar1 = position[1];
-  *(byte *)(object + 1) = (byte)(uVar7 & 0x380) | bVar9;
+  ((uw_object_hdr_t *)object)->position_word_low = (byte)(uVar7 & 0x380) | bVar9;
   ((uw_object_hdr_t *)object)->position_word_high =
       (byte)((uVar7 & 0x380) >> 8) | bVar3 |
      (byte)((uint)(((int)(short)(uVar1 & 0xe0) >> 5) << 10) >> 8);
@@ -1120,7 +1120,7 @@ int sync_object_tile_position(ushort *object, void *position_ptr)
   }
   else {
     uVar1 = ((uw_object_hdr_t *)object)->chain_word;
-    *(byte *)(object + 2) = (byte)position[0xf] & 0x3f | (byte)(uVar1 & 0xffc0);
+    ((uw_object_hdr_t *)object)->chain_word_low = (byte)position[0xf] & 0x3f | (byte)(uVar1 & 0xffc0);
     ((uw_object_hdr_t *)object)->chain_word_high = (byte)(char)((uVar1 & 0xffc0) >> 8);
   }
   uVar1 = *(ushort *)((char *)position + 0x29);
@@ -1138,7 +1138,7 @@ int sync_object_tile_position(ushort *object, void *position_ptr)
   }
   else {
     uVar1 = ((uw_object_hdr_t *)object)->chain_word;
-    *(byte *)(object + 2) = (byte)position[0xf] & 0x3f | (byte)(uVar1 & 0xffc0);
+    ((uw_object_hdr_t *)object)->chain_word_low = (byte)position[0xf] & 0x3f | (byte)(uVar1 & 0xffc0);
     ((uw_object_hdr_t *)object)->chain_word_high = (byte)(char)((uVar1 & 0xffc0) >> 8);
   }
   if ((position[0x14] & 4) != 0) {
@@ -1221,8 +1221,7 @@ int sync_object_tile_position(ushort *object, void *position_ptr)
 LAB_0005559c:
   if ((((uw_object_hdr_t *)object)->type_flags & 0x1c0) == 0x140) {
     uVar7 = ((uw_object_hdr_t *)object)->position_word & 0xfc7f | ((int)*(short *)((char *)position + 0x21) >> 0xd & 7U) << 7;
-    *(char *)(object + 1) = (char)uVar7;
-    ((uw_object_hdr_t *)object)->position_word_high = (byte)(char)(uVar7 >> 8);
+    ((uw_object_hdr_t *)object)->position_word = (ushort)uVar7;
   }
   return 0;
 }
@@ -1279,15 +1278,14 @@ ushort *settle_mobile_to_immobile(ushort *object)
       }
       else {
         uVar11 = ((uw_object_hdr_t *)object)->type_flags & 0xffc2 | 0x1c2;
-        ((uw_object_hdr_t *)object)->type_flags_low = (byte)uVar11;
-        ((uw_object_hdr_t *)object)->type_flags_high = (byte)(uVar11 >> 8);
+        ((uw_object_hdr_t *)object)->type_flags = (ushort)uVar11;
         if (*(byte *)(DAT_00086df8 + 0x6d) < 9) {
           iVar8 = 8;
           do {
             bVar4 = ce_rand();
             uVar1 = ((uw_object_hdr_t *)object)->position_word;
             bVar5 = (byte)uVar1;
-            *(byte *)(object + 1) = ((bVar4 & 7) + bVar5 + 4 ^ bVar5) & 0x7f ^ bVar5;
+            ((uw_object_hdr_t *)object)->position_word_low = ((bVar4 & 7) + bVar5 + 4 ^ bVar5) & 0x7f ^ bVar5;
             ((uw_object_hdr_t *)object)->position_word_high = (byte)(uVar1 >> 8);
             uVar6 = ce_rand();
             uVar7 = ce_rand();
@@ -1324,36 +1322,35 @@ ushort *settle_mobile_to_immobile(ushort *object)
   }
   pbTile = pbTile + 2;
   if ((bVar3) && (puVar9 = (ushort *)alloc_object_slot(0), puVar9 != (ushort *)0x0)) {
-    *(byte *)puVar9 = (byte)((uw_object_hdr_t *)object)->type_flags;
-    *(byte *)((char *)puVar9 + 1) = ((uw_object_hdr_t *)object)->type_flags_high;
-    *(byte *)(puVar9 + 1) = (byte)((uw_object_hdr_t *)object)->position_word;
-    *(byte *)((char *)puVar9 + 3) = ((uw_object_hdr_t *)object)->position_word_high;
-    *(byte *)(puVar9 + 2) = (byte)((uw_object_hdr_t *)object)->chain_word;
-    *(byte *)((char *)puVar9 + 5) = ((uw_object_hdr_t *)object)->chain_word_high;
-    *(byte *)(puVar9 + 3) = (byte)((uw_object_hdr_t *)object)->link_word;
-    *(byte *)((char *)puVar9 + 7) = ((uw_object_hdr_t *)object)->link_word_high;
-    *(byte *)(object + 3) = ((uw_object_hdr_t *)object)->owner;
+    ((uw_object_hdr_t *)puVar9)->type_flags_low = (byte)((uw_object_hdr_t *)object)->type_flags;
+    ((uw_object_hdr_t *)puVar9)->type_flags_high = ((uw_object_hdr_t *)object)->type_flags_high;
+    ((uw_object_hdr_t *)puVar9)->position_word_low = (byte)((uw_object_hdr_t *)object)->position_word;
+    ((uw_object_hdr_t *)puVar9)->position_word_high = ((uw_object_hdr_t *)object)->position_word_high;
+    ((uw_object_hdr_t *)puVar9)->chain_word_low = (byte)((uw_object_hdr_t *)object)->chain_word;
+    ((uw_object_hdr_t *)puVar9)->chain_word_high = ((uw_object_hdr_t *)object)->chain_word_high;
+    ((uw_object_hdr_t *)puVar9)->link_word_low = (byte)((uw_object_hdr_t *)object)->link_word;
+    ((uw_object_hdr_t *)puVar9)->link_word_high = ((uw_object_hdr_t *)object)->link_word_high;
+    ((uw_object_hdr_t *)object)->link_word_low = ((uw_object_hdr_t *)object)->owner;
     ((uw_object_hdr_t *)object)->link_word_high = 0;
-    uVar1 = *puVar9;
+    uVar1 = ((uw_object_hdr_t *)puVar9)->type_flags;
     if ((uVar1 & 0x1c0) == 0x1c0) {
       scheduler_relink_entry(puVar9,object);
     }
     else if ((((uVar1 & 0x1f0) == 0x90) && (3 < (uVar1 & 0xf))) && ((uVar1 & 0xf) < 7)) {
       bVar5 = (byte)uVar1;
-      *(byte *)puVar9 = (bVar5 - 4 ^ bVar5) & 0xf ^ bVar5;
-      *(byte *)((char *)puVar9 + 1) = (byte)(uVar1 >> 8);
+      ((uw_object_hdr_t *)puVar9)->type_flags_low = (bVar5 - 4 ^ bVar5) & 0xf ^ bVar5;
+      ((uw_object_hdr_t *)puVar9)->type_flags_high = (byte)(uVar1 >> 8);
       set_ambient_bias_without_light(0);
     }
-    uVar1 = puVar9[2];
-    *(byte *)(puVar9 + 2) = (byte)object[4] & 0x3f | (byte)(uVar1 & 0xffc0);
-    *(byte *)((char *)puVar9 + 5) = (byte)((uVar1 & 0xffc0) >> 8);
-    uVar12 = (uint)(ushort)*puVar9;
+    uVar1 = ((uw_object_hdr_t *)puVar9)->chain_word;
+    ((uw_object_hdr_t *)puVar9)->chain_word_low = (byte)object[4] & 0x3f | (byte)(uVar1 & 0xffc0);
+    ((uw_object_hdr_t *)puVar9)->chain_word_high = (byte)((uVar1 & 0xffc0) >> 8);
+    uVar12 = (uint)(ushort)((uw_object_hdr_t *)puVar9)->type_flags;
     uVar11 = uVar12 & 0x1c0;
     if (((uVar11 != 0x140) && (uVar11 != 0x180)) &&
        ((g_object_type_props[(uVar12 & 0x1ff)].class_flags & 3) != 2)) {
-      uVar11 = puVar9[1] & 0xfc7f | ((byte)object[0xd] & 7) << 7;
-      *(byte *)(puVar9 + 1) = (byte)uVar11;
-      *(byte *)((char *)puVar9 + 3) = (byte)(uVar11 >> 8);
+      uVar11 = ((uw_object_hdr_t *)puVar9)->position_word & 0xfc7f | ((byte)object[0xd] & 7) << 7;
+      ((uw_object_hdr_t *)puVar9)->position_word = (ushort)uVar11;
     }
   }
   else {
@@ -1466,8 +1463,8 @@ void spawn_creature_treasure_drop(void *creature_ptr)
     uVar2 = (uint)cVar5;
     if (0 < (int)uVar2) {
       pObj = (char *)spawn_new_object((short)cVar4 + 0xa0,0);
-      *(byte *)(pObj + 6) = *(byte *)(pObj + 6) & 0x3f | (byte)((uVar2 & 0x3ff) << 6);
-      *(char *)(pObj + 7) = (char)((uVar2 << 0x16) >> 0x18);
+      ((uw_object_hdr_t *)pObj)->link_word_low = ((uw_object_hdr_t *)pObj)->owner | (byte)((uVar2 & 0x3ff) << 6);
+      ((uw_object_hdr_t *)pObj)->link_word_high = (byte)(char)((uVar2 << 0x16) >> 0x18);
       object_list_insert_head(creature + 6,pObj);
     }
   }
@@ -1540,17 +1537,17 @@ void spawn_creature_equipment_drop(void *creature_ptr)
         uw_ord2005_rem_162 = ((int)(uVar5)) % (0x40);
         bVar6 = uw_ord2005_rem_162;
       }
-      uVar1 = *(undefined2 *)(pbVar4 + 4);
+      uVar1 = ((uw_object_hdr_t *)pbVar4)->chain_word;
       bVar2 = (byte)uVar1;
-      pbVar4[4] = (bVar2 ^ bVar6) & 0x3f ^ bVar2;
-      pbVar4[5] = (byte)((ushort)uVar1 >> 8);
-      if ((*pbVar4 & 0x30) == 0x10) {
-        if (g_ranged_type_props[(*pbVar4 & 0xf)].ammo_damage_selector == 0xc0) {  /* byte value 0xc0 (was compared against -0x40, never true for an unsigned byte) */
+      ((uw_object_hdr_t *)pbVar4)->chain_word_low = (bVar2 ^ bVar6) & 0x3f ^ bVar2;
+      ((uw_object_hdr_t *)pbVar4)->chain_word_high = (byte)((ushort)uVar1 >> 8);
+      if ((((uw_object_hdr_t *)pbVar4)->type_flags_low & 0x30) == 0x10) {
+        if (g_ranged_type_props[(((uw_object_hdr_t *)pbVar4)->type_flags_low & 0xf)].ammo_damage_selector == 0xc0) {  /* byte value 0xc0 (was compared against -0x40, never true for an unsigned byte) */
           uVar5 = ce_rand();
           uw_ord2005_rem_163 = ((int)(uVar5)) % (8);
           uVar7 = (uw_ord2005_rem_163 & 0xffff) + 4;
-          pbVar4[6] = ((uw_object_hdr_t *)pbVar4)->owner ^ (char)uVar7 * '@';
-          pbVar4[7] = (byte)(uVar7 >> 2);
+          ((uw_object_hdr_t *)pbVar4)->link_word_low = ((uw_object_hdr_t *)pbVar4)->owner ^ (char)uVar7 * '@';
+          ((uw_object_hdr_t *)pbVar4)->link_word_high = (byte)(uVar7 >> 2);
         }
       }
       object_list_insert_head(creature + 6,pbVar4);
@@ -1607,10 +1604,10 @@ void spawn_creature_misc_item_drop(void *creature_ptr)
         uw_ord2005_rem_166 = ((int)(uVar5)) % (0x40);
         bVar7 = uw_ord2005_rem_166;
       }
-      uVar2 = *(undefined2 *)(iVar6 + 4);
+      uVar2 = ((uw_object_hdr_t *)iVar6)->chain_word;
       bVar3 = (byte)uVar2;
-      *(byte *)(iVar6 + 4) = (bVar3 ^ bVar7) & 0x3f ^ bVar3;
-      *(char *)(iVar6 + 5) = (char)((ushort)uVar2 >> 8);
+      ((uw_object_hdr_t *)iVar6)->chain_word_low = (bVar3 ^ bVar7) & 0x3f ^ bVar3;
+      ((uw_object_hdr_t *)iVar6)->chain_word_high = (byte)(char)((ushort)uVar2 >> 8);
       object_list_insert_head(creature + 6,iVar6);
     }
     uVar8 = uVar8 + 1 & 0xff;
@@ -1717,17 +1714,17 @@ void drop_monster_loot(void *monster_ptr, ushort gold_nibble, ushort item_nibble
     uVar6 = (((uw_object_hdr_t *)pDropObj)->position_word ^ *(ushort *)(monster + 2)) & 0x1fff ^
             (uint)*(ushort *)(monster + 2);
     bVar1 = (byte)uVar6;
-    *(byte *)(pDropObj + 2) = bVar1;
+    ((uw_object_hdr_t *)pDropObj)->position_word_low = bVar1;
     bVar2 = (byte)(uVar6 >> 8);
-    *(byte *)(pDropObj + 3) = bVar2;
+    ((uw_object_hdr_t *)pDropObj)->position_word_high = bVar2;
     bVar2 = (monster[3] ^ bVar2) & 0x1c ^ bVar2;
-    *(byte *)(pDropObj + 2) = bVar1;
-    *(byte *)(pDropObj + 3) = bVar2;
-    *(byte *)(pDropObj + 2) = (monster[2] ^ bVar1) & 0x7f ^ bVar1;
-    *(byte *)(pDropObj + 3) = bVar2;
+    ((uw_object_hdr_t *)pDropObj)->position_word_low = bVar1;
+    ((uw_object_hdr_t *)pDropObj)->position_word_high = bVar2;
+    ((uw_object_hdr_t *)pDropObj)->position_word_low = (monster[2] ^ bVar1) & 0x7f ^ bVar1;
+    ((uw_object_hdr_t *)pDropObj)->position_word_high = bVar2;
     uVar6 = ((uw_object_hdr_t *)pDropObj)->chain_word & 0xffe8;
-    *(byte *)(pDropObj + 4) = (byte)uVar6 | 0x28;
-    *(char *)(pDropObj + 5) = (char)(uVar6 >> 8);
+    ((uw_object_hdr_t *)pDropObj)->chain_word_low = (byte)uVar6 | 0x28;
+    ((uw_object_hdr_t *)pDropObj)->chain_word_high = (byte)(char)(uVar6 >> 8);
     object_list_insert_head(iVar4 + 2,pDropObj);
     settle_dropped_object(pDropObj,(int)DAT_0010144c,(int)DAT_00101454,1);
   }
@@ -1736,10 +1733,10 @@ void drop_monster_loot(void *monster_ptr, ushort gold_nibble, ushort item_nibble
     uw_ord2005_rem_12 = ((int)(uVar7)) % (0x10);
     if ((uw_ord2005_rem_12 < 7) &&
        (pDropObj = (char *)spawn_new_object((short)(item_nibble & 0xff) + 0xc0,0), pDropObj != NULL)) {
-      uVar3 = *(undefined2 *)(pDropObj + 6);
+      uVar3 = ((uw_object_hdr_t *)pDropObj)->link_word;
       bVar1 = (byte)uVar3;
-      *(byte *)(pDropObj + 6) = (*monster ^ bVar1) & 0x3f ^ bVar1;
-      *(char *)(pDropObj + 7) = (char)((ushort)uVar3 >> 8);
+      ((uw_object_hdr_t *)pDropObj)->link_word_low = (*monster ^ bVar1) & 0x3f ^ bVar1;
+      ((uw_object_hdr_t *)pDropObj)->link_word_high = (byte)(char)((ushort)uVar3 >> 8);
       drop_object_near_target(monster,pDropObj,4,0);
     }
   }
@@ -2770,7 +2767,7 @@ LAB_000323ac:
       uw_ord2005_rem_86 = ((int)(((int)cVar4 - ((int)(char)(uVar3 >> 7) & 7U)) + 8)) % (8);
       if ((((uw_ord2005_rem_86 == '\0') || (uw_ord2005_rem_86 == '\x01')) || (uw_ord2005_rem_86 == '\a')) &&
          (iVar5 = check_fine_line_of_sight(DAT_00101910,DAT_0010141c,
-                               (ushort)(byte) g_object_type_props[(*puVar7 & 0x1ff)].height +
+                               (ushort)(byte) g_object_type_props[(((uw_object_hdr_t *)puVar7)->item_id)].height +
                                (uVar3 & 0x7f),DAT_00101908,DAT_00101418,
                                (ushort)(byte) g_object_type_props[(*DAT_00101400 & 0x1ff)].height +
                                ((byte)DAT_00101400[1] & 0x7f)), puVar7 = DAT_0010190c, iVar5 != 0))
@@ -3137,7 +3134,7 @@ LAB_00033e9c:
     uVar11 = uVar11 & 0xff;
   }
   uVar5 = uVar2 & 0xfc7f | (uVar11 & 0xffe0) << 2;
-  *(char *)(npc_rec + 2) = (char)uVar5;
+  ((uw_object_hdr_t *)npc_rec)->position_word_low = (byte)(char)uVar5;
   DAT_0010190c->hdr.position_word_high = (byte)(char)(uVar5 >> 8);
   DAT_0010190c->heading_flags =
     (DAT_0010190c->heading_flags ^ (byte)uVar11) & 0x1f ^ DAT_0010190c->heading_flags;
@@ -3869,8 +3866,7 @@ void emit_noise_alert(ushort *source, byte noise_type)
     scan_area_for_matching_objects(0x14,0,alert_npc_to_noise_callback,0,(char)DAT_002020a0 + -7,(char)DAT_002020a4 + -7,0xf,0xf);
     if ((((uw_object_hdr_t *)source)->link_word & 0x1f) < 0x1c) {
       uVar2 = ((uw_object_hdr_t *)source)->link << 6;
-      *(char *)(source + 3) = (char)uVar2;
-      ((uw_object_hdr_t *)source)->link_word_high = (byte)(char)(uVar2 >> 8);
+      ((uw_object_hdr_t *)source)->link_word = (ushort)uVar2;
     }
   }
 }

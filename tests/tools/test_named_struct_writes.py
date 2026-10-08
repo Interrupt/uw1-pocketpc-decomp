@@ -11,7 +11,7 @@ from struct_field_catalog import WORDS, BYTES
 from extract_functions import extract
 
 spatch = sys.argv[1]
-patch = ROOT / 'tools/coccinelle/named-field-writes.cocci'
+patch = Path(sys.argv[2]) if len(sys.argv) > 2 else ROOT / 'tools/coccinelle/named-field-writes.cocci'
 
 
 def object_type(word):

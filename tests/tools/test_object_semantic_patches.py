@@ -458,6 +458,7 @@ void npc_walk_toward_tile(int uVar8, byte *local_40, int other) {
     *(char *)((char *)DAT_0010190c + 0x17) = (char)(uVar8 >> 8);
     int slot = *(byte *)((char *)DAT_0010190c + 0x16) & 0xf;
     int signed_byte = *(char *)((char *)DAT_0010190c + 2);
+    char *low_address = &*(char *)((char *)DAT_0010190c + 2);
     *(char *)((char *)DAT_0010190c + 4) = (char)uVar8;
     *(char *)((char *)DAT_0010190c + 5) = (char)(other >> 8);
     *(short *)((char *)g_player_object + 2) = -32768;
@@ -480,6 +481,7 @@ int unrelated(byte *buffer) { return *(byte *)((char *)buffer + 2); }
     assert 'DAT_0010190c->tile_word_high' in result, result
     assert 'DAT_0010190c->npc_path_slot' in result, result
     assert '(char)DAT_0010190c->hdr.position_word_low' in result, result
+    assert '(char *)&DAT_0010190c->hdr.position_word_low' in result, result
     assert 'DAT_0010190c->hdr.chain_word_low' in result, result
     assert 'DAT_0010190c->hdr.chain_word_high' in result, result
     assert 'g_player_object->hdr.position_word_signed = -32768;' in result, result
@@ -508,6 +510,18 @@ void find_object_in_world(ushort *puVar6, int value) {
 void unrelated(ushort *puVar6, int value) {
     *(char *)((char *)puVar6 + 2) = (char)value;
 }
+void reallocate_object_to_arena(ushort *puVar2) {
+    int bare_word = puVar2[1];
+    char *low_address = &*(char *)(puVar2 + 1);
+}
+void free_object_slot(char *object, int value) {
+    *object = (char)value;
+    int first_byte = *object;
+    char *first_address = &*object;
+    int word = *(ushort *)(object + 2);
+    int signed_byte = object[3];
+    char *high_address = &object[3];
+}
 """)
     transform('header-bytes/objects.cocci', path)
     result = path.read_text()
@@ -515,6 +529,13 @@ void unrelated(ushort *puVar6, int value) {
     assert '->position_word_low' in result, result
     assert '->position_word_high' in result, result
     assert result.count('*(char *)((char *)puVar6 + 2)') == 1, result
+    assert 'bare_word = ((uw_object_hdr_t *)puVar2)->position_word;' in result, result
+    assert '(char *)&((uw_object_hdr_t *)puVar2)->position_word_low' in result, result
+    assert '(char *)&((uw_object_hdr_t *)object)->position_word_high' in result, result
+    assert 'int word = ((uw_object_hdr_t *)object)->position_word;' in result, result
+    assert '->type_flags_low = (byte)(char)value;' in result, result
+    assert '(char *)&((uw_object_hdr_t *)object)->type_flags_low' in result, result
+    assert 'first_byte = (char)((uw_object_hdr_t *)object)->type_flags_low' in result, result
     transform('header-bytes/objects.cocci', path)
     assert path.read_text() == result, 'scoped header byte rules are not idempotent'
 

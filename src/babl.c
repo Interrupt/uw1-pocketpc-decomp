@@ -542,7 +542,7 @@ int babl_builtin_do_inv_create(char *args)
   }
   else {
     uVar1 = ((uw_object_hdr_t *)puVar3)->chain_word;
-    *(byte *)(puVar3 + 2) = (byte)uVar1 | 0x3f;
+    ((uw_object_hdr_t *)puVar3)->chain_word_low = (byte)uVar1 | 0x3f;
     ((uw_object_hdr_t *)puVar3)->chain_word_high = (byte)(char)(uVar1 >> 8);
     puVar4 = (ushort *)(*piVar2 + 6);
     while (puVar4 = (ushort *)resolve_object_link(puVar4), puVar4 != (ushort *)0x0) {
@@ -742,8 +742,8 @@ LAB_0001818c:
        (iVar1 < 0x40)) {
       pbVar9 = (byte *)tilemap_lookup(uVar5,uVar6);
       uVar2 = ((uw_object_hdr_t *)puVar4)->position_word;
-      puVar4[2] = (byte)(uVar2 & 0xff80) | *pbVar9 >> 1 & 0x78;
-      puVar4[3] = (char)((uVar2 & 0xff80) >> 8);
+      ((uw_object_hdr_t *)puVar4)->position_word_low = (byte)(uVar2 & 0xff80) | *pbVar9 >> 1 & 0x78;
+      ((uw_object_hdr_t *)puVar4)->position_word_high = (char)((uVar2 & 0xff80) >> 8);
       iVar8 = check_object_placement_clearance(((uw_object_hdr_t *)puVar4)->item_id,
                                                uVar3,(iVar8 << 0x13) >> 0x10,
                                                (iVar1 << 0x13) >> 0x10,
@@ -961,13 +961,12 @@ void babl_builtin_x_obj_stuff(char *args)
     if ((((int)*psVar4 != 0xffffffff) && ((((uw_object_hdr_t *)puVar11_rec)->type_flags & 0x1c0) != 0x140)) &&
         ((g_object_type_props[(((uw_object_hdr_t *)puVar11_rec)->item_id)].class_flags & 3) != 2)) {
       uVar12 = ((uw_object_hdr_t *)puVar11_rec)->position_word & 0xfc7f | ((int)*psVar4 & 7U) << 7;
-      *(char *)(puVar11_rec + 1) = (char)uVar12;
-      ((uw_object_hdr_t *)puVar11_rec)->position_word_high = (byte)(char)(uVar12 >> 8);
+      ((uw_object_hdr_t *)puVar11_rec)->position_word = (ushort)uVar12;
     }
     if (*puVar5 != 0xffff) {
       uVar1 = ((uw_object_hdr_t *)puVar11_rec)->link_word;
       bVar2 = (byte)uVar1;
-      *(byte *)(puVar11_rec + 3) = (bVar2 ^ (byte)*puVar5) & 0x3f ^ bVar2;
+      ((uw_object_hdr_t *)puVar11_rec)->link_word_low = (bVar2 ^ (byte)*puVar5) & 0x3f ^ bVar2;
       ((uw_object_hdr_t *)puVar11_rec)->link_word_high = (byte)(char)(uVar1 >> 8);
     }
     sVar3 = *psVar6;
@@ -979,7 +978,7 @@ void babl_builtin_x_obj_stuff(char *args)
     }
     uVar12 = (uint)*psVar7;
     if (uVar12 != 0xffffffff) {
-      *(byte *)(puVar11_rec + 3) = ((uw_object_hdr_t *)puVar11_rec)->owner | (byte)(uVar12 << 6);
+      ((uw_object_hdr_t *)puVar11_rec)->link_word_low = ((uw_object_hdr_t *)puVar11_rec)->owner | (byte)(uVar12 << 6);
       ((uw_object_hdr_t *)puVar11_rec)->link_word_high = (byte)(char)((uVar12 & 0x3ffffff | 0xfe00) >> 2);
     }
     sVar3 = *psVar8;
@@ -999,7 +998,7 @@ void babl_builtin_x_obj_stuff(char *args)
     if (*puVar10 != 0xffff) {
       uVar1 = ((uw_object_hdr_t *)puVar11_rec)->chain_word;
       bVar2 = (byte)uVar1;
-      *(byte *)(puVar11_rec + 2) = (bVar2 ^ (byte)*puVar10) & 0x3f ^ bVar2;
+      ((uw_object_hdr_t *)puVar11_rec)->chain_word_low = (bVar2 ^ (byte)*puVar10) & 0x3f ^ bVar2;
       ((uw_object_hdr_t *)puVar11_rec)->chain_word_high = (byte)(char)(uVar1 >> 8);
     }
   }
@@ -2736,8 +2735,8 @@ int babl_builtin_give_ptr_npc(char *args)
   uVar3 = babl_read_var_word((int)*(short *)(args + -2));
   item_rec = (char *)get_object_record_by_slot_index(uVar1);
   if (-1 < (short)uVar3) {
-    if ((*(byte *)(item_rec + 1) & 0x80) != 0) {
-      if ((*(byte *)(item_rec + 7) & 0x80) == 0) goto LAB_00029efc;
+    if (((uw_object_hdr_t *)item_rec)->is_quant != 0) {
+      if ((((uw_object_hdr_t *)item_rec)->link_word_high & 0x80) == 0) goto LAB_00029efc;
     }
   }
   uVar3 = 0xffffffff;
@@ -2825,7 +2824,7 @@ int babl_builtin_identify_inv(char *args)
   uVar3 = babl_read_var_word((int)*(short *)(args + -2));
   uVar4 = compute_barter_item_value(1,uVar2,(int)DAT_000bbfbc);
   iVar5 = (char *)get_object_record_by_slot_index(uVar2);
-  if (((*(byte *)(iVar5 + 1) & 0x80) == 0) || ((((uw_object_hdr_t *)iVar5)->link_word & 0x8000) != 0)) {
+  if ((((uw_object_hdr_t *)iVar5)->is_quant == 0) || ((((uw_object_hdr_t *)iVar5)->link_word & 0x8000) != 0)) {
     uVar9 = 1;
   }
   else {
@@ -3860,7 +3859,7 @@ void handle_barter_slot_click(int is_player_side, int slot, void *counts, void *
         return;
       }
       obj_rec = get_object_record_by_slot_index((int)*(short *)(local_8 + (short)local_c * 2));
-      if (((((*(byte *)(obj_rec + 1) & 0x80) != 0) && ((((uw_object_hdr_t *)obj_rec)->link_word & 0x8000) == 0)) &&
+      if ((((((uw_object_hdr_t *)obj_rec)->is_quant != 0) && ((((uw_object_hdr_t *)obj_rec)->link_word & 0x8000) == 0)) &&
            (((uw_object_hdr_t *)obj_rec)->link != 1)) && (split_rec = prompt_split_object_stack((byte *)(intptr_t)(obj_rec)), split_rec == 0))
       {
         return;
@@ -3869,8 +3868,8 @@ void handle_barter_slot_click(int is_player_side, int slot, void *counts, void *
       if (iVar3 == 0) {
         if ((split_rec != 0) && (split_rec != obj_rec)) {
           iVar3 = (((uw_object_hdr_t *)obj_rec)->link << 6) + (*(ushort *)(split_rec + 6) & 0xffc0);
-          *(byte *)(obj_rec + 6) = (byte)iVar3 ^ ((uw_object_hdr_t *)obj_rec)->owner;
-          *(char *)(obj_rec + 7) = (char)((uint)iVar3 >> 8);
+          ((uw_object_hdr_t *)obj_rec)->link_word_low = (byte)iVar3 ^ ((uw_object_hdr_t *)obj_rec)->owner;
+          ((uw_object_hdr_t *)obj_rec)->link_word_high = (byte)(char)((uint)iVar3 >> 8);
           object_list_unlink((void *)(intptr_t)(obj_rec + 4),(void *)(intptr_t)(split_rec));
           free_object_slot((void *)(intptr_t)(split_rec));
         }
@@ -4018,7 +4017,7 @@ void redraw_barter_slot_icon(short side, short slot)
   }
   else {
     psVar6 = (short *)get_object_record_by_slot_index(sVar4);
-    uVar9 = (int)*psVar6 & 0x1ff;
+    uVar9 = (int)((uw_object_hdr_t *)psVar6)->type_flags_signed & 0x1ff;
   }
   puVar10 = &DAT_000845d8;
   iVar1 = iVar3 * 4;
@@ -4035,11 +4034,11 @@ void redraw_barter_slot_icon(short side, short slot)
                  ,0x10,0x10);
   }
   if (sVar4 != 0) {
-    if (((short)(*psVar6 & -0x8000) == 0) || ((psVar6[3] & 0x8000U) != 0)) {
+    if (((short)(((uw_object_hdr_t *)psVar6)->type_flags_signed & -0x8000) == 0) || ((((uw_object_hdr_t *)psVar6)->link_word_signed & 0x8000U) != 0)) {
       uVar8 = 0;
     }
     else {
-      uVar8 = (ushort)psVar6[3] >> 6;
+      uVar8 = (ushort)((uw_object_hdr_t *)psVar6)->link_word_signed >> 6;
     }
     g_blit_transparent_mode = 0;
     if (1 < uVar8) {
@@ -4149,7 +4148,7 @@ int merge_or_swap_barter_slot_item(ushort *held_object, int side, int slot, void
       if ((((uVar3 & 0x8000) == 0) && (((*held_object ^ uVar1) & 0x1ff) == 0)) &&
          ((ushort)((uVar3 >> 6) + (uVar2 >> 6)) < 999)) {
         iVar6 = (uVar3 & 0xffc0) + (uVar2 & 0xffc0);
-        *(byte *)(puVar5 + 3) = (byte)iVar6 ^ (byte)uVar3 & 0x3f;
+        ((uw_object_hdr_t *)puVar5)->link_word_low = (byte)iVar6 ^ (byte)uVar3 & 0x3f;
         ((uw_object_hdr_t *)puVar5)->link_word_high = (byte)(char)((uint)iVar6 >> 8);
         free_object_slot(held_object);
         uVar8 = 1;
@@ -4285,7 +4284,7 @@ void finalize_player_barter_items()
                 ((((((uw_object_hdr_t *)puVar3)->link_word & 0x8000) == 0 && (((((uw_object_hdr_t *)puVar3)->type_flags ^ ((uw_object_hdr_t *)puVar2)->type_flags) & 0x1ff) == 0)) &&
                   ((ushort)((((uw_object_hdr_t *)puVar3)->link) + (((uw_object_hdr_t *)puVar2)->link)) < 999)))) {
               iVar4 = (((uw_object_hdr_t *)puVar3)->link << 6) + (((uw_object_hdr_t *)puVar2)->link << 6);
-              *(byte *)(puVar3 + 3) = (byte)iVar4 ^ ((uw_object_hdr_t *)puVar3)->owner;
+              ((uw_object_hdr_t *)puVar3)->link_word_low = (byte)iVar4 ^ ((uw_object_hdr_t *)puVar3)->owner;
               ((uw_object_hdr_t *)puVar3)->link_word_high = (byte)(char)((uint)iVar4 >> 8);
               free_object_slot(puVar2);
               puVar2 = (ushort *)0x0;

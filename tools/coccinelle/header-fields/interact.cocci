@@ -1064,535 +1064,6 @@ typedef ushort, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(ushort *)((char *)pbVar7 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)pbVar7)->item_id
-|
-- ((ushort *)pbVar7)[0] & 0x1ff
-+ ((uw_object_hdr_t *)pbVar7)->item_id
-|
-- *(ushort *)pbVar7 & 0x1ff
-+ ((uw_object_hdr_t *)pbVar7)->item_id
-|
-- *(ushort *)(pbVar7 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)pbVar7)->item_id
-|
-- CONCAT11(pbVar7[1], *pbVar7) & 0x1ff
-+ ((uw_object_hdr_t *)pbVar7)->item_id
-|
-- CONCAT11(pbVar7[1], pbVar7[0]) & 0x1ff
-+ ((uw_object_hdr_t *)pbVar7)->item_id
-)
-...>
-}
-
-@field_2_flags_res@
-type R;
-identifier F =~ "^\(roll_container_trap_disarm_check\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)pbVar7 + 0x0) >> 9) & 0x7
-+ ((uw_object_hdr_t *)pbVar7)->flags_res
-|
-- (*(ushort *)((char *)pbVar7 + 0x0) & 0xe00) >> 9
-+ ((uw_object_hdr_t *)pbVar7)->flags_res
-|
-- (((ushort *)pbVar7)[0] >> 9) & 0x7
-+ ((uw_object_hdr_t *)pbVar7)->flags_res
-|
-- (((ushort *)pbVar7)[0] & 0xe00) >> 9
-+ ((uw_object_hdr_t *)pbVar7)->flags_res
-|
-- (*(ushort *)pbVar7 >> 9) & 0x7
-+ ((uw_object_hdr_t *)pbVar7)->flags_res
-|
-- (*(ushort *)pbVar7 & 0xe00) >> 9
-+ ((uw_object_hdr_t *)pbVar7)->flags_res
-|
-- (*(ushort *)(pbVar7 + 0x0) >> 9) & 0x7
-+ ((uw_object_hdr_t *)pbVar7)->flags_res
-|
-- (*(ushort *)(pbVar7 + 0x0) & 0xe00) >> 9
-+ ((uw_object_hdr_t *)pbVar7)->flags_res
-|
-- (CONCAT11(pbVar7[1], *pbVar7) >> 9) & 0x7
-+ ((uw_object_hdr_t *)pbVar7)->flags_res
-|
-- (CONCAT11(pbVar7[1], *pbVar7) & 0xe00) >> 9
-+ ((uw_object_hdr_t *)pbVar7)->flags_res
-|
-- (CONCAT11(pbVar7[1], pbVar7[0]) >> 9) & 0x7
-+ ((uw_object_hdr_t *)pbVar7)->flags_res
-|
-- (CONCAT11(pbVar7[1], pbVar7[0]) & 0xe00) >> 9
-+ ((uw_object_hdr_t *)pbVar7)->flags_res
-|
-- (*(byte *)((char *)pbVar7 + 0x1) >> 1) & 0x7
-+ ((uw_object_hdr_t *)pbVar7)->flags_res
-|
-- (*(byte *)((char *)pbVar7 + 0x1) & 0xe) >> 1
-+ ((uw_object_hdr_t *)pbVar7)->flags_res
-)
-...>
-}
-
-@field_2_enchanted@
-type R;
-identifier F =~ "^\(roll_container_trap_disarm_check\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)pbVar7 + 0x0) >> 12) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->enchanted
-|
-- (*(ushort *)((char *)pbVar7 + 0x0) & 0x1000) >> 12
-+ ((uw_object_hdr_t *)pbVar7)->enchanted
-|
-- (((ushort *)pbVar7)[0] >> 12) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->enchanted
-|
-- (((ushort *)pbVar7)[0] & 0x1000) >> 12
-+ ((uw_object_hdr_t *)pbVar7)->enchanted
-|
-- (*(ushort *)pbVar7 >> 12) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->enchanted
-|
-- (*(ushort *)pbVar7 & 0x1000) >> 12
-+ ((uw_object_hdr_t *)pbVar7)->enchanted
-|
-- (*(ushort *)(pbVar7 + 0x0) >> 12) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->enchanted
-|
-- (*(ushort *)(pbVar7 + 0x0) & 0x1000) >> 12
-+ ((uw_object_hdr_t *)pbVar7)->enchanted
-|
-- (CONCAT11(pbVar7[1], *pbVar7) >> 12) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->enchanted
-|
-- (CONCAT11(pbVar7[1], *pbVar7) & 0x1000) >> 12
-+ ((uw_object_hdr_t *)pbVar7)->enchanted
-|
-- (CONCAT11(pbVar7[1], pbVar7[0]) >> 12) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->enchanted
-|
-- (CONCAT11(pbVar7[1], pbVar7[0]) & 0x1000) >> 12
-+ ((uw_object_hdr_t *)pbVar7)->enchanted
-|
-- (*(byte *)((char *)pbVar7 + 0x1) >> 4) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->enchanted
-|
-- (*(byte *)((char *)pbVar7 + 0x1) & 0x10) >> 4
-+ ((uw_object_hdr_t *)pbVar7)->enchanted
-)
-...>
-}
-
-@field_2_doordir@
-type R;
-identifier F =~ "^\(roll_container_trap_disarm_check\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)pbVar7 + 0x0) >> 13) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->doordir
-|
-- (*(ushort *)((char *)pbVar7 + 0x0) & 0x2000) >> 13
-+ ((uw_object_hdr_t *)pbVar7)->doordir
-|
-- (((ushort *)pbVar7)[0] >> 13) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->doordir
-|
-- (((ushort *)pbVar7)[0] & 0x2000) >> 13
-+ ((uw_object_hdr_t *)pbVar7)->doordir
-|
-- (*(ushort *)pbVar7 >> 13) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->doordir
-|
-- (*(ushort *)pbVar7 & 0x2000) >> 13
-+ ((uw_object_hdr_t *)pbVar7)->doordir
-|
-- (*(ushort *)(pbVar7 + 0x0) >> 13) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->doordir
-|
-- (*(ushort *)(pbVar7 + 0x0) & 0x2000) >> 13
-+ ((uw_object_hdr_t *)pbVar7)->doordir
-|
-- (CONCAT11(pbVar7[1], *pbVar7) >> 13) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->doordir
-|
-- (CONCAT11(pbVar7[1], *pbVar7) & 0x2000) >> 13
-+ ((uw_object_hdr_t *)pbVar7)->doordir
-|
-- (CONCAT11(pbVar7[1], pbVar7[0]) >> 13) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->doordir
-|
-- (CONCAT11(pbVar7[1], pbVar7[0]) & 0x2000) >> 13
-+ ((uw_object_hdr_t *)pbVar7)->doordir
-|
-- (*(byte *)((char *)pbVar7 + 0x1) >> 5) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->doordir
-|
-- (*(byte *)((char *)pbVar7 + 0x1) & 0x20) >> 5
-+ ((uw_object_hdr_t *)pbVar7)->doordir
-)
-...>
-}
-
-@field_2_invisible@
-type R;
-identifier F =~ "^\(roll_container_trap_disarm_check\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)pbVar7 + 0x0) >> 14) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->invisible
-|
-- (*(ushort *)((char *)pbVar7 + 0x0) & 0x4000) >> 14
-+ ((uw_object_hdr_t *)pbVar7)->invisible
-|
-- (((ushort *)pbVar7)[0] >> 14) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->invisible
-|
-- (((ushort *)pbVar7)[0] & 0x4000) >> 14
-+ ((uw_object_hdr_t *)pbVar7)->invisible
-|
-- (*(ushort *)pbVar7 >> 14) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->invisible
-|
-- (*(ushort *)pbVar7 & 0x4000) >> 14
-+ ((uw_object_hdr_t *)pbVar7)->invisible
-|
-- (*(ushort *)(pbVar7 + 0x0) >> 14) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->invisible
-|
-- (*(ushort *)(pbVar7 + 0x0) & 0x4000) >> 14
-+ ((uw_object_hdr_t *)pbVar7)->invisible
-|
-- (CONCAT11(pbVar7[1], *pbVar7) >> 14) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->invisible
-|
-- (CONCAT11(pbVar7[1], *pbVar7) & 0x4000) >> 14
-+ ((uw_object_hdr_t *)pbVar7)->invisible
-|
-- (CONCAT11(pbVar7[1], pbVar7[0]) >> 14) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->invisible
-|
-- (CONCAT11(pbVar7[1], pbVar7[0]) & 0x4000) >> 14
-+ ((uw_object_hdr_t *)pbVar7)->invisible
-|
-- (*(byte *)((char *)pbVar7 + 0x1) >> 6) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->invisible
-|
-- (*(byte *)((char *)pbVar7 + 0x1) & 0x40) >> 6
-+ ((uw_object_hdr_t *)pbVar7)->invisible
-)
-...>
-}
-
-@field_2_is_quant@
-type R;
-identifier F =~ "^\(roll_container_trap_disarm_check\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)pbVar7 + 0x0) >> 15) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->is_quant
-|
-- (*(ushort *)((char *)pbVar7 + 0x0) & 0x8000) >> 15
-+ ((uw_object_hdr_t *)pbVar7)->is_quant
-|
-- (((ushort *)pbVar7)[0] >> 15) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->is_quant
-|
-- (((ushort *)pbVar7)[0] & 0x8000) >> 15
-+ ((uw_object_hdr_t *)pbVar7)->is_quant
-|
-- (*(ushort *)pbVar7 >> 15) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->is_quant
-|
-- (*(ushort *)pbVar7 & 0x8000) >> 15
-+ ((uw_object_hdr_t *)pbVar7)->is_quant
-|
-- (*(ushort *)(pbVar7 + 0x0) >> 15) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->is_quant
-|
-- (*(ushort *)(pbVar7 + 0x0) & 0x8000) >> 15
-+ ((uw_object_hdr_t *)pbVar7)->is_quant
-|
-- (CONCAT11(pbVar7[1], *pbVar7) >> 15) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->is_quant
-|
-- (CONCAT11(pbVar7[1], *pbVar7) & 0x8000) >> 15
-+ ((uw_object_hdr_t *)pbVar7)->is_quant
-|
-- (CONCAT11(pbVar7[1], pbVar7[0]) >> 15) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->is_quant
-|
-- (CONCAT11(pbVar7[1], pbVar7[0]) & 0x8000) >> 15
-+ ((uw_object_hdr_t *)pbVar7)->is_quant
-|
-- (*(byte *)((char *)pbVar7 + 0x1) >> 7) & 0x1
-+ ((uw_object_hdr_t *)pbVar7)->is_quant
-|
-- (*(byte *)((char *)pbVar7 + 0x1) & 0x80) >> 7
-+ ((uw_object_hdr_t *)pbVar7)->is_quant
-)
-...>
-}
-
-@field_2_zpos@
-type R;
-identifier F =~ "^\(roll_container_trap_disarm_check\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)pbVar7 + 0x2) & 0x7f
-+ ((uw_object_hdr_t *)pbVar7)->zpos
-|
-- ((ushort *)pbVar7)[1] & 0x7f
-+ ((uw_object_hdr_t *)pbVar7)->zpos
-|
-- *(ushort *)(pbVar7 + 0x2) & 0x7f
-+ ((uw_object_hdr_t *)pbVar7)->zpos
-|
-- *(byte *)((char *)pbVar7 + 0x2) & 0x7f
-+ ((uw_object_hdr_t *)pbVar7)->zpos
-|
-- pbVar7[2] & 0x7f
-+ ((uw_object_hdr_t *)pbVar7)->zpos
-)
-...>
-}
-
-@field_2_heading@
-type R;
-identifier F =~ "^\(roll_container_trap_disarm_check\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)pbVar7 + 0x2) >> 7) & 0x7
-+ ((uw_object_hdr_t *)pbVar7)->heading
-|
-- (*(ushort *)((char *)pbVar7 + 0x2) & 0x380) >> 7
-+ ((uw_object_hdr_t *)pbVar7)->heading
-|
-- (((ushort *)pbVar7)[1] >> 7) & 0x7
-+ ((uw_object_hdr_t *)pbVar7)->heading
-|
-- (((ushort *)pbVar7)[1] & 0x380) >> 7
-+ ((uw_object_hdr_t *)pbVar7)->heading
-|
-- (*(ushort *)(pbVar7 + 0x2) >> 7) & 0x7
-+ ((uw_object_hdr_t *)pbVar7)->heading
-|
-- (*(ushort *)(pbVar7 + 0x2) & 0x380) >> 7
-+ ((uw_object_hdr_t *)pbVar7)->heading
-)
-...>
-}
-
-@field_2_ypos@
-type R;
-identifier F =~ "^\(roll_container_trap_disarm_check\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)pbVar7 + 0x2) >> 10) & 0x7
-+ ((uw_object_hdr_t *)pbVar7)->ypos
-|
-- (*(ushort *)((char *)pbVar7 + 0x2) & 0x1c00) >> 10
-+ ((uw_object_hdr_t *)pbVar7)->ypos
-|
-- (((ushort *)pbVar7)[1] >> 10) & 0x7
-+ ((uw_object_hdr_t *)pbVar7)->ypos
-|
-- (((ushort *)pbVar7)[1] & 0x1c00) >> 10
-+ ((uw_object_hdr_t *)pbVar7)->ypos
-|
-- (*(ushort *)(pbVar7 + 0x2) >> 10) & 0x7
-+ ((uw_object_hdr_t *)pbVar7)->ypos
-|
-- (*(ushort *)(pbVar7 + 0x2) & 0x1c00) >> 10
-+ ((uw_object_hdr_t *)pbVar7)->ypos
-|
-- (*(byte *)((char *)pbVar7 + 0x3) >> 2) & 0x7
-+ ((uw_object_hdr_t *)pbVar7)->ypos
-|
-- (*(byte *)((char *)pbVar7 + 0x3) & 0x1c) >> 2
-+ ((uw_object_hdr_t *)pbVar7)->ypos
-)
-...>
-}
-
-@field_2_xpos@
-type R;
-identifier F =~ "^\(roll_container_trap_disarm_check\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)pbVar7 + 0x2) >> 13) & 0x7
-+ ((uw_object_hdr_t *)pbVar7)->xpos
-|
-- (*(ushort *)((char *)pbVar7 + 0x2) & 0xe000) >> 13
-+ ((uw_object_hdr_t *)pbVar7)->xpos
-|
-- (((ushort *)pbVar7)[1] >> 13) & 0x7
-+ ((uw_object_hdr_t *)pbVar7)->xpos
-|
-- (((ushort *)pbVar7)[1] & 0xe000) >> 13
-+ ((uw_object_hdr_t *)pbVar7)->xpos
-|
-- (*(ushort *)(pbVar7 + 0x2) >> 13) & 0x7
-+ ((uw_object_hdr_t *)pbVar7)->xpos
-|
-- (*(ushort *)(pbVar7 + 0x2) & 0xe000) >> 13
-+ ((uw_object_hdr_t *)pbVar7)->xpos
-|
-- (*(byte *)((char *)pbVar7 + 0x3) >> 5) & 0x7
-+ ((uw_object_hdr_t *)pbVar7)->xpos
-|
-- (*(byte *)((char *)pbVar7 + 0x3) & 0xe0) >> 5
-+ ((uw_object_hdr_t *)pbVar7)->xpos
-)
-...>
-}
-
-@field_2_quality@
-type R;
-identifier F =~ "^\(roll_container_trap_disarm_check\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)pbVar7 + 0x4) & 0x3f
-+ ((uw_object_hdr_t *)pbVar7)->quality
-|
-- ((ushort *)pbVar7)[2] & 0x3f
-+ ((uw_object_hdr_t *)pbVar7)->quality
-|
-- *(ushort *)(pbVar7 + 0x4) & 0x3f
-+ ((uw_object_hdr_t *)pbVar7)->quality
-|
-- *(byte *)((char *)pbVar7 + 0x4) & 0x3f
-+ ((uw_object_hdr_t *)pbVar7)->quality
-|
-- pbVar7[4] & 0x3f
-+ ((uw_object_hdr_t *)pbVar7)->quality
-)
-...>
-}
-
-@field_2_next@
-type R;
-identifier F =~ "^\(roll_container_trap_disarm_check\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)pbVar7 + 0x4) >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)pbVar7)->next
-|
-- (*(ushort *)((char *)pbVar7 + 0x4) & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)pbVar7)->next
-|
-- (((ushort *)pbVar7)[2] >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)pbVar7)->next
-|
-- (((ushort *)pbVar7)[2] & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)pbVar7)->next
-|
-- (*(ushort *)(pbVar7 + 0x4) >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)pbVar7)->next
-|
-- (*(ushort *)(pbVar7 + 0x4) & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)pbVar7)->next
-)
-...>
-}
-
-@field_2_owner@
-type R;
-identifier F =~ "^\(roll_container_trap_disarm_check\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)pbVar7 + 0x6) & 0x3f
-+ ((uw_object_hdr_t *)pbVar7)->owner
-|
-- ((ushort *)pbVar7)[3] & 0x3f
-+ ((uw_object_hdr_t *)pbVar7)->owner
-|
-- *(ushort *)(pbVar7 + 0x6) & 0x3f
-+ ((uw_object_hdr_t *)pbVar7)->owner
-|
-- *(byte *)((char *)pbVar7 + 0x6) & 0x3f
-+ ((uw_object_hdr_t *)pbVar7)->owner
-|
-- pbVar7[6] & 0x3f
-+ ((uw_object_hdr_t *)pbVar7)->owner
-)
-...>
-}
-
-@field_2_link@
-type R;
-identifier F =~ "^\(roll_container_trap_disarm_check\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- (*(ushort *)((char *)pbVar7 + 0x6) >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)pbVar7)->link
-|
-- (*(ushort *)((char *)pbVar7 + 0x6) & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)pbVar7)->link
-|
-- (((ushort *)pbVar7)[3] >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)pbVar7)->link
-|
-- (((ushort *)pbVar7)[3] & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)pbVar7)->link
-|
-- (*(ushort *)(pbVar7 + 0x6) >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)pbVar7)->link
-|
-- (*(ushort *)(pbVar7 + 0x6) & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)pbVar7)->link
-)
-...>
-}
-
-@field_3_item_id@
-type R;
-identifier F =~ "^\(roll_container_trap_disarm_check\)$";
-typedef ushort, byte, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
 - *(ushort *)((char *)pbVar4 + 0x0) & 0x1ff
 + ((uw_object_hdr_t *)pbVar4)->item_id
 |
@@ -1614,7 +1085,7 @@ R F(...) {
 ...>
 }
 
-@field_3_flags_res@
+@field_2_flags_res@
 type R;
 identifier F =~ "^\(roll_container_trap_disarm_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1667,7 +1138,7 @@ R F(...) {
 ...>
 }
 
-@field_3_enchanted@
+@field_2_enchanted@
 type R;
 identifier F =~ "^\(roll_container_trap_disarm_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1720,7 +1191,7 @@ R F(...) {
 ...>
 }
 
-@field_3_doordir@
+@field_2_doordir@
 type R;
 identifier F =~ "^\(roll_container_trap_disarm_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1773,7 +1244,7 @@ R F(...) {
 ...>
 }
 
-@field_3_invisible@
+@field_2_invisible@
 type R;
 identifier F =~ "^\(roll_container_trap_disarm_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1826,7 +1297,7 @@ R F(...) {
 ...>
 }
 
-@field_3_is_quant@
+@field_2_is_quant@
 type R;
 identifier F =~ "^\(roll_container_trap_disarm_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1879,7 +1350,7 @@ R F(...) {
 ...>
 }
 
-@field_3_zpos@
+@field_2_zpos@
 type R;
 identifier F =~ "^\(roll_container_trap_disarm_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1905,7 +1376,7 @@ R F(...) {
 ...>
 }
 
-@field_3_heading@
+@field_2_heading@
 type R;
 identifier F =~ "^\(roll_container_trap_disarm_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1934,7 +1405,7 @@ R F(...) {
 ...>
 }
 
-@field_3_ypos@
+@field_2_ypos@
 type R;
 identifier F =~ "^\(roll_container_trap_disarm_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1969,7 +1440,7 @@ R F(...) {
 ...>
 }
 
-@field_3_xpos@
+@field_2_xpos@
 type R;
 identifier F =~ "^\(roll_container_trap_disarm_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2004,7 +1475,7 @@ R F(...) {
 ...>
 }
 
-@field_3_quality@
+@field_2_quality@
 type R;
 identifier F =~ "^\(roll_container_trap_disarm_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2030,7 +1501,7 @@ R F(...) {
 ...>
 }
 
-@field_3_next@
+@field_2_next@
 type R;
 identifier F =~ "^\(roll_container_trap_disarm_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2059,7 +1530,7 @@ R F(...) {
 ...>
 }
 
-@field_3_owner@
+@field_2_owner@
 type R;
 identifier F =~ "^\(roll_container_trap_disarm_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2085,7 +1556,7 @@ R F(...) {
 ...>
 }
 
-@field_3_link@
+@field_2_link@
 type R;
 identifier F =~ "^\(roll_container_trap_disarm_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2110,6 +1581,535 @@ R F(...) {
 |
 - (*(ushort *)(pbVar4 + 0x6) & 0xffc0) >> 6
 + ((uw_object_hdr_t *)pbVar4)->link
+)
+...>
+}
+
+@field_3_item_id@
+type R;
+identifier F =~ "^\(roll_container_trap_disarm_check\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)pbVar7 + 0x0) & 0x1ff
++ ((uw_object_hdr_t *)pbVar7)->item_id
+|
+- ((ushort *)pbVar7)[0] & 0x1ff
++ ((uw_object_hdr_t *)pbVar7)->item_id
+|
+- *(ushort *)pbVar7 & 0x1ff
++ ((uw_object_hdr_t *)pbVar7)->item_id
+|
+- *(ushort *)(pbVar7 + 0x0) & 0x1ff
++ ((uw_object_hdr_t *)pbVar7)->item_id
+|
+- CONCAT11(pbVar7[1], *pbVar7) & 0x1ff
++ ((uw_object_hdr_t *)pbVar7)->item_id
+|
+- CONCAT11(pbVar7[1], pbVar7[0]) & 0x1ff
++ ((uw_object_hdr_t *)pbVar7)->item_id
+)
+...>
+}
+
+@field_3_flags_res@
+type R;
+identifier F =~ "^\(roll_container_trap_disarm_check\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)pbVar7 + 0x0) >> 9) & 0x7
++ ((uw_object_hdr_t *)pbVar7)->flags_res
+|
+- (*(ushort *)((char *)pbVar7 + 0x0) & 0xe00) >> 9
++ ((uw_object_hdr_t *)pbVar7)->flags_res
+|
+- (((ushort *)pbVar7)[0] >> 9) & 0x7
++ ((uw_object_hdr_t *)pbVar7)->flags_res
+|
+- (((ushort *)pbVar7)[0] & 0xe00) >> 9
++ ((uw_object_hdr_t *)pbVar7)->flags_res
+|
+- (*(ushort *)pbVar7 >> 9) & 0x7
++ ((uw_object_hdr_t *)pbVar7)->flags_res
+|
+- (*(ushort *)pbVar7 & 0xe00) >> 9
++ ((uw_object_hdr_t *)pbVar7)->flags_res
+|
+- (*(ushort *)(pbVar7 + 0x0) >> 9) & 0x7
++ ((uw_object_hdr_t *)pbVar7)->flags_res
+|
+- (*(ushort *)(pbVar7 + 0x0) & 0xe00) >> 9
++ ((uw_object_hdr_t *)pbVar7)->flags_res
+|
+- (CONCAT11(pbVar7[1], *pbVar7) >> 9) & 0x7
++ ((uw_object_hdr_t *)pbVar7)->flags_res
+|
+- (CONCAT11(pbVar7[1], *pbVar7) & 0xe00) >> 9
++ ((uw_object_hdr_t *)pbVar7)->flags_res
+|
+- (CONCAT11(pbVar7[1], pbVar7[0]) >> 9) & 0x7
++ ((uw_object_hdr_t *)pbVar7)->flags_res
+|
+- (CONCAT11(pbVar7[1], pbVar7[0]) & 0xe00) >> 9
++ ((uw_object_hdr_t *)pbVar7)->flags_res
+|
+- (*(byte *)((char *)pbVar7 + 0x1) >> 1) & 0x7
++ ((uw_object_hdr_t *)pbVar7)->flags_res
+|
+- (*(byte *)((char *)pbVar7 + 0x1) & 0xe) >> 1
++ ((uw_object_hdr_t *)pbVar7)->flags_res
+)
+...>
+}
+
+@field_3_enchanted@
+type R;
+identifier F =~ "^\(roll_container_trap_disarm_check\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)pbVar7 + 0x0) >> 12) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->enchanted
+|
+- (*(ushort *)((char *)pbVar7 + 0x0) & 0x1000) >> 12
++ ((uw_object_hdr_t *)pbVar7)->enchanted
+|
+- (((ushort *)pbVar7)[0] >> 12) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->enchanted
+|
+- (((ushort *)pbVar7)[0] & 0x1000) >> 12
++ ((uw_object_hdr_t *)pbVar7)->enchanted
+|
+- (*(ushort *)pbVar7 >> 12) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->enchanted
+|
+- (*(ushort *)pbVar7 & 0x1000) >> 12
++ ((uw_object_hdr_t *)pbVar7)->enchanted
+|
+- (*(ushort *)(pbVar7 + 0x0) >> 12) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->enchanted
+|
+- (*(ushort *)(pbVar7 + 0x0) & 0x1000) >> 12
++ ((uw_object_hdr_t *)pbVar7)->enchanted
+|
+- (CONCAT11(pbVar7[1], *pbVar7) >> 12) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->enchanted
+|
+- (CONCAT11(pbVar7[1], *pbVar7) & 0x1000) >> 12
++ ((uw_object_hdr_t *)pbVar7)->enchanted
+|
+- (CONCAT11(pbVar7[1], pbVar7[0]) >> 12) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->enchanted
+|
+- (CONCAT11(pbVar7[1], pbVar7[0]) & 0x1000) >> 12
++ ((uw_object_hdr_t *)pbVar7)->enchanted
+|
+- (*(byte *)((char *)pbVar7 + 0x1) >> 4) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->enchanted
+|
+- (*(byte *)((char *)pbVar7 + 0x1) & 0x10) >> 4
++ ((uw_object_hdr_t *)pbVar7)->enchanted
+)
+...>
+}
+
+@field_3_doordir@
+type R;
+identifier F =~ "^\(roll_container_trap_disarm_check\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)pbVar7 + 0x0) >> 13) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->doordir
+|
+- (*(ushort *)((char *)pbVar7 + 0x0) & 0x2000) >> 13
++ ((uw_object_hdr_t *)pbVar7)->doordir
+|
+- (((ushort *)pbVar7)[0] >> 13) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->doordir
+|
+- (((ushort *)pbVar7)[0] & 0x2000) >> 13
++ ((uw_object_hdr_t *)pbVar7)->doordir
+|
+- (*(ushort *)pbVar7 >> 13) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->doordir
+|
+- (*(ushort *)pbVar7 & 0x2000) >> 13
++ ((uw_object_hdr_t *)pbVar7)->doordir
+|
+- (*(ushort *)(pbVar7 + 0x0) >> 13) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->doordir
+|
+- (*(ushort *)(pbVar7 + 0x0) & 0x2000) >> 13
++ ((uw_object_hdr_t *)pbVar7)->doordir
+|
+- (CONCAT11(pbVar7[1], *pbVar7) >> 13) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->doordir
+|
+- (CONCAT11(pbVar7[1], *pbVar7) & 0x2000) >> 13
++ ((uw_object_hdr_t *)pbVar7)->doordir
+|
+- (CONCAT11(pbVar7[1], pbVar7[0]) >> 13) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->doordir
+|
+- (CONCAT11(pbVar7[1], pbVar7[0]) & 0x2000) >> 13
++ ((uw_object_hdr_t *)pbVar7)->doordir
+|
+- (*(byte *)((char *)pbVar7 + 0x1) >> 5) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->doordir
+|
+- (*(byte *)((char *)pbVar7 + 0x1) & 0x20) >> 5
++ ((uw_object_hdr_t *)pbVar7)->doordir
+)
+...>
+}
+
+@field_3_invisible@
+type R;
+identifier F =~ "^\(roll_container_trap_disarm_check\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)pbVar7 + 0x0) >> 14) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->invisible
+|
+- (*(ushort *)((char *)pbVar7 + 0x0) & 0x4000) >> 14
++ ((uw_object_hdr_t *)pbVar7)->invisible
+|
+- (((ushort *)pbVar7)[0] >> 14) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->invisible
+|
+- (((ushort *)pbVar7)[0] & 0x4000) >> 14
++ ((uw_object_hdr_t *)pbVar7)->invisible
+|
+- (*(ushort *)pbVar7 >> 14) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->invisible
+|
+- (*(ushort *)pbVar7 & 0x4000) >> 14
++ ((uw_object_hdr_t *)pbVar7)->invisible
+|
+- (*(ushort *)(pbVar7 + 0x0) >> 14) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->invisible
+|
+- (*(ushort *)(pbVar7 + 0x0) & 0x4000) >> 14
++ ((uw_object_hdr_t *)pbVar7)->invisible
+|
+- (CONCAT11(pbVar7[1], *pbVar7) >> 14) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->invisible
+|
+- (CONCAT11(pbVar7[1], *pbVar7) & 0x4000) >> 14
++ ((uw_object_hdr_t *)pbVar7)->invisible
+|
+- (CONCAT11(pbVar7[1], pbVar7[0]) >> 14) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->invisible
+|
+- (CONCAT11(pbVar7[1], pbVar7[0]) & 0x4000) >> 14
++ ((uw_object_hdr_t *)pbVar7)->invisible
+|
+- (*(byte *)((char *)pbVar7 + 0x1) >> 6) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->invisible
+|
+- (*(byte *)((char *)pbVar7 + 0x1) & 0x40) >> 6
++ ((uw_object_hdr_t *)pbVar7)->invisible
+)
+...>
+}
+
+@field_3_is_quant@
+type R;
+identifier F =~ "^\(roll_container_trap_disarm_check\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)pbVar7 + 0x0) >> 15) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->is_quant
+|
+- (*(ushort *)((char *)pbVar7 + 0x0) & 0x8000) >> 15
++ ((uw_object_hdr_t *)pbVar7)->is_quant
+|
+- (((ushort *)pbVar7)[0] >> 15) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->is_quant
+|
+- (((ushort *)pbVar7)[0] & 0x8000) >> 15
++ ((uw_object_hdr_t *)pbVar7)->is_quant
+|
+- (*(ushort *)pbVar7 >> 15) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->is_quant
+|
+- (*(ushort *)pbVar7 & 0x8000) >> 15
++ ((uw_object_hdr_t *)pbVar7)->is_quant
+|
+- (*(ushort *)(pbVar7 + 0x0) >> 15) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->is_quant
+|
+- (*(ushort *)(pbVar7 + 0x0) & 0x8000) >> 15
++ ((uw_object_hdr_t *)pbVar7)->is_quant
+|
+- (CONCAT11(pbVar7[1], *pbVar7) >> 15) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->is_quant
+|
+- (CONCAT11(pbVar7[1], *pbVar7) & 0x8000) >> 15
++ ((uw_object_hdr_t *)pbVar7)->is_quant
+|
+- (CONCAT11(pbVar7[1], pbVar7[0]) >> 15) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->is_quant
+|
+- (CONCAT11(pbVar7[1], pbVar7[0]) & 0x8000) >> 15
++ ((uw_object_hdr_t *)pbVar7)->is_quant
+|
+- (*(byte *)((char *)pbVar7 + 0x1) >> 7) & 0x1
++ ((uw_object_hdr_t *)pbVar7)->is_quant
+|
+- (*(byte *)((char *)pbVar7 + 0x1) & 0x80) >> 7
++ ((uw_object_hdr_t *)pbVar7)->is_quant
+)
+...>
+}
+
+@field_3_zpos@
+type R;
+identifier F =~ "^\(roll_container_trap_disarm_check\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)pbVar7 + 0x2) & 0x7f
++ ((uw_object_hdr_t *)pbVar7)->zpos
+|
+- ((ushort *)pbVar7)[1] & 0x7f
++ ((uw_object_hdr_t *)pbVar7)->zpos
+|
+- *(ushort *)(pbVar7 + 0x2) & 0x7f
++ ((uw_object_hdr_t *)pbVar7)->zpos
+|
+- *(byte *)((char *)pbVar7 + 0x2) & 0x7f
++ ((uw_object_hdr_t *)pbVar7)->zpos
+|
+- pbVar7[2] & 0x7f
++ ((uw_object_hdr_t *)pbVar7)->zpos
+)
+...>
+}
+
+@field_3_heading@
+type R;
+identifier F =~ "^\(roll_container_trap_disarm_check\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)pbVar7 + 0x2) >> 7) & 0x7
++ ((uw_object_hdr_t *)pbVar7)->heading
+|
+- (*(ushort *)((char *)pbVar7 + 0x2) & 0x380) >> 7
++ ((uw_object_hdr_t *)pbVar7)->heading
+|
+- (((ushort *)pbVar7)[1] >> 7) & 0x7
++ ((uw_object_hdr_t *)pbVar7)->heading
+|
+- (((ushort *)pbVar7)[1] & 0x380) >> 7
++ ((uw_object_hdr_t *)pbVar7)->heading
+|
+- (*(ushort *)(pbVar7 + 0x2) >> 7) & 0x7
++ ((uw_object_hdr_t *)pbVar7)->heading
+|
+- (*(ushort *)(pbVar7 + 0x2) & 0x380) >> 7
++ ((uw_object_hdr_t *)pbVar7)->heading
+)
+...>
+}
+
+@field_3_ypos@
+type R;
+identifier F =~ "^\(roll_container_trap_disarm_check\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)pbVar7 + 0x2) >> 10) & 0x7
++ ((uw_object_hdr_t *)pbVar7)->ypos
+|
+- (*(ushort *)((char *)pbVar7 + 0x2) & 0x1c00) >> 10
++ ((uw_object_hdr_t *)pbVar7)->ypos
+|
+- (((ushort *)pbVar7)[1] >> 10) & 0x7
++ ((uw_object_hdr_t *)pbVar7)->ypos
+|
+- (((ushort *)pbVar7)[1] & 0x1c00) >> 10
++ ((uw_object_hdr_t *)pbVar7)->ypos
+|
+- (*(ushort *)(pbVar7 + 0x2) >> 10) & 0x7
++ ((uw_object_hdr_t *)pbVar7)->ypos
+|
+- (*(ushort *)(pbVar7 + 0x2) & 0x1c00) >> 10
++ ((uw_object_hdr_t *)pbVar7)->ypos
+|
+- (*(byte *)((char *)pbVar7 + 0x3) >> 2) & 0x7
++ ((uw_object_hdr_t *)pbVar7)->ypos
+|
+- (*(byte *)((char *)pbVar7 + 0x3) & 0x1c) >> 2
++ ((uw_object_hdr_t *)pbVar7)->ypos
+)
+...>
+}
+
+@field_3_xpos@
+type R;
+identifier F =~ "^\(roll_container_trap_disarm_check\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)pbVar7 + 0x2) >> 13) & 0x7
++ ((uw_object_hdr_t *)pbVar7)->xpos
+|
+- (*(ushort *)((char *)pbVar7 + 0x2) & 0xe000) >> 13
++ ((uw_object_hdr_t *)pbVar7)->xpos
+|
+- (((ushort *)pbVar7)[1] >> 13) & 0x7
++ ((uw_object_hdr_t *)pbVar7)->xpos
+|
+- (((ushort *)pbVar7)[1] & 0xe000) >> 13
++ ((uw_object_hdr_t *)pbVar7)->xpos
+|
+- (*(ushort *)(pbVar7 + 0x2) >> 13) & 0x7
++ ((uw_object_hdr_t *)pbVar7)->xpos
+|
+- (*(ushort *)(pbVar7 + 0x2) & 0xe000) >> 13
++ ((uw_object_hdr_t *)pbVar7)->xpos
+|
+- (*(byte *)((char *)pbVar7 + 0x3) >> 5) & 0x7
++ ((uw_object_hdr_t *)pbVar7)->xpos
+|
+- (*(byte *)((char *)pbVar7 + 0x3) & 0xe0) >> 5
++ ((uw_object_hdr_t *)pbVar7)->xpos
+)
+...>
+}
+
+@field_3_quality@
+type R;
+identifier F =~ "^\(roll_container_trap_disarm_check\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)pbVar7 + 0x4) & 0x3f
++ ((uw_object_hdr_t *)pbVar7)->quality
+|
+- ((ushort *)pbVar7)[2] & 0x3f
++ ((uw_object_hdr_t *)pbVar7)->quality
+|
+- *(ushort *)(pbVar7 + 0x4) & 0x3f
++ ((uw_object_hdr_t *)pbVar7)->quality
+|
+- *(byte *)((char *)pbVar7 + 0x4) & 0x3f
++ ((uw_object_hdr_t *)pbVar7)->quality
+|
+- pbVar7[4] & 0x3f
++ ((uw_object_hdr_t *)pbVar7)->quality
+)
+...>
+}
+
+@field_3_next@
+type R;
+identifier F =~ "^\(roll_container_trap_disarm_check\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)pbVar7 + 0x4) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)pbVar7)->next
+|
+- (*(ushort *)((char *)pbVar7 + 0x4) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)pbVar7)->next
+|
+- (((ushort *)pbVar7)[2] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)pbVar7)->next
+|
+- (((ushort *)pbVar7)[2] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)pbVar7)->next
+|
+- (*(ushort *)(pbVar7 + 0x4) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)pbVar7)->next
+|
+- (*(ushort *)(pbVar7 + 0x4) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)pbVar7)->next
+)
+...>
+}
+
+@field_3_owner@
+type R;
+identifier F =~ "^\(roll_container_trap_disarm_check\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)pbVar7 + 0x6) & 0x3f
++ ((uw_object_hdr_t *)pbVar7)->owner
+|
+- ((ushort *)pbVar7)[3] & 0x3f
++ ((uw_object_hdr_t *)pbVar7)->owner
+|
+- *(ushort *)(pbVar7 + 0x6) & 0x3f
++ ((uw_object_hdr_t *)pbVar7)->owner
+|
+- *(byte *)((char *)pbVar7 + 0x6) & 0x3f
++ ((uw_object_hdr_t *)pbVar7)->owner
+|
+- pbVar7[6] & 0x3f
++ ((uw_object_hdr_t *)pbVar7)->owner
+)
+...>
+}
+
+@field_3_link@
+type R;
+identifier F =~ "^\(roll_container_trap_disarm_check\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)pbVar7 + 0x6) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)pbVar7)->link
+|
+- (*(ushort *)((char *)pbVar7 + 0x6) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)pbVar7)->link
+|
+- (((ushort *)pbVar7)[3] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)pbVar7)->link
+|
+- (((ushort *)pbVar7)[3] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)pbVar7)->link
+|
+- (*(ushort *)(pbVar7 + 0x6) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)pbVar7)->link
+|
+- (*(ushort *)(pbVar7 + 0x6) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)pbVar7)->link
 )
 ...>
 }
