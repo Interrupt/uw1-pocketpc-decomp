@@ -11,6 +11,7 @@
 #include "headers/audio.h"
 #include "headers/debug.h"
 #include "headers/file_io.h"
+#include "headers/platform_dosmidi.h"
 #include "hxcmod.h"
 #include <SDL.h>
 #include <stdio.h>
@@ -54,6 +55,13 @@ static unsigned char *g_uwmod_filedata;
 static int g_uwmod_loaded;
 static int g_uwmod_playing;
 static SDL_AudioDeviceID g_uwmod_audiodev;
+/* Nonzero once platform_dosmidi_init has confirmed a usable OPL3 synth,
+ * i.e. the player asked for UW_AUDIO_MODE=dos AND the DOS assets and
+ * synth are actually available. Decided once at init and never flipped
+ * afterwards, so one audio device and one callback serve either backend
+ * without ever mixing the two mid-session. Zero is the default and means
+ * everything below behaves exactly as it always has. */
+static int g_dos_mode;
 
 /* SDL audio device fill callback -- runs on SDL's own audio thread, not
  * the game's main thread, so every access to the shared g_uwmod_* state
@@ -66,10 +74,20 @@ static void uwmod_audio_callback(void *userdata, Uint8 *stream, int len)
 {
   (void)userdata;
   memset(stream, 0, (size_t)len);
-  if (!g_uwmod_playing || !g_uwmod_loaded) {
+  if (!g_uwmod_playing) {
     return;
   }
-  hxcmod_fillbuffer(&g_uwmod_ctx, (msample *)stream, (mssize)(len / 4), NULL);
+  if (g_dos_mode) {
+    /* OPL3 synthesis of the DOS XMI track. Renders nothing (leaving the
+     * zeroed buffer) when no track is loaded, so a track that failed to
+     * load is silent rather than fatal. */
+    platform_dosmidi_render((short *)stream, len / 4);
+  } else {
+    if (!g_uwmod_loaded) {
+      return;
+    }
+    hxcmod_fillbuffer(&g_uwmod_ctx, (msample *)stream, (mssize)(len / 4), NULL);
+  }
 
   /* UW_DEBUG_AUDIO: dump basic PCM sample statistics from real callback
    * output, to confirm real (non-silent, non-garbage) music data is
@@ -133,8 +151,15 @@ void platform_music_init(void)
   hxcmod_init(&g_uwmod_ctx);
   hxcmod_setcfg(&g_uwmod_ctx, have.freq, 0, 1);
 
-  DEBUG(INFO, "[audio] music playback ready: %dHz %dch %d samples/buffer\n",
-        have.freq, have.channels, have.samples);
+  /* Opt-in DOS audio mode. Returns 0 both when it wasn't asked for (the
+   * normal case) and when it was but couldn't be set up, so an incomplete
+   * DOS install degrades to the .MOD path below rather than to silence --
+   * see platform_dosmidi_init for the specific failure cases. */
+  g_dos_mode = platform_dosmidi_init(have.freq);
+
+  DEBUG(INFO, "[audio] music playback ready: %dHz %dch %d samples/buffer (%s)\n",
+        have.freq, have.channels, have.samples,
+        g_dos_mode ? "DOS XMI/OPL3" : "converted MOD");
 
   DAT_00087454 = 1;
   DAT_00087448 = 1;
@@ -152,6 +177,24 @@ void platform_music_init(void)
  * not just until this function returns. */
 void platform_music_load_track(const char *win_path)
 {
+  /* DOS audio mode plays the original XMI for this same track number
+   * instead. audio.c is deliberately untouched: it still asks for
+   * "\SOUND\uwNN.mod" and the mapping to <UW_DOS_DATA_DIR>/SOUND/UWNN.XMI
+   * happens here, so play_music_track's base-8 track numbering stays the
+   * single source of truth for which track this is. */
+  if (g_dos_mode) {
+    char xmi_path[1024];
+    if (!platform_dosmidi_xmi_path(win_path, xmi_path, sizeof(xmi_path))) {
+      DEBUG(WARN, "[audio] could not map %s to a DOS XMI path\n", win_path);
+      return;
+    }
+    if (g_uwmod_audiodev) SDL_LockAudioDevice(g_uwmod_audiodev);
+    g_uwmod_playing = 0;
+    platform_dosmidi_load_file(xmi_path);
+    if (g_uwmod_audiodev) SDL_UnlockAudioDevice(g_uwmod_audiodev);
+    return;
+  }
+
   FILE *fp = (FILE *)uw_file_fopen(win_path, "rb");
   if (!fp) {
     DEBUG(WARN, "[audio] platform_music_load_track: could not open %s\n", win_path);
@@ -211,7 +254,12 @@ void platform_music_load_track(const char *win_path)
  * audio.c. A no-op if no audio device is open or nothing is loaded. */
 void platform_music_start(void)
 {
-  if (!g_uwmod_audiodev || !g_uwmod_loaded) {
+  if (!g_uwmod_audiodev) {
+    return;
+  }
+  /* In DOS mode the synth itself reports "nothing loaded" by rendering
+   * silence, so there is no separate loaded flag to gate on here. */
+  if (!g_dos_mode && !g_uwmod_loaded) {
     return;
   }
   SDL_LockAudioDevice(g_uwmod_audiodev);
@@ -246,6 +294,11 @@ void platform_music_shutdown(void)
     SDL_CloseAudioDevice(g_uwmod_audiodev);
     g_uwmod_audiodev = 0;
   }
+  /* Safe (and a no-op) when DOS mode was never active. Done after the
+   * device is closed so the audio callback can no longer be rendering
+   * from the synth while it is being torn down. */
+  platform_dosmidi_shutdown();
+  g_dos_mode = 0;
   if (g_uwmod_loaded) {
     hxcmod_unload(&g_uwmod_ctx);
     g_uwmod_loaded = 0;

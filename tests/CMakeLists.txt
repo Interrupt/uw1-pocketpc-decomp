@@ -128,6 +128,19 @@ add_fixture_game_unit_test(audio
   src/audio.c:play_sound_effect_at_object
   src/combat.c:play_weapon_impact_sound
   src/ordinal_stubs.c:ce_memmove)
+
+# The optional DOS-audio backend is hand-written platform code rather than
+# extracted decompiled function bodies, so it is compiled directly instead
+# of going through uw_extract_test_functions.
+add_library(uw_test_dosmidi STATIC
+  "${PROJECT_SOURCE_DIR}/src/platform_dosmidi.c"
+  "${PROJECT_SOURCE_DIR}/src/debug.c")
+uw_configure_test_target(uw_test_dosmidi)
+target_include_directories(uw_test_dosmidi PUBLIC
+  "${PROJECT_SOURCE_DIR}/src"
+  "${PROJECT_SOURCE_DIR}/third_party/libadlmidi/include")
+target_link_libraries(uw_test_dosmidi PUBLIC ADLMIDI_static)
+add_supported_game_unit_test(dosmidi uw_test_dosmidi)
 add_game_test_library(uw_test_movement
   src/movement.c:sweep_kill_velocity src/movement.c:sweep_deflect_heading
   src/movement.c:sweep_slide_along_wall src/movement.c:sweep_apply_collision

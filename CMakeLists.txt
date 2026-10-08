@@ -61,6 +61,7 @@ set(UW_SOURCES
   src/platform_music.c
   src/platform_sfx.c
   src/platform_voice.c
+  src/platform_dosmidi.c
   src/main.c
   src/gx_stub.c
   src/ordinal_stubs.c
@@ -114,7 +115,7 @@ add_subdirectory(third_party/libadlmidi EXCLUDE_FROM_ALL)
 
 add_executable(uw_dbg ${UW_SOURCES})
 
-target_include_directories(uw_dbg PRIVATE ${SDL2_INCLUDE_DIRS} third_party/hxcmod)
+target_include_directories(uw_dbg PRIVATE ${SDL2_INCLUDE_DIRS} third_party/hxcmod third_party/libadlmidi/include)
 target_link_directories(uw_dbg PRIVATE ${SDL2_LIBRARY_DIRS})
 target_link_libraries(uw_dbg PRIVATE ${SDL2_LIBRARIES} ADLMIDI_static)
 target_compile_options(uw_dbg PRIVATE
@@ -136,7 +137,7 @@ set_target_properties(uw_dbg PROPERTIES
 # ASan's overhead.
 add_executable(uw_asan ${UW_SOURCES})
 
-target_include_directories(uw_asan PRIVATE ${SDL2_INCLUDE_DIRS} third_party/hxcmod)
+target_include_directories(uw_asan PRIVATE ${SDL2_INCLUDE_DIRS} third_party/hxcmod third_party/libadlmidi/include)
 target_link_directories(uw_asan PRIVATE ${SDL2_LIBRARY_DIRS})
 target_link_libraries(uw_asan PRIVATE ${SDL2_LIBRARIES} ADLMIDI_static)
 target_compile_options(uw_asan PRIVATE
