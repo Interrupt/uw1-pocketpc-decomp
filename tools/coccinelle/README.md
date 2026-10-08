@@ -257,7 +257,7 @@ the repair leaves unrelated functions untouched.
 
 No game function is moved to a different source file during this work.
 
-Checkpoint validation: game build, all 52 C unit suites, and all seven conversion
+Checkpoint validation: game build, all 52 C unit suites, and all nine conversion
 tool suites pass. The latest
 AddressSanitizer pass covers 16 consumers: npc_state/npc_combat/npc_ai/creatures/
 combat/object_layout/object_core/movement/scheduler/spells/chargen/inventory/
@@ -414,6 +414,33 @@ source and neighboring bytes, mismatched-source and intervening-write
 exclusions, and idempotence. Twenty paired copies across four game sources
 are now whole-word assignments. Mixed-value byte updates remain for a later
 property-write pass.
+
+## NPC spawn fields
+
+`generate_npc_spawn_rules.py` emits `npc-spawn-fields.cocci` for
+`init_monster_spawn_defaults` (ARM `FUN_0002a35c`). Its caller selects a newly
+spawned creature before invoking it. This establishes NPC layout for the saved
+scratch pointer within this function; other scratch and projectile consumers
+remain separate audits. The pass replaces byte offsets with a typed NPC
+pointer, names complete property updates and heading reads, and types the
+monster-table row so HP reads use `max_hp` instead of row byte 4. Apply with
+`--all-includes --include-headers-for-types -I . -I src`.
+
+The update recipes retain every original packed snapshot, including when an
+OR insertion forces a bit that the original clear mask retained. Status bits
+4..12 have no documented property names, so their individual clears remain
+explicit operations on `status_word`. Masks in motion, animation, attack,
+heading and AI control bytes retain their original operations: their complete
+bytes have names, but the remaining individual flag meanings are undocumented.
+These are specific exceptions, not a claim that the surrounding migration is
+complete.
+
+`npc_spawn_fields` checks offset conversions, signed reads/stores/addresses,
+table HP signedness, live snapshots, exclusions and idempotence across all
+65,536 input words. It extracts the actual game initializer and compares all
+27 bytes plus surrounding guards with independently indexed expected bytes
+for 65,536 record seeds and 50 random inputs each. Run the same regression
+with `--asan` after the `spatch` argument for direct AddressSanitizer coverage.
 
 ## NPC death fields
 

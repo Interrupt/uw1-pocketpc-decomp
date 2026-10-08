@@ -997,6 +997,10 @@ if(UW_SPATCH_EXECUTABLE)
     COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_packed_field_copies.py"
       "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME npc_spawn_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_npc_spawn_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
   add_test(NAME npc_death_fields
     COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_npc_death_fields.py"
