@@ -257,7 +257,8 @@ the repair leaves unrelated functions untouched.
 
 No game function is moved to a different source file during this work.
 
-Checkpoint validation: game build and all 57 CTest suites pass. The latest
+Checkpoint validation: game build, all 52 C unit suites, and all six conversion
+tool suites pass. The latest
 AddressSanitizer pass covers 16 consumers: npc_state/npc_combat/npc_ai/creatures/
 combat/object_layout/object_core/movement/scheduler/spells/chargen/inventory/
 lighting/sleep/teleport/babl_vm. This is a checkpoint for continuing the full
@@ -395,3 +396,20 @@ refreshing pointer roles, apply header fields before header byte views, then
 apply packed stores, named reads and named writes. Review surviving snapshots,
 partial-field/multi-field updates, and noncanonical byte copies separately;
 these remain active migration work rather than blanket exceptions.
+
+## NPC death fields
+
+`generate_npc_death_rules.py` emits `npc-death-fields.cocci` for
+`initiate_npc_death` and `handle_monster_death` in `src/ai.c`. Their existing
+ARM notes establish full-object byte offsets at 0x345bc..0x3462c and
+0x34638..0x34648. The rules name HP, identity, animation flags, attack state,
+and goal-byte accesses through the original local pointer. Signed reads,
+stores, and addresses remain separate so signed values and lvalues survive.
+Apply the named-field write rules afterward to clear `npc_animation_frame`
+without obscuring the goal/target fields or changing the packed temporary.
+
+`npc_death_fields` checks all 65,536 initial goal words against the actual
+mobile-object layout, covering all byte flag values, signed identity reads,
+address-taking, neighboring storage, packed temporaries, unrelated-buffer and
+projectile exclusions, and idempotence. The function scopes are intentional;
+they do not establish NPC layout for other consumers of mobile arena slots.

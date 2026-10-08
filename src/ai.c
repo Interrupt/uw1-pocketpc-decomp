@@ -3278,14 +3278,13 @@ int initiate_npc_death(char *npc)
   undefined4 uVar2;
   uint uVar3;
 
-  if ((*(char *)(npc + 0x1a) == '\0') || (iVar1 = resolve_unique_npc_special_behavior(npc,0), iVar1 != 0)) {
+  if (((char)((uw_mobile_object_t *)npc)->npc_whoami == '\0') || (iVar1 = resolve_unique_npc_special_behavior(npc,0), iVar1 != 0)) {
     uVar2 = 1;
-    *(byte *)(npc + 0x15) = *(byte *)(npc + 0x15) & 0xcc | 0xc;
-    uVar3 = ((uw_mobile_object_t *)npc)->goal_word & 0xfff;
-    *(char *)(npc + 0xb) = (char)uVar3;
-    *(char *)(npc + 0xc) = (char)(uVar3 >> 8);
-    *(byte *)(npc + 0x14) = *(byte *)(npc + 0x14) & 0xfc | 4;
-    *(undefined1 *)(npc + 8) = 0;
+    ((uw_mobile_object_t *)npc)->animation_flags = ((uw_mobile_object_t *)npc)->animation_flags & 0xcc | 0xc;
+    ((uw_mobile_object_t *)npc)->npc_animation_frame = 0x0;
+    uVar3 = ((uw_mobile_object_t *)npc)->goal_word;
+    ((uw_mobile_object_t *)npc)->attack_pitch = ((uw_mobile_object_t *)npc)->attack_pitch & 0xfc | 4;
+    ((uw_mobile_object_t *)npc)->npc_hp = 0;
   }
   else {
     uVar2 = 0;
@@ -3305,7 +3304,7 @@ int handle_monster_death(void *npc_ptr)
   int iVar1;
   undefined4 uVar2;
 
-  if (((*(byte *)(npc + 0x15) & 0x3f) == 0xc) || (iVar1 = initiate_npc_death(npc), iVar1 == 0)) {
+  if (((((uw_mobile_object_t *)npc)->animation_flags & 0x3f) == 0xc) || (iVar1 = initiate_npc_death(npc), iVar1 == 0)) {
     uVar2 = 0;
   }
   else {
