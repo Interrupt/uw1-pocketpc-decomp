@@ -15,7 +15,21 @@
               "name": "iVar1",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "debug_force_rest_action",
+          "roles": [
+            {
+              "name": "puVar1",
+              "type": "ushort *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -36,7 +50,8 @@
               "name": "puVar9",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -48,7 +63,8 @@
               "name": "puVar9",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -60,7 +76,8 @@
               "name": "puVar3",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -72,7 +89,8 @@
               "name": "puVar7",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -84,13 +102,15 @@
               "name": "puVar4",
               "type": "undefined1 *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "link_cursor",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -102,7 +122,8 @@
               "name": "iVar3",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -114,7 +135,8 @@
               "name": "uVar1",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -126,7 +148,8 @@
               "name": "iVar6",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -138,7 +161,8 @@
               "name": "puVar11_rec",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "COMOBJ index from object header item_id"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -150,7 +174,8 @@
               "name": "iVar5",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -162,7 +187,8 @@
               "name": "iVar3",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -174,7 +200,8 @@
               "name": "item_rec",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -186,7 +213,8 @@
               "name": "iVar5",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -198,7 +226,8 @@
               "name": "iVar2",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -210,7 +239,8 @@
               "name": "iVar1",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -222,7 +252,8 @@
               "name": "iVar4",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -234,25 +265,29 @@
               "name": "puVar6",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "COMOBJ index from object header item_id"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "puVar14",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             },
             {
               "name": "puVar7",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             },
             {
               "name": "uVar9",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -264,7 +299,8 @@
               "name": "uVar1",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -276,13 +312,15 @@
               "name": "obj_rec",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "obj_ptr",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -294,7 +332,8 @@
               "name": "psVar6",
               "type": "short *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -306,7 +345,8 @@
               "name": "puVar5",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -318,7 +358,8 @@
               "name": "uVar1",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -330,13 +371,15 @@
               "name": "puVar2",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "puVar3",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -348,7 +391,8 @@
               "name": "puVar4",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -360,7 +404,8 @@
               "name": "puVar1",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -372,7 +417,8 @@
               "name": "pvItem",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -384,7 +430,8 @@
               "name": "puVar1",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -396,7 +443,8 @@
               "name": "puVar2",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "COMOBJ index from object header item_id"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -413,7 +461,8 @@
               "name": "pp",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -430,7 +479,8 @@
               "name": "puVar1",
               "type": "undefined1 *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -442,7 +492,8 @@
               "name": "puVar1",
               "type": "undefined1 *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -454,13 +505,15 @@
               "name": "puVar7",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "puVar8",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -472,7 +525,8 @@
               "name": "puVar7",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -483,13 +537,92 @@
       "source": "src/combat.c",
       "functions": [
         {
+          "function": "npc_combat_approach_tick",
+          "roles": [
+            {
+              "name": "iVar5_rec",
+              "type": "char *",
+              "parameter": false,
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": true
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "npc_combat_engage_close_tick",
+          "roles": [
+            {
+              "name": "iVar6_rec",
+              "type": "char *",
+              "parameter": false,
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": true
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "npc_combat_set_stance",
+          "roles": [
+            {
+              "name": "iVar6_rec",
+              "type": "char *",
+              "parameter": false,
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": true
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "npc_combat_engage_wide_tick",
+          "roles": [
+            {
+              "name": "iVar2_rec",
+              "type": "char *",
+              "parameter": false,
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": true
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "npc_combat_position_tick",
+          "roles": [
+            {
+              "name": "iVar7_rec",
+              "type": "uw_mobile_object_t *",
+              "parameter": false,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": true
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "npc_combat_disengage_tick",
+          "roles": [
+            {
+              "name": "iVar2",
+              "type": "uw_mobile_object_t *",
+              "parameter": false,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": true
+            }
+          ],
+          "requires_review": []
+        },
+        {
           "function": "find_nearest_hit_target",
           "roles": [
             {
               "name": "puVar6",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -501,7 +634,8 @@
               "name": "iVar7",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -520,13 +654,15 @@
               "name": "puVar2",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "pbVar5",
               "type": "byte *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -538,13 +674,15 @@
               "name": "puVar6",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "uVar7",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -556,7 +694,15 @@
               "name": "uVar4",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "puVar6",
+              "type": "ushort *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -568,13 +714,15 @@
               "name": "iVar1",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "iVar2",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -586,25 +734,42 @@
               "name": "puTarget",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             },
             {
               "name": "puAttacker",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             },
             {
               "name": "uVar4",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             },
             {
               "name": "uVar5",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "resolve_equipped_weapon_attack",
+          "roles": [
+            {
+              "name": "puVar4",
+              "type": "ushort *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -616,12 +781,26 @@
               "name": "target",
               "type": "ushort *",
               "parameter": true,
-              "evidence": "COMOBJ index from object header item_id"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": [
             "attacker"
           ]
+        },
+        {
+          "function": "check_npc_target_alignment",
+          "roles": [
+            {
+              "name": "iVar4",
+              "type": "char *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": true
+            }
+          ],
+          "requires_review": []
         },
         {
           "function": "resolve_damage_type_resistance",
@@ -630,7 +809,8 @@
               "name": "object",
               "type": "ushort *",
               "parameter": true,
-              "evidence": "COMOBJ index from object header item_id"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -642,7 +822,8 @@
               "name": "object",
               "type": "ushort *",
               "parameter": true,
-              "evidence": "COMOBJ index from object header item_id"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -651,10 +832,18 @@
           "function": "damage_equipped_item_in_slot",
           "roles": [
             {
+              "name": "puVar5",
+              "type": "undefined2 *",
+              "parameter": false,
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            },
+            {
               "name": "pDropObj",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -666,7 +855,8 @@
               "name": "puVar4",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -683,7 +873,8 @@
               "name": "_o",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -695,7 +886,8 @@
               "name": "_o",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -707,7 +899,8 @@
               "name": "_o",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -722,13 +915,34 @@
       "source": "src/player.c",
       "functions": [
         {
+          "function": "refresh_player_equipment_effects",
+          "roles": [
+            {
+              "name": "equipped",
+              "type": "ushort *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "_o",
+              "type": "ushort *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": []
+        },
+        {
           "function": "handle_game_victory_sequence",
           "roles": [
             {
               "name": "puVar5",
               "type": "undefined2 *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -740,7 +954,21 @@
               "name": "pNewObj",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "decay_equipped_light_sources",
+          "roles": [
+            {
+              "name": "puVar6",
+              "type": "ushort *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -757,7 +985,8 @@
               "name": "_dpp",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -766,16 +995,18 @@
           "function": "emit_tile_features",
           "roles": [
             {
-              "name": "puVar4",
-              "type": "char *",
-              "parameter": false,
-              "evidence": "object accessor / proven object alias"
-            },
-            {
               "name": "puVar5",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "puVar4",
+              "type": "char *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -787,16 +1018,24 @@
               "name": "_rec",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "_item",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
-          "requires_review": []
+          "requires_review": [
+            "_rec",
+            "_rec",
+            "_rec",
+            "_rec",
+            "_recb"
+          ]
         }
       ]
     },
@@ -810,7 +1049,55 @@
               "name": "puVar6",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "alloc_object_slot",
+          "roles": [],
+          "requires_review": [
+            "pvVar1"
+          ]
+        },
+        {
+          "function": "free_object_slot",
+          "roles": [
+            {
+              "name": "object_ptr",
+              "type": "uw_object_hdr_t *",
+              "parameter": true,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "object",
+              "type": "char *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "object_list_insert_head",
+          "roles": [
+            {
+              "name": "object",
+              "type": "uw_object_hdr_t *",
+              "parameter": false,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "object_ptr",
+              "type": "uw_object_hdr_t *",
+              "parameter": true,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -820,9 +1107,24 @@
           "roles": [
             {
               "name": "pbVar2",
-              "type": "byte *",
+              "type": "uw_object_hdr_t *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "object",
+              "type": "uw_object_hdr_t *",
+              "parameter": false,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "object_ptr",
+              "type": "uw_object_hdr_t *",
+              "parameter": true,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -832,9 +1134,24 @@
           "roles": [
             {
               "name": "pbVar4",
-              "type": "byte *",
+              "type": "uw_object_hdr_t *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "object",
+              "type": "uw_object_hdr_t *",
+              "parameter": false,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "object_ptr",
+              "type": "uw_object_hdr_t *",
+              "parameter": true,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -844,9 +1161,50 @@
           "roles": [
             {
               "name": "puVar1",
-              "type": "ushort *",
+              "type": "uw_object_hdr_t *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "unlink_and_free_object",
+          "roles": [
+            {
+              "name": "object",
+              "type": "uw_object_hdr_t *",
+              "parameter": false,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "object_ptr",
+              "type": "uw_object_hdr_t *",
+              "parameter": true,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "encode_object_slot_index",
+          "roles": [
+            {
+              "name": "object_ptr",
+              "type": "const uw_object_hdr_t *",
+              "parameter": true,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "object",
+              "type": "char *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -856,9 +1214,23 @@
           "roles": [
             {
               "name": "puVar3",
-              "type": "undefined1 *",
+              "type": "uw_object_hdr_t *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "reset_burnt_out_item_state",
+          "roles": [
+            {
+              "name": "discarded",
+              "type": "ushort *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -870,7 +1242,8 @@
               "name": "settled",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -889,7 +1262,8 @@
               "name": "object",
               "type": "ushort *",
               "parameter": true,
-              "evidence": "COMOBJ index from object header item_id"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -901,7 +1275,8 @@
               "name": "contents",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -913,7 +1288,21 @@
               "name": "iVar1",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "calculate_object_weight",
+          "roles": [
+            {
+              "name": "object",
+              "type": "uw_object_hdr_t *",
+              "parameter": true,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -925,7 +1314,8 @@
               "name": "pcVar2",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -937,7 +1327,8 @@
               "name": "pcVar1",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -949,13 +1340,15 @@
               "name": "pcVar4",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "pvVar5",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -965,15 +1358,37 @@
           "roles": [
             {
               "name": "iVar3",
-              "type": "byte *",
+              "type": "uw_object_hdr_t *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
             },
             {
               "name": "iVar4",
-              "type": "ushort *",
+              "type": "uw_object_hdr_t *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "object_ptr_in_arena",
+          "roles": [
+            {
+              "name": "object_ptr",
+              "type": "const uw_object_hdr_t *",
+              "parameter": true,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "object",
+              "type": "char *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -983,15 +1398,17 @@
           "roles": [
             {
               "name": "puVar1",
-              "type": "ushort *",
+              "type": "uw_object_hdr_t *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
             },
             {
               "name": "puVar2",
-              "type": "ushort *",
+              "type": "uw_object_hdr_t *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1003,7 +1420,8 @@
               "name": "found",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1013,9 +1431,10 @@
           "roles": [
             {
               "name": "puVar6",
-              "type": "ushort *",
+              "type": "uw_object_hdr_t *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1027,9 +1446,37 @@
               "name": "psVar7",
               "type": "short *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "puVar9",
+              "type": "ushort *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
+          "requires_review": [
+            "object"
+          ]
+        },
+        {
+          "function": "class1_variant_effect_table_lookup",
+          "roles": [
+            {
+              "name": "pbVar3",
+              "type": "uw_object_hdr_t *",
+              "parameter": false,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "compute_object_placement_fields",
+          "roles": [],
           "requires_review": [
             "object"
           ]
@@ -1041,25 +1488,29 @@
               "name": "object",
               "type": "ushort *",
               "parameter": true,
-              "evidence": "COMOBJ index from object header item_id"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "pWalk",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "puVar2",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "pWalk",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1074,13 +1525,34 @@
       "source": "src/ai.c",
       "functions": [
         {
+          "function": "npc_walk_toward_tile",
+          "roles": [
+            {
+              "name": "npc_bytes",
+              "type": "char *",
+              "parameter": false,
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": true
+            }
+          ],
+          "requires_review": []
+        },
+        {
           "function": "npc_ai_tick",
           "roles": [
+            {
+              "name": "puVar11",
+              "type": "ushort *",
+              "parameter": false,
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": true
+            },
             {
               "name": "player_rec",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1092,7 +1564,8 @@
               "name": "pcVar3",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1104,7 +1577,8 @@
               "name": "object",
               "type": "ushort *",
               "parameter": true,
-              "evidence": "COMOBJ index from object header item_id"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1116,7 +1590,15 @@
               "name": "object",
               "type": "ushort *",
               "parameter": true,
-              "evidence": "COMOBJ index from object header item_id"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "puVar9",
+              "type": "ushort *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1128,7 +1610,8 @@
               "name": "pObj",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1140,7 +1623,8 @@
               "name": "pObj",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1152,7 +1636,8 @@
               "name": "pbVar4",
               "type": "byte *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1164,7 +1649,8 @@
               "name": "iVar6",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1176,7 +1662,8 @@
               "name": "pDropObj",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1188,17 +1675,90 @@
               "name": "iVar1",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
         },
         {
           "function": "detect_npc_wander_proximity",
-          "roles": [],
-          "requires_review": [
-            "puVar7"
-          ]
+          "roles": [
+            {
+              "name": "puVar7",
+              "type": "ushort *",
+              "parameter": false,
+              "evidence": "COMOBJ index from object header item_id",
+              "current_mobile_alias": true
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "setup_npc_ai_tick_state",
+          "roles": [
+            {
+              "name": "npc",
+              "type": "uw_mobile_object_t *",
+              "parameter": true,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "npc_ai_default_tick",
+          "roles": [
+            {
+              "name": "npc_rec",
+              "type": "char *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "initiate_npc_death",
+          "roles": [
+            {
+              "name": "npc",
+              "type": "char *",
+              "parameter": true,
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "npc_set_goal_for_object",
+          "roles": [
+            {
+              "name": "npc_ptr",
+              "type": "uw_mobile_object_t *",
+              "parameter": true,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "npc",
+              "type": "uw_mobile_object_t *",
+              "parameter": false,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "saved_npc",
+              "type": "uw_mobile_object_t *",
+              "parameter": false,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": true
+            }
+          ],
+          "requires_review": []
         },
         {
           "function": "spawn_rest_interrupt_monster_callback",
@@ -1207,7 +1767,8 @@
               "name": "puVar8",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1219,7 +1780,8 @@
               "name": "npc",
               "type": "ushort *",
               "parameter": true,
-              "evidence": "COMOBJ index from object header item_id"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1231,7 +1793,54 @@
               "name": "source",
               "type": "ushort *",
               "parameter": true,
-              "evidence": "COMOBJ index from object header item_id"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "resolve_unique_npc_special_behavior",
+          "roles": [],
+          "requires_review": [
+            "npc"
+          ]
+        },
+        {
+          "function": "npc_idle_behavior_tick",
+          "roles": [
+            {
+              "name": "iVar9",
+              "type": "char *",
+              "parameter": false,
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": true
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "npc_notice_and_idle_tick",
+          "roles": [
+            {
+              "name": "iVar2",
+              "type": "char *",
+              "parameter": false,
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": true
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "npc_wander_return_home_exact_tick",
+          "roles": [
+            {
+              "name": "iVar2",
+              "type": "char *",
+              "parameter": false,
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": true
             }
           ],
           "requires_review": []
@@ -1248,7 +1857,8 @@
               "name": "puVar2",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1260,7 +1870,8 @@
               "name": "iVar1",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1272,13 +1883,15 @@
               "name": "pContents",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             },
             {
               "name": "_pMatch",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1290,19 +1903,22 @@
               "name": "puVar7",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
-            },
-            {
-              "name": "puVar14",
-              "type": "ushort *",
-              "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "puVar15",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "puVar14",
+              "type": "ushort *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1314,7 +1930,8 @@
               "name": "iVar4",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1326,19 +1943,24 @@
               "name": "puVar4",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
-          "requires_review": []
+          "requires_review": [
+            "object",
+            "puVar6"
+          ]
         },
         {
           "function": "sum_container_weight",
           "roles": [
             {
               "name": "puVar2",
-              "type": "ushort *",
+              "type": "uw_object_hdr_t *",
               "parameter": false,
-              "evidence": "COMOBJ index from object header item_id"
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1350,13 +1972,15 @@
               "name": "pNextLink",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             },
             {
               "name": "iVar4",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": [
@@ -1368,9 +1992,10 @@
           "roles": [
             {
               "name": "container",
-              "type": "ushort *",
+              "type": "uw_object_hdr_t *",
               "parameter": true,
-              "evidence": "COMOBJ index from object header item_id"
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1379,10 +2004,31 @@
           "function": "discard_container_contents",
           "roles": [
             {
+              "name": "container",
+              "type": "uw_object_hdr_t *",
+              "parameter": true,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            },
+            {
               "name": "puVar1",
-              "type": "ushort *",
+              "type": "uw_object_hdr_t *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "place_rune_in_bag",
+          "roles": [
+            {
+              "name": "rune_object",
+              "type": "uw_object_hdr_t *",
+              "parameter": true,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1399,7 +2045,8 @@
               "name": "pbVar1",
               "type": "byte *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1411,19 +2058,22 @@
               "name": "pbVar3",
               "type": "byte *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             },
             {
               "name": "pbVar7",
               "type": "byte *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             },
             {
               "name": "pbVar4",
               "type": "byte *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1435,7 +2085,8 @@
               "name": "iVar3",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1447,7 +2098,8 @@
               "name": "puVar1",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1459,7 +2111,8 @@
               "name": "puVar3",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "COMOBJ index from object header item_id"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1476,37 +2129,50 @@
               "name": "puVar8",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "puVar9",
               "type": "undefined1 *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
-            },
-            {
-              "name": "puVar10",
-              "type": "undefined1 *",
-              "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "_case8_p1",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
-            },
-            {
-              "name": "_case8_p2",
-              "type": "ushort *",
-              "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "linked_obj",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "puVar10",
+              "type": "undefined1 *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "_case8_p2",
+              "type": "ushort *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "equipped_item",
+              "type": "char *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1518,13 +2184,15 @@
               "name": "puVar4",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "puVar5",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1536,7 +2204,8 @@
               "name": "puVar4",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1548,13 +2217,15 @@
               "name": "pObj",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "pbVar5",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1566,7 +2237,8 @@
               "name": "pbVar1",
               "type": "byte *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1578,7 +2250,8 @@
               "name": "iVar2",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1590,7 +2263,8 @@
               "name": "pNew",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1602,7 +2276,8 @@
               "name": "iVar3",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1614,7 +2289,8 @@
               "name": "iVar2",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1626,7 +2302,8 @@
               "name": "iVar2",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1638,7 +2315,8 @@
               "name": "iVar2",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1647,16 +2325,18 @@
           "function": "trigger_quest_milestone_cleanup_event",
           "roles": [
             {
-              "name": "puVar3",
-              "type": "ushort *",
-              "parameter": false,
-              "evidence": "object accessor / proven object alias"
-            },
-            {
               "name": "puVar2",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "puVar3",
+              "type": "ushort *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1673,7 +2353,8 @@
               "name": "uVar1",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1685,7 +2366,8 @@
               "name": "puVar4",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1697,7 +2379,8 @@
               "name": "pbVar3",
               "type": "byte *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1709,7 +2392,8 @@
               "name": "puVar4",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1718,16 +2402,18 @@
           "function": "spawn_scheduled_effect_object",
           "roles": [
             {
-              "name": "source_object",
-              "type": "ushort *",
-              "parameter": true,
-              "evidence": "COMOBJ index from object header item_id"
-            },
-            {
               "name": "iVar5",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "source_object",
+              "type": "ushort *",
+              "parameter": true,
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1739,7 +2425,8 @@
               "name": "puVar2",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1760,12 +2447,26 @@
               "name": "puVar5",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": [
             "held_object"
           ]
+        },
+        {
+          "function": "use_light_source",
+          "roles": [
+            {
+              "name": "puVar7",
+              "type": "ushort *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": []
         },
         {
           "function": "begin_holding_object_on_cursor",
@@ -1774,7 +2475,8 @@
               "name": "object",
               "type": "short *",
               "parameter": true,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1786,7 +2488,8 @@
               "name": "iVar3",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1795,16 +2498,18 @@
           "function": "complete_use_item_scatter_spawn",
           "roles": [
             {
-              "name": "found_item",
-              "type": "ushort *",
-              "parameter": false,
-              "evidence": "object accessor / proven object alias"
-            },
-            {
               "name": "puVar8",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "found_item",
+              "type": "ushort *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1816,7 +2521,21 @@
               "name": "puVar1",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "check_offering_container_puzzle",
+          "roles": [
+            {
+              "name": "puVar5",
+              "type": "ushort *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1828,19 +2547,42 @@
               "name": "puVar5",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             },
             {
               "name": "puVar6",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             },
             {
               "name": "equip_object",
               "type": "ushort *",
               "parameter": true,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "objects_can_stack",
+          "roles": [
+            {
+              "name": "object_a",
+              "type": "const uw_object_hdr_t *",
+              "parameter": true,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "object_b",
+              "type": "const uw_object_hdr_t *",
+              "parameter": true,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1852,7 +2594,8 @@
               "name": "local_1c",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1864,13 +2607,15 @@
               "name": "puVar5",
               "type": "undefined1 *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "puVar6",
               "type": "undefined1 *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1882,7 +2627,8 @@
               "name": "puVar2",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1894,13 +2640,15 @@
               "name": "pbVar10",
               "type": "byte *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "local_28",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1912,7 +2660,21 @@
               "name": "pbVar1",
               "type": "byte *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "swap_cursor_and_slot_item",
+          "roles": [
+            {
+              "name": "slot_item",
+              "type": "void *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1924,7 +2686,8 @@
               "name": "iVar4",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1936,13 +2699,15 @@
               "name": "puVar3",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "iVar4",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1954,13 +2719,15 @@
               "name": "puVar11",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "pbVar13",
               "type": "byte *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1979,13 +2746,15 @@
               "name": "puVar1",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "puVar2",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2002,13 +2771,15 @@
               "name": "puVar2",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "COMOBJ index from object header item_id"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "psVar3",
               "type": "short *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2020,7 +2791,8 @@
               "name": "puVar7",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "COMOBJ index from object header item_id"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": [
@@ -2034,13 +2806,15 @@
               "name": "puVar2",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "uVar4",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2052,7 +2826,8 @@
               "name": "uVar1",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2081,7 +2856,8 @@
               "name": "object",
               "type": "ushort *",
               "parameter": true,
-              "evidence": "COMOBJ index from object header item_id"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2093,7 +2869,8 @@
               "name": "puVar7",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2105,7 +2882,8 @@
               "name": "puVar4",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "COMOBJ index from object header item_id"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2122,7 +2900,8 @@
               "name": "uVar11",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2139,7 +2918,8 @@
               "name": "object",
               "type": "ushort *",
               "parameter": true,
-              "evidence": "COMOBJ index from object header item_id"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2151,7 +2931,8 @@
               "name": "object",
               "type": "ushort *",
               "parameter": true,
-              "evidence": "COMOBJ index from object header item_id"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2163,13 +2944,15 @@
               "name": "object",
               "type": "ushort *",
               "parameter": true,
-              "evidence": "COMOBJ index from object header item_id"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "reference",
               "type": "ushort *",
               "parameter": true,
-              "evidence": "COMOBJ index from object header item_id"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2181,7 +2964,8 @@
               "name": "puVar4",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2193,7 +2977,8 @@
               "name": "iVar4",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2205,7 +2990,8 @@
               "name": "iVar2",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2217,7 +3003,8 @@
               "name": "uVar2",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2229,7 +3016,8 @@
               "name": "uVar2",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2241,7 +3029,8 @@
               "name": "puVar6",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2253,7 +3042,15 @@
               "name": "pObj",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "saved_scratch",
+              "type": "uw_object_hdr_t *",
+              "parameter": false,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2265,7 +3062,8 @@
               "name": "iVar4",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2277,7 +3075,8 @@
               "name": "target",
               "type": "ushort *",
               "parameter": true,
-              "evidence": "COMOBJ index from object header item_id"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2289,13 +3088,15 @@
               "name": "iVar3",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             },
             {
               "name": "uVar4",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2307,7 +3108,8 @@
               "name": "iVar3",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2319,7 +3121,21 @@
               "name": "puVar8",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "init_monster_spawn_defaults",
+          "roles": [
+            {
+              "name": "scratch_bytes",
+              "type": "byte *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2331,7 +3147,8 @@
               "name": "chain_item",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2343,7 +3160,8 @@
               "name": "puVar1",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2354,13 +3172,27 @@
       "source": "src/weapon_swing.c",
       "functions": [
         {
+          "function": "find_and_consume_ammo",
+          "roles": [
+            {
+              "name": "found_item",
+              "type": "ushort *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": []
+        },
+        {
           "function": "fire_ranged_weapon",
           "roles": [
             {
               "name": "puVar6",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": [
@@ -2379,7 +3211,8 @@
               "name": "_obj",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2396,7 +3229,8 @@
               "name": "door_texture",
               "type": "undefined1 *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2458,52 +3292,81 @@
           "function": "demomode_pump",
           "roles": [
             {
-              "name": "pl",
-              "type": "unsigned short *",
-              "parameter": false,
-              "evidence": "object accessor / proven object alias"
-            },
-            {
-              "name": "obj",
-              "type": "void *",
-              "parameter": false,
-              "evidence": "object accessor / proven object alias"
-            },
-            {
-              "name": "contents",
-              "type": "void *",
-              "parameter": false,
-              "evidence": "object accessor / proven object alias"
-            },
-            {
               "name": "c",
               "type": "unsigned short *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
-            },
-            {
-              "name": "nx",
-              "type": "void *",
-              "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "nc",
               "type": "unsigned short *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
-            },
-            {
-              "name": "pl",
-              "type": "unsigned short *",
-              "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             },
             {
               "name": "obj",
               "type": "unsigned short *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias"
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "g_player_object",
+              "type": "uw_mobile_object_t *",
+              "parameter": false,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "g_player_object",
+              "type": "uw_mobile_object_t *",
+              "parameter": false,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "g_player_object",
+              "type": "uw_mobile_object_t *",
+              "parameter": false,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "pl",
+              "type": "unsigned short *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "obj",
+              "type": "void *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "contents",
+              "type": "void *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "nx",
+              "type": "void *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "pl",
+              "type": "unsigned short *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2524,7 +3387,21 @@
     },
     {
       "source": "src/debug_shim.c",
-      "functions": []
+      "functions": [
+        {
+          "function": "uw_debug_force_item_id_once",
+          "roles": [
+            {
+              "name": "obj",
+              "type": "ushort *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": []
+        }
+      ]
     }
   ]
 }

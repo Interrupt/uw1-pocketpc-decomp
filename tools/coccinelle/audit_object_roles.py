@@ -19,6 +19,7 @@ ACCESSORS = {'alloc_object_slot', 'resolve_object_link', 'get_object_record_by_s
              'reallocate_object_to_arena', 'settle_dropped_object',
              'get_equipped_item_at_slot', 'find_equipped_item_by_category',
              'discard_misplaced_object'}
+OBJECT_GLOBALS = {'g_player_object', 'DAT_0010190c', 'g_scratch_object_ptr'}
 WRAPPERS = {'ImplicitCastExpr', 'CStyleCastExpr', 'ParenExpr', 'ConstantExpr'}
 
 
@@ -64,6 +65,7 @@ def pointer(node):
 
 def inspect(entry):
     filename = Path(entry['file']).resolve()
+    display_name = str(filename.relative_to(ROOT)) if filename.is_relative_to(ROOT) else str(filename)
     args = entry.get('arguments') or shlex.split(entry['command'])
     clean = []
     skip = False
@@ -78,7 +80,7 @@ def inspect(entry):
     run = subprocess.run(clean + ['-fsyntax-only', '-Xclang', '-ast-dump=json'],
                          cwd=entry['directory'], capture_output=True, text=True)
     if run.returncode:
-        return {'source': str(filename.relative_to(ROOT)), 'error': run.stderr}
+        return {'source': display_name, 'error': run.stderr}
     tree = json.loads(run.stdout)
     results = []
     for function in tree.get('inner', []):
@@ -132,7 +134,7 @@ def inspect(entry):
             value = unwrap(value)
             ref = decl(value)
             if ref:
-                return ref.get('name') == 'g_player_object' or ref['id'] in roles
+                return ref.get('name') in OBJECT_GLOBALS or ref['id'] in roles
             if callee(value) in ACCESSORS:
                 return True
             if value.get('kind') == 'ConditionalOperator':
@@ -163,12 +165,30 @@ def inspect(entry):
                     excluded.append(declarations[ident].get('name'))
                     del roles[ident]
                     removed = True
+        # A saved current-slot alias keeps its own pointer when the global
+        # changes. Record the evidence so NPC-only byte/word rules can name
+        # its fields without replacing it with a fresh global lookup.
+        current_aliases = set()
+        for _ in range(len(roles) + 1):
+            added = False
+            for ident in roles:
+                values = assignments.get(ident, [])
+                if not values or ident in current_aliases:
+                    continue
+                refs = [decl(value) for value in values if not null(value)]
+                if refs and all(ref and (ref.get('name') == 'DAT_0010190c' or
+                                       ref['id'] in current_aliases) for ref in refs):
+                    current_aliases.add(ident)
+                    added = True
+            if not added:
+                break
         if roles or excluded:
             results.append({'function': function['name'], 'roles': [
                 {'name': declarations[ident]['name'], 'type': declarations[ident]['type']['qualType'],
-                 'parameter': declarations[ident]['kind'] == 'ParmVarDecl', 'evidence': evidence}
+                 'parameter': declarations[ident]['kind'] == 'ParmVarDecl', 'evidence': evidence,
+                 'current_mobile_alias': ident in current_aliases}
                 for ident, evidence in roles.items()], 'requires_review': excluded})
-    return {'source': str(filename.relative_to(ROOT)), 'functions': results}
+    return {'source': display_name, 'functions': results}
 
 
 def main():

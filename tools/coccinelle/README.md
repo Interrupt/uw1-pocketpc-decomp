@@ -257,7 +257,7 @@ the repair leaves unrelated functions untouched.
 
 No game function is moved to a different source file during this work.
 
-Checkpoint validation: game build and all 53 CTest suites pass. The latest
+Checkpoint validation: game build and all 56 CTest suites pass. The latest
 AddressSanitizer pass covers 16 consumers: npc_state/npc_combat/npc_ai/creatures/
 combat/object_layout/object_core/movement/scheduler/spells/chargen/inventory/
 lighting/sleep/teleport/babl_vm. This is a checkpoint for continuing the full
@@ -335,3 +335,32 @@ Remaining work includes multi-field and XOR updates, paired byte stores,
 raw aliases and interfaces, scalar-temporary field extraction, and documenting
 which surviving whole-word operations are actual encoding/copy boundaries.
 The goal is not complete while these remain unreviewed.
+
+## Saved current-NPC aliases and packed writes
+
+`audit_object_roles.py` records `current_mobile_alias` only when every
+non-null assignment is the current mobile pointer or another proven saved
+alias. Mixed object/accessor aliases remain common-object roles; aliases reused
+for unrelated storage are excluded. `generate_current_alias_rules.py` emits
+function-scoped `current-aliases/*.cocci`, respecting the original pointer's
+byte/word scaling and signed views. It retains the saved pointer, because a
+nested operation may change `DAT_0010190c`. NPC contexts are explicitly scoped;
+projectile consumers must not inherit NPC fields at overlapping offsets.
+
+`generate_named_field_write_rules.py` emits `named-field-writes.cocci` from
+the documented catalog. Complete field insertions, clears, sets and contained
+byte XOR updates become named assignments. Matching split-byte stores can be
+combined. When the original calculation assigned a temporary, its final packed
+value is reloaded after the field assignment so later uses retain their value.
+Reserved-bit, cross-field and wider insertion masks remain unchanged. Rules
+restrict receivers and insertion values to identifiers to avoid changing
+side-effect evaluation. Multi-field and noncanonical sequences remain work.
+
+`named_struct_writes` executes original and converted updates against the
+actual UW1 structs for 207 update patterns, every initial word and six insertion
+values, including
+out-of-range values. It checks neighboring storage and live packed temporaries,
+requires conversion of every candidate, and verifies exclusions and idempotence.
+`current_object_aliases` uses the real Clang audit on a fixture, verifies mixed
+and reused-pointer exclusions, and executes both versions after switching the
+global current object to verify saved-pointer identity and word-offset scaling.
