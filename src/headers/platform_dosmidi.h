@@ -1,74 +1,84 @@
 #ifndef HEADERS_PLATFORM_DOSMIDI_H
 #define HEADERS_PLATFORM_DOSMIDI_H
 
-/* Optional DOS-audio backend: plays the original DOS game's XMI music
- * through OPL3 synthesis, the way a Sound Blaster Pro did, instead of the
- * WinCE port's converted .MOD files.
+/* Optional DOS-audio backend: the original DOS game's own audio path, as a
+ * Sound Blaster Pro played it -- XMI music and MIDI-note sound effects
+ * rendered through an emulated OPL2, driven by the real ADLIB.ADV driver
+ * model and the game's real UW.AD timbres.
  *
- * Everything that touches libADLMIDI lives behind this header. That is
- * deliberate: libADLMIDI's own core is GPL-3 while the parts we actually
- * need (its XMI converter, the Nuked OPL3 emulator, its MIDI sequencer)
- * are LGPL/MIT, so keeping the surface this narrow means the core could
- * later be replaced by a hand-written MIDI-event-to-OPL layer over just
- * the permissive parts without any call site changing. See
- * third_party/libadlmidi/VENDORING.md.
+ * Everything that touches the vendored OpenAbyss audio layer lives behind
+ * this header (see third_party/openabyss/VENDORING.md). That layer is a
+ * reverse-engineering of ADLIB.ADV: the AIL sequencer, its voice layer and
+ * the chip. This port supplies only the files, the clock and the output.
  *
- * This is strictly opt-in. The default audio path remains the ARM/WinCE
- * one (hxcmod .MOD music, UU.exe WAVE-resource SFX) and the DOS assets
- * are optional -- nothing here is reached unless the player asks for it
- * AND the assets are actually present. */
+ * Why this rather than a general MIDI synth: UW1's sound effects are not
+ * samples and not plain notes either. Each one is a note on a *custom*
+ * timbre from UW.AD's bank 1 -- selected by MIDI controller 114 -- and
+ * those bank-1 timbres are time-variant effects, little command streams
+ * that ramp the frequency, levels, feedback, multipliers and waveforms at
+ * 60Hz. That is what makes a door sound like a door instead of a beep, and
+ * it cannot be expressed as a static instrument, so a MIDI-file player
+ * cannot reproduce it.
+ *
+ * Strictly opt-in. The default audio path remains the ARM/WinCE one
+ * (hxcmod .MOD music, UU.exe WAVE-resource SFX), and the DOS assets are
+ * optional -- nothing here runs unless the player asks for it AND the
+ * assets are present. */
 
-/* Is DOS audio mode requested and usable?
- *
- * True only when UW_AUDIO_MODE=dos (case-insensitive, matching the
- * existing UW_LIGHT_MODE=dos convention in 3d.c/player.c) *and*
- * platform_dosmidi_init later confirmed a working synth. Resolved once
- * and cached, so this is cheap to call per-track.
- *
- * Deliberately reports false after a failed init, so a missing
- * UW_DOS_DATA_DIR, absent XMI files or an unavailable synth all degrade
- * to the normal ARM path rather than to silence or a crash. */
+/* Is DOS audio mode live? True only when UW_AUDIO_MODE=dos (case-
+ * insensitive, matching UW_LIGHT_MODE=dos in 3d.c/player.c) and
+ * platform_dosmidi_init then succeeded in loading every file it needs.
+ * Reports false after a failed init, so missing assets degrade to the
+ * normal path rather than to silence or a crash. */
 int platform_dos_audio_enabled(void);
 
-/* Opens the OPL3 synth at sample_rate Hz and selects the AIL Underworld
- * instrument bank. Returns 1 on success, 0 on any failure (in which case
- * platform_dos_audio_enabled() stays false and the caller should keep
- * using its normal backend).
- *
- * Call once, from platform_music_init, only when UW_AUDIO_MODE=dos. */
-int platform_dosmidi_init(int sample_rate);
+/* Loads SOUND/ADLIB.ADV (the driver's own tables), SOUND/UW.AD (the
+ * timbres) and SOUND/SOUNDS.DAT (the effect table) from UW_DOS_DATA_DIR,
+ * and starts the driver. out_rate is the rate render() will be asked for.
+ * Returns 1 on success, 0 on any failure. Call once, from
+ * platform_music_init, only when UW_AUDIO_MODE=dos. */
+int platform_dosmidi_init(int out_rate);
 
-/* Maps one of audio.c's "\SOUND\uwNN.mod" game paths to the real DOS
- * XMI file for the same track: "<UW_DOS_DATA_DIR>/SOUND/UWNN.XMI".
+/* Maps one of audio.c's "\SOUND\uwNN.mod" game paths to the DOS XMI for
+ * the same track: "<UW_DOS_DATA_DIR>/SOUND/AWNN.XMI".
  *
- * Exists as its own function (rather than inline in the loader) because
- * it is the one piece of this backend with interesting behavior to pin
- * down in a unit test -- play_music_track's track numbering is base-8
- * style, so getting this mapping wrong silently plays the wrong track,
- * which is a bug this project has already hit once. Returns 1 on
- * success, 0 if UW_DOS_DATA_DIR is unset or the path doesn't look like a
- * track path. */
+ * The AW set is deliberate: UW ships two variants of every track, UW*.XMI
+ * voiced for the MT-32 and AW*.XMI voiced for AdLib/OPL. We synthesise OPL,
+ * so AW is the matching set -- which is also the set the DOS game itself
+ * loads when the AdLib driver is in use. Its own two digits are already
+ * octal-style ((track>>3), track&7), which is exactly how play_music_track
+ * builds the .mod name, so the digits carry across untouched.
+ *
+ * Its own function because it is the one piece here worth pinning down in a
+ * test: a wrong track number silently plays a real-but-wrong file, a bug
+ * this project has already shipped once. Returns 1 on success, 0 if
+ * UW_DOS_DATA_DIR is unset or the path is not a track path. */
 int platform_dosmidi_xmi_path(const char *win_mod_path, char *out, unsigned int out_sz);
 
-/* Loads the XMI file at a real filesystem path. Returns 1 on success, 0
- * on failure (missing file, unparseable XMI); on failure whatever was
- * previously loaded keeps playing. */
+/* Registers the XMI at a real filesystem path as the current track and
+ * installs the timbres it asks for. Returns 1 on success. */
 int platform_dosmidi_load_file(const char *real_path);
 
-/* Renders frames stereo frames of interleaved 16-bit audio into stream.
+/* Starts / stops the registered track. */
+void platform_dosmidi_start(void);
+void platform_dosmidi_stop(void);
+
+/* Plays sound-effect `id` -- an index into SOUNDS.DAT, i.e.
+ * trigger_sound_sample_note's own id before its +800 resource offset.
+ * Looks up that record's bank-1 program, note, velocity and duration,
+ * locks a channel and plays the note, releasing it when the duration runs
+ * out. A no-op when the id has no record. */
+void platform_dosmidi_play_effect(int id);
+
+/* Renders `frames` stereo frames of interleaved 16-bit audio, advancing the
+ * driver's 120Hz timer and the chip as needed.
  *
- * Called from platform_music.c's SDL audio callback, which already holds
- * the device lock for the duration, so this does no locking of its own --
- * do not call it from the main thread without that lock held. Returns
- * the number of frames actually produced (0 when nothing is loaded). */
+ * Called from platform_music.c's SDL audio callback, which holds the device
+ * lock for the duration, so this does no locking of its own. Returns the
+ * frames produced (0 when DOS mode is not live). */
 int platform_dosmidi_render(short *stream, int frames);
 
-/* Rewinds the loaded track to its start, for the stop-then-restart
- * semantics audio.c's music call sites expect. */
-void platform_dosmidi_rewind(void);
-
-/* Closes the synth and frees the loaded song. Safe to call even if
- * platform_dosmidi_init never succeeded. */
+/* Releases every loaded file. Safe to call even if init never succeeded. */
 void platform_dosmidi_shutdown(void);
 
 #endif

@@ -3,10 +3,11 @@
  * The two things worth pinning down here are (a) that the mode is OFF
  * unless explicitly asked for, since the whole feature is opt-in and the
  * ARM/WinCE audio path must stay the default, and (b) the
- * "\SOUND\uwNN.mod" -> "<UW_DOS_DATA_DIR>/SOUND/UWNN.XMI" mapping, because
+ * "\SOUND\uwNN.mod" -> "<UW_DOS_DATA_DIR>/SOUND/AWNN.XMI" mapping, because
  * play_music_track's track numbering is base-8 style and this project has
  * already shipped one bug where a wrong track number silently played a
- * real-but-wrong file. */
+ * real-but-wrong file. The AW set rather than the UW set is deliberate --
+ * see platform_dosmidi_xmi_path's own comment. */
 #include "unity.h"
 #include "headers/platform_dosmidi.h"
 #include <stdlib.h>
@@ -58,21 +59,25 @@ static void test_dos_mode_requires_a_data_dir(void)
     TEST_ASSERT_FALSE(platform_dos_audio_enabled());
 }
 
-/* Matches UW_LIGHT_MODE=dos's own case-insensitive handling. */
-static void test_dos_mode_name_is_case_insensitive(void)
+/* Fail-soft: a data dir that exists but holds no DOS audio files must
+   degrade, not half-enable. (The mode name's case-insensitivity is covered
+   by test_dos_mode_ignores_unrelated_mode_values' negative side; enabling
+   for real needs ADLIB.ADV, UW.AD and SOUNDS.DAT, which a unit test has no
+   business shipping.) */
+static void test_dos_mode_requires_the_dos_audio_files(void)
 {
     setenv("UW_AUDIO_MODE", "DOS", 1);
     setenv("UW_DOS_DATA_DIR", "/tmp", 1);
-    TEST_ASSERT_EQUAL_INT(1, platform_dosmidi_init(44100));
-    TEST_ASSERT_TRUE(platform_dos_audio_enabled());
+    TEST_ASSERT_EQUAL_INT(0, platform_dosmidi_init(44100));
+    TEST_ASSERT_FALSE(platform_dos_audio_enabled());
 }
 
-static void test_xmi_path_maps_track_to_uppercase_xmi(void)
+static void test_xmi_path_maps_track_to_the_adlib_xmi(void)
 {
     setenv("UW_DOS_DATA_DIR", "/dos/UW", 1);
     char out[256];
     TEST_ASSERT_EQUAL_INT(1, platform_dosmidi_xmi_path("\\SOUND\\uw01.mod", out, sizeof out));
-    TEST_ASSERT_EQUAL_STRING("/dos/UW/SOUND/UW01.XMI", out);
+    TEST_ASSERT_EQUAL_STRING("/dos/UW/SOUND/AW01.XMI", out);
 }
 
 /* Track 13 (automap/talk/rest) is "uw15" under play_music_track's base-8
@@ -83,9 +88,9 @@ static void test_xmi_path_preserves_the_track_digits(void)
     setenv("UW_DOS_DATA_DIR", "/dos/UW", 1);
     char out[256];
     TEST_ASSERT_EQUAL_INT(1, platform_dosmidi_xmi_path("\\SOUND\\uw15.mod", out, sizeof out));
-    TEST_ASSERT_EQUAL_STRING("/dos/UW/SOUND/UW15.XMI", out);
+    TEST_ASSERT_EQUAL_STRING("/dos/UW/SOUND/AW15.XMI", out);
     TEST_ASSERT_EQUAL_INT(1, platform_dosmidi_xmi_path("\\SOUND\\uw10.mod", out, sizeof out));
-    TEST_ASSERT_EQUAL_STRING("/dos/UW/SOUND/UW10.XMI", out);
+    TEST_ASSERT_EQUAL_STRING("/dos/UW/SOUND/AW10.XMI", out);
 }
 
 static void test_xmi_path_accepts_forward_slashes(void)
@@ -93,7 +98,7 @@ static void test_xmi_path_accepts_forward_slashes(void)
     setenv("UW_DOS_DATA_DIR", "/dos/UW", 1);
     char out[256];
     TEST_ASSERT_EQUAL_INT(1, platform_dosmidi_xmi_path("/SOUND/uw07.mod", out, sizeof out));
-    TEST_ASSERT_EQUAL_STRING("/dos/UW/SOUND/UW07.XMI", out);
+    TEST_ASSERT_EQUAL_STRING("/dos/UW/SOUND/AW07.XMI", out);
 }
 
 static void test_xmi_path_needs_a_data_dir(void)
@@ -116,6 +121,8 @@ static void test_xmi_path_rejects_a_pathological_path(void)
     char out[256];
     TEST_ASSERT_EQUAL_INT(0, platform_dosmidi_xmi_path("\\SOUND\\", out, sizeof out));
     TEST_ASSERT_EQUAL_INT(0, platform_dosmidi_xmi_path("", out, sizeof out));
+    /* not a track name: only the uwNN set maps to the AW set */
+    TEST_ASSERT_EQUAL_INT(0, platform_dosmidi_xmi_path("\\SOUND\\voc01.wav", out, sizeof out));
 }
 
 /* Rendering with nothing loaded must produce no frames rather than
@@ -134,8 +141,8 @@ int main(void)
     RUN_TEST(test_dos_mode_is_off_by_default);
     RUN_TEST(test_dos_mode_ignores_unrelated_mode_values);
     RUN_TEST(test_dos_mode_requires_a_data_dir);
-    RUN_TEST(test_dos_mode_name_is_case_insensitive);
-    RUN_TEST(test_xmi_path_maps_track_to_uppercase_xmi);
+    RUN_TEST(test_dos_mode_requires_the_dos_audio_files);
+    RUN_TEST(test_xmi_path_maps_track_to_the_adlib_xmi);
     RUN_TEST(test_xmi_path_preserves_the_track_digits);
     RUN_TEST(test_xmi_path_accepts_forward_slashes);
     RUN_TEST(test_xmi_path_needs_a_data_dir);

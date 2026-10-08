@@ -134,12 +134,16 @@ add_fixture_game_unit_test(audio
 # of going through uw_extract_test_functions.
 add_library(uw_test_dosmidi STATIC
   "${PROJECT_SOURCE_DIR}/src/platform_dosmidi.c"
-  "${PROJECT_SOURCE_DIR}/src/debug.c")
+  "${PROJECT_SOURCE_DIR}/src/debug.c"
+  "${PROJECT_SOURCE_DIR}/third_party/openabyss/uw_opl.c"
+  "${PROJECT_SOURCE_DIR}/third_party/openabyss/uw_adlib.c"
+  "${PROJECT_SOURCE_DIR}/third_party/openabyss/uw_ail.c"
+  "${PROJECT_SOURCE_DIR}/third_party/openabyss/uw_sound.c"
+  "${PROJECT_SOURCE_DIR}/third_party/openabyss/uw_blob.c")
 uw_configure_test_target(uw_test_dosmidi)
 target_include_directories(uw_test_dosmidi PUBLIC
   "${PROJECT_SOURCE_DIR}/src"
-  "${PROJECT_SOURCE_DIR}/third_party/libadlmidi/include")
-target_link_libraries(uw_test_dosmidi PUBLIC ADLMIDI_static)
+  "${PROJECT_SOURCE_DIR}/third_party/openabyss")
 add_supported_game_unit_test(dosmidi uw_test_dosmidi)
 add_game_test_library(uw_test_movement
   src/movement.c:sweep_kill_velocity src/movement.c:sweep_deflect_heading

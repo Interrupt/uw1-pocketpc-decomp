@@ -1,109 +1,166 @@
-/* Optional DOS-audio backend: the original DOS game's XMI music rendered
- * through OPL3 synthesis (Sound Blaster Pro FM), as an alternative to the
- * WinCE port's converted .MOD files.
+/* Optional DOS-audio backend: the original game's audio path as a Sound
+ * Blaster Pro played it. See src/headers/platform_dosmidi.h for what this
+ * is and why, and third_party/openabyss/VENDORING.md for the vendored
+ * driver model this drives.
  *
- * This is the only file that includes libADLMIDI. See
- * src/headers/platform_dosmidi.h for why the surface is kept this narrow,
- * and third_party/libadlmidi/VENDORING.md for the vendoring and licensing.
- *
- * The DOS original drove music through Miles AIL: XMI files plus a timbre
- * bank, fed to whichever .ADV driver matched the player's sound card
- * (SBPFM.ADV for SB Pro FM). libADLMIDI happens to cover both halves of
- * that -- it reads XMI directly and ships a converted AIL Underworld
- * instrument bank -- so this file is mostly bookkeeping around it. */
+ * This file is the only thing in the port that touches that layer. It owns
+ * three jobs and no more: find the DOS files, turn the SDL callback's
+ * demand for output frames into the driver's 120Hz timer calls, and
+ * translate the port's two audio requests (play track, play effect) into
+ * the MIDI the driver expects. Everything musical happens inside the
+ * vendored code. */
 #include "headers/platform_dosmidi.h"
 #include "headers/debug.h"
-#include "adlmidi.h"
+#include "uw_ail.h"
+#include "uw_adlib.h"
+#include "uw_opl.h"
+#include "uw_sound.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 
-static struct ADL_MIDIPlayer *g_synth;
-static int g_song_loaded;
+/* One tick of the driver's timer is this many chip samples. The chip runs
+ * at its own 49716Hz and the host resamples, so this is fractional and the
+ * remainder is carried in g.src_frac. */
+#define CHIP_SAMPLES_PER_TICK ((double)UW_OPL_RATE / (double)UW_AIL_TICK_HZ)
 
-/* UW_AUDIO_MODE=dos, matching the existing UW_LIGHT_MODE=dos convention
- * (3d.c, player.c): case-insensitive, anything else means "leave the
- * default behavior alone". Read in platform_dosmidi_init rather than
- * cached in a static, because the synth handle below is already the
- * authoritative "is DOS mode live" answer and a second cached copy would
- * only be able to disagree with it. */
+static struct {
+  int live;
+  int out_rate;
+
+  uw_opl opl;
+  uw_adlib adlib;
+  uw_ail ail;
+  uw_sounds sounds;
+  uw_bank timbres;
+  uw_blob adlib_file;
+  uw_blob xmi;
+
+  int seq;                  /* the registered sequence handle, -1 for none */
+
+  /* One tick's worth of chip output, consumed by the resampler below. */
+  short tick_buf[(int)(UW_OPL_RATE / UW_AIL_TICK_HZ) + 2];
+  int tick_len, tick_pos;
+
+  /* 49716Hz -> out_rate, linear. src_frac is the position between the two
+   * samples straddling the current output frame. */
+  double src_frac;
+  short prev_sample, cur_sample;
+  int primed;
+
+  /* The card's output coupling capacitor, as a one-pole high pass. Without
+   * it a held operator leaves a constant offset on the output. */
+  int dc_x, dc_y;
+
+  /* Sound effects: a locked channel per voice, released when its note's
+   * duration runs out. Durations are in SOUNDS.DAT's 1/256s units; count
+   * them down in driver ticks. */
+  struct { int channel, note, ticks_left; } sfx[4];
+} g;
+
 static int dos_mode_requested(void)
 {
   const char *mode = getenv("UW_AUDIO_MODE");
   return (mode && strcasecmp(mode, "dos") == 0) ? 1 : 0;
 }
 
-/* A live synth is the one and only signal that DOS mode is actually in
- * effect: platform_dosmidi_init only creates one when the mode was asked
- * for AND everything it needs was present. */
-int platform_dos_audio_enabled(void)
+int platform_dos_audio_enabled(void) { return g.live; }
+
+/* The vendored driver model's synthesiser: the AIL sequencer's messages
+ * and timbres go to ADLIB.ADV's voice layer, whose register writes go to
+ * the chip. */
+static void synth_message(void *user, uint8_t status, uint8_t d1, uint8_t d2)
 {
-  return g_synth != NULL;
+  (void)user;
+  uw_adlib_message(&g.adlib, status, d1, d2);
+}
+static void synth_timbre(void *user, uint8_t bank, uint8_t program, const uint8_t *patch, size_t len)
+{
+  (void)user;
+  uw_adlib_timbre(&g.adlib, bank, program, patch, len);
+}
+static void synth_tick(void *user)
+{
+  (void)user;
+  uw_adlib_service(&g.adlib);
+}
+static void chip_write(void *user, uint8_t reg, uint8_t value)
+{
+  (void)user;
+  uw_opl_write(&g.opl, reg, value);
 }
 
-int platform_dosmidi_init(int sample_rate)
+int platform_dosmidi_init(int out_rate)
 {
   if (!dos_mode_requested()) {
-    return 0; /* not asked for -- silent, this is the normal case */
+    return 0; /* not asked for -- the normal case, silently */
   }
-  if (g_synth) {
+  if (g.live) {
     return 1;
   }
-  if (!getenv("UW_DOS_DATA_DIR")) {
+
+  const char *root = getenv("UW_DOS_DATA_DIR");
+  if (!root || !*root) {
     DEBUG(WARN, "[audio] UW_AUDIO_MODE=dos but UW_DOS_DATA_DIR is unset -- "
                 "falling back to the converted .MOD music\n");
     return 0;
   }
 
-  g_synth = adl_init(sample_rate);
-  if (!g_synth) {
-    DEBUG(WARN, "[audio] adl_init failed: %s -- falling back to the converted .MOD music\n",
-          adl_errorString());
-    return 0;
+  char path[1024];
+  uw_ail_synth synth;
+
+  /* The driver file is not optional: uw_adlib_init reads the F-number,
+   * block, velocity and operator-slot tables, and the chip's reset
+   * registers, out of ADLIB.ADV itself rather than hardcoding them. */
+  snprintf(path, sizeof(path), "%s/SOUND/ADLIB.ADV", root);
+  g.adlib_file = uw_read_file(path);
+  if (!g.adlib_file.data) {
+    DEBUG(WARN, "[audio] DOS audio: cannot read %s (%s) -- falling back\n",
+          path, g.adlib_file.why ? g.adlib_file.why : "?");
+    goto fail;
   }
 
-  /* Resolve the instrument bank by NAME, never by index: the index shifts
-   * between libADLMIDI's full and no-grey bank databases (this build uses
-   * the no-grey one -- see VENDORING.md), so a hardcoded number would
-   * silently select some unrelated game's instruments. */
-  int bank = -1;
-  int count = adl_getBanksCount();
-  const char *const *names = adl_getBankNames();
-  for (int i = 0; i < count; i++) {
-    if (names[i] && strstr(names[i], "Underworld")) {
-      bank = i;
-      break;
-    }
-  }
-  if (bank < 0 || adl_setBank(g_synth, bank) < 0) {
-    DEBUG(WARN, "[audio] no AIL Underworld instrument bank available (%d banks searched) -- "
-                "falling back to the converted .MOD music\n", count);
-    adl_close(g_synth);
-    g_synth = NULL;
-    return 0;
+  snprintf(path, sizeof(path), "%s/SOUND/UW.AD", root);
+  if (!uw_bank_open(&g.timbres, path)) {
+    DEBUG(WARN, "[audio] DOS audio: cannot read the timbre bank %s -- falling back\n", path);
+    goto fail;
   }
 
-  /* The DOS original is a Miles AIL game and libADLMIDI models AIL's own
-   * volume curve specifically. Set explicitly rather than left on AUTO so
-   * the choice is documented and can't drift with a library update --
-   * though measuring all 15 models over 20s of UW01.XMI showed AUTO
-   * resolving to byte-identical output (peak 7005, RMS 567), i.e. the
-   * library independently agrees this is the right model for these files.
-   *
-   * Worth knowing before "fixing" the level here: this track opens very
-   * quietly (~970 peak over its first 5 seconds) and only reaches ~7000
-   * later on, which is in the same range as the .MOD backend's own output.
-   * A short sample of the opening looks about 7x too quiet and is not. */
-  adl_setVolumeRangeModel(g_synth, ADLMIDI_VolumeModel_AIL);
-  /* audio.c owns track changes and re-issues play_music_track when a track
-   * should repeat (see update_ingame_music_track / the DAT_00087414
-   * duration table), so the synth must not loop behind its back. */
-  adl_setLoopEnabled(g_synth, 0);
+  snprintf(path, sizeof(path), "%s/SOUND/SOUNDS.DAT", root);
+  if (!uw_sounds_open(&g.sounds, path)) {
+    DEBUG(WARN, "[audio] DOS audio: cannot read the effect table %s -- falling back\n", path);
+    goto fail;
+  }
 
-  DEBUG(INFO, "[audio] DOS audio mode ready: OPL3 at %dHz, bank %d \"%s\"\n",
-        sample_rate, bank, names[bank]);
+  uw_opl_reset(&g.opl);
+  if (!uw_adlib_init(&g.adlib, g.adlib_file.data, g.adlib_file.size, chip_write, NULL)) {
+    DEBUG(WARN, "[audio] DOS audio: %s/SOUND/ADLIB.ADV is not the AdLib driver -- falling back\n", root);
+    goto fail;
+  }
+
+  synth.user = NULL;
+  synth.message = synth_message;
+  synth.timbre = synth_timbre;
+  synth.tick = synth_tick;
+  uw_ail_init(&g.ail, &synth);
+
+  g.out_rate = out_rate > 0 ? out_rate : UW_OPL_RATE;
+  g.seq = -1;
+  for (int i = 0; i < (int)(sizeof(g.sfx) / sizeof(g.sfx[0])); i++) {
+    g.sfx[i].channel = 0;
+  }
+  g.live = 1;
+  DEBUG(INFO, "[audio] DOS audio mode ready: OPL2 at %dHz -> %dHz, %d effects, %d timbres\n",
+        UW_OPL_RATE, g.out_rate, g.sounds.count, g.timbres.count);
   return 1;
+
+fail:
+  uw_sounds_close(&g.sounds);
+  uw_bank_close(&g.timbres);
+  uw_free(&g.adlib_file);
+  memset(&g, 0, sizeof(g));
+  return 0;
 }
 
 int platform_dosmidi_xmi_path(const char *win_mod_path, char *out, unsigned int out_sz)
@@ -113,8 +170,6 @@ int platform_dosmidi_xmi_path(const char *win_mod_path, char *out, unsigned int 
     return 0;
   }
 
-  /* Take the basename: audio.c hands us a Windows-style game path such as
-   * "\SOUND\uw01.mod". */
   const char *base = win_mod_path;
   for (const char *p = win_mod_path; *p; p++) {
     if (*p == '\\' || *p == '/') {
@@ -122,11 +177,12 @@ int platform_dosmidi_xmi_path(const char *win_mod_path, char *out, unsigned int 
     }
   }
 
-  /* Stem = basename without its extension, upper-cased: the DOS install
-   * ships UW01.XMI where the port ships uw01.mod. */
+  /* "uw01.mod" -> "AW01.XMI": the two digits are already the octal-style
+   * pair play_music_track built, so only the stem's letters and the
+   * extension change. */
   const char *dot = strrchr(base, '.');
   size_t stem_len = dot ? (size_t)(dot - base) : strlen(base);
-  if (stem_len == 0 || stem_len >= 32) {
+  if (stem_len < 3 || stem_len >= 32) {
     return 0;
   }
   char stem[32];
@@ -135,47 +191,217 @@ int platform_dosmidi_xmi_path(const char *win_mod_path, char *out, unsigned int 
     stem[i] = (c >= 'a' && c <= 'z') ? (char)(c - 'a' + 'A') : c;
   }
   stem[stem_len] = '\0';
+  if (stem[0] != 'U' || stem[1] != 'W') {
+    return 0;
+  }
+  stem[0] = 'A'; /* UWnn -> AWnn, the AdLib-voiced variant */
 
   int n = snprintf(out, out_sz, "%s/SOUND/%s.XMI", root, stem);
   return (n > 0 && (unsigned int)n < out_sz) ? 1 : 0;
 }
 
+/* The patch for (bank, program) out of UW.AD, installed in the driver's
+ * cache if it isn't already there. */
+static int timbre_ready(uint8_t bank, uint8_t program)
+{
+  if (uw_ail_timbre_installed(&g.ail, bank, program)) {
+    return 1;
+  }
+  size_t len = 0;
+  const uint8_t *patch = uw_bank_patch(&g.timbres, program, bank, &len);
+  if (!patch) {
+    return 0;
+  }
+  uw_ail_install_timbre(&g.ail, bank, program, patch, len);
+  return 1;
+}
+
 int platform_dosmidi_load_file(const char *real_path)
 {
-  if (!g_synth || !real_path) {
+  if (!g.live || !real_path) {
     return 0;
   }
-  if (adl_openFile(g_synth, real_path) < 0) {
-    DEBUG(WARN, "[audio] could not load DOS music %s: %s\n", real_path, adl_errorInfo(g_synth));
+
+  if (g.seq >= 0) {
+    uw_ail_stop_sequence(&g.ail, g.seq);
+    uw_ail_release_sequence(&g.ail, g.seq);
+    g.seq = -1;
+  }
+  uw_free(&g.xmi);
+
+  g.xmi = uw_read_file(real_path);
+  if (!g.xmi.data) {
+    DEBUG(WARN, "[audio] DOS audio: cannot read %s (%s)\n",
+          real_path, g.xmi.why ? g.xmi.why : "?");
     return 0;
   }
-  g_song_loaded = 1;
+
+  g.seq = uw_ail_register_sequence(&g.ail, g.xmi.data, g.xmi.size, 0);
+  if (g.seq < 0) {
+    DEBUG(WARN, "[audio] DOS audio: %s is not an XMI sequence\n", real_path);
+    uw_free(&g.xmi);
+    return 0;
+  }
+
+  /* The driver names the timbres it still needs, one per call, until it has
+   * them all; each is bank<<8 | program in UW.AD. */
+  int req;
+  while ((req = uw_ail_timbre_request(&g.ail, g.seq)) != 0xffff) {
+    if (!timbre_ready((uint8_t)(req >> 8), (uint8_t)(req & 0xff))) {
+      DEBUG(WARN, "[audio] DOS audio: the timbre bank has no patch %d:%d\n",
+            req >> 8, req & 0xff);
+      break; /* the driver will play it on whatever the cache holds */
+    }
+  }
+
   DEBUG(INFO, "[audio] loaded DOS XMI track %s\n", real_path);
   return 1;
 }
 
-int platform_dosmidi_render(short *stream, int frames)
+void platform_dosmidi_start(void)
 {
-  if (!g_synth || !g_song_loaded || !stream || frames <= 0) {
-    return 0;
+  if (g.live && g.seq >= 0) {
+    uw_ail_start_sequence(&g.ail, g.seq);
   }
-  /* adl_play counts individual samples, not stereo frames. */
-  int got = adl_play(g_synth, frames * 2, stream);
-  return got > 0 ? got / 2 : 0;
 }
 
-void platform_dosmidi_rewind(void)
+void platform_dosmidi_stop(void)
 {
-  if (g_synth && g_song_loaded) {
-    adl_positionRewind(g_synth);
+  if (g.live && g.seq >= 0) {
+    uw_ail_stop_sequence(&g.ail, g.seq);
   }
+}
+
+void platform_dosmidi_play_effect(int id)
+{
+  if (!g.live || id < 0 || id >= g.sounds.count) {
+    return;
+  }
+  uw_sound_effect e;
+  if (!uw_sound_effect_at(&g.sounds, id, &e)) {
+    return;
+  }
+  /* Bank 1 is the sound-effects bank: its timbres are the time-variant
+   * effects, not plain instruments (see the header). */
+  if (!timbre_ready(1, e.program)) {
+    DEBUG(WARN, "[audio] DOS audio: effect %d wants bank 1 patch %u, which UW.AD lacks\n",
+          id, e.program);
+    return;
+  }
+
+  int slot = -1;
+  for (int i = 0; i < (int)(sizeof(g.sfx) / sizeof(g.sfx[0])); i++) {
+    if (!g.sfx[i].channel) { slot = i; break; }
+  }
+  if (slot < 0) {
+    return; /* every effect voice busy -- the original drops it too */
+  }
+
+  int ch = uw_ail_lock_channel(&g.ail);
+  if (ch <= 0) {
+    return;
+  }
+
+  /* The sequence the DOS engine sends, in its order: the bank, the program,
+   * all controllers off, full volume and expression, centre pan, note on. */
+  uw_ail_send_voice(&g.ail, (uint8_t)(0xaf + ch), 0x72, 1);   /* CC 114: timbre bank 1 */
+  uw_ail_send_voice(&g.ail, (uint8_t)(0xbf + ch), e.program, 0);
+  uw_ail_send_voice(&g.ail, (uint8_t)(0xaf + ch), 0x79, 0);   /* CC 121: controllers off */
+  uw_ail_send_voice(&g.ail, (uint8_t)(0xaf + ch), 7, 0x7f);
+  uw_ail_send_voice(&g.ail, (uint8_t)(0xaf + ch), 0x0b, 0x7f);
+  uw_ail_send_voice(&g.ail, (uint8_t)(0xaf + ch), 0x0a, 0x40);
+  uw_ail_send_voice(&g.ail, (uint8_t)(0x8f + ch), e.note, e.velocity);
+
+  /* duration is in 1/256s; the timer runs at UW_AIL_TICK_HZ. */
+  int ticks = (int)(((long)e.duration * UW_AIL_TICK_HZ) / 256);
+  g.sfx[slot].channel = ch;
+  g.sfx[slot].note = e.note;
+  g.sfx[slot].ticks_left = ticks > 0 ? ticks : 1;
+}
+
+/* One driver timer call: the effect voices' durations, then the sequencer
+ * (which calls the voice layer's own service through synth_tick). */
+static void driver_tick(void)
+{
+  for (int i = 0; i < (int)(sizeof(g.sfx) / sizeof(g.sfx[0])); i++) {
+    if (!g.sfx[i].channel) {
+      continue;
+    }
+    if (--g.sfx[i].ticks_left <= 0) {
+      int ch = g.sfx[i].channel;
+      uw_ail_send_voice(&g.ail, (uint8_t)(0x7f + ch), (uint8_t)g.sfx[i].note, 0);
+      uw_ail_release_channel(&g.ail, ch);
+      g.sfx[i].channel = 0;
+    }
+  }
+  uw_ail_tick(&g.ail);
+}
+
+/* The next chip sample, generating another tick's worth when the current
+ * one is spent. */
+static short next_chip_sample(void)
+{
+  if (g.tick_pos >= g.tick_len) {
+    driver_tick();
+    int n = (int)CHIP_SAMPLES_PER_TICK;
+    if (n > (int)(sizeof(g.tick_buf) / sizeof(g.tick_buf[0]))) {
+      n = (int)(sizeof(g.tick_buf) / sizeof(g.tick_buf[0]));
+    }
+    uw_opl_render(&g.opl, g.tick_buf, n);
+    /* The output coupling, sample by sample, as the card's capacitor. */
+    for (int i = 0; i < n; i++) {
+      int x = g.tick_buf[i];
+      int y = x - g.dc_x + (g.dc_y * 255) / 256;
+      g.dc_x = x;
+      g.dc_y = y;
+      g.tick_buf[i] = (short)(y > 32767 ? 32767 : (y < -32768 ? -32768 : y));
+    }
+    g.tick_len = n;
+    g.tick_pos = 0;
+  }
+  return g.tick_buf[g.tick_pos++];
+}
+
+int platform_dosmidi_render(short *stream, int frames)
+{
+  if (!g.live || !stream || frames <= 0) {
+    return 0;
+  }
+
+  const double step = (double)UW_OPL_RATE / (double)g.out_rate;
+  if (!g.primed) {
+    g.prev_sample = next_chip_sample();
+    g.cur_sample = next_chip_sample();
+    g.src_frac = 0.0;
+    g.primed = 1;
+  }
+
+  for (int i = 0; i < frames; i++) {
+    double t = g.src_frac;
+    int v = (int)(g.prev_sample + (g.cur_sample - g.prev_sample) * t);
+    short s = (short)(v > 32767 ? 32767 : (v < -32768 ? -32768 : v));
+    stream[i * 2] = s;
+    stream[i * 2 + 1] = s; /* the chip is mono; both ears get it */
+
+    g.src_frac += step;
+    while (g.src_frac >= 1.0) {
+      g.src_frac -= 1.0;
+      g.prev_sample = g.cur_sample;
+      g.cur_sample = next_chip_sample();
+    }
+  }
+  return frames;
 }
 
 void platform_dosmidi_shutdown(void)
 {
-  if (g_synth) {
-    adl_close(g_synth);
-    g_synth = NULL;
+  if (g.live && g.seq >= 0) {
+    uw_ail_stop_sequence(&g.ail, g.seq);
+    uw_ail_release_sequence(&g.ail, g.seq);
   }
-  g_song_loaded = 0;
+  uw_free(&g.xmi);
+  uw_sounds_close(&g.sounds);
+  uw_bank_close(&g.timbres);
+  uw_free(&g.adlib_file);
+  memset(&g, 0, sizeof(g));
 }

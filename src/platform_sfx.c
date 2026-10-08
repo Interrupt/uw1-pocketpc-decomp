@@ -10,6 +10,8 @@
  * looking at.
  */
 #include "headers/platform_sfx.h"
+#include "headers/platform_dosmidi.h"
+#include "headers/platform_music.h"
 #include "headers/audio.h"
 #include "headers/debug.h"
 #include "headers/file_io.h"
@@ -656,6 +658,28 @@ static int sfx_pick_voice(void)
 
 void platform_sfx_play(int resource_id)
 {
+  /* DOS audio mode plays effects the way the original did: a note on a
+   * custom bank-1 timbre through the AdLib driver, not a WAV sample. Taken
+   * before the device check below because that path needs no WAV device at
+   * all. The id arrives with trigger_sound_sample_note's +800 resource
+   * offset already applied; SOUNDS.DAT is indexed by the raw id, so take
+   * that 800 back off. (Not SFX_ID_MIN: that is 801, the lowest WAVE
+   * resource that happens to exist, which is a different number.)
+   *
+   * Effect ids the table has no record for are dropped by
+   * platform_dosmidi_play_effect -- notably the playable instrument's
+   * notes, ids 40-59, which SOUNDS.DAT does not cover.
+   *
+   * Bracketed by the music device's lock: the DOS driver state this
+   * touches is also stepped by the audio callback (platform_dosmidi_render),
+   * which runs on SDL's audio thread. */
+  if (platform_dos_audio_enabled()) {
+    platform_music_lock();
+    platform_dosmidi_play_effect(resource_id - 800);
+    platform_music_unlock();
+    return;
+  }
+
   if (!g_sfx_audiodev) {
     return; /* no device open -- platform_sfx_init already warned once */
   }

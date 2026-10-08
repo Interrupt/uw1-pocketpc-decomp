@@ -55,9 +55,9 @@ static unsigned char *g_uwmod_filedata;
 static int g_uwmod_loaded;
 static int g_uwmod_playing;
 static SDL_AudioDeviceID g_uwmod_audiodev;
-/* Nonzero once platform_dosmidi_init has confirmed a usable OPL3 synth,
- * i.e. the player asked for UW_AUDIO_MODE=dos AND the DOS assets and
- * synth are actually available. Decided once at init and never flipped
+/* Nonzero once platform_dosmidi_init has confirmed a usable DOS audio
+ * path, i.e. the player asked for UW_AUDIO_MODE=dos AND the DOS driver,
+ * timbre bank and effect table were all readable. Decided once at init and never flipped
  * afterwards, so one audio device and one callback serve either backend
  * without ever mixing the two mid-session. Zero is the default and means
  * everything below behaves exactly as it always has. */
@@ -78,9 +78,9 @@ static void uwmod_audio_callback(void *userdata, Uint8 *stream, int len)
     return;
   }
   if (g_dos_mode) {
-    /* OPL3 synthesis of the DOS XMI track. Renders nothing (leaving the
-     * zeroed buffer) when no track is loaded, so a track that failed to
-     * load is silent rather than fatal. */
+    /* The DOS driver model and its OPL2, resampled to this device's rate.
+     * Renders nothing (leaving the zeroed buffer) when DOS mode is not
+     * live, so a track that failed to load is silent rather than fatal. */
     platform_dosmidi_render((short *)stream, len / 4);
   } else {
     if (!g_uwmod_loaded) {
@@ -154,12 +154,13 @@ void platform_music_init(void)
   /* Opt-in DOS audio mode. Returns 0 both when it wasn't asked for (the
    * normal case) and when it was but couldn't be set up, so an incomplete
    * DOS install degrades to the .MOD path below rather than to silence --
-   * see platform_dosmidi_init for the specific failure cases. */
+   * see platform_dosmidi_init for the specific failure cases. It is told
+   * the device's real rate because its chip runs at 49716Hz and resamples. */
   g_dos_mode = platform_dosmidi_init(have.freq);
 
   DEBUG(INFO, "[audio] music playback ready: %dHz %dch %d samples/buffer (%s)\n",
         have.freq, have.channels, have.samples,
-        g_dos_mode ? "DOS XMI/OPL3" : "converted MOD");
+        g_dos_mode ? "DOS XMI/OPL2" : "converted MOD");
 
   DAT_00087454 = 1;
   DAT_00087448 = 1;
@@ -264,6 +265,7 @@ void platform_music_start(void)
   }
   SDL_LockAudioDevice(g_uwmod_audiodev);
   g_uwmod_playing = 1;
+  if (g_dos_mode) platform_dosmidi_start();
   SDL_UnlockAudioDevice(g_uwmod_audiodev);
 }
 
@@ -281,7 +283,18 @@ void platform_music_stop(void)
   }
   SDL_LockAudioDevice(g_uwmod_audiodev);
   g_uwmod_playing = 0;
+  if (g_dos_mode) platform_dosmidi_stop();
   SDL_UnlockAudioDevice(g_uwmod_audiodev);
+}
+
+void platform_music_lock(void)
+{
+  if (g_uwmod_audiodev) SDL_LockAudioDevice(g_uwmod_audiodev);
+}
+
+void platform_music_unlock(void)
+{
+  if (g_uwmod_audiodev) SDL_UnlockAudioDevice(g_uwmod_audiodev);
 }
 
 /* Closes the real audio device and releases the loaded track, for real
