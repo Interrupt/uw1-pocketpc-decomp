@@ -409,7 +409,7 @@ int babl_builtin_take_from_npc(char *args)
           bVar12 = (((uw_object_hdr_t *)puVar9)->item_id) == uVar1;
         }
         else {
-          bVar12 = uVar1 - 1000 == (uint)(((uw_object_hdr_t *)puVar9)->type_flags >> 4 & 0x1f);
+          bVar12 = uVar1 - 1000 == (uint)(((uw_object_hdr_t *)puVar9)->item_id >> 4);
         }
         if (bVar12) {
           object_list_unlink((byte *)(iVar8 + 6),(byte *)puVar9);
@@ -546,7 +546,7 @@ int babl_builtin_do_inv_create(char *args)
     ((uw_object_hdr_t *)puVar3)->chain_word_high = (byte)(char)(uVar1 >> 8);
     puVar4 = (ushort *)(*piVar2 + 6);
     while (puVar4 = (ushort *)resolve_object_link(puVar4), puVar4 != (ushort *)0x0) {
-      if ((((((uw_object_hdr_t *)puVar3)->is_quant != 0) && ((*puVar4 & 0x8000) != 0)) && ((((uw_object_hdr_t *)puVar3)->link_word & 0x8000) == 0))
+      if ((((((uw_object_hdr_t *)puVar3)->is_quant != 0) && ((*puVar4 & 0x8000) != 0)) && ((((uw_object_hdr_t *)puVar3)->link & 0x200) == 0))
           && ((((puVar4[3] & 0x8000) == 0 && (((*puVar4 ^ ((uw_object_hdr_t *)puVar3)->type_flags) & 0x1ff) == 0)) &&
                ((ushort)((puVar4[3] >> 6) + (((uw_object_hdr_t *)puVar3)->link)) < 999)))) {
         iVar6 = (puVar4[3] & 0xffc0) + (((uw_object_hdr_t *)puVar3)->link << 6);
@@ -636,7 +636,7 @@ void babl_builtin_set_race_attitude(char *args)
         if (puVar7 != (ushort *)0x0) {
           do {
             if ((((((uw_object_hdr_t *)puVar7)->item_id) == (int)(short)(uVar1 & 0x1ff)) && ((puVar7[5] & 0x80) == 0)) &&
-                ((byte) g_monster_type_props[(((uw_object_hdr_t *)puVar7)->type_flags & 0x3f)].race_flags == uVar3)) {
+                ((byte) g_monster_type_props[(((uw_object_hdr_t *)puVar7)->item_id & 0x3f)].race_flags == uVar3)) {
               uVar11 = *(ushort *)((char *)puVar7 + 0xd) & 0x3fff;
               *(char *)((char *)puVar7 + 0xd) = (char)uVar11;
               *(byte *)(puVar7 + 7) = (byte)(uVar11 >> 8) | (byte)(((uVar2 & 3) << 0xe) >> 8);
@@ -934,7 +934,7 @@ void babl_builtin_x_obj_stuff(char *args)
   puVar11_rec = (ushort *)get_object_record_by_slot_index(babl_read_var_word((int)*(short *)(args + -0x12)));  /* r0 passthrough */
   sVar3 = babl_read_var_word((int)*(short *)(args + -0x10));
   if (sVar3 == 0) {
-    if (((*psVar4 != -1) && ((((uw_object_hdr_t *)puVar11_rec)->type_flags & 0x1c0) != 0x140)) &&
+    if (((*psVar4 != -1) && ((((uw_object_hdr_t *)puVar11_rec)->item_id & 0x1c0) != 0x140)) &&
         ((g_object_type_props[(((uw_object_hdr_t *)puVar11_rec)->item_id)].class_flags & 3) != 2)) {
       *psVar4 = (short)(((uw_object_hdr_t *)puVar11_rec)->heading);
     }
@@ -945,7 +945,7 @@ void babl_builtin_x_obj_stuff(char *args)
       *psVar6 = (short)((((uw_object_hdr_t *)puVar11_rec)->type_flags_high & 0x1e) >> 1);
     }
     if (*psVar7 != -1) {
-      *psVar7 = (short)((((uw_object_hdr_t *)puVar11_rec)->link_word & 0x7fc0) >> 6);
+      *psVar7 = (short)(((((uw_object_hdr_t *)puVar11_rec)->link & 0x1ff) << 6) >> 6);
     }
     if (*psVar8 != -1) {
       *psVar8 = ((short)(char)((uw_object_hdr_t *)puVar11_rec)->type_flags_high & 4U) << 8;
@@ -958,7 +958,7 @@ void babl_builtin_x_obj_stuff(char *args)
     }
   }
   else {
-    if ((((int)*psVar4 != 0xffffffff) && ((((uw_object_hdr_t *)puVar11_rec)->type_flags & 0x1c0) != 0x140)) &&
+    if ((((int)*psVar4 != 0xffffffff) && ((((uw_object_hdr_t *)puVar11_rec)->item_id & 0x1c0) != 0x140)) &&
         ((g_object_type_props[(((uw_object_hdr_t *)puVar11_rec)->item_id)].class_flags & 3) != 2)) {
       uVar12 = ((uw_object_hdr_t *)puVar11_rec)->position_word & 0xfc7f | ((int)*psVar4 & 7U) << 7;
       ((uw_object_hdr_t *)puVar11_rec)->position_word = (ushort)uVar12;
@@ -2736,7 +2736,7 @@ int babl_builtin_give_ptr_npc(char *args)
   item_rec = (char *)get_object_record_by_slot_index(uVar1);
   if (-1 < (short)uVar3) {
     if (((uw_object_hdr_t *)item_rec)->is_quant != 0) {
-      if ((((uw_object_hdr_t *)item_rec)->link_word_high & 0x80) == 0) goto LAB_00029efc;
+      if ((((uw_object_hdr_t *)item_rec)->link & 0x200) == 0) goto LAB_00029efc;
     }
   }
   uVar3 = 0xffffffff;
@@ -2824,7 +2824,7 @@ int babl_builtin_identify_inv(char *args)
   uVar3 = babl_read_var_word((int)*(short *)(args + -2));
   uVar4 = compute_barter_item_value(1,uVar2,(int)DAT_000bbfbc);
   iVar5 = (char *)get_object_record_by_slot_index(uVar2);
-  if ((((uw_object_hdr_t *)iVar5)->is_quant == 0) || ((((uw_object_hdr_t *)iVar5)->link_word & 0x8000) != 0)) {
+  if ((((uw_object_hdr_t *)iVar5)->is_quant == 0) || ((((uw_object_hdr_t *)iVar5)->link & 0x200) != 0)) {
     uVar9 = 1;
   }
   else {
@@ -3557,7 +3557,7 @@ void babl_builtin_setup_to_barter()
          (iVar1 = (int)sVar11, sVar11 = (short)((uint)((iVar1 + 1) * 0x10000) >> 0x10), iVar1 < 0x28
          ))) {
     puVar7 = (ushort *)resolve_object_link(puVar6 + 2);
-    if ((((((uw_object_hdr_t *)puVar6)->type_flags & 0x30) == 0) && (!bVar2)) ||
+    if ((((((uw_object_hdr_t *)puVar6)->item_id & 0x30) == 0) && (!bVar2)) ||
         (((short)g_object_type_props[(((uw_object_hdr_t *)puVar6)->item_id)].monetary_value == 0 ||
           ((bVar3 && (uVar8 = ce_rand(), (uVar8 & 7) < 5)))))) {
       uVar4 = ((uw_object_hdr_t *)puVar6)->type_flags;
@@ -3859,7 +3859,7 @@ void handle_barter_slot_click(int is_player_side, int slot, void *counts, void *
         return;
       }
       obj_rec = get_object_record_by_slot_index((int)*(short *)(local_8 + (short)local_c * 2));
-      if ((((((uw_object_hdr_t *)obj_rec)->is_quant != 0) && ((((uw_object_hdr_t *)obj_rec)->link_word & 0x8000) == 0)) &&
+      if ((((((uw_object_hdr_t *)obj_rec)->is_quant != 0) && ((((uw_object_hdr_t *)obj_rec)->link & 0x200) == 0)) &&
            (((uw_object_hdr_t *)obj_rec)->link != 1)) && (split_rec = prompt_split_object_stack((byte *)(intptr_t)(obj_rec)), split_rec == 0))
       {
         return;
@@ -4280,8 +4280,8 @@ void finalize_player_barter_items()
         if ((((uw_object_hdr_t *)puVar2)->item_id) == 0xa1) {
           for (; puVar3 != (ushort *)0x0; puVar3 = (ushort *)resolve_object_link(puVar3 + 2)) {
             if ((((((uw_object_hdr_t *)puVar2)->is_quant != 0) && (((uw_object_hdr_t *)puVar3)->is_quant != 0)) &&
-                 ((((uw_object_hdr_t *)puVar2)->link_word & 0x8000) == 0)) &&
-                ((((((uw_object_hdr_t *)puVar3)->link_word & 0x8000) == 0 && (((((uw_object_hdr_t *)puVar3)->type_flags ^ ((uw_object_hdr_t *)puVar2)->type_flags) & 0x1ff) == 0)) &&
+                 ((((uw_object_hdr_t *)puVar2)->link & 0x200) == 0)) &&
+                ((((((uw_object_hdr_t *)puVar3)->link & 0x200) == 0 && (((((uw_object_hdr_t *)puVar3)->type_flags ^ ((uw_object_hdr_t *)puVar2)->type_flags) & 0x1ff) == 0)) &&
                   ((ushort)((((uw_object_hdr_t *)puVar3)->link) + (((uw_object_hdr_t *)puVar2)->link)) < 999)))) {
               iVar4 = (((uw_object_hdr_t *)puVar3)->link << 6) + (((uw_object_hdr_t *)puVar2)->link << 6);
               ((uw_object_hdr_t *)puVar3)->link_word_low = (byte)iVar4 ^ ((uw_object_hdr_t *)puVar3)->owner;
@@ -4477,7 +4477,7 @@ int compute_barter_item_value(short is_player_side, int item_id, int mode)
       sVar6 = (short)(sVar6 * 3 >> 1);
     }
   }
-  if (((uVar7 & 0x8000) == 0) || ((((uw_object_hdr_t *)puVar4)->link_word & 0x8000) != 0)) {
+  if (((uVar7 & 0x8000) == 0) || ((((uw_object_hdr_t *)puVar4)->link & 0x200) != 0)) {
     uVar3 = 1;
   }
   else {

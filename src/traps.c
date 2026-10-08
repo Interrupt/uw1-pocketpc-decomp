@@ -188,7 +188,7 @@ int dispatch_trap_type_effect(ushort *trap_record, int tile_x, int tile_y)
             ((uw_object_hdr_t *)puVar9)->link_word_high = 0;
           }
         }
-        if ((((uw_object_hdr_t *)puVar8)->type_flags & 0x1c0) == 0x1c0) {
+        if ((((uw_object_hdr_t *)puVar8)->item_id & 0x1c0) == 0x1c0) {
           uVar6 = encode_object_slot_index(puVar8);
           scheduler_add_entry(uVar6,0xffffffff,0,tile_x & 0xff,tile_y & 0xff);
         }
@@ -210,9 +210,9 @@ int dispatch_trap_type_effect(ushort *trap_record, int tile_x, int tile_y)
       if (getenv("UW_DEBUG_DOOR"))
         fprintf(stderr, "[door] dispatch_trap_type_effect case8(branchA): trigger_state(uVar4)=%d target_nibble=%d target_obj0=0x%04x\n",
                 (int)uVar4,
-                (int)(((uw_object_hdr_t *)_case8_p1)->link_word_low & 0xf),
+                (int)(((uw_object_hdr_t *)_case8_p1)->owner & 0xf),
                 (unsigned)((uw_object_hdr_t *)_case8_p1)->type_flags);
-      if (7 < (((uw_object_hdr_t *)_case8_p1)->link_word_low & 0xf)) {
+      if (7 < (((uw_object_hdr_t *)_case8_p1)->owner & 0xf)) {
         if ((uVar4 != 1) && (uVar4 != 3)) {
           return 2;
         }
@@ -308,7 +308,7 @@ LAB_0007dce4:
       return 2;
     }
     if ((((((byte)trap_record[1] & 0x7f) != 0) && (((uw_object_hdr_t *)equipped_item)->is_quant != 0)) &&
-         ((((uw_object_hdr_t *)equipped_item)->link_word & 0x8000) == 0)) &&
+         ((((uw_object_hdr_t *)equipped_item)->link & 0x200) == 0)) &&
         (((uw_object_hdr_t *)equipped_item)->link < ((byte)trap_record[1] & 0x7f))) {
       return 2;
     }
@@ -751,7 +751,7 @@ void tick_ambient_doors_and_scheduler(int target_present)
     /* was folded into `int iVar2` (reused below for unrelated int
        values) -- truncated tilemap_lookup's real `void *` return */
     char *_tile2 = (char *)tilemap_lookup((int)local_1c,(int)local_1a);
-    if ((((*(byte *)(_tile2 + 1) & 0x80) == 0) && (7 < (((uw_object_hdr_t *)pbVar1)->type_flags_low & 0xf))) &&
+    if ((((*(byte *)(_tile2 + 1) & 0x80) == 0) && (7 < (((uw_object_hdr_t *)pbVar1)->item_id & 0xf))) &&
         (iVar2 = rand_below(10), iVar2 < 3)) {
       DAT_002020a0 = local_1c;
       DAT_002020a4 = local_1a;

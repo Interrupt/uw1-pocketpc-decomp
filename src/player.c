@@ -787,7 +787,7 @@ LAB_000669a8:
       ushort *_o = (ushort *)get_equipped_item_at_slot(_s);
       fprintf(stderr, "  slot=%d ptr=%p id=0x%03x nibble=0x%x\n", _s, (void *)_o,
               _o ? (unsigned)(((uw_object_hdr_t *)_o)->item_id) : 0u,
-              _o ? (unsigned)(((uw_object_hdr_t *)_o)->type_flags & 0xf) : 0u);
+              _o ? (unsigned)(((uw_object_hdr_t *)_o)->item_id & 0xf) : 0u);
     }
   }
   if ((*(ushort *)(DAT_00086df8 + 0x5f) & 0x3c0) != 0) {

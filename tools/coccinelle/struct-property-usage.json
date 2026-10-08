@@ -1,8 +1,8 @@
 {
   "scope": "Named packed views and existing audited object-pointer roles in src/*.c; unrecorded aliases and other structures still require independent auditing.",
   "counts": {
-    "byte_view": 512,
-    "packed_word": 415,
+    "byte_view": 489,
+    "packed_word": 333,
     "raw_audited_object_access": 300,
     "signed_word_view": 9
   },
@@ -46,15 +46,6 @@
     {
       "source": "src/ai.c",
       "function": "npc_walk_toward_tile",
-      "line": 616,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "DAT_0010190c->hdr.position_word_low >> 3 & 0xf,"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "npc_walk_toward_tile",
       "line": 624,
       "category": "packed_word",
       "member": "tile_word",
@@ -82,15 +73,6 @@
     {
       "source": "src/ai.c",
       "function": "npc_ai_tick",
-      "line": 674,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "DAT_00101404 = &g_monster_type_props[((byte)DAT_0010190c->hdr.type_flags & 0x3f)];"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "npc_ai_tick",
       "line": 684,
       "category": "raw_audited_object_access",
       "member": null,
@@ -105,15 +87,6 @@
       "member": null,
       "pointer": "player_rec",
       "code": "iVar5 = (int)(char)DAT_00101918 - (int)(char)(byte)(*(ushort *)(player_rec + 0x16) >> 10),"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "npc_ai_tick",
-      "line": 781,
-      "category": "packed_word",
-      "member": "position_word",
-      "pointer": null,
-      "code": "DAT_0010140c = (byte) DAT_0010190c->hdr.position_word >> 3 & 0xf;"
     },
     {
       "source": "src/ai.c",
@@ -204,15 +177,6 @@
       "member": "target_word",
       "pointer": null,
       "code": "uVar9 = DAT_0010190c->target_word;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "tick_mobile_objects",
-      "line": 927,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((DAT_0010190c->hdr.type_flags & 0x1c0) == 0x40) {"
     },
     {
       "source": "src/ai.c",
@@ -316,15 +280,6 @@
     {
       "source": "src/ai.c",
       "function": "sync_object_tile_position",
-      "line": 1128,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((uw_object_hdr_t *)object)->type_flags & 0x1c0) != 0x40) {"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "sync_object_tile_position",
       "line": 1137,
       "category": "raw_audited_object_access",
       "member": null,
@@ -357,15 +312,6 @@
       "member": "chain_word",
       "pointer": null,
       "code": "((uw_object_hdr_t *)object)->chain_word_high = (byte)(char)((uVar1 & 0xffc0) >> 8);"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "sync_object_tile_position",
-      "line": 1151,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((uw_object_hdr_t *)object)->type_flags & 0x1c0) != 0x40) {"
     },
     {
       "source": "src/ai.c",
@@ -505,15 +451,6 @@
     {
       "source": "src/ai.c",
       "function": "sync_object_tile_position",
-      "line": 1208,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((uw_object_hdr_t *)object)->type_flags & 0x1c0) != 0x40) {"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "sync_object_tile_position",
       "line": 1210,
       "category": "raw_audited_object_access",
       "member": null,
@@ -564,15 +501,6 @@
       "member": null,
       "pointer": "object",
       "code": "*(char *)(object + 8) = (char)(uVar1 >> 8);"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "sync_object_tile_position",
-      "line": 1222,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((uw_object_hdr_t *)object)->type_flags & 0x1c0) == 0x140) {"
     },
     {
       "source": "src/ai.c",
@@ -910,15 +838,6 @@
     {
       "source": "src/ai.c",
       "function": "settle_mobile_to_immobile",
-      "line": 1360,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((uw_object_hdr_t *)object)->type_flags & 0x1c0) == 0x40) {"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "settle_mobile_to_immobile",
       "line": 1364,
       "category": "raw_audited_object_access",
       "member": null,
@@ -969,24 +888,6 @@
       "member": "chain_word",
       "pointer": null,
       "code": "((uw_object_hdr_t *)pbVar4)->chain_word_high = (byte)((ushort)uVar1 >> 8);"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "spawn_creature_equipment_drop",
-      "line": 1544,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((uw_object_hdr_t *)pbVar4)->type_flags_low & 0x30) == 0x10) {"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "spawn_creature_equipment_drop",
-      "line": 1545,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if (g_ranged_type_props[(((uw_object_hdr_t *)pbVar4)->type_flags_low & 0xf)].ammo_damage_selector == 0xc0) {  /* byte value 0xc0 (was compared against -0x40, never true for an unsigned byte) */"
     },
     {
       "source": "src/ai.c",
@@ -1261,24 +1162,6 @@
     {
       "source": "src/ai.c",
       "function": "setup_npc_ai_tick_state",
-      "line": 2850,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "iVar3 = ((byte) DAT_0010190c->hdr.type_flags & 0x3f) * 0x30;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "setup_npc_ai_tick_state",
-      "line": 2855,
-      "category": "packed_word",
-      "member": "position_word",
-      "pointer": null,
-      "code": "DAT_0010140c = (byte) DAT_0010190c->hdr.position_word >> 3 & 0xf;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "setup_npc_ai_tick_state",
       "line": 2862,
       "category": "packed_word",
       "member": "position_word",
@@ -1338,15 +1221,6 @@
       "member": "status_word",
       "pointer": null,
       "code": "uVar11 = DAT_0010190c->status_word;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "npc_ai_default_tick",
-      "line": 2999,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "g_player_object->hdr.position_word_low >> 3 & 0xf);"
     },
     {
       "source": "src/ai.c",
@@ -1459,15 +1333,6 @@
     {
       "source": "src/ai.c",
       "function": "spawn_rest_interrupt_monster_callback",
-      "line": 3639,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "DAT_0010190c->hdr.position_word_low >> 3 & 0xf,(uint)(uVar4 >> 10),"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "spawn_rest_interrupt_monster_callback",
       "line": 3642,
       "category": "byte_view",
       "member": "position_word",
@@ -1482,33 +1347,6 @@
       "member": "type_flags",
       "pointer": null,
       "code": "uVar9 = (uint)((uw_object_hdr_t *)puVar8)->type_flags;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "spawn_rest_interrupt_monster_callback",
-      "line": 3659,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "bVar14 = (((uw_object_hdr_t *)puVar8)->type_flags & 0x30) == 0;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "spawn_rest_interrupt_monster_callback",
-      "line": 3703,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "g_player_object->hdr.position_word_low >> 3 & 0xf);"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "alert_npc_to_noise_callback",
-      "line": 3800,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "iVar10 = (((uw_object_hdr_t *)npc)->type_flags & 0x3f) * 0x30;"
     },
     {
       "source": "src/ai.c",
@@ -1572,15 +1410,6 @@
       "member": null,
       "pointer": "npc",
       "code": "*(byte *)(npc + 7) = (byte)(uVar6 >> 8) | (byte)(((uVar8 & 3) << 0xe) >> 8);"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "emit_noise_alert",
-      "line": 3866,
-      "category": "packed_word",
-      "member": "link_word",
-      "pointer": null,
-      "code": "if ((((uw_object_hdr_t *)source)->link_word & 0x1f) < 0x1c) {"
     },
     {
       "source": "src/ai.c",
@@ -1944,15 +1773,6 @@
     },
     {
       "source": "src/babl.c",
-      "function": "babl_builtin_take_from_npc",
-      "line": 412,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "bVar12 = uVar1 - 1000 == (uint)(((uw_object_hdr_t *)puVar9)->type_flags >> 4 & 0x1f);"
-    },
-    {
-      "source": "src/babl.c",
       "function": "babl_builtin_do_inv_create",
       "line": 544,
       "category": "packed_word",
@@ -1981,15 +1801,6 @@
     {
       "source": "src/babl.c",
       "function": "babl_builtin_do_inv_create",
-      "line": 549,
-      "category": "packed_word",
-      "member": "link_word",
-      "pointer": null,
-      "code": "if ((((((uw_object_hdr_t *)puVar3)->is_quant != 0) && ((*puVar4 & 0x8000) != 0)) && ((((uw_object_hdr_t *)puVar3)->link_word & 0x8000) == 0))"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "babl_builtin_do_inv_create",
       "line": 550,
       "category": "packed_word",
       "member": "type_flags",
@@ -2004,15 +1815,6 @@
       "member": null,
       "pointer": "puVar7",
       "code": "if ((((((uw_object_hdr_t *)puVar7)->item_id) == (int)(short)(uVar1 & 0x1ff)) && ((puVar7[5] & 0x80) == 0)) &&"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "babl_builtin_set_race_attitude",
-      "line": 639,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "((byte) g_monster_type_props[(((uw_object_hdr_t *)puVar7)->type_flags & 0x3f)].race_flags == uVar3)) {"
     },
     {
       "source": "src/babl.c",
@@ -2098,29 +1900,11 @@
     {
       "source": "src/babl.c",
       "function": "babl_builtin_x_obj_stuff",
-      "line": 937,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if (((*psVar4 != -1) && ((((uw_object_hdr_t *)puVar11_rec)->type_flags & 0x1c0) != 0x140)) &&"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "babl_builtin_x_obj_stuff",
       "line": 945,
       "category": "byte_view",
       "member": "type_flags",
       "pointer": null,
       "code": "*psVar6 = (short)((((uw_object_hdr_t *)puVar11_rec)->type_flags_high & 0x1e) >> 1);"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "babl_builtin_x_obj_stuff",
-      "line": 948,
-      "category": "packed_word",
-      "member": "link_word",
-      "pointer": null,
-      "code": "*psVar7 = (short)((((uw_object_hdr_t *)puVar11_rec)->link_word & 0x7fc0) >> 6);"
     },
     {
       "source": "src/babl.c",
@@ -2139,15 +1923,6 @@
       "member": "type_flags",
       "pointer": null,
       "code": "*psVar9 = ((short)(char)((uw_object_hdr_t *)puVar11_rec)->type_flags_high & 2U) << 8;"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "babl_builtin_x_obj_stuff",
-      "line": 961,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((int)*psVar4 != 0xffffffff) && ((((uw_object_hdr_t *)puVar11_rec)->type_flags & 0x1c0) != 0x140)) &&"
     },
     {
       "source": "src/babl.c",
@@ -2475,24 +2250,6 @@
     },
     {
       "source": "src/babl.c",
-      "function": "babl_builtin_give_ptr_npc",
-      "line": 2739,
-      "category": "byte_view",
-      "member": "link_word",
-      "pointer": null,
-      "code": "if ((((uw_object_hdr_t *)item_rec)->link_word_high & 0x80) == 0) goto LAB_00029efc;"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "babl_builtin_identify_inv",
-      "line": 2827,
-      "category": "packed_word",
-      "member": "link_word",
-      "pointer": null,
-      "code": "if ((((uw_object_hdr_t *)iVar5)->is_quant == 0) || ((((uw_object_hdr_t *)iVar5)->link_word & 0x8000) != 0)) {"
-    },
-    {
-      "source": "src/babl.c",
       "function": "babl_builtin_count_inv",
       "line": 2895,
       "category": "raw_audited_object_access",
@@ -2566,29 +2323,11 @@
     {
       "source": "src/babl.c",
       "function": "babl_builtin_setup_to_barter",
-      "line": 3560,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((((uw_object_hdr_t *)puVar6)->type_flags & 0x30) == 0) && (!bVar2)) ||"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "babl_builtin_setup_to_barter",
       "line": 3563,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
       "code": "uVar4 = ((uw_object_hdr_t *)puVar6)->type_flags;"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "handle_barter_slot_click",
-      "line": 3862,
-      "category": "packed_word",
-      "member": "link_word",
-      "pointer": null,
-      "code": "if ((((((uw_object_hdr_t *)obj_rec)->is_quant != 0) && ((((uw_object_hdr_t *)obj_rec)->link_word & 0x8000) == 0)) &&"
     },
     {
       "source": "src/babl.c",
@@ -2683,20 +2422,11 @@
     {
       "source": "src/babl.c",
       "function": "finalize_player_barter_items",
-      "line": 4283,
-      "category": "packed_word",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((((uw_object_hdr_t *)puVar2)->link_word & 0x8000) == 0)) &&"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "finalize_player_barter_items",
       "line": 4284,
       "category": "packed_word",
-      "member": "link_word",
+      "member": "type_flags",
       "pointer": null,
-      "code": "((((((uw_object_hdr_t *)puVar3)->link_word & 0x8000) == 0 && (((((uw_object_hdr_t *)puVar3)->type_flags ^ ((uw_object_hdr_t *)puVar2)->type_flags) & 0x1ff) == 0)) &&"
+      "code": "((((((uw_object_hdr_t *)puVar3)->link & 0x200) == 0 && (((((uw_object_hdr_t *)puVar3)->type_flags ^ ((uw_object_hdr_t *)puVar2)->type_flags) & 0x1ff) == 0)) &&"
     },
     {
       "source": "src/babl.c",
@@ -2705,16 +2435,7 @@
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
-      "code": "((((((uw_object_hdr_t *)puVar3)->link_word & 0x8000) == 0 && (((((uw_object_hdr_t *)puVar3)->type_flags ^ ((uw_object_hdr_t *)puVar2)->type_flags) & 0x1ff) == 0)) &&"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "finalize_player_barter_items",
-      "line": 4284,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "((((((uw_object_hdr_t *)puVar3)->link_word & 0x8000) == 0 && (((((uw_object_hdr_t *)puVar3)->type_flags ^ ((uw_object_hdr_t *)puVar2)->type_flags) & 0x1ff) == 0)) &&"
+      "code": "((((((uw_object_hdr_t *)puVar3)->link & 0x200) == 0 && (((((uw_object_hdr_t *)puVar3)->type_flags ^ ((uw_object_hdr_t *)puVar2)->type_flags) & 0x1ff) == 0)) &&"
     },
     {
       "source": "src/babl.c",
@@ -2753,15 +2474,6 @@
       "code": "uVar7 = (uint)((uw_object_hdr_t *)puVar4)->type_flags;"
     },
     {
-      "source": "src/babl.c",
-      "function": "compute_barter_item_value",
-      "line": 4480,
-      "category": "packed_word",
-      "member": "link_word",
-      "pointer": null,
-      "code": "if (((uVar7 & 0x8000) == 0) || ((((uw_object_hdr_t *)puVar4)->link_word & 0x8000) != 0)) {"
-    },
-    {
       "source": "src/bitmap.c",
       "function": "sprite_partition_by_depth",
       "line": 408,
@@ -2787,15 +2499,6 @@
       "member": null,
       "pointer": "object",
       "code": "field = (((uw_object_hdr_t *)object)->ypos) + ((object[0xb] & 0x3f0) >> 1);"
-    },
-    {
-      "source": "src/collision.c",
-      "function": "collision_height_envelope",
-      "line": 407,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "((((DAT_002046c4 <= (char *)puVar7 || ((((uw_object_hdr_t *)puVar7)->type_flags & 0x1c0) == 0x40)) ||"
     },
     {
       "source": "src/collision.c",
@@ -3268,15 +2971,6 @@
     {
       "source": "src/combat.c",
       "function": "find_nearest_hit_target",
-      "line": 806,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((((uw_object_hdr_t *)puVar6)->type_flags & 0x1c0) != 0x180) && (uVar4 >> 6 != DAT_00100610)) &&"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "find_nearest_hit_target",
       "line": 809,
       "category": "raw_audited_object_access",
       "member": null,
@@ -3357,24 +3051,6 @@
     },
     {
       "source": "src/combat.c",
-      "function": "resolve_weapon_hit_skill_check",
-      "line": 1063,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "(g_monster_type_props[(((uw_object_hdr_t *)pbVar5)->type_flags_low & 0x3f)].movement_flags & 1) == 0)) {"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "resolve_weapon_hit_skill_check",
-      "line": 1089,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "(iVar3 = rand_below(0xc), iVar3 < (int)(((byte)((uw_object_hdr_t *)puVar2)->type_flags & 7) * 2))) {"
-    },
-    {
-      "source": "src/combat.c",
       "function": "apply_melee_damage",
       "line": 1126,
       "category": "packed_word",
@@ -3435,24 +3111,6 @@
       "member": "size_weight",
       "pointer": null,
       "code": "DAT_001005f4 = (byte)((byte)g_object_type_props[uVar1].size_weight) & 7;"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "compute_player_weapon_attack_stats",
-      "line": 1485,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "g_monster_type_props[(g_player_object->hdr.type_flags & 0x3f)].strength).quot;  /* dividend dropped by Ghidra; ARM 0x2749c-0x274bc, same table lookup as the else branch below */"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "compute_player_weapon_attack_stats",
-      "line": 1491,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "g_monster_type_props[(g_player_object->hdr.type_flags & 0x3f)].strength).quot;"
     },
     {
       "source": "src/combat.c",
@@ -3610,15 +3268,6 @@
     {
       "source": "src/combat.c",
       "function": "damage_equipped_item_in_slot",
-      "line": 2217,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((uw_object_hdr_t *)puVar5)->type_flags & 0x1f0) != 0) {"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "damage_equipped_item_in_slot",
       "line": 2229,
       "category": "byte_view",
       "member": "chain_word",
@@ -3768,15 +3417,6 @@
       "member": "type_flags",
       "pointer": null,
       "code": "((uw_object_hdr_t *)puVar7)->type_flags_high = (byte)(uVar3 >> 8);"
-    },
-    {
-      "source": "src/containers.c",
-      "function": "sum_container_weight",
-      "line": 759,
-      "category": "packed_word",
-      "member": "link_word",
-      "pointer": null,
-      "code": "if ((puVar2->is_quant == 0) || ((puVar2->link_word & 0x8000) != 0)) {"
     },
     {
       "source": "src/containers.c",
@@ -4239,15 +3879,6 @@
     },
     {
       "source": "src/game.c",
-      "function": "init_gameplay_session",
-      "line": 695,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "iVar1 = (g_player_object->hdr.type_flags & 0x3f) * 0x30;"
-    },
-    {
-      "source": "src/game.c",
       "function": "set_custom_view_target",
       "line": 861,
       "category": "raw_audited_object_access",
@@ -4473,51 +4104,6 @@
     },
     {
       "source": "src/interact.c",
-      "function": "roll_container_lockpick_check",
-      "line": 290,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if (0x1f < (((uw_object_hdr_t *)pbVar1)->type_flags_low & 0x30)) {"
-    },
-    {
-      "source": "src/interact.c",
-      "function": "roll_container_lockpick_check",
-      "line": 293,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((uw_object_hdr_t *)pbVar1)->type_flags_low & 0x3f) < 3) {"
-    },
-    {
-      "source": "src/interact.c",
-      "function": "roll_container_trap_disarm_check",
-      "line": 332,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((uw_object_hdr_t *)pbVar3)->type_flags_low & 0x30) < 0x20) {"
-    },
-    {
-      "source": "src/interact.c",
-      "function": "roll_container_trap_disarm_check",
-      "line": 340,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((uw_object_hdr_t *)pbVar4)->type_flags_low & 0x3f) < 3) {"
-    },
-    {
-      "source": "src/interact.c",
-      "function": "purge_tagged_objects_from_chain",
-      "line": 522,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if (((((uw_object_hdr_t *)puVar1)->type_flags & 0x1f0) == 0x1a0) && ((int)DAT_0024cfd0 == (uint)(((uw_object_hdr_t *)puVar1)->link))) {"
-    },
-    {
-      "source": "src/interact.c",
       "function": "purge_tagged_objects_from_chain",
       "line": 525,
       "category": "byte_view",
@@ -4731,33 +4317,6 @@
       "member": "type_flags",
       "pointer": null,
       "code": "uVar3 = ((uw_object_hdr_t *)puVar7)->type_flags;"
-    },
-    {
-      "source": "src/inventory.c",
-      "function": "handle_inventory_panel_click",
-      "line": 337,
-      "category": "packed_word",
-      "member": "link_word",
-      "pointer": null,
-      "code": "if (((uVar3 & 0x8000) == 0) || ((((uw_object_hdr_t *)puVar7)->link_word & 0x8000) != 0)) {"
-    },
-    {
-      "source": "src/inventory.c",
-      "function": "redraw_inventory_widget_range",
-      "line": 554,
-      "category": "packed_word",
-      "member": "link_word",
-      "pointer": null,
-      "code": "if (((((uw_object_hdr_t *)puVar7)->is_quant != 0) && ((((uw_object_hdr_t *)puVar7)->link_word & 0x8000) == 0)) &&"
-    },
-    {
-      "source": "src/inventory.c",
-      "function": "redraw_inventory_widget_range",
-      "line": 605,
-      "category": "packed_word",
-      "member": "link_word",
-      "pointer": null,
-      "code": "if (((((uw_object_hdr_t *)puVar7)->is_quant != 0) && ((((uw_object_hdr_t *)puVar7)->link_word & 0x8000) == 0)) &&"
     },
     {
       "source": "src/item_use.c",
@@ -5095,15 +4654,6 @@
     {
       "source": "src/item_use.c",
       "function": "trigger_object_trap_or_use_action",
-      "line": 1864,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((uw_object_hdr_t *)puVar1)->type_flags & 0x30) < 0x20) {"
-    },
-    {
-      "source": "src/item_use.c",
-      "function": "trigger_object_trap_or_use_action",
       "line": 1865,
       "category": "packed_word",
       "member": "type_flags",
@@ -5127,15 +4677,6 @@
       "member": "type_flags",
       "pointer": null,
       "code": "((uw_object_hdr_t *)puVar5)->type_flags = (ushort)uVar9;"
-    },
-    {
-      "source": "src/item_use.c",
-      "function": "try_climb_wall",
-      "line": 2050,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((int)(g_player_object->hdr.position_word_low >> 3 & 0xf) <= (int)((uVar1 >> 4 & 0xf) - 1))) {"
     },
     {
       "source": "src/item_use.c",
@@ -5172,15 +4713,6 @@
       "member": "link_word",
       "pointer": null,
       "code": "((uVar4 = object_a->link_word, (uVar4 & 0x8000) == 0 && (uVar5 = object_b->link_word, (uVar5 & 0x8000) == 0)))) {"
-    },
-    {
-      "source": "src/item_use.c",
-      "function": "reduce_object_count",
-      "line": 2511,
-      "category": "packed_word",
-      "member": "link_word",
-      "pointer": null,
-      "code": "if (((0 < sVar1) && (((uw_object_hdr_t *)puVar5)->is_quant != 0)) && ((((uw_object_hdr_t *)puVar5)->link_word & 0x8000) == 0)) {"
     },
     {
       "source": "src/item_use.c",
@@ -5364,24 +4896,6 @@
     },
     {
       "source": "src/item_use.c",
-      "function": "extract_clicked_backpack_item",
-      "line": 2558,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((puVar2 != (ushort *)0x0) && ((((uw_object_hdr_t *)puVar2)->type_flags & 0x1c0) == 0x80)) && ((((uw_object_hdr_t *)puVar2)->type_flags & 0x30) == 0)) &&"
-    },
-    {
-      "source": "src/item_use.c",
-      "function": "extract_clicked_backpack_item",
-      "line": 2558,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((puVar2 != (ushort *)0x0) && ((((uw_object_hdr_t *)puVar2)->type_flags & 0x1c0) == 0x80)) && ((((uw_object_hdr_t *)puVar2)->type_flags & 0x30) == 0)) &&"
-    },
-    {
-      "source": "src/item_use.c",
       "function": "extract_matching_object_from_slot",
       "line": 2638,
       "category": "byte_view",
@@ -5471,87 +4985,6 @@
       "code": "((uw_object_hdr_t *)pbVar10)->link_word_high = (byte)((uVar8 & 0x3ffffff) >> 2);"
     },
     {
-      "source": "src/item_use.c",
-      "function": "redraw_armor_overlay_widgets",
-      "line": 2774,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "uVar3 = ((uw_object_hdr_t *)pbVar1)->type_flags_low & 0x1f;"
-    },
-    {
-      "source": "src/item_use.c",
-      "function": "redraw_armor_overlay_widgets",
-      "line": 2776,
-      "category": "byte_view",
-      "member": "chain_word",
-      "pointer": null,
-      "code": "uVar2 = (((uw_object_hdr_t *)pbVar1)->chain_word_low & 0x30) >> 4;"
-    },
-    {
-      "source": "src/item_use.c",
-      "function": "check_object_fits_in_slot",
-      "line": 3110,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((puVar11 == (ushort *)0x0) || ((((uw_object_hdr_t *)puVar11)->type_flags & 0x1f0) != 0x80)) {"
-    },
-    {
-      "source": "src/item_use.c",
-      "function": "check_object_fits_in_slot",
-      "line": 3201,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((puVar11 == (ushort *)0x0) || ((((uw_object_hdr_t *)puVar11)->type_flags & 0x1f0) != 0x80)) {"
-    },
-    {
-      "source": "src/item_use.c",
-      "function": "check_object_fits_in_slot",
-      "line": 3220,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "else if (((short)(ushort)(byte) g_container_type_props[(((uw_object_hdr_t *)pbVar13)->type_flags_low & 0xf)].capacity == 0) ||"
-    },
-    {
-      "source": "src/item_use.c",
-      "function": "check_object_fits_in_slot",
-      "line": 3223,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "(int)(short)(ushort)(byte) g_container_type_props[(((uw_object_hdr_t *)pbVar13)->type_flags_low & 0xf)].capacity)) {"
-    },
-    {
-      "source": "src/item_use.c",
-      "function": "check_object_fits_in_slot",
-      "line": 3231,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "iVar15 = ((byte)((uw_object_hdr_t *)puVar11)->type_flags & 0xf) * 3;"
-    },
-    {
-      "source": "src/item_use.c",
-      "function": "handle_object_drop_target",
-      "line": 3506,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "((((((uw_object_hdr_t *)puVar1)->type_flags & 0x1f0) == 0) || (uVar3 == 0x18)) || (uVar3 == 0x19)) ||"
-    },
-    {
-      "source": "src/item_use.c",
-      "function": "handle_object_drop_target",
-      "line": 3578,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "(unsigned)(((uw_object_hdr_t *)puVar2)->type_flags & 0x1f0),"
-    },
-    {
       "source": "src/level.c",
       "function": "reset_level_object_arena",
       "line": 225,
@@ -5616,24 +5049,6 @@
     },
     {
       "source": "src/movement.c",
-      "function": "sweep_land_on_surface",
-      "line": 1031,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((uw_object_hdr_t *)puVar7)->type_flags & 0x1c0) != 0x40) goto LAB_0005a238;"
-    },
-    {
-      "source": "src/movement.c",
-      "function": "sweep_land_on_surface",
-      "line": 1049,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "(((uw_object_hdr_t *)puVar7)->type_flags & 0x1c0) == 0x40)) {"
-    },
-    {
-      "source": "src/movement.c",
       "function": "collision_response_default",
       "line": 1750,
       "category": "packed_word",
@@ -5671,33 +5086,6 @@
     {
       "source": "src/object_actions.c",
       "function": "dispatch_object_action",
-      "line": 127,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((uw_object_hdr_t *)object)->type_flags & 0x1f0) == 0x160) {"
-    },
-    {
-      "source": "src/object_actions.c",
-      "function": "dispatch_object_action",
-      "line": 147,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((uw_object_hdr_t *)object)->type_flags & 0x1c0) == 0x40) {"
-    },
-    {
-      "source": "src/object_actions.c",
-      "function": "dispatch_object_action",
-      "line": 157,
-      "category": "packed_word",
-      "member": "chain_word",
-      "pointer": null,
-      "code": "sVar4 = (((uw_object_hdr_t *)object)->chain_word >> 4 & 3) + 1;"
-    },
-    {
-      "source": "src/object_actions.c",
-      "function": "dispatch_object_action",
       "line": 171,
       "category": "packed_word",
       "member": "link_word",
@@ -5712,33 +5100,6 @@
       "member": "link_word",
       "pointer": null,
       "code": "(bVar1 = (byte)((uw_object_hdr_t *)object)->link_word, (bVar1 & 0x3f) != 0)) && ((bVar1 & 0x1f) < 0x1c)) {"
-    },
-    {
-      "source": "src/object_actions.c",
-      "function": "dispatch_object_action_dup",
-      "line": 447,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((uw_object_hdr_t *)object)->type_flags & 0x1f0) == 0x160) {"
-    },
-    {
-      "source": "src/object_actions.c",
-      "function": "dispatch_object_action_dup",
-      "line": 470,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((uw_object_hdr_t *)object)->type_flags & 0x1c0) == 0x40) {"
-    },
-    {
-      "source": "src/object_actions.c",
-      "function": "dispatch_object_action_dup",
-      "line": 480,
-      "category": "packed_word",
-      "member": "chain_word",
-      "pointer": null,
-      "code": "sVar4 = (((uw_object_hdr_t *)object)->chain_word >> 4 & 3) + 1;"
     },
     {
       "source": "src/object_actions.c",
@@ -5932,15 +5293,6 @@
     {
       "source": "src/object_actions.c",
       "function": "check_object_combination",
-      "line": 697,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((uw_object_hdr_t *)puVar4)->type_flags & 0x400) == 0) {"
-    },
-    {
-      "source": "src/object_actions.c",
-      "function": "check_object_combination",
       "line": 702,
       "category": "packed_word",
       "member": "type_flags",
@@ -5955,15 +5307,6 @@
       "member": "type_flags",
       "pointer": null,
       "code": "((uw_object_hdr_t *)puVar4)->type_flags = (ushort)uVar6;"
-    },
-    {
-      "source": "src/object_actions.c",
-      "function": "check_object_combination",
-      "line": 708,
-      "category": "packed_word",
-      "member": "link_word",
-      "pointer": null,
-      "code": "else if (((0 < (int)uVar6) && ((((uw_object_hdr_t *)puVar4)->link_word & 0x7fc0) != 0)) && ((((uw_object_hdr_t *)puVar4)->link & 0x1ff) == uVar6))"
     },
     {
       "source": "src/object_actions.c",
@@ -5991,15 +5334,6 @@
       "member": "position_word",
       "pointer": null,
       "code": "((uw_object_hdr_t *)iVar4)->position_word_high = (byte)(char)((ushort)uVar2 >> 8);"
-    },
-    {
-      "source": "src/object_actions.c",
-      "function": "scan_area_for_matching_objects",
-      "line": 1244,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((uw_object_hdr_t *)puVar6)->type_flags & 0x1c0) == 0x40) {"
     },
     {
       "source": "src/object_actions.c",
@@ -6351,15 +5685,6 @@
       "member": "tile_word",
       "pointer": null,
       "code": "uVar2 = g_player_object->tile_word;"
-    },
-    {
-      "source": "src/object_actions.c",
-      "function": "complete_pending_player_command_target",
-      "line": 1715,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "uVar4 = ((uw_object_hdr_t *)target)->type_flags & 0x1c0;"
     },
     {
       "source": "src/object_actions.c",
@@ -6720,15 +6045,6 @@
       "member": "link_word",
       "pointer": null,
       "code": "((uw_object_hdr_t *)scratch_bytes)->link_word_high = (byte)((uVar1 & 0xffc0) >> 8);"
-    },
-    {
-      "source": "src/object_actions.c",
-      "function": "init_monster_spawn_defaults",
-      "line": 2358,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "DAT_001007c8 = &DAT_001007d0 + (((uw_object_hdr_t *)scratch_bytes)->type_flags_low & 0x3f) * 0x30;"
     },
     {
       "source": "src/object_actions.c",
@@ -7559,15 +6875,6 @@
       "code": "scratch_bytes[0x19] = scratch_bytes[0x19] & 0xf3;"
     },
     {
-      "source": "src/object_actions.c",
-      "function": "append_object_special_name",
-      "line": 2544,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "bVar9 = (((uw_object_hdr_t *)chain_item)->type_flags_high & 8) == 0;"
-    },
-    {
       "source": "src/objects.c",
       "function": "spawn_object_near_player",
       "line": 98,
@@ -7876,29 +7183,11 @@
     {
       "source": "src/objects.c",
       "function": "spawn_object_near_player",
-      "line": 160,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "(unsigned)(((uw_object_hdr_t *)puVar6)->type_flags & 0x1c0),"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
       "line": 161,
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "puVar6",
       "code": "(unsigned)puVar6[0xb],"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 163,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((uw_object_hdr_t *)puVar6)->type_flags & 0x1c0) != 0x40) {"
     },
     {
       "source": "src/objects.c",
@@ -8227,15 +7516,6 @@
     {
       "source": "src/objects.c",
       "function": "clear_object_temp_flag_callback",
-      "line": 850,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "uVar3 = ((uw_object_hdr_t *)object)->type_flags & 0x1c0;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "clear_object_temp_flag_callback",
       "line": 853,
       "category": "packed_word",
       "member": "position_word",
@@ -8268,15 +7548,6 @@
       "member": "link_word",
       "pointer": null,
       "code": "sum_container_weight(&object->link_word,local_8);"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "get_scanned_object_class_effect_ptr",
-      "line": 1054,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "return class_handlers[(short)((g_scratch_object_ptr->type_flags & 0x1c0) >> 6)]();"
     },
     {
       "source": "src/objects.c",
@@ -8457,33 +7728,6 @@
       "member": "type_flags",
       "pointer": null,
       "code": "uVar1 = g_scratch_object_ptr->type_flags;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "class7_variant_effect_table_lookup",
-      "line": 1706,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "return &g_animation_type_props[((byte)g_scratch_object_ptr->type_flags & 0xf)];"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "class1_variant_effect_table_lookup",
-      "line": 1721,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "sVar1 = (short)((pbVar3->type_flags & 0x30) >> 4);"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "class1_variant_effect_table_lookup",
-      "line": 1723,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "uVar2 = pbVar3->type_flags & 0xf;"
     },
     {
       "source": "src/objects.c",
@@ -8668,29 +7912,11 @@
     {
       "source": "src/objects.c",
       "function": "reallocate_object_to_arena",
-      "line": 1899,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if (((((uw_object_hdr_t *)object)->type_flags & 0x1c0) != 0x140) && ((g_object_type_props[(((uw_object_hdr_t *)object)->item_id)].class_flags & 3) != 2)) {"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "reallocate_object_to_arena",
       "line": 1900,
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "puVar2",
       "code": "*(byte *)(puVar2 + 0xd) = ((uw_object_hdr_t *)object)->heading;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "reallocate_object_to_arena",
-      "line": 1902,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((uw_object_hdr_t *)puVar2)->type_flags & 0x1c0) == 0x1c0) {"
     },
     {
       "source": "src/objects.c",
@@ -9045,15 +8271,6 @@
     },
     {
       "source": "src/player.c",
-      "function": "refresh_player_equipment_effects",
-      "line": 790,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "_o ? (unsigned)(((uw_object_hdr_t *)_o)->type_flags & 0xf) : 0u);"
-    },
-    {
-      "source": "src/player.c",
       "function": "handle_game_victory_sequence",
       "line": 2730,
       "category": "packed_word",
@@ -9325,15 +8542,6 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_finish_entry",
-      "line": 112,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "uVar5 = (byte)((uw_object_hdr_t *)puVar4)->type_flags & 0xf;"
-    },
-    {
-      "source": "src/scheduler.c",
-      "function": "scheduler_finish_entry",
       "line": 120,
       "category": "packed_word",
       "member": "type_flags",
@@ -9348,15 +8556,6 @@
       "member": "link_word",
       "pointer": null,
       "code": "uVar10 = (byte)((byte)((uw_object_hdr_t *)puVar4)->link_word >> 4) & 3;"
-    },
-    {
-      "source": "src/scheduler.c",
-      "function": "scheduler_finish_entry",
-      "line": 131,
-      "category": "packed_word",
-      "member": "link_word",
-      "pointer": null,
-      "code": "uVar5 = (byte)((uw_object_hdr_t *)puVar4)->link_word & 0xf;"
     },
     {
       "source": "src/scheduler.c",
@@ -9478,15 +8677,6 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_add_entry",
-      "line": 261,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "iVar4 = (((uw_object_hdr_t *)pbVar3)->type_flags_low & 0xf) * 4;"
-    },
-    {
-      "source": "src/scheduler.c",
-      "function": "scheduler_add_entry",
       "line": 265,
       "category": "packed_word",
       "member": "link_word",
@@ -9532,47 +8722,11 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_step_entry",
-      "line": 318,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "(int)((((uw_object_hdr_t *)puVar4)->type_flags & 0x1f0) == 0x1c0));"
-    },
-    {
-      "source": "src/scheduler.c",
-      "function": "scheduler_step_entry",
-      "line": 319,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((uw_object_hdr_t *)puVar4)->type_flags & 0x1f0) == 0x1c0) {"
-    },
-    {
-      "source": "src/scheduler.c",
-      "function": "scheduler_step_entry",
-      "line": 320,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "iVar1 = (((uw_object_hdr_t *)puVar4)->type_flags & 0xf) * 4;"
-    },
-    {
-      "source": "src/scheduler.c",
-      "function": "scheduler_step_entry",
       "line": 324,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
       "code": "(unsigned)((uw_object_hdr_t *)puVar4)->type_flags,"
-    },
-    {
-      "source": "src/scheduler.c",
-      "function": "scheduler_step_entry",
-      "line": 325,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "(((uw_object_hdr_t *)puVar4)->type_flags & 0xf), iVar1,"
     },
     {
       "source": "src/scheduler.c",
@@ -9600,15 +8754,6 @@
       "member": "link_word",
       "pointer": null,
       "code": "uVar8 = ((uw_object_hdr_t *)puVar4)->link_word;"
-    },
-    {
-      "source": "src/scheduler.c",
-      "function": "scheduler_step_entry",
-      "line": 364,
-      "category": "packed_word",
-      "member": "link_word",
-      "pointer": null,
-      "code": "if ((((uw_object_hdr_t *)puVar4)->link_word & 7) == 6) {"
     },
     {
       "source": "src/scheduler.c",
@@ -9829,15 +8974,6 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_advance_effect",
-      "line": 620,
-      "category": "packed_word",
-      "member": "link_word",
-      "pointer": null,
-      "code": "(((uVar5 & 0x1c0) == 0x1c0 && ((((uw_object_hdr_t *)puVar2)->link_word & 7) == 6)))) {"
-    },
-    {
-      "source": "src/scheduler.c",
-      "function": "scheduler_advance_effect",
       "line": 624,
       "category": "byte_view",
       "member": "type_flags",
@@ -9883,38 +9019,11 @@
     {
       "source": "src/tmap.c",
       "function": "emit_tile_features",
-      "line": 1811,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if (getenv(\"UW_DEBUG_DOOR_POS\") && puVar5 && (((uw_object_hdr_t *)puVar5)->type_flags & 0x1f0) == 0x140)"
-    },
-    {
-      "source": "src/tmap.c",
-      "function": "emit_tile_features",
-      "line": 1820,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if (((((uw_object_hdr_t *)puVar5)->type_flags & 0x1c0) == 0x40) || (iVar16 = object_ptr_in_arena(puVar5), iVar16 == 0)) {"
-    },
-    {
-      "source": "src/tmap.c",
-      "function": "emit_tile_features",
       "line": 1824,
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "puVar5",
       "code": "DAT_0023b91c = *(short *)((char *)puVar5 + 0xf);"
-    },
-    {
-      "source": "src/tmap.c",
-      "function": "emit_tile_features",
-      "line": 1875,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((uVar10 == 0x164) || (((((uw_object_hdr_t *)puVar5)->type_flags & 0x1f0) == 0x140 || (uVar10 == 0x1cf)))) {"
     },
     {
       "source": "src/tmap.c",
@@ -9942,15 +9051,6 @@
       "member": "type_flags",
       "pointer": null,
       "code": "ushort _w0 = ((uw_object_hdr_t *)_rec)->type_flags;"
-    },
-    {
-      "source": "src/tmap.c",
-      "function": "emit_tile_objects",
-      "line": 2118,
-      "category": "packed_word",
-      "member": "chain_word",
-      "pointer": null,
-      "code": "_off = ((g_object_type_props[_iv / 0xd].quality_flags & 0xc) == 0xc) ? 5 : (((byte)((uw_object_hdr_t *)_rec)->chain_word >> 4 & 3) + 1);"
     },
     {
       "source": "src/tmap.c",
@@ -10306,38 +9406,11 @@
     {
       "source": "src/traps.c",
       "function": "dispatch_trap_type_effect",
-      "line": 191,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((uw_object_hdr_t *)puVar8)->type_flags & 0x1c0) == 0x1c0) {"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "dispatch_trap_type_effect",
-      "line": 213,
-      "category": "byte_view",
-      "member": "link_word",
-      "pointer": null,
-      "code": "(int)(((uw_object_hdr_t *)_case8_p1)->link_word_low & 0xf),"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "dispatch_trap_type_effect",
       "line": 214,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
       "code": "(unsigned)((uw_object_hdr_t *)_case8_p1)->type_flags);"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "dispatch_trap_type_effect",
-      "line": 215,
-      "category": "byte_view",
-      "member": "link_word",
-      "pointer": null,
-      "code": "if (7 < (((uw_object_hdr_t *)_case8_p1)->link_word_low & 0xf)) {"
     },
     {
       "source": "src/traps.c",
@@ -10491,15 +9564,6 @@
       "member": "type_flags",
       "pointer": null,
       "code": "(unsigned)((uw_object_hdr_t *)_case8_p1)->type_flags);"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "dispatch_trap_type_effect",
-      "line": 311,
-      "category": "packed_word",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((((uw_object_hdr_t *)equipped_item)->link_word & 0x8000) == 0)) &&"
     },
     {
       "source": "src/traps.c",
@@ -10833,15 +9897,6 @@
       "member": null,
       "pointer": "pbVar5",
       "code": "*(byte *)(pbVar5 + 0xe) = (byte)((ushort)uVar1 >> 8) | 1;"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "tick_ambient_doors_and_scheduler",
-      "line": 754,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "if ((((*(byte *)(_tile2 + 1) & 0x80) == 0) && (7 < (((uw_object_hdr_t *)pbVar1)->type_flags_low & 0xf))) &&"
     },
     {
       "source": "src/traps.c",

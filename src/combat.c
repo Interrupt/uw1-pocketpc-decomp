@@ -803,7 +803,7 @@ int find_nearest_hit_target(short *screen_pos)
          passes the candidate link's slot index, confirmed by the identical `uVar4 >> 6` value used
          right below in this same loop. */
       puVar6 = (ushort *)get_object_record_by_slot_index(uVar4 >> 6);
-      if ((((((uw_object_hdr_t *)puVar6)->type_flags & 0x1c0) != 0x180) && (uVar4 >> 6 != DAT_00100610)) &&
+      if ((((((uw_object_hdr_t *)puVar6)->item_id & 0x1c0) != 0x180) && (uVar4 >> 6 != DAT_00100610)) &&
           (((DAT_00100610 != 1 ||
              ((iVar5 = object_ptr_in_arena(puVar6), iVar5 == 0 ||
                ((*(byte *)((char *)puVar6 + 0x19) & 0x40) == 0)))) ||
@@ -1060,7 +1060,7 @@ int resolve_weapon_hit_skill_check(short hit_flag, int target_slot)
     if ((short)iVar3 != 2) {
       if ((((short)iVar3 == -1) && (hit_flag == 1)) &&
          (pbVar5 = (byte *)get_object_record_by_slot_index((int)DAT_00100620),
-         (g_monster_type_props[(((uw_object_hdr_t *)pbVar5)->type_flags_low & 0x3f)].movement_flags & 1) == 0)) {
+         (g_monster_type_props[(((uw_object_hdr_t *)pbVar5)->item_id & 0x3f)].movement_flags & 1) == 0)) {
         bVar1 = *(byte *)(DAT_00086df8 + 100);
         uVar4 = roll_dice_sum(2,3);
         damage_equipped_item_in_slot(8 - (bVar1 & 1),uVar4,4,0,1);
@@ -1086,7 +1086,7 @@ int resolve_weapon_hit_skill_check(short hit_flag, int target_slot)
     }
   }
   else if (((hit_flag == 1) && ((uVar6 & 0x1f0) == 0x140)) &&
-          (iVar3 = rand_below(0xc), iVar3 < (int)(((byte)((uw_object_hdr_t *)puVar2)->type_flags & 7) * 2))) {
+          (iVar3 = rand_below(0xc), iVar3 < (int)((((uw_object_hdr_t *)puVar2)->item_id & 0x7) * 2))) {
     bVar1 = *(byte *)(DAT_00086df8 + 100);
     uVar4 = roll_dice_sum(2,4);
     damage_equipped_item_in_slot(8 - (bVar1 & 1),uVar4,4,0,1);
@@ -1482,13 +1482,13 @@ void compute_player_weapon_attack_stats(char *weapon_stats, char *weapon_item, s
   }
   if ((short)uVar3 == 2) {
     sVar4 = ordint_divmod(6,
-                          g_monster_type_props[(g_player_object->hdr.type_flags & 0x3f)].strength).quot;  /* dividend dropped by Ghidra; ARM 0x2749c-0x274bc, same table lookup as the else branch below */
+                          g_monster_type_props[(g_player_object->hdr.item_id & 0x3f)].strength).quot;  /* dividend dropped by Ghidra; ARM 0x2749c-0x274bc, same table lookup as the else branch below */
     sVar5 = ordint_divmod(5,(uint)*(byte *)(iVar2 + 0x23) << 1).quot;
     DAT_0010061c = sVar4 + sVar5 + 4;
   }
   else {
     sVar4 = ordint_divmod(9,
-                          g_monster_type_props[(g_player_object->hdr.type_flags & 0x3f)].strength).quot;
+                          g_monster_type_props[(g_player_object->hdr.item_id & 0x3f)].strength).quot;
     DAT_0010061c = (ushort)*(byte *)(weapon_stats + (uint)(byte)(&DAT_00084eff)[attack_type]) + sVar4;
   }
   DAT_00100610 = 1;
@@ -2214,7 +2214,7 @@ int damage_equipped_item_in_slot(int slot, byte damage, byte damage_type, short 
   }
   if (reaction_mode != 2) {
     if (reaction_mode == 0) {
-      if ((((uw_object_hdr_t *)puVar5)->type_flags & 0x1f0) != 0) {
+      if ((((uw_object_hdr_t *)puVar5)->item_id & 0x1f0) != 0) {
         return 0xfffffffe;
       }
     }

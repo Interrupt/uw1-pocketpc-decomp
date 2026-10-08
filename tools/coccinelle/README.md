@@ -257,7 +257,7 @@ the repair leaves unrelated functions untouched.
 
 No game function is moved to a different source file during this work.
 
-Checkpoint validation: game build, all 52 C unit suites, and all six conversion
+Checkpoint validation: game build, all 52 C unit suites, and all seven conversion
 tool suites pass. The latest
 AddressSanitizer pass covers 16 consumers: npc_state/npc_combat/npc_ai/creatures/
 combat/object_layout/object_core/movement/scheduler/spells/chargen/inventory/
@@ -413,3 +413,31 @@ mobile-object layout, covering all byte flag values, signed identity reads,
 address-taking, neighboring storage, packed temporaries, unrelated-buffer and
 projectile exclusions, and idempotence. The function scopes are intentional;
 they do not establish NPC layout for other consumers of mobile arena slots.
+
+## Partial-property reads
+
+`generate_partial_field_read_rules.py` emits `partial-field-reads.cocci` for
+masked slices contained wholly within a documented property. The subset masks
+come from the remaining-access inventory: class/subclass indexes within
+`item_id`, reserved flag bits, owner subcodes, quantity/link bits, quality
+subcodes, and position slices. A slice of `item_id` still reads `item_id`;
+it does not need the surrounding `type_flags` word.
+
+Apply this pass with `--all-includes --include-headers-for-types -I . -I src`,
+so Coccinelle knows the actual typedefs without rewriting headers. Do not use
+`--no-includes`: without type information it can parse a narrowing byte cast
+as part of a member receiver and retain that cast around the wider field.
+`python3 tools/coccinelle/apply_partial_field_read_rules.py --in-place`
+selects the proven patterns present in each source and supplies those options.
+Use `--check` to fail on remaining matches, or omit both flags to preview.
+
+The rules preserve the original slice's bit position when its numeric value
+is used for indexing or encoding. Zero comparisons can omit that position.
+Signed word and char views are supported only where a final mask discards
+sign extension. Masks spanning properties, sign-extension bits outside the
+original byte/word, and genuine packed copies remain unchanged. Both pointer
+and value receivers retain their original evaluation count.
+
+`partial_field_reads` executes every generated spelling and zero comparison
+over all 65,536 input words using the actual object structs. It checks
+conversion coverage, identical values, exclusions and repeatability.

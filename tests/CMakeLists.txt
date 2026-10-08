@@ -981,6 +981,10 @@ if(UW_SPATCH_EXECUTABLE)
     COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_named_struct_fields.py"
       "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME partial_field_reads
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_partial_field_reads.py"
+      "${UW_SPATCH_EXECUTABLE}")
   add_test(NAME named_struct_writes
     COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_named_struct_writes.py"

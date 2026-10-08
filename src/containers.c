@@ -756,7 +756,7 @@ void sum_container_weight(ushort *link_field, short *total_weight)
     if (puVar2 == NULL) {
       return;
     }
-    if ((puVar2->is_quant == 0) || ((puVar2->link_word & 0x8000) != 0)) {
+    if ((puVar2->is_quant == 0) || ((puVar2->link & 0x200) != 0)) {
       uVar1 = 1;
     }
     else {

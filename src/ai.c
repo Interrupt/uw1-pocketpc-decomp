@@ -613,7 +613,7 @@ LAB_0002ed50:
     if (iVar6 != 0) {
       uVar4 = compute_pathfind_search_radius();
       iVar6 = creature_find_path_to_tile(DAT_00101918,DAT_001013f8,
-                                         DAT_0010190c->hdr.position_word_low >> 3 & 0xf,
+                                         DAT_0010190c->hdr.zpos >> 3,
                                          goal,
                                          goal_target,attitude,uVar4);
       if (iVar6 != 0) {
@@ -671,7 +671,7 @@ int npc_ai_tick()
             (unsigned)(DAT_0010190c->npc_yhome),
             (int) DAT_0010190c->npc_hp);
   DAT_00101738 = encode_object_slot_index(DAT_0010190c);
-  DAT_00101404 = &g_monster_type_props[((byte)DAT_0010190c->hdr.type_flags & 0x3f)];
+  DAT_00101404 = &g_monster_type_props[(DAT_0010190c->hdr.item_id & 0x3f)];
   DAT_00101918 = DAT_0010190c->npc_xhome;
   DAT_001013f8 = DAT_0010190c->npc_yhome;
   player_rec = get_object_record_by_slot_index(1);
@@ -778,7 +778,7 @@ int npc_ai_tick()
   DAT_00101918 = DAT_0010190c->npc_xhome;
   uVar9 = DAT_0010190c->npc_yhome;
   DAT_001013f8 = (byte)uVar9;
-  DAT_0010140c = (byte) DAT_0010190c->hdr.position_word >> 3 & 0xf;
+  DAT_0010140c = DAT_0010190c->hdr.zpos >> 3;
   DAT_00101910 = (short)(((uint)DAT_00101918 << 0x13) >> 0x10) +
                  (ushort)(DAT_0010190c->hdr.xpos);
   DAT_0010141c = (DAT_0010190c->hdr.ypos) + (short)((uVar9 << 0x13) >> 0x10);
@@ -924,7 +924,7 @@ void tick_mobile_objects(char elapsed)
         iVar1 = object_tick_is_due(DAT_0010190c->movement_flags & 0xf,
                                    DAT_0010190c->attack_pitch & 7);
         if (iVar1 == 0) goto LAB_00034a98;
-        if ((DAT_0010190c->hdr.type_flags & 0x1c0) == 0x40) {
+        if ((DAT_0010190c->hdr.item_id & 0x1c0) == 0x40) {
           iVar1 = npc_ai_tick();
         }
         else {
@@ -1125,7 +1125,7 @@ int sync_object_tile_position(ushort *object, void *position_ptr)
   }
   uVar1 = *(ushort *)((char *)position + 0x29);
   if (0x100 < uVar1) {
-    if ((((uw_object_hdr_t *)object)->type_flags & 0x1c0) != 0x40) {
+    if ((((uw_object_hdr_t *)object)->item_id & 0x1c0) != 0x40) {
       uVar2 = ordint_divmod(0x32,
                                 (short)(g_object_type_props[(((uw_object_hdr_t *)object)->item_id)].unit_weight)
                                 + -600).quot;
@@ -1148,7 +1148,7 @@ int sync_object_tile_position(ushort *object, void *position_ptr)
       apply_typed_damage_to_object(object,0,(int)(short)DAT_0010144c,(int)DAT_00101454,1,8);
     }
   }
-  if ((((uw_object_hdr_t *)object)->type_flags & 0x1c0) != 0x40) {
+  if ((((uw_object_hdr_t *)object)->item_id & 0x1c0) != 0x40) {
     if (DAT_002046c4 < (char *)object) {
       if ((position[10] != 0 || position[8] != 0) || position[5] != 0) {
         object = (ushort *)reallocate_object_to_arena(object);
@@ -1205,7 +1205,7 @@ int sync_object_tile_position(ushort *object, void *position_ptr)
     *(byte *)((char *)object + 0x13) = (bVar3 ^ bVar9) & 0x7f ^ bVar9;
     *(byte *)(object + 5) =
          (byte)object[5] & 0x8f | ((&DAT_000868c0)[(byte)position[0x14]] & 7) << 4;
-    if ((((uw_object_hdr_t *)object)->type_flags & 0x1c0) != 0x40) {
+    if ((((uw_object_hdr_t *)object)->item_id & 0x1c0) != 0x40) {
       uVar1 = *position;
       *(char *)((char *)object + 0xb) = (char)uVar1;
       *(char *)(object + 6) = (char)(uVar1 >> 8);
@@ -1219,7 +1219,7 @@ int sync_object_tile_position(ushort *object, void *position_ptr)
     return 1;
   }
 LAB_0005559c:
-  if ((((uw_object_hdr_t *)object)->type_flags & 0x1c0) == 0x140) {
+  if ((((uw_object_hdr_t *)object)->item_id & 0x1c0) == 0x140) {
     uVar7 = ((uw_object_hdr_t *)object)->position_word & 0xfc7f | ((int)*(short *)((char *)position + 0x21) >> 0xd & 7U) << 7;
     ((uw_object_hdr_t *)object)->position_word = (ushort)uVar7;
   }
@@ -1357,7 +1357,7 @@ ushort *settle_mobile_to_immobile(ushort *object)
     puVar9 = (ushort *)0x0;
   }
   if (bVar13 == 9) {
-    if ((((uw_object_hdr_t *)object)->type_flags & 0x1c0) == 0x40) {
+    if ((((uw_object_hdr_t *)object)->item_id & 0x1c0) == 0x40) {
       local_2c = 0;
     }
     else {
@@ -1541,8 +1541,8 @@ void spawn_creature_equipment_drop(void *creature_ptr)
       bVar2 = (byte)uVar1;
       ((uw_object_hdr_t *)pbVar4)->chain_word_low = (bVar2 ^ bVar6) & 0x3f ^ bVar2;
       ((uw_object_hdr_t *)pbVar4)->chain_word_high = (byte)((ushort)uVar1 >> 8);
-      if ((((uw_object_hdr_t *)pbVar4)->type_flags_low & 0x30) == 0x10) {
-        if (g_ranged_type_props[(((uw_object_hdr_t *)pbVar4)->type_flags_low & 0xf)].ammo_damage_selector == 0xc0) {  /* byte value 0xc0 (was compared against -0x40, never true for an unsigned byte) */
+      if ((((uw_object_hdr_t *)pbVar4)->item_id & 0x30) == 0x10) {
+        if (g_ranged_type_props[(((uw_object_hdr_t *)pbVar4)->item_id & 0xf)].ammo_damage_selector == 0xc0) {  /* byte value 0xc0 (was compared against -0x40, never true for an unsigned byte) */
           uVar5 = ce_rand();
           uw_ord2005_rem_163 = ((int)(uVar5)) % (8);
           uVar7 = (uw_ord2005_rem_163 & 0xffff) + 4;
@@ -2847,12 +2847,12 @@ void setup_npc_ai_tick_state(uw_mobile_object_t *npc)
      above as DAT_0010190c, the "current NPC" this whole per-tick setup is for) is the obvious
      intended argument. */
   DAT_00101738 = encode_object_slot_index(npc);
-  iVar3 = ((byte) DAT_0010190c->hdr.type_flags & 0x3f) * 0x30;
+  iVar3 = (DAT_0010190c->hdr.item_id & 0x3f) * 0x30;
   DAT_00101404 = &g_monster_type_props[(iVar3) / 0x30];
   DAT_00101918 = DAT_0010190c->npc_xhome;
   uVar2 = DAT_0010190c->npc_yhome;
   DAT_001013f8 = (char)uVar2;
-  DAT_0010140c = (byte) DAT_0010190c->hdr.position_word >> 3 & 0xf;
+  DAT_0010140c = DAT_0010190c->hdr.zpos >> 3;
   DAT_00101910 = (short)(((uint)DAT_00101918 << 0x13) >> 0x10) +
                  (ushort)(DAT_0010190c->hdr.xpos);
   DAT_0010141c = (DAT_0010190c->hdr.ypos) + (short)((uVar2 << 0x13) >> 0x10);
@@ -2996,7 +2996,7 @@ LAB_000339fc:
             uVar11 = DAT_0010190c->status_word;
             npc_set_walk_target(g_player_object->npc_xhome,
                                 g_player_object->npc_yhome,
-                                g_player_object->hdr.position_word_low >> 3 & 0xf);
+                                g_player_object->hdr.zpos >> 3);
             DAT_0010190c->npc_ai_flags = DAT_0010190c->npc_ai_flags | 1;
           }
           if ((DAT_00101900 < 3) ||
@@ -3636,7 +3636,7 @@ int spawn_rest_interrupt_monster_callback(int scan_x, int scan_y, ushort *object
             (iVar13 * 0x10000 >> 0x10) * (iVar13 * 0x10000 >> 0x10)) * 0x10000 >> 0x10 <=
             (int)(uVar9 * uVar9 * 3)) &&
           (iVar11 = creature_find_path_to_tile((uint)DAT_00101918,(uint)DAT_001013f8,
-                                 DAT_0010190c->hdr.position_word_low >> 3 & 0xf,(uint)(uVar4 >> 10),
+                                 DAT_0010190c->hdr.zpos >> 3,(uint)(uVar4 >> 10),
                                  CONCAT11(uVar16,(char)(uVar4 >> 4)) & 0xff3f,
                                  CONCAT31((int3)((uint)in_stack_ffffffd0 >> 8),
                                           g_player_object->hdr.position_word_low >> 3) & 0xffffff0f,0),
@@ -3656,7 +3656,7 @@ int spawn_rest_interrupt_monster_callback(int scan_x, int scan_y, ushort *object
                 uVar9 = (uint)((uw_object_hdr_t *)puVar8)->type_flags;
                 if ((uVar9 & 0x1c0) == 0x180) {
                   uVar10 = uVar9 & 0x30;
-                  bVar14 = (((uw_object_hdr_t *)puVar8)->type_flags & 0x30) == 0;
+                  bVar14 = (((uw_object_hdr_t *)puVar8)->item_id & 0x30) == 0;
                   if (bVar14) {
                     uVar10 = uVar9 & 0xf;
                   }
@@ -3700,7 +3700,7 @@ int spawn_rest_interrupt_monster_callback(int scan_x, int scan_y, ushort *object
             *(byte *)((char *)object + 0x19) = *(byte *)((char *)object + 0x19) | 1;
             npc_set_walk_target(g_player_object->npc_xhome,
                                 g_player_object->npc_yhome,
-                                g_player_object->hdr.position_word_low >> 3 & 0xf);
+                                g_player_object->hdr.zpos >> 3);
             DAT_00101950 = 1;
             return 1;
           }
@@ -3797,7 +3797,7 @@ int alert_npc_to_noise_callback(int scan_x, int scan_y, ushort *npc)
   int iVar12;
   undefined1 auStack_74 [80];
   
-  iVar10 = (((uw_object_hdr_t *)npc)->type_flags & 0x3f) * 0x30;
+  iVar10 = (((uw_object_hdr_t *)npc)->item_id & 0x3f) * 0x30;
   if ((((g_monster_type_props[(iVar10) / 0x30].race_flags == (DAT_0010195c & 0x1f)) &&
         (((npc[5] & 0x80) == 0 || ((DAT_0010195c & 0x20) != 0)))) &&
        ((DAT_0010195c != 0x20 || ((npc[5] & 0x80) != 0)))) &&
@@ -3863,7 +3863,7 @@ void emit_noise_alert(ushort *source, byte noise_type)
   if (DAT_0010195c != 0) {
     DAT_00101958 = source;
     scan_area_for_matching_objects(0x14,0,alert_npc_to_noise_callback,0,(char)DAT_002020a0 + -7,(char)DAT_002020a4 + -7,0xf,0xf);
-    if ((((uw_object_hdr_t *)source)->link_word & 0x1f) < 0x1c) {
+    if ((((uw_object_hdr_t *)source)->owner & 0x1f) < 0x1c) {
       uVar2 = ((uw_object_hdr_t *)source)->link << 6;
       ((uw_object_hdr_t *)source)->link_word = (ushort)uVar2;
     }

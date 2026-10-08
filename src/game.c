@@ -692,7 +692,7 @@ void init_gameplay_session()
      per-tick call sites of scheduler_tick... */
   DAT_000879ac = 1;
   reset_player_object_record();
-  iVar1 = (g_player_object->hdr.type_flags & 0x3f) * 0x30;
+  iVar1 = (g_player_object->hdr.item_id & 0x3f) * 0x30;
   DAT_0023be74 = &DAT_001007d0 + iVar1;
   ((ushort *)g_player_object)[8] = g_monster_type_props[(iVar1) / 0x30].max_hp;
   if (DAT_00201c74 == 0) {

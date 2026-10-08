@@ -334,7 +334,7 @@ void handle_inventory_panel_click(short slot)
       if (((iVar9 != -1) && (iVar9 != 0x13)) && (iVar6 = wait_for_key_or_mouse_move(1), iVar6 != 0)) {
         puVar7 = (ushort *)resolve_object_link(&g_equipped_items + iVar9 * 2);
         uVar3 = ((uw_object_hdr_t *)puVar7)->type_flags;
-        if (((uVar3 & 0x8000) == 0) || ((((uw_object_hdr_t *)puVar7)->link_word & 0x8000) != 0)) {
+        if (((uVar3 & 0x8000) == 0) || ((((uw_object_hdr_t *)puVar7)->link & 0x200) != 0)) {
           if (((uVar3 & 0x1c0) == 0x80) && ((uVar3 & 0x30) == 0)) {
             open_record = g_open_container_list;
             if ((DAT_00085a6c[4] == 4) && ((uVar3 & 0xf) != 0xf)) {
@@ -551,7 +551,7 @@ joined_r0x00048308:
                                 (int)(short)(&g_inv_hotspot_draw_y)[iVar6 * 7],
                                 (&g_inv_hotspot_dirty_h)[iVar6 * 0xe],
                                 (&g_inv_hotspot_dirty_w)[iVar6 * 0xe]);
-              if (((((uw_object_hdr_t *)puVar7)->is_quant != 0) && ((((uw_object_hdr_t *)puVar7)->link_word & 0x8000) == 0)) &&
+              if (((((uw_object_hdr_t *)puVar7)->is_quant != 0) && ((((uw_object_hdr_t *)puVar7)->link & 0x200) == 0)) &&
                   (uVar4 = ((uw_object_hdr_t *)puVar7)->link, 1 < uVar4)) {
                 auStack_54[iVar6] = uVar4;
                 bVar5 = true;
@@ -602,7 +602,7 @@ joined_r0x00048308:
                           (int)_DAT_00085bf0,
                           (int)CONCAT11(DAT_00085bf3,DAT_00085bf2),
                           DAT_00085bf5,DAT_00085bf4);
-        if (((((uw_object_hdr_t *)puVar7)->is_quant != 0) && ((((uw_object_hdr_t *)puVar7)->link_word & 0x8000) == 0)) &&
+        if (((((uw_object_hdr_t *)puVar7)->is_quant != 0) && ((((uw_object_hdr_t *)puVar7)->link & 0x200) == 0)) &&
             (uVar4 = ((uw_object_hdr_t *)puVar7)->link, 1 < uVar4)) {
           bVar5 = true;
           local_2c = uVar4;

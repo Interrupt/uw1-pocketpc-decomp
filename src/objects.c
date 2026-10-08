@@ -157,10 +157,10 @@ LAB_0004b06c:
     if (getenv("UW_DEBUG_THROW"))
       fprintf(stderr, "[throw-spawn] *puVar6=0x%x (&0x1c0=0x%x) puVar6[0xb]_before=0x%x DAT_00202a44_type=0x%x\n",
               (unsigned)((uw_object_hdr_t *)puVar6)->type_flags,
-              (unsigned)(((uw_object_hdr_t *)puVar6)->type_flags & 0x1c0),
+              (unsigned)(((uw_object_hdr_t *)puVar6)->item_id & 0x1c0),
               (unsigned)puVar6[0xb],
               (unsigned)(*DAT_00202a44 & 0x1ff));
-    if ((((uw_object_hdr_t *)puVar6)->type_flags & 0x1c0) != 0x40) {
+    if ((((uw_object_hdr_t *)puVar6)->item_id & 0x1c0) != 0x40) {
       sVar5 = 0;
       iVar8 = (((uw_object_hdr_t *)puVar6)->xpos << 5) + ((puVar6[0xb] & 0xfc00) >> 2) + 0xf;
       *(char *)((char *)puVar6 + 0xb) = (char)iVar8;
@@ -847,7 +847,7 @@ int clear_object_temp_flag_callback(ushort *object)
 
   iVar2 = object_ptr_in_arena(object);
   if (iVar2 == 0) {
-    uVar3 = ((uw_object_hdr_t *)object)->type_flags & 0x1c0;
+    uVar3 = ((uw_object_hdr_t *)object)->item_id & 0x1c0;
     if (((uVar3 != 0x140) && (uVar3 != 0x180)) &&
        ((g_object_type_props[(((uw_object_hdr_t *)object)->item_id)].class_flags & 3) != 2)) {
       uVar1 = ((uw_object_hdr_t *)object)->position_word;
@@ -1051,7 +1051,7 @@ void *get_scanned_object_class_effect_ptr()
 
   /* Was `(*(code *)local_24[...])(); return 0;` -- Ghidra couldn't trace a return value through the
      indirect call and fabricated a "return 0" placeholder. */
-  return class_handlers[(short)((g_scratch_object_ptr->type_flags & 0x1c0) >> 6)]();
+  return class_handlers[(short)((g_scratch_object_ptr->item_id & 0x1c0) >> 6)]();
 }
 
 
@@ -1703,7 +1703,7 @@ void *class6_variant_effect_table_lookup()
 void *class7_variant_effect_table_lookup()
 
 {
-  return &g_animation_type_props[((byte)g_scratch_object_ptr->type_flags & 0xf)];
+  return &g_animation_type_props[(g_scratch_object_ptr->item_id & 0xf)];
 }
 /* was FUN_0002a2d8: class1_variant_effect_table_lookup, dispatch slot 1 of
    get_scanned_object_class_effect_ptr's local_24 array (the same 4-entry array
@@ -1718,9 +1718,9 @@ void *class1_variant_effect_table_lookup()
   uw_object_hdr_t *pbVar3;
 
   pbVar3 = g_scratch_object_ptr;
-  sVar1 = (short)((pbVar3->type_flags & 0x30) >> 4);
+  sVar1 = (short)((pbVar3->item_id & 0x30) >> 4);
   DAT_001013f4 = sVar1;
-  uVar2 = pbVar3->type_flags & 0xf;
+  uVar2 = pbVar3->item_id & 0xf;
   DAT_001013f0 = uVar2;
   return &g_monster_type_props[(sVar1 * 0x10 + (int)(short)uVar2)];
 }
@@ -1896,10 +1896,10 @@ uw_object_hdr_t *reallocate_object_to_arena(ushort *object)
     ((uw_object_hdr_t *)puVar2)->link_word_high = ((uw_object_hdr_t *)object)->link_word_high;
     compute_object_placement_fields(puVar2,(int)DAT_0010144c,(int)DAT_00101454);
     *(byte *)(puVar2 + 4) = ((uw_object_hdr_t *)object)->quality;
-    if (((((uw_object_hdr_t *)object)->type_flags & 0x1c0) != 0x140) && ((g_object_type_props[(((uw_object_hdr_t *)object)->item_id)].class_flags & 3) != 2)) {
+    if (((((uw_object_hdr_t *)object)->item_id & 0x1c0) != 0x140) && ((g_object_type_props[(((uw_object_hdr_t *)object)->item_id)].class_flags & 3) != 2)) {
       *(byte *)(puVar2 + 0xd) = ((uw_object_hdr_t *)object)->heading;
     }
-    if ((((uw_object_hdr_t *)puVar2)->type_flags & 0x1c0) == 0x1c0) {
+    if ((((uw_object_hdr_t *)puVar2)->item_id & 0x1c0) == 0x1c0) {
       scheduler_relink_entry(puVar2,object);
     }
     if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)object)->item_id) == 0x80)

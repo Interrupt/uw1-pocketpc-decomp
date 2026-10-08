@@ -1808,7 +1808,7 @@ void emit_tile_features(ushort *tile)
             fprintf(stderr, "[objpos] cVar8=%d iVar7=%d bb99=%d bb9a=%d b4e4=%d b4e8=%d\n",
                     (int)cVar8, iVar7, (int)(char)(&DAT_0023bb99)[iVar7], (int)(char)(&DAT_0023bb9a)[iVar7],
                     (int)DAT_0023b4e4, (int)DAT_0023b4e8);
-          if (getenv("UW_DEBUG_DOOR_POS") && puVar5 && (((uw_object_hdr_t *)puVar5)->type_flags & 0x1f0) == 0x140)
+          if (getenv("UW_DEBUG_DOOR_POS") && puVar5 && (((uw_object_hdr_t *)puVar5)->item_id & 0x1f0) == 0x140)
             fprintf(stderr, "[doorpos] tile-grid: cVar8=%d slot_x=%d slot_z=%d b4e4(tileX)=%d b4e8(tileZ)=%d tile_origin=(%d,%d)\n",
                     (int)cVar8, (int)(char)(&DAT_0023bb99)[iVar7], (int)(char)(&DAT_0023bb9a)[iVar7],
                     (int)DAT_0023b4e4, (int)DAT_0023b4e8,
@@ -1817,7 +1817,7 @@ void emit_tile_features(ushort *tile)
                          (short)((uint)((int)DAT_0023b4e4 << 0x13) >> 0x10)) * 0x20 + 0x10;
           DAT_0023b920 = ((short)(char)(&DAT_0023bb9a)[iVar7] +
                          (short)((uint)((int)DAT_0023b4e8 << 0x13) >> 0x10)) * 0x20 + 0x10;
-          if (((((uw_object_hdr_t *)puVar5)->type_flags & 0x1c0) == 0x40) || (iVar16 = object_ptr_in_arena(puVar5), iVar16 == 0)) {
+          if (((((uw_object_hdr_t *)puVar5)->item_id & 0x1c0) == 0x40) || (iVar16 = object_ptr_in_arena(puVar5), iVar16 == 0)) {
             DAT_0023b91c = (((uw_object_hdr_t *)puVar5)->zpos) << 3;
           }
           else {
@@ -1872,7 +1872,7 @@ void emit_tile_features(ushort *tile)
       return;
     }
     uVar10 = (uint)(short)(((uw_object_hdr_t *)puVar5)->item_id);
-    if ((uVar10 == 0x164) || (((((uw_object_hdr_t *)puVar5)->type_flags & 0x1f0) == 0x140 || (uVar10 == 0x1cf)))) {
+    if ((uVar10 == 0x164) || (((((uw_object_hdr_t *)puVar5)->item_id & 0x1f0) == 0x140 || (uVar10 == 0x1cf)))) {
       uVar2 = local_34 >> 0x10;
       local_34 = CONCAT22((short)uVar2,sVar3 + (short)((uVar10 << 0x16) >> 0x10));
 LAB_0006574c:
@@ -2115,7 +2115,7 @@ void emit_tile_objects(ushort *tile)
       int _qual = ((uw_object_hdr_t *)_rec)->quality;
       int _off = 0;
       if (_qual != 0) {
-        _off = ((g_object_type_props[_iv / 0xd].quality_flags & 0xc) == 0xc) ? 5 : (((byte)((uw_object_hdr_t *)_rec)->chain_word >> 4 & 3) + 1);
+        _off = ((g_object_type_props[_iv / 0xd].quality_flags & 0xc) == 0xc) ? 5 : ((((uw_object_hdr_t *)_rec)->quality >> 4) + 1);
       }
       char *_nm = (char *)get_message_string(_grp * 6 + _off | 0xa00);
       fprintf(stderr, "[lookslot] slot=%d id=0x%03x flags=0x%04x has_lookbit=%d namegrp=%d name='%s'\n",

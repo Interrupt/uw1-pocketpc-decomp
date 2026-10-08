@@ -404,7 +404,7 @@ void collision_height_envelope(int mode, int collision)
               iVar10 = (((uw_object_hdr_t *)puVar7)->item_id) * 0xd;
               if ((((local_3c == 0) || ((g_object_type_props[iVar10 / 0xd].flags & 4) == 0)) &&
                    ((g_object_type_props[iVar10 / 0xd].height != '\0' || ((char *)puVar7 < DAT_002046c4)))) &&
-                  ((((DAT_002046c4 <= (char *)puVar7 || ((((uw_object_hdr_t *)puVar7)->type_flags & 0x1c0) == 0x40)) ||
+                  ((((DAT_002046c4 <= (char *)puVar7 || ((((uw_object_hdr_t *)puVar7)->item_id & 0x1c0) == 0x40)) ||
                      ((*(byte *)((char *)puVar7 + 0x15) & 0x80) == 0)) &&
                     ((collision == 0 || ((g_object_type_props[iVar10 / 0xd].quality_flags & 1) != 0)))))) {
                 collision_add_candidate_object(puVar7,*puVar6 >> 6,iVar12,iVar14,local_3c);
