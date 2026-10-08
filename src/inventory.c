@@ -683,7 +683,7 @@ LAB_0003f69c:
         if ((short)uVar2 < (short)((ushort)uVar3 & 3)) {
           uVar2 = uVar3 & 3;
         }
-        uVar3 = CONCAT11(*(undefined1 *)((char *)g_interact_target + 3),(char)g_interact_target[1]) & 0xfe7f |
+        uVar3 = (ushort)g_interact_target[1] & 0xfe7f |
                 (uVar2 & 3 | 4) << 7;
         *(char *)(g_interact_target + 1) = (char)uVar3;
         *(char *)((char *)g_interact_target + 3) = (char)(uVar3 >> 8);

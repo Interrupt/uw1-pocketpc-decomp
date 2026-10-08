@@ -628,8 +628,7 @@ int check_object_drop_height(ushort *object, ushort *reference)
     uVar7 = uVar2 & 0xf | uVar7 | ((int)(short)(*(ushort *)(DAT_00202c6c + 2) & 0x1f8) >> 3) << 4;
     *(char *)(object + 0xb) = (char)uVar7;
     *(char *)((char *)object + 0x17) = (char)(uVar7 >> 8);
-    uVar7 = (uint)CONCAT11(((uw_object_hdr_t *)object)->position_word_high,
-                           (char)((uw_object_hdr_t *)object)->position_word);
+    uVar7 = (uint)((uw_object_hdr_t *)object)->position_word;
     uVar6 = uVar7 & 0x1fff;
     bVar1 = (byte)((((byte)*DAT_00202c6c & 7) << 0xd) >> 8);
     *(char *)(object + 1) = (char)uVar6;
@@ -2648,7 +2647,7 @@ void look_at_inscribed_object(ushort *inscribed_object, short look_mode)
       uVar9 = (byte)inscribed_object[3] & 0x3f;
     }
     else {
-      uVar9 = (CONCAT11(*(undefined1 *)((char *)inscribed_object + 7),(byte)inscribed_object[3]) & 0x7fc0) >> 6;
+      uVar9 = ((ushort)inscribed_object[3] & 0x7fc0) >> 6;
     }
     if (uVar8 == 5) {
       ce_memset(acStack_120,0,0x104);

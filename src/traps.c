@@ -538,8 +538,7 @@ int create_scripted_trap_pair_at_tile(int tile_x, int tile_y, uint code)
       uVar7 = uVar2 & 0xffa0 | 0x61a0;
       ((uw_object_hdr_t *)puVar4)->type_flags_low = (byte)(char)uVar7;
       ((uw_object_hdr_t *)puVar4)->type_flags_high = (byte)(char)(uVar7 >> 8);
-      uVar7 = CONCAT11(((uw_object_hdr_t *)puVar4)->position_word_high,
-                       (char)((uw_object_hdr_t *)puVar4)->position_word) & 0xff80;
+      uVar7 = ((uw_object_hdr_t *)puVar4)->position_word & 0xff80;
       bVar9 = *pbVar6 >> 1 & 0x78;
       *(byte *)(puVar4 + 1) = (byte)uVar7 | bVar9;
       ((uw_object_hdr_t *)puVar4)->position_word_high = (byte)(char)(uVar7 >> 8);
@@ -565,8 +564,7 @@ int create_scripted_trap_pair_at_tile(int tile_x, int tile_y, uint code)
       ((uw_object_hdr_t *)puVar5)->type_flags_low = (byte)(char)uVar11;
       ((uw_object_hdr_t *)puVar5)->type_flags_high = (byte)(uVar7 >> 8) | 0x60;
       bVar9 = *pbVar6 >> 1 & 0x78;
-      uVar7 = (uint)CONCAT11(((uw_object_hdr_t *)puVar5)->position_word_high,
-                             (char)((uw_object_hdr_t *)puVar5)->position_word);
+      uVar7 = (uint)((uw_object_hdr_t *)puVar5)->position_word;
       uVar10 = uVar7 & 0xff80;
       *(byte *)(puVar5 + 1) = bVar9 | (byte)uVar10;
       ((uw_object_hdr_t *)puVar5)->position_word_high = (byte)(char)(uVar10 >> 8);
@@ -1209,7 +1207,7 @@ void trigger_scripted_npc_conversation()
   uVar1 = *(undefined2 *)(iVar2 + 0xd);
   *(char *)(iVar2 + 0xd) = (char)uVar1;
   *(byte *)(iVar2 + 0xe) = (byte)((ushort)uVar1 >> 8) | 0xc0;
-  uVar3 = CONCAT11(*(undefined1 *)(iVar2 + 0xc),*(undefined1 *)(iVar2 + 0xb)) & 0xfffa;
+  uVar3 = ((uw_mobile_object_t *)iVar2)->goal_word & 0xfffa;
   *(byte *)(iVar2 + 0xb) = (byte)uVar3 | 10;
   *(char *)(iVar2 + 0xc) = (char)(uVar3 >> 8);
   interact_talk_npc();

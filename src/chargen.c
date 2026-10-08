@@ -970,10 +970,10 @@ void draw_chargen_field_value(short *field)
           iVar10 = iVar10 + iVar9 + 4;
         }
         sVar7 = (short)uVar12;
-        iVar11 = CONCAT11(*(undefined1 *)((char *)field + 0x13),(char)field[9]) + iVar11 + uVar12;
+        iVar11 = (ushort)field[9] + iVar11 + uVar12;
         /* Investigated as a possible "missing button outline" source this session -- ruled out. */
         bitmap_blit_to_framebuffer(iVar11,iVar10,
-                     (&DAT_000fb880)[CONCAT11(*(undefined1 *)((char *)field + 0xd),(char)field[6])]
+                     (&DAT_000fb880)[(ushort)field[6]]
                      + iVar3,(int)(short)local_2c,sVar7,0,0,0);
         if (field[6] == 0) {
           /* field+3 (byte offset +6 in the record) holds a relative
@@ -1132,7 +1132,7 @@ uint character_generator_touch_select(short *field, uint position)
     sVar7 = 0;
   }
   iVar1 = -(((uint)(sVar4 != 0) +
-            (int)CONCAT11(*(undefined1 *)((char *)field + 0xf),(char)field[7])) * (local_30 + 4));
+            (int)(ushort)field[7]) * (local_30 + 4));
   iVar9 = iVar1 + 200;
   if (iVar9 < 0) {
     iVar9 = iVar1 + 0xc9;

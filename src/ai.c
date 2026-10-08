@@ -1210,7 +1210,7 @@ int sync_object_tile_position(ushort *object, void *position_ptr)
     *(byte *)((char *)object + 0x13) = (bVar3 ^ bVar9) & 0x7f ^ bVar9;
     *(byte *)(object + 5) =
          (byte)object[5] & 0x8f | ((&DAT_000868c0)[(byte)position[0x14]] & 7) << 4;
-    if ((CONCAT11(((uw_object_hdr_t *)object)->type_flags_high,(char)((uw_object_hdr_t *)object)->type_flags) & 0x1c0) != 0x40) {
+    if ((((uw_object_hdr_t *)object)->type_flags & 0x1c0) != 0x40) {
       uVar1 = *position;
       *(char *)((char *)object + 0xb) = (char)uVar1;
       *(char *)(object + 6) = (char)(uVar1 >> 8);
@@ -1352,7 +1352,7 @@ ushort *settle_mobile_to_immobile(ushort *object)
     uVar1 = puVar9[2];
     *(byte *)(puVar9 + 2) = (byte)object[4] & 0x3f | (byte)(uVar1 & 0xffc0);
     *(byte *)((char *)puVar9 + 5) = (byte)((uVar1 & 0xffc0) >> 8);
-    uVar12 = (uint)CONCAT11(*(byte *)((char *)puVar9 + 1),(byte)*puVar9);
+    uVar12 = (uint)(ushort)*puVar9;
     uVar11 = uVar12 & 0x1c0;
     if (((uVar11 != 0x140) && (uVar11 != 0x180)) &&
        ((g_object_type_props[(uVar12 & 0x1ff)].class_flags & 3) != 2)) {
@@ -1730,7 +1730,7 @@ void drop_monster_loot(void *monster_ptr, ushort gold_nibble, ushort item_nibble
     *(byte *)(pDropObj + 3) = bVar2;
     *(byte *)(pDropObj + 2) = (monster[2] ^ bVar1) & 0x7f ^ bVar1;
     *(byte *)(pDropObj + 3) = bVar2;
-    uVar6 = CONCAT11(*(undefined1 *)(pDropObj + 5),*(undefined1 *)(pDropObj + 4)) & 0xffe8;
+    uVar6 = ((uw_object_hdr_t *)pDropObj)->chain_word & 0xffe8;
     *(byte *)(pDropObj + 4) = (byte)uVar6 | 0x28;
     *(char *)(pDropObj + 5) = (char)(uVar6 >> 8);
     object_list_insert_head(iVar4 + 2,pDropObj);
@@ -3293,7 +3293,7 @@ int initiate_npc_death(char *npc)
   if ((*(char *)(npc + 0x1a) == '\0') || (iVar1 = resolve_unique_npc_special_behavior(npc,0), iVar1 != 0)) {
     uVar2 = 1;
     *(byte *)(npc + 0x15) = *(byte *)(npc + 0x15) & 0xcc | 0xc;
-    uVar3 = CONCAT11(*(undefined1 *)(npc + 0xc),*(undefined1 *)(npc + 0xb)) & 0xfff;
+    uVar3 = ((uw_mobile_object_t *)npc)->goal_word & 0xfff;
     *(char *)(npc + 0xb) = (char)uVar3;
     *(char *)(npc + 0xc) = (char)(uVar3 >> 8);
     *(byte *)(npc + 0x14) = *(byte *)(npc + 0x14) & 0xfc | 4;
@@ -3494,7 +3494,7 @@ LAB_00034db4:
       *(byte *)(npc_object + 0xb) = (byte)npc_object[0xb] & 0xf | (byte)(uVar8 << 4);
       *(byte *)((char *)npc_object + 0x17) = (byte)((uVar8 << 0x14) >> 0x18);
       uVar9 = uVar9 | (local_2b[0] & 7 | (local_2c & 7) << 3) << 10 |
-              CONCAT11(*(byte *)((char *)npc_object + 3),(byte)npc_object[1]) & 0x380;
+              (ushort)npc_object[1] & 0x380;
       *(byte *)(npc_object + 1) = (byte)uVar9;
       *(byte *)((char *)npc_object + 3) = (byte)(uVar9 >> 8);
     }
@@ -3707,7 +3707,7 @@ int spawn_rest_interrupt_monster_callback(int scan_x, int scan_y, ushort *object
             *(byte *)(object + 0xb) = (byte)object[0xb] & 0xf | (byte)(uVar9 << 4);
             *(char *)((char *)object + 0x17) = (char)(uVar9 >> 4);
             uVar9 = (uint)bVar3 << 3 & 0x7f | (local_27[0] & 7 | (local_28 & 7) << 3) << 10 |
-                    CONCAT11(*(undefined1 *)((char *)object + 3),(char)object[1]) & 0x380;
+                    (ushort)object[1] & 0x380;
             *(char *)(object + 1) = (char)uVar9;
             *(char *)((char *)object + 3) = (char)(uVar9 >> 8);
             *(byte *)((char *)object + 0x19) = *(byte *)((char *)object + 0x19) | 1;
@@ -3910,7 +3910,7 @@ int resolve_unique_npc_special_behavior(void *npc_ptr, int event_mode)
       *(undefined1 *)(npc + 0x12) = 0;
       cancel_weapon_swing();
       *(byte *)(npc + 0x15) = *(byte *)(npc + 0x15) & 0xe0 | 0x20;
-      uVar2 = CONCAT11(*(undefined1 *)(npc + 0xc),*(undefined1 *)(npc + 0xb)) & 0xfff;
+      uVar2 = ((uw_mobile_object_t *)npc)->goal_word & 0xfff;
       *(char *)(npc + 0xb) = (char)uVar2;
       *(char *)(npc + 0xc) = (char)(uVar2 >> 8);
       attempt_talk_interaction(npc);

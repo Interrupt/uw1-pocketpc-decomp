@@ -560,3 +560,95 @@ void unrelated(void) {
     checked = subprocess.run(command + ['--check'], text=True, capture_output=True)
     assert checked.returncode == 0, checked.stdout + checked.stderr
     assert path.read_text() == result, 'ARM byte-offset context repair is not idempotent'
+
+# Packed-byte reassembly must preserve unsigned CONCAT11 promotion, including
+# signed low bytes, signed word lvalues, and every possible 16-bit pattern.
+with tempfile.TemporaryDirectory() as tmp:
+    path = pathlib.Path(tmp) / 'reassembly.c'
+    fields = ['type_flags', 'position_word', 'chain_word', 'link_word',
+              'goal_word', 'status_word', 'target_word', 'tile_word', 'size_weight']
+    unions = '\n'.join('union { ushort %s; struct { byte %s_low, %s_high; }; };' %
+                       (field, field, field) for field in fields)
+    checks = '\n'.join('''
+        object->%s = (ushort)value;
+        if (CONCAT11(object->%s_high, (char)object->%s) != value) return 1;
+        if (CONCAT11(object->%s_high, object->%s_low) != value) return 2;
+        if ((short)CONCAT11(object->%s_high, (byte)object->%s) != (short)value) return 3;
+        if ((int)CONCAT11(object->%s_high, (undefined1)object->%s) != (int)value) return 4;
+    ''' % ((field,) * 9) for field in fields)
+    path.write_text('''
+#include <stdint.h>
+typedef unsigned short ushort;
+typedef unsigned char byte;
+typedef unsigned char undefined1;
+typedef unsigned short undefined2;
+#define CONCAT11(hi,lo) ((ushort)(((unsigned)(byte)(hi) << 8) | (byte)(lo)))
+typedef struct { %s } uw_object_hdr_t;
+typedef struct { uw_object_hdr_t hdr; } uw_mobile_object_t;
+uw_object_hdr_t storage, *object = &storage, *other = &storage;
+uw_object_hdr_t *get_object(void) { return object; }
+ushort *get_words(void) { static ushort words[2]; return words; }
+void excluded(void) {
+    unsigned a = CONCAT11(other->position_word_high, (char)object->position_word);
+    unsigned b = CONCAT11(object->link_word_high, (char)object->position_word);
+    unsigned c = CONCAT11(get_object()->position_word_high, (char)get_object()->position_word);
+    unsigned d = CONCAT11(*(byte *)((char *)get_words() + 3), (byte)get_words()[1]);
+    byte bytes[4] = {0};
+    unsigned e = CONCAT11(bytes[3], bytes[2]);
+    (void)a; (void)b; (void)c; (void)d; (void)e;
+}
+unsigned auto_place_in_container(ushort *object, ushort *puVar6) {
+    byte bVar1 = (byte)object[3];
+    unsigned link = CONCAT11(*(byte *)((char *)object + 7), bVar1);
+    bVar1 = (byte)puVar6[2];
+    return link + CONCAT11(*(undefined1 *)((char *)puVar6 + 5), bVar1);
+}
+int main(void) {
+    ushort word_storage[4], *words = word_storage;
+    short signed_storage[4], *signed_words = signed_storage;
+    uw_mobile_object_t mobile, *npc = &mobile;
+    for (unsigned value = 0; value <= UINT16_MAX; ++value) {
+        %s
+        words[2] = words[3] = (ushort)value;
+        if (auto_place_in_container(words, words) != value * 2) return 10;
+        words[1] = (ushort)value;
+        signed_words[1] = (short)value;
+        npc->hdr.position_word = (ushort)value;
+        if ((int)CONCAT11(*(undefined1 *)((char *)words + 3), (char)words[1]) != (int)value) return 5;
+        if ((int)CONCAT11(*(byte *)((char *)signed_words + 3), (char)signed_words[1]) != (int)value) return 6;
+        if (CONCAT11(npc->hdr.position_word_high, (byte)npc->hdr.position_word) != value) return 7;
+        if (CONCAT11(((uw_object_hdr_t *)object)->position_word_high,
+                     (char)((uw_object_hdr_t *)object)->position_word) != value) return 8;
+        if (CONCAT11(storage.position_word_high, storage.position_word_low) != value) return 9;
+    }
+    return 0;
+}
+''' % (unions, checks))
+    def compile_and_run():
+        executable = pathlib.Path(tmp) / 'reassembly'
+        subprocess.run(['cc', '-std=c11', str(path), '-o', str(executable)], check=True,
+                       capture_output=True, text=True)
+        subprocess.run([str(executable)], check=True, capture_output=True)
+    compile_and_run()
+    transform('packed-reassembly.cocci', path)
+    result = path.read_text()
+    for field in fields:
+        assert 'CONCAT11(object->' + field + '_high, (char)object->' + field + ')' not in result, result
+    assert '((uw_object_hdr_t *)object)->link_word' in result, result
+    assert '((uw_object_hdr_t *)puVar6)->chain_word' in result, result
+    assert '(ushort)words[1]' in result, result
+    assert '(ushort)signed_words[1]' in result, result
+    assert 'CONCAT11(npc->hdr.position_word_high' not in result, result
+    assert 'CONCAT11(storage.position_word_high' not in result, result
+    assert 'CONCAT11(((uw_object_hdr_t *)object)' not in result, result
+    for untouched in [
+        'CONCAT11(other->position_word_high, (char)object->position_word)',
+        'CONCAT11(object->link_word_high, (char)object->position_word)',
+        'CONCAT11(get_object()->position_word_high, (char)get_object()->position_word)',
+        'CONCAT11(*(byte *)((char *)get_words() + 3), (byte)get_words()[1])',
+        'CONCAT11(bytes[3], bytes[2])',
+    ]:
+        assert untouched in result, result
+    compile_and_run()
+    transform('packed-reassembly.cocci', path)
+    assert path.read_text() == result, 'packed reassembly patch is not idempotent'

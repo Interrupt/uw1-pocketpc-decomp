@@ -2227,13 +2227,13 @@ int damage_equipped_item_in_slot(int slot, byte damage, byte damage_type, short 
   }
   if (reaction_mode != 2) {
     if (reaction_mode == 0) {
-      if ((CONCAT11(*(undefined1 *)((char *)puVar5 + 1),*(undefined1 *)puVar5) & 0x1f0) != 0) {
+      if ((((uw_object_hdr_t *)puVar5)->type_flags & 0x1f0) != 0) {
         return 0xfffffffe;
       }
     }
     else {
-      iVar6 = is_valid_equipment_slot_item(CONCAT11(*(undefined1 *)((char *)puVar5 + 1),*(undefined1 *)puVar5) & 0x1ff,
-                           slot);
+      iVar6 = is_valid_equipment_slot_item(((uw_object_hdr_t *)puVar5)->type_flags & 0x1ff,
+                                           slot);
       if (iVar6 == 0) {
         return 0xfffffffe;
       }

@@ -266,7 +266,7 @@ int drop_held_object_near_player(void *held_object_ptr, int force)
     local_26 = (short)(g_player_object->hdr.ypos) + DAT_00202a50 * 8;
     *(byte *)(held_object + 1) = ((byte) g_player_object->hdr.position_word ^ (byte)held_object[1]) & 0x7f ^ (byte)held_object[1];
     *(byte *)((char *)held_object + 3) = *(byte *)((char *)held_object + 3);
-    cVar9 = (g_object_type_props[(CONCAT11(*(byte *)((char *)held_object + 1), (byte)*held_object) & 0x1ff)].collision_radius) + (g_object_type_props[(g_player_object->hdr.item_id)].collision_radius) + '\x01';
+    cVar9 = (g_object_type_props[((ushort)*held_object & 0x1ff)].collision_radius) + (g_object_type_props[(g_player_object->hdr.item_id)].collision_radius) + '\x01';
     if (getenv("UW_DEBUG_THROW"))
       fprintf(stderr, "[throw-heading] facing_byte(g_player_object+0x18)&0x1f=%d fine_aim((g_player_object[1]&0x380)>>2)=%d heading=%d dist(cVar9)=%d start=(%d,%d)\n",
               (int)(g_player_object->npc_heading),

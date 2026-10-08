@@ -97,8 +97,7 @@ LAB_0004b06c:
   else {
     *(byte *)(puVar6 + 2) = ((uw_object_hdr_t *)puVar6)->quality;
     ((uw_object_hdr_t *)puVar6)->chain_word_high = 0;
-    uVar7 = CONCAT11(((uw_object_hdr_t *)puVar6)->type_flags_high,
-                     (char)((uw_object_hdr_t *)puVar6)->type_flags) | 0x8000;
+    uVar7 = ((uw_object_hdr_t *)puVar6)->type_flags | 0x8000;
     ((uw_object_hdr_t *)puVar6)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar6)->type_flags;
     ((uw_object_hdr_t *)puVar6)->type_flags_high = (byte)(char)(uVar7 >> 8);
     *(byte *)(puVar6 + 3) = ((uw_object_hdr_t *)puVar6)->owner | 0x40;
@@ -126,8 +125,7 @@ LAB_0004b06c:
     uVar9 = ((uw_object_hdr_t *)puVar6)->type_flags;
     ((uw_object_hdr_t *)puVar6)->type_flags_low = (byte)(char)(uVar9 & 0xdfff);
     ((uw_object_hdr_t *)puVar6)->type_flags_high = (byte)(char)((uVar9 & 0xdfff) >> 8);
-    uVar7 = (uint)CONCAT11(((uw_object_hdr_t *)puVar6)->position_word_high,
-                           (char)((uw_object_hdr_t *)puVar6)->position_word);
+    uVar7 = (uint)((uw_object_hdr_t *)puVar6)->position_word;
     uVar7 = ((byte)DAT_00202a44[1] ^ uVar7) & 0x7f ^ uVar7;
     *(char *)(puVar6 + 1) = (char)uVar7;
     ((uw_object_hdr_t *)puVar6)->position_word_high = ((uw_object_hdr_t *)puVar6)->position_word_high;
@@ -1830,7 +1828,7 @@ void compute_object_placement_fields(void *object_ptr, uint tile_x, uint tile_y)
   object[9] = (byte)(*(ushort *)(object + 2) >> 2) & 0xe0;
   object[0x18] = object[0x18] & 0xe0;
   object[0x14] = object[0x14] & 7 | 0x80;
-  uVar6 = (uint)CONCAT11(object[1],*object);
+  uVar6 = (uint)((uw_object_hdr_t *)object)->type_flags;
   bVar4 = ((g_object_type_props[(uVar6 & 0x1ff)].flags & 8) == 0) << 7;
   object[0x13] = bVar4 | object[0x13] & 0x7f;
   uVar2 = tile_y & 0x3f | (tile_x & 0x3ff) << 6;

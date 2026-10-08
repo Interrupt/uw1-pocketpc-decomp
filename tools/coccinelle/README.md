@@ -262,3 +262,22 @@ AddressSanitizer pass covers 16 consumers: npc_state/npc_combat/npc_ai/creatures
 combat/object_layout/object_core/movement/scheduler/spells/chargen/inventory/
 lighting/sleep/teleport/babl_vm. This is a checkpoint for continuing the full
 migration, not a completion claim.
+
+## Packed-byte reassembly
+
+`generate_packed_reassembly_rules.py` generates `packed-reassembly.cocci`.
+Apply with `spatch --sp-file tools/coccinelle/packed-reassembly.cocci src/FILE.c
+--no-includes --in-place`; omit `--in-place` to check for remaining conversions.
+The rules collapse `CONCAT11` high/low aliases of the same named packed word,
+and byte views that reconstruct an existing 16-bit pointer element. The latter
+retain an unsigned-short cast, including when the original lvalue is signed.
+Identifier constraints exclude receivers with calls or increments. Explicit
+function-scoped rules cover audited byte-only object aliases, NPC goal words,
+and the two cached-low-byte expressions in the container stacking branch.
+
+The semantic regression compiles and executes both original and converted code
+for all 65,536 word values. It checks signed low bytes, signed word promotion,
+outer signed casts, member and cast receivers, and container cached bytes.
+Mismatched fields/receivers, side effects, and untyped byte buffers remain
+unchanged; a second application must produce identical output. Concatenations
+that assemble separate values or update only part of a value remain valid.

@@ -172,8 +172,7 @@ void scheduler_finish_entry(int entry_slot)
     uVar5 = (uVar10 ^ uVar5) & 0xf ^ uVar10;
     ((uw_object_hdr_t *)puVar4)->type_flags_low = (byte)uVar5;
     ((uw_object_hdr_t *)puVar4)->type_flags_high = (byte)(uVar10 >> 8);
-    uVar10 = CONCAT11(((uw_object_hdr_t *)puVar4)->link_word_high,
-                      (byte)((uw_object_hdr_t *)puVar4)->link_word) & 0xffc0;
+    uVar10 = ((uw_object_hdr_t *)puVar4)->link_word & 0xffc0;
     *(byte *)(puVar4 + 3) = (byte)uVar10;
     ((uw_object_hdr_t *)puVar4)->link_word_high = (byte)(uVar10 >> 8);
     uVar8 = (ushort)uVar5;

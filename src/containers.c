@@ -686,19 +686,19 @@ LAB_0004386c:
           }
           uVar7 = (uint)bVar1;
           if (bVar11) {
-            uVar7 = (uint)(ushort)(CONCAT11(*(byte *)((char *)object + 7),bVar1) >> 6);
+            uVar7 = (uint)(ushort)(((uw_object_hdr_t *)object)->link_word >> 6);
           }
           if (!bVar11) {
             uVar7 = 1;
           }
-          iVar10 = (CONCAT11(*(undefined1 *)((char *)puVar6 + 7),(byte)puVar6[3]) & 0xffc0) +
+          iVar10 = ((ushort)puVar6[3] & 0xffc0) +
                    uVar7 * 0x40;
           bVar1 = (byte)puVar6[2];
           *(byte *)(puVar6 + 3) = (byte)iVar10 ^ (byte)puVar6[3] & 0x3f;
           *(char *)((char *)puVar6 + 7) = (char)((uint)iVar10 >> 8);
           *(byte *)(puVar6 + 2) =
                (bVar1 ^ (byte)((int)(((byte)object[2] & 0x3f) +
-                                    (CONCAT11(*(undefined1 *)((char *)puVar6 + 5),bVar1) & 0x3f)) >> 1)
+                                    (((uw_object_hdr_t *)puVar6)->chain_word & 0x3f)) >> 1)
                ) & 0x3f ^ bVar1;
           *(undefined1 *)((char *)puVar6 + 5) = *(undefined1 *)((char *)puVar6 + 5);
           free_object_slot(object);
