@@ -1322,14 +1322,10 @@ ushort *settle_mobile_to_immobile(ushort *object)
   }
   pbTile = pbTile + 2;
   if ((bVar3) && (puVar9 = (ushort *)alloc_object_slot(0), puVar9 != (ushort *)0x0)) {
-    ((uw_object_hdr_t *)puVar9)->type_flags_low = (byte)((uw_object_hdr_t *)object)->type_flags;
-    ((uw_object_hdr_t *)puVar9)->type_flags_high = ((uw_object_hdr_t *)object)->type_flags_high;
-    ((uw_object_hdr_t *)puVar9)->position_word_low = (byte)((uw_object_hdr_t *)object)->position_word;
-    ((uw_object_hdr_t *)puVar9)->position_word_high = ((uw_object_hdr_t *)object)->position_word_high;
-    ((uw_object_hdr_t *)puVar9)->chain_word_low = (byte)((uw_object_hdr_t *)object)->chain_word;
-    ((uw_object_hdr_t *)puVar9)->chain_word_high = ((uw_object_hdr_t *)object)->chain_word_high;
-    ((uw_object_hdr_t *)puVar9)->link_word_low = (byte)((uw_object_hdr_t *)object)->link_word;
-    ((uw_object_hdr_t *)puVar9)->link_word_high = ((uw_object_hdr_t *)object)->link_word_high;
+    ((uw_object_hdr_t *)puVar9)->type_flags = ((uw_object_hdr_t *)object)->type_flags;
+    ((uw_object_hdr_t *)puVar9)->position_word = ((uw_object_hdr_t *)object)->position_word;
+    ((uw_object_hdr_t *)puVar9)->chain_word = ((uw_object_hdr_t *)object)->chain_word;
+    ((uw_object_hdr_t *)puVar9)->link_word = ((uw_object_hdr_t *)object)->link_word;
     ((uw_object_hdr_t *)object)->link_word_low = ((uw_object_hdr_t *)object)->owner;
     ((uw_object_hdr_t *)object)->link_word_high = 0;
     uVar1 = ((uw_object_hdr_t *)puVar9)->type_flags;

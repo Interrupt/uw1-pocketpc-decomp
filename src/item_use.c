@@ -2512,14 +2512,10 @@ int reduce_object_count(ushort *stack_object, uint amount)
       uVar2 = ((uw_object_hdr_t *)puVar5)->link;
       if ((1 < uVar2) && (sVar1 < (short)uVar2)) {
         puVar6 = (undefined1 *)alloc_object_slot(0);
-        ((uw_object_hdr_t *)puVar6)->type_flags_low = ((uw_object_hdr_t *)puVar5)->type_flags_low;
-        ((uw_object_hdr_t *)puVar6)->type_flags_high = ((uw_object_hdr_t *)puVar5)->type_flags_high;
-        ((uw_object_hdr_t *)puVar6)->position_word_low = ((uw_object_hdr_t *)puVar5)->position_word_low;
-        ((uw_object_hdr_t *)puVar6)->position_word_high = ((uw_object_hdr_t *)puVar5)->position_word_high;
-        ((uw_object_hdr_t *)puVar6)->chain_word_low = ((uw_object_hdr_t *)puVar5)->chain_word_low;
-        ((uw_object_hdr_t *)puVar6)->chain_word_high = ((uw_object_hdr_t *)puVar5)->chain_word_high;
-        ((uw_object_hdr_t *)puVar6)->link_word_low = ((uw_object_hdr_t *)puVar5)->link_word_low;
-        ((uw_object_hdr_t *)puVar6)->link_word_high = ((uw_object_hdr_t *)puVar5)->link_word_high;
+        ((uw_object_hdr_t *)puVar6)->type_flags = ((uw_object_hdr_t *)puVar5)->type_flags;
+        ((uw_object_hdr_t *)puVar6)->position_word = ((uw_object_hdr_t *)puVar5)->position_word;
+        ((uw_object_hdr_t *)puVar6)->chain_word = ((uw_object_hdr_t *)puVar5)->chain_word;
+        ((uw_object_hdr_t *)puVar6)->link_word = ((uw_object_hdr_t *)puVar5)->link_word;
         uVar9 = (amount & 0xffff) * 0x3ff + (uint)uVar2;
         ((uw_object_hdr_t *)puVar6)->link_word_low = ((uw_object_hdr_t *)puVar6)->owner ^ (char)uVar9 * '@';
         ((uw_object_hdr_t *)puVar6)->link_word_high = (char)((uVar9 & 0x3ffffff) >> 2);

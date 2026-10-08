@@ -168,14 +168,10 @@ int dispatch_trap_type_effect(ushort *trap_record, int tile_x, int tile_y)
         if (((((uw_object_hdr_t *)puVar8)->is_quant == 0) && (((uw_object_hdr_t *)puVar8)->link != 0)) &&
             (puVar9 = (undefined1 *)alloc_object_slot(0), puVar9 != (undefined1 *)0x0)) {
           puVar10 = (undefined1 *)get_object_record_by_slot_index(((uw_object_hdr_t *)puVar8)->link);
-          ((uw_object_hdr_t *)puVar9)->type_flags_low = ((uw_object_hdr_t *)puVar10)->type_flags_low;
-          ((uw_object_hdr_t *)puVar9)->type_flags_high = ((uw_object_hdr_t *)puVar10)->type_flags_high;
-          ((uw_object_hdr_t *)puVar9)->position_word_low = ((uw_object_hdr_t *)puVar10)->position_word_low;
-          ((uw_object_hdr_t *)puVar9)->position_word_high = ((uw_object_hdr_t *)puVar10)->position_word_high;
-          ((uw_object_hdr_t *)puVar9)->chain_word_low = ((uw_object_hdr_t *)puVar10)->chain_word_low;
-          ((uw_object_hdr_t *)puVar9)->chain_word_high = ((uw_object_hdr_t *)puVar10)->chain_word_high;
-          ((uw_object_hdr_t *)puVar9)->link_word_low = ((uw_object_hdr_t *)puVar10)->link_word_low;
-          ((uw_object_hdr_t *)puVar9)->link_word_high = ((uw_object_hdr_t *)puVar10)->link_word_high;
+          ((uw_object_hdr_t *)puVar9)->type_flags = ((uw_object_hdr_t *)puVar10)->type_flags;
+          ((uw_object_hdr_t *)puVar9)->position_word = ((uw_object_hdr_t *)puVar10)->position_word;
+          ((uw_object_hdr_t *)puVar9)->chain_word = ((uw_object_hdr_t *)puVar10)->chain_word;
+          ((uw_object_hdr_t *)puVar9)->link_word = ((uw_object_hdr_t *)puVar10)->link_word;
           uVar14 = encode_object_slot_index(puVar9);
           ((uw_object_hdr_t *)puVar8)->link_word_low = ((uw_object_hdr_t *)puVar8)->owner | (byte)((uVar14 & 0x3ff) << 6);
           ((uw_object_hdr_t *)puVar8)->link_word_high = (byte)(char)((uVar14 << 0x16) >> 0x18);
@@ -236,14 +232,10 @@ int dispatch_trap_type_effect(ushort *trap_record, int tile_x, int tile_y)
         puVar9 = (undefined1 *)resolve_object_link(trap_record + 3);
         puVar10 = (undefined1 *)alloc_object_slot(0);
         if (puVar10 != (undefined1 *)0x0) {
-          ((uw_object_hdr_t *)puVar10)->type_flags_low = ((uw_object_hdr_t *)puVar9)->type_flags_low;
-          ((uw_object_hdr_t *)puVar10)->type_flags_high = ((uw_object_hdr_t *)puVar9)->type_flags_high;
-          ((uw_object_hdr_t *)puVar10)->position_word_low = ((uw_object_hdr_t *)puVar9)->position_word_low;
-          ((uw_object_hdr_t *)puVar10)->position_word_high = ((uw_object_hdr_t *)puVar9)->position_word_high;
-          ((uw_object_hdr_t *)puVar10)->chain_word_low = ((uw_object_hdr_t *)puVar9)->chain_word_low;
-          ((uw_object_hdr_t *)puVar10)->chain_word_high = ((uw_object_hdr_t *)puVar9)->chain_word_high;
-          ((uw_object_hdr_t *)puVar10)->link_word_low = ((uw_object_hdr_t *)puVar9)->link_word_low;
-          ((uw_object_hdr_t *)puVar10)->link_word_high = ((uw_object_hdr_t *)puVar9)->link_word_high;
+          ((uw_object_hdr_t *)puVar10)->type_flags = ((uw_object_hdr_t *)puVar9)->type_flags;
+          ((uw_object_hdr_t *)puVar10)->position_word = ((uw_object_hdr_t *)puVar9)->position_word;
+          ((uw_object_hdr_t *)puVar10)->chain_word = ((uw_object_hdr_t *)puVar9)->chain_word;
+          ((uw_object_hdr_t *)puVar10)->link_word = ((uw_object_hdr_t *)puVar9)->link_word;
           /* HACK: was a bare `object_list_insert_head(local_34);` -- dropped second argument, same
              class as this file's other Ghidra-decompiled dropped-argument calls. */
           object_list_insert_head(local_34,puVar10);

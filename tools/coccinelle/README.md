@@ -397,6 +397,24 @@ apply packed stores, named reads and named writes. Review surviving snapshots,
 partial-field/multi-field updates, and noncanonical byte copies separately;
 these remain active migration work rather than blanket exceptions.
 
+`generate_packed_store_rules.py` also emits `packed-field-copies.cocci`.
+Adjacent low/high assignments from the same named source word become one
+whole-word assignment, including narrowed whole-word and direct byte-view
+sources. Apply with `--all-includes --include-headers-for-types -I . -I src`.
+Receiver identifiers exclude side effects, and both writes must copy the same
+member from the same source without intervening statements. Review matches
+against object roles before applying: this pass assumes valid object records
+that are disjoint or identical, not partially overlapping raw buffers or
+volatile/device storage. The current matches copy records from object slots
+into newly allocated slots in relocation, stack splitting, and traps.
+
+`packed_field_copies` checks all 756 source/destination/cast combinations over
+all 65,536 words using the real structs, including self-aliasing pointer forms,
+source and neighboring bytes, mismatched-source and intervening-write
+exclusions, and idempotence. Twenty paired copies across four game sources
+are now whole-word assignments. Mixed-value byte updates remain for a later
+property-write pass.
+
 ## NPC death fields
 
 `generate_npc_death_rules.py` emits `npc-death-fields.cocci` for
