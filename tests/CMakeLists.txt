@@ -793,6 +793,13 @@ target_link_libraries(uw_test_voice PUBLIC ${SDL2_LIBRARIES})
 target_compile_definitions(uw_test_voice PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
 add_supported_game_unit_test(voice uw_test_voice)
 
+# file_io.c's read-only port-asset fallback: real file_io.c + debug.c against
+# temp directories the suite builds itself, no game globals or fixtures needed.
+add_library(uw_test_file_io STATIC
+  "${PROJECT_SOURCE_DIR}/src/file_io.c" "${PROJECT_SOURCE_DIR}/src/debug.c")
+uw_configure_test_target(uw_test_file_io)
+add_supported_game_unit_test(file_io uw_test_file_io)
+
 add_library(uw_test_division STATIC support/division.c)
 uw_configure_test_target(uw_test_division)
 foreach(suite npc_ai throw throw_cursor lighting creatures stair_transition inventory_drag)

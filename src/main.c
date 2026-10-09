@@ -1,7 +1,13 @@
 #include "headers/main.h"
+#include "headers/debug.h"
+#include "headers/file_io.h"
+#include <SDL.h>
 #include <signal.h>
 #include <execinfo.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 static code **g_atexit_handlers;      /* was DAT_0025090c: base of the handler array */
@@ -83,6 +89,42 @@ static void crash_backtrace_handler(int sig) {
     _exit(128 + sig);
 }
 
+/* Find the port's own bundled data directory so reads can fall back to it for
+   the files an original DOS install doesn't have -- the DATA3D/*.E models
+   above all (see uw_set_port_data_dir's comment in headers/file_io.h).
+
+   Identified by content, not by position: a candidate counts only if it holds
+   DATA3D/CUBE.E, which exists in this port's asset set and in no DOS install.
+   That way pointing UW_DATA_DIR at a DOS tree next to the build can never be
+   mistaken for the bundle. Looked for next to the executable and one level up,
+   which covers both a `build/uw` run from the repo and an installed layout. */
+static void detect_port_data_dir(void) {
+    if (getenv("UW_PORT_DATA_DIR")) {
+        return; /* explicitly set -- file_io.c picks it up itself */
+    }
+    char *base = SDL_GetBasePath();
+    if (!base) {
+        DEBUG(INFO, "[main] SDL_GetBasePath unavailable (%s) -- no port asset fallback\n",
+              SDL_GetError());
+        return;
+    }
+    static const char *const suffixes[] = {"data", "../data"};
+    for (unsigned i = 0; i < sizeof suffixes / sizeof suffixes[0]; i++) {
+        char candidate[4096], marker[4160];
+        snprintf(candidate, sizeof candidate, "%s%s", base, suffixes[i]);
+        snprintf(marker, sizeof marker, "%s/DATA3D/CUBE.E", candidate);
+        struct stat st;
+        if (stat(marker, &st) == 0) {
+            uw_set_port_data_dir(candidate);
+            SDL_free(base);
+            return;
+        }
+    }
+    DEBUG(INFO, "[main] no bundled port asset directory found near %s -- "
+                "reads resolve against UW_DATA_DIR alone\n", base);
+    SDL_free(base);
+}
+
 int main(int argc, char **argv) {
     (void)argc;
     (void)argv;
@@ -93,6 +135,7 @@ int main(int argc, char **argv) {
     signal(SIGSEGV, crash_backtrace_handler);
     signal(SIGBUS, crash_backtrace_handler);
     signal(SIGABRT, crash_backtrace_handler);
+    detect_port_data_dir();
     entry(0, 0, 0, 0);
     return 0;
 }

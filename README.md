@@ -189,6 +189,28 @@ A copy of the extracted game data also lives at `data/` in this repo for
 local convenience (`UW_DATA_DIR=$(pwd)/data ./build/uw`) — it's
 gitignored, not checked in, since it's copyrighted game data.
 
+### Running against an original DOS install
+
+`UW_DATA_DIR` can also point straight at a DOS Ultima Underworld 1
+directory; the port works out the differences itself:
+
+- `DATA/CHRGEN.DAT` uses 18-byte records there instead of the port's 20,
+  and is converted at load time (`src/chargen.c`).
+- Cutscene speech ships as Creative `SOUND/NN.VOC` rather than RIFF
+  `SOUND/VOCnn.wav`; `src/platform_voice.c` reads either.
+- Music and sound effects come from the DOS `SOUND` set via
+  `UW_AUDIO_MODE` — see the audio section below.
+
+A few files exist only on the Pocket PC side and have no DOS equivalent at
+all, the 3D models above all: DOS compiled those into `UW.EXE` as bytecode,
+while `DATA3D/*.E` is Looking Glass's ASCII source format, so there is
+nothing in a DOS install for the `.E` parser to read. Reads therefore fall
+back to this port's own `data/` for anything `UW_DATA_DIR` lacks —
+`DATA3D/*.E`, `DATA/COPYRIGHT.BYT`, `DATA/CREDIT1-3.BYT`, `CUTS/CS405.N01`.
+The fallback directory is found automatically next to the executable;
+`UW_PORT_DATA_DIR` overrides it. It is **read-only**: saves always land in
+`UW_DATA_DIR`, never back in the bundled assets.
+
 Dungeon lighting defaults to ARM RGB shading. As a project deviation, each
 light strength level subtracts 16 from the unlit starting bias of +8.
 Use `UW_LIGHT_MODE=dos ./run.sh` for palette shading based on the equipped
