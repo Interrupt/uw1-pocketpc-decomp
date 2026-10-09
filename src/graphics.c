@@ -657,6 +657,7 @@ int render_dungeon_view()
   set_draw_color(0);
   rect_fill_or_save_restore(0x34,0x13,0xe0,0x83);
   build_view_matrix();
+  extra_lights_transform_to_eye();
   near_clip_visible_tiles(0,0);
   translate_verts_to_camera_space(&DAT_000a85d0);
   project_verts_through_view_matrix(&DAT_000a85d0);

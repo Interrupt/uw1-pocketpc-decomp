@@ -406,6 +406,85 @@ static void test_arm_fullbright_colours_skip_distance_falloff_unless_disabled(vo
     TEST_ASSERT_EQUAL_HEX16(0x112, draw_one_texel(4096)); /* DOS table already leaves it alone */
 }
 
+/* Eye-space light at the pixel `shade_span_pixel(88, 2000, 0, 0, ...)` draws: straight ahead, depth 2000. */
+static void put_light_at_pixel(float radius, float intensity)
+{
+    extra_light_add(0, 0, 0, radius, intensity);
+    g_extra_lights[g_extra_light_count - 1].eye[0] = 0;
+    g_extra_lights[g_extra_light_count - 1].eye[1] = 0;
+    g_extra_lights[g_extra_light_count - 1].eye[2] = 2000;
+}
+
+static void test_extra_lights_are_ignored_unless_enabled(void)
+{
+    g_palette_rgb565_backing[88] = 0xffff;
+    set_ambient_bias_without_light(0);
+    ushort lit_by_player = shade_span_pixel(88, 2000, 0, 0, 0, false, false);
+    TEST_ASSERT_NOT_EQUAL(0xffff, lit_by_player);
+    put_light_at_pixel(256, 1.0f);
+    TEST_ASSERT_EQUAL_HEX16(lit_by_player, shade_span_pixel(88, 2000, 0, 0, 0, false, false));
+    options_set("extralights", "1");
+    TEST_ASSERT_EQUAL_HEX16(0xffff, shade_span_pixel(88, 2000, 0, 0, 0, false, false));
+}
+
+static void test_extra_light_falls_off_with_distance_and_stops_at_its_radius(void)
+{
+    g_palette_rgb565_backing[88] = 0xffff;
+    set_ambient_bias_without_light(0);
+    options_set("extralights", "1");
+    ushort player_only = shade_span_pixel(88, 2000, 0, 0, 0, false, false);
+    put_light_at_pixel(256, 1.0f);
+    float reach = 256 * (4096.0f / 1500.0f);
+    g_extra_lights[0].eye[2] = 2000 - reach * 0.5f; /* half way out: dimmer than at the centre */
+    ushort half = shade_span_pixel(88, 2000, 0, 0, 0, false, false);
+    TEST_ASSERT_GREATER_THAN_UINT16(player_only, half);
+    TEST_ASSERT_LESS_THAN_UINT16(0xffff, half);
+    g_extra_lights[0].eye[2] = 2000 - reach * 1.01f; /* outside the radius: no effect */
+    TEST_ASSERT_EQUAL_HEX16(player_only, shade_span_pixel(88, 2000, 0, 0, 0, false, false));
+}
+
+static void test_extra_lights_light_the_dos_shade_table_rows_too(void)
+{
+    options_set("light-mode", "dos");
+    options_set("extralights", "1");
+    load_shading_level_config(1); /* unlit shading level: the player's row at depth 2000 is dark */
+    ushort dark = shade_span_pixel(88, 40000, 0, 0, 0, true, false);
+    put_light_at_pixel(256, 1.0f);
+    g_extra_lights[0].eye[2] = 40000;
+    ushort lit = shade_span_pixel(88, 40000, 0, 0, 0, true, false);
+    TEST_ASSERT_EQUAL_HEX16(g_palette_rgb565_backing[88], lit); /* row 0 leaves the colour alone */
+    TEST_ASSERT_NOT_EQUAL(lit, dark);
+}
+
+static void test_light_list_holds_eight_lights_and_drops_the_rest(void)
+{
+    for (int i = 0; i < UW_MAX_EXTRA_LIGHTS; i++) TEST_ASSERT_EQUAL_INT(1, extra_light_add(i, 0, 0, 100, 1));
+    TEST_ASSERT_EQUAL_INT(0, extra_light_add(99, 0, 0, 100, 1));
+    TEST_ASSERT_EQUAL_INT(UW_MAX_EXTRA_LIGHTS, g_extra_light_count);
+    TEST_ASSERT_EQUAL_FLOAT(0, g_extra_lights[0].world[0]);
+    TEST_ASSERT_EQUAL_FLOAT(7, g_extra_lights[7].world[0]);
+    extra_lights_reset();
+    TEST_ASSERT_EQUAL_INT(0, g_extra_light_count);
+}
+
+static void test_light_sources_are_recognised_by_object_id(void)
+{
+    extra_lights_consider_object(0x12a, 100, 200, 300); /* campfire, but --extralights is off */
+    TEST_ASSERT_EQUAL_INT(0, g_extra_light_count);
+    options_set("extralights", "1");
+    extra_lights_consider_object(0x12a, 100, 200, 300);
+    TEST_ASSERT_EQUAL_INT(1, g_extra_light_count);
+    TEST_ASSERT_EQUAL_FLOAT(100, g_extra_lights[0].world[0]);
+    TEST_ASSERT_EQUAL_FLOAT(320, g_extra_lights[0].world[1]); /* height + the flame's rise */
+    TEST_ASSERT_EQUAL_FLOAT(200, g_extra_lights[0].world[2]);
+    extra_lights_consider_object(0x0017, 1, 2, 3);            /* magic missile */
+    extra_lights_consider_object(0x8000 | 0x014, 1, 2, 3);    /* fireball; flag bits are ignored */
+    TEST_ASSERT_EQUAL_INT(3, g_extra_light_count);
+    extra_lights_consider_object(0x0123, 1, 2, 3);            /* ordinary scenery */
+    extra_lights_consider_object(0x0004, 1, 2, 3);            /* a sword */
+    TEST_ASSERT_EQUAL_INT(3, g_extra_light_count);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -432,5 +511,10 @@ int main(void)
     RUN_TEST(test_arm_light_types_step_bias_by_sixteen_and_keep_calibration);
     RUN_TEST(test_fullbright_mask_is_the_indices_light_dat_never_changes);
     RUN_TEST(test_arm_fullbright_colours_skip_distance_falloff_unless_disabled);
+    RUN_TEST(test_extra_lights_are_ignored_unless_enabled);
+    RUN_TEST(test_extra_light_falls_off_with_distance_and_stops_at_its_radius);
+    RUN_TEST(test_extra_lights_light_the_dos_shade_table_rows_too);
+    RUN_TEST(test_light_list_holds_eight_lights_and_drops_the_rest);
+    RUN_TEST(test_light_sources_are_recognised_by_object_id);
     return UNITY_END();
 }
