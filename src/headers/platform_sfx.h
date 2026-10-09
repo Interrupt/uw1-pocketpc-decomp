@@ -60,6 +60,17 @@ void platform_sfx_init(void);
  * backed by that site's own evidence. */
 void platform_sfx_play(int resource_id);
 
+/* Does this port actually have a playable WAVE resource for `resource_id`
+ * (801-859)? Loads and caches it on first ask, so a later
+ * platform_sfx_play of the same id costs nothing extra.
+ *
+ * False for the real gaps in the shipped set -- effect ids 0, 13, 14, 15,
+ * 19 and 21-23 have no resource -- and also when no SFX audio device
+ * opened, since then nothing here can be heard regardless. That makes it
+ * a straight "can the sampled path serve this sound", which is what
+ * UW_AUDIO_MODE=hybrid needs to decide between a sample and a DOS note. */
+int platform_sfx_has_resource(int resource_id);
+
 /* Closes the audio device and releases every cached sample buffer, for
  * real app shutdown. Safe to call even if platform_sfx_init never
  * succeeded. */

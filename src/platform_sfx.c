@@ -656,6 +656,21 @@ static int sfx_pick_voice(void)
   return slot;
 }
 
+int platform_sfx_has_resource(int resource_id)
+{
+  if (!g_sfx_audiodev) {
+    return 0; /* nothing sampled can be heard -- let the caller fall back */
+  }
+  if (resource_id < SFX_ID_MIN || resource_id > SFX_ID_MAX) {
+    return 0;
+  }
+  sfx_cache_entry_t *entry = &g_sfx_cache[resource_id - SFX_ID_MIN];
+  if (!entry->tried) {
+    sfx_cache_load(resource_id, entry);
+  }
+  return entry->loaded ? 1 : 0;
+}
+
 void platform_sfx_play(int resource_id)
 {
   /* DOS audio mode plays effects the way the original did: a note on a
@@ -673,7 +688,7 @@ void platform_sfx_play(int resource_id)
    * Bracketed by the music device's lock: the DOS driver state this
    * touches is also stepped by the audio callback (platform_dosmidi_render),
    * which runs on SDL's audio thread. */
-  if (platform_dos_audio_enabled()) {
+  if (platform_dos_audio_enabled() && !platform_dos_prefer_wav_effects()) {
     platform_music_lock();
     platform_dosmidi_play_effect(resource_id - 800, -1, -1);
     platform_music_unlock();

@@ -76,3 +76,9 @@ int platform_dos_audio_enabled(void);
    volume and the pan directly, since trigger_sound_sample_note cannot
    carry a pan. Recorded by support/audio_fixture.c. */
 void platform_dosmidi_play_effect(int id, int velocity, int pan);
+
+/* The hybrid-mode decision in allocate_and_play_sound_channel: prefer a
+   sampled WAVE resource where the port has one, else the DOS note. Both
+   are controllable from support/audio_fixture.c. */
+int platform_dos_prefer_wav_effects(void);
+int platform_sfx_has_resource(int resource_id);

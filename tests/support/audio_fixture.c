@@ -63,8 +63,12 @@ static int last_positional_sfx_pan;
 static int last_positional_sfx_volume;
 static void *next_object_record;
 static int dos_audio_enabled;
+static int dos_prefer_wav;
+static int sfx_available_mask_set;   /* 0 = every id available */
 static int dos_effect_calls;
 static int last_dos_effect_id, last_dos_effect_velocity, last_dos_effect_pan;
+
+void audio_fixture_set_missing_sfx_resource(int resource_id);
 
 void audio_fixture_reset(void)
 {
@@ -92,7 +96,10 @@ void audio_fixture_reset(void)
     DAT_00100624 = 0;
     memset(DAT_001007d0_backing, 0, sizeof DAT_001007d0_backing);
     next_object_record = 0;
-    dos_audio_enabled = 0; /* the default path: the id whitelist applies */
+    dos_audio_enabled = 0; /* the default path: the sampled backend */
+    dos_prefer_wav = 0;
+    sfx_available_mask_set = 0;
+    audio_fixture_set_missing_sfx_resource(-1);
     dos_effect_calls = 0;
     last_dos_effect_id = -1;
     last_dos_effect_velocity = -1;
@@ -135,6 +142,18 @@ void audio_fixture_set_dos_audio_enabled(int on) { dos_audio_enabled = on; }
    SOUNDS.DAT defines. The real one lives in platform_dosmidi.c, which this
    suite does not link. */
 int platform_dos_audio_enabled(void) { return dos_audio_enabled; }
+int platform_dos_prefer_wav_effects(void) { return dos_prefer_wav; }
+void audio_fixture_set_dos_prefer_wav(int on) { dos_prefer_wav = on; }
+
+/* Which ids the sampled backend claims to have. Defaults to "all"; a test
+   sets the one id it wants missing, to drive the hybrid fallback. */
+static int missing_resource_id = -1;
+int platform_sfx_has_resource(int resource_id)
+{
+    (void)sfx_available_mask_set;
+    return resource_id != missing_resource_id;
+}
+void audio_fixture_set_missing_sfx_resource(int resource_id) { missing_resource_id = resource_id; }
 
 /* DOS mode's effect entry point -- records the volume and pan so tests can
    assert they survive the trip, which the shipped WinCE port's own chain

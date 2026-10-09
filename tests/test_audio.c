@@ -333,6 +333,46 @@ static void test_default_path_does_not_reach_the_dos_backend(void)
     TEST_ASSERT_EQUAL_INT(803, audio_fixture_last_sfx_resource_id());
 }
 
+/* UW_AUDIO_MODE=hybrid: the sampled resource wins where the port has one,
+   so the id goes to the WAVE backend at id+800 and not to the DOS one. */
+static void test_hybrid_mode_prefers_the_sampled_resource(void)
+{
+    audio_fixture_set_dos_audio_enabled(1);
+    audio_fixture_set_dos_prefer_wav(1);
+    allocate_and_play_sound_channel(3, 0, 0, 0x40, 0, 0);
+    TEST_ASSERT_EQUAL_INT(1, audio_fixture_sfx_play_call_count());
+    TEST_ASSERT_EQUAL_INT(803, audio_fixture_last_sfx_resource_id());
+    TEST_ASSERT_EQUAL_INT(0, audio_fixture_dos_effect_call_count());
+}
+
+/* ...and falls back to the DOS note for the ids with no resource (0, 13,
+   14, 15, 19, 21-23 in the shipped set), which is the whole point of the
+   mode: coverage the sampled set alone cannot give. */
+static void test_hybrid_mode_falls_back_to_the_dos_note(void)
+{
+    audio_fixture_set_dos_audio_enabled(1);
+    audio_fixture_set_dos_prefer_wav(1);
+    audio_fixture_set_missing_sfx_resource(815); /* effect id 15 */
+    allocate_and_play_sound_channel(15, 0, 0, 0x40, 0x30, 0);
+    TEST_ASSERT_EQUAL_INT(0, audio_fixture_sfx_play_call_count());
+    TEST_ASSERT_EQUAL_INT(1, audio_fixture_dos_effect_call_count());
+    TEST_ASSERT_EQUAL_INT(15, audio_fixture_last_dos_effect_id());
+    /* the volume and pan still come through on the fallback */
+    TEST_ASSERT_EQUAL_INT(0x40, audio_fixture_last_dos_effect_velocity());
+    TEST_ASSERT_EQUAL_INT(0x30, audio_fixture_last_dos_effect_pan());
+}
+
+/* Plain dos mode ignores the sampled set entirely, even where one exists --
+   that is the faithful setting. */
+static void test_dos_mode_ignores_the_sampled_resource(void)
+{
+    audio_fixture_set_dos_audio_enabled(1);
+    audio_fixture_set_dos_prefer_wav(0);
+    allocate_and_play_sound_channel(3, 0, 0, 0x40, 0, 0);
+    TEST_ASSERT_EQUAL_INT(0, audio_fixture_sfx_play_call_count());
+    TEST_ASSERT_EQUAL_INT(1, audio_fixture_dos_effect_call_count());
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -354,5 +394,8 @@ int main(void)
     RUN_TEST(test_dos_audio_mode_leaves_whitelisted_ids_alone);
     RUN_TEST(test_dos_audio_mode_forwards_the_volume_and_pan);
     RUN_TEST(test_default_path_does_not_reach_the_dos_backend);
+    RUN_TEST(test_hybrid_mode_prefers_the_sampled_resource);
+    RUN_TEST(test_hybrid_mode_falls_back_to_the_dos_note);
+    RUN_TEST(test_dos_mode_ignores_the_sampled_resource);
     return UNITY_END();
 }

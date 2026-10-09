@@ -32,6 +32,17 @@
  * normal path rather than to silence or a crash. */
 int platform_dos_audio_enabled(void);
 
+/* Should sound effects prefer this port's sampled WAVE resources over the
+ * DOS notes, where a sample exists? True only for UW_AUDIO_MODE=hybrid.
+ *
+ * "dos" is the faithful setting: every effect is a note on UW.AD's bank-1
+ * timbres, as a Sound Blaster Pro played it. "hybrid" keeps that driver
+ * for the music but takes the sampled effect where the port has one,
+ * falling back to the DOS note for the ids it does not -- effect ids 0,
+ * 13, 14, 15, 19 and 21-23. Those samples appear to be Ultima Underworld
+ * 2's, so hybrid is deliberately a mix rather than either original. */
+int platform_dos_prefer_wav_effects(void);
+
 /* Loads SOUND/ADLIB.ADV (the driver's own tables), SOUND/UW.AD (the
  * timbres) and SOUND/SOUNDS.DAT (the effect table) from UW_DOS_DATA_DIR,
  * and starts the driver. out_rate is the rate render() will be asked for.

@@ -39,6 +39,7 @@ static struct {
   uw_blob xmi;
 
   int seq;                  /* the registered sequence handle, -1 for none */
+  int prefer_wav;           /* UW_AUDIO_MODE=hybrid: sample where we have one */
   int music_volume;         /* percent, applied to the sequence only */
 
   /* One tick's worth of chip output, consumed by the resampler below. */
@@ -61,10 +62,23 @@ static struct {
   struct { int channel, note, ticks_left, id; } sfx[4];
 } g;
 
+/* Both modes run the DOS driver; they differ only in where effects come
+   from (see platform_dos_prefer_wav_effects). */
 static int dos_mode_requested(void)
 {
   const char *mode = getenv("UW_AUDIO_MODE");
-  return (mode && strcasecmp(mode, "dos") == 0) ? 1 : 0;
+  return (mode && (strcasecmp(mode, "dos") == 0 || strcasecmp(mode, "hybrid") == 0)) ? 1 : 0;
+}
+
+static int hybrid_mode_requested(void)
+{
+  const char *mode = getenv("UW_AUDIO_MODE");
+  return (mode && strcasecmp(mode, "hybrid") == 0) ? 1 : 0;
+}
+
+int platform_dos_prefer_wav_effects(void)
+{
+  return g.live && g.prefer_wav;
 }
 
 int platform_dos_audio_enabled(void) { return g.live; }
@@ -149,6 +163,7 @@ int platform_dosmidi_init(int out_rate)
 
   g.out_rate = out_rate > 0 ? out_rate : UW_OPL_RATE;
   g.seq = -1;
+  g.prefer_wav = hybrid_mode_requested();
   /* BUG FIX (confirmed live: the music drowned the effects). At their own
    * settings the OPL music peaks about 7x an effect, so the default trims
    * the music -- never the effects, which stay at the velocities
@@ -179,7 +194,8 @@ int platform_dosmidi_init(int out_rate)
   }
 
   g.live = 1;
-  DEBUG(INFO, "[audio] DOS audio mode ready: OPL2 at %dHz -> %dHz, %d effects, %d timbres\n",
+  DEBUG(INFO, "[audio] DOS audio mode ready (%s): OPL2 at %dHz -> %dHz, %d effects, %d timbres\n",
+        g.prefer_wav ? "hybrid: sampled effects where available" : "dos: every effect a DOS note",
         UW_OPL_RATE, g.out_rate, g.sounds.count, g.timbres.count);
   return 1;
 
