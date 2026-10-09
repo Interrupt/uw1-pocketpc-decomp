@@ -3,10 +3,11 @@
 
 ushort player[16], resurrection_object[4];
 byte level_map[64 * 64 * 4], character[256];
-ushort *g_player_object = player;
+uw_mobile_object_t *g_player_object = (uw_mobile_object_t *)player;
 char *DAT_002029cc = (char *)level_map;
 char *DAT_00086df8 = (char *)character;
-undefined1 DAT_000878d0_backing[256], DAT_00202c90_backing[8192];
+undefined1 DAT_000878d0_backing[256];
+uw_object_type_props_t g_object_type_props[512];
 short DAT_00201b68, DAT_00201c7c, g_visibility_max_ring_passes;
 undefined2 DAT_00201c90, DAT_00201c8c, g_cursor_holding_state;
 char *g_selected_object;
@@ -53,7 +54,7 @@ void *tilemap_lookup(short x, short y)
     if (probes++ == 0) { first_x = x; first_y = y; }
     return level_map + (x + y * 64) * 4;
 }
-int encode_object_slot_index(void *object)
+int encode_object_slot_index(const uw_object_hdr_t *object)
 {
     TEST_ASSERT_EQUAL_PTR(player, object);
     return 1;
@@ -64,8 +65,8 @@ int check_object_placement_clearance(short type, short slot, short x, short y, s
     TEST_ASSERT_EQUAL_INT(1, slot);
     return x == open_x * 8 + 3 && y == open_y * 8 + 3;
 }
-void *resolve_object_link(void *link) { return NULL; }
-int object_ptr_in_arena(void *object) { return 0; }
+uw_object_hdr_t *resolve_object_link(ushort *link) { return NULL; }
+int object_ptr_in_arena(const uw_object_hdr_t *object) { return 0; }
 ushort *discard_misplaced_object(void *head, ushort *object, int flag) { return NULL; }
 void tick_weapon_swing_state(short flag) {}
 void set_hud_status_value(byte slot, ushort value) { if (slot == 0) hud_hp = value; }
@@ -76,7 +77,8 @@ void update_player_tick_effects(void) {}
 long ce_rand(void) { return 1; }
 void apply_level9_random_hazard_tick(void) {}
 void debug_print(char *format, ...) {}
-ushort *find_object_in_chain(void *link, int recursive, int group, int subclass, short type)
+uw_object_hdr_t *find_object_in_chain(ushort **link, int recursive, int group,
+                                      int subclass, short type)
 {
     TEST_ASSERT_EQUAL_INT(7, group);
     TEST_ASSERT_EQUAL_INT(0, subclass);
@@ -91,7 +93,7 @@ void stair_transition_fixture_reset(void)
     memset(character, 0, sizeof character);
     memset(level_map, 0, sizeof level_map);
     memset(DAT_000878d0_backing, 0, sizeof DAT_000878d0_backing);
-    memset(DAT_00202c90_backing, 0, sizeof DAT_00202c90_backing);
+    memset(((byte *)g_object_type_props), 0, sizeof g_object_type_props);
     player[0] = 0x7f;
     ((byte *)player)[8] = 30;
     character[0x39] = 200; /* Hunger lives in the character record, not HP. */

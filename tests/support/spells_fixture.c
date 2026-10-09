@@ -11,7 +11,8 @@ char *DAT_002046c4, *DAT_00202098;
 uint DAT_00202094;
 undefined1 DAT_0023c3dc, DAT_0023c3d8;
 
-undefined1 DAT_00202c90_backing[8192], DAT_002027d0_backing[48];
+uw_ranged_type_props_t g_ranged_type_props[16];
+uw_object_type_props_t g_object_type_props[512];
 short DAT_00202a38, DAT_00202a3c, DAT_00202a40, DAT_0023beb4;
 ushort *DAT_00202a44;
 ushort DAT_00202a48, DAT_00202a4c;
@@ -29,7 +30,7 @@ void pop_cursor_icon(ushort mode)
 { TEST_ASSERT_EQUAL_INT(3, mode); spells_fixture.cursor_pops++; }
 void get_mouse_position(ushort *x, ushort *y)
 { *x=spells_fixture.mouse_x; *y=spells_fixture.mouse_y; }
-void *alloc_object_slot(int region)
+uw_object_hdr_t *alloc_object_slot(int region)
 {
     TEST_ASSERT_EQUAL_INT(1, region);
     spells_fixture.allocations++;
@@ -41,11 +42,11 @@ int check_object_drop_height(ushort *object, ushort *actor)
     TEST_ASSERT_EQUAL_PTR(g_player_object, actor);
     return spells_fixture.placement_allowed;
 }
-void free_object_slot(void *object)
+void free_object_slot(uw_object_hdr_t *object)
 { TEST_ASSERT_EQUAL_PTR(spells_fixture.projectile, object); spells_fixture.frees++; }
-int encode_object_slot_index(void *object)
+int encode_object_slot_index(const uw_object_hdr_t *object)
 { TEST_ASSERT_EQUAL_PTR(g_player_object, object); return 1; }
-void object_list_insert_head(void *head, void *object)
+void object_list_insert_head(ushort *head, uw_object_hdr_t *object)
 {
     TEST_ASSERT_EQUAL_PTR(spells_fixture.map+(32+64*2)*4+2, head);
     TEST_ASSERT_EQUAL_PTR(spells_fixture.projectile, object);
@@ -166,8 +167,9 @@ void spells_fixture_reset(void)
     uint regeneration_budget=1000;
     memcpy(spells_fixture.character+0xce, &regeneration_budget, sizeof regeneration_budget);
     spells_fixture_ready_in_lor(20);
-    uw_test_load_object_properties(DAT_00202c90_backing, sizeof DAT_00202c90_backing);
-    uw_test_read_data("DATA/OBJECTS.DAT", DAT_002027d0_backing, 0x30, 2+0x80, SEEK_SET);
+    uw_test_load_object_properties(((byte *)g_object_type_props), sizeof g_object_type_props);
+    uw_test_read_data("DATA/OBJECTS.DAT", ((byte *)g_ranged_type_props), 0x30,
+                      2+0x80, SEEK_SET);
     DAT_00202a38=DAT_00202a3c=DAT_00202a40=DAT_0023beb4=0;
     DAT_00202a44=NULL;
     DAT_00202a48=DAT_00202a4c=DAT_00202a50=DAT_00202a54=0;

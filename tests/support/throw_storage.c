@@ -2,13 +2,13 @@
 /* Isolated storage for the original throw/physics functions. */
 char *DAT_00086df8;
 short DAT_00201b68;
-undefined1 DAT_00202c90_backing[8192];
-ushort * g_player_object;
+uw_object_type_props_t g_object_type_props[512];
+uw_mobile_object_t *g_player_object;
 char * DAT_002029cc;
 short * DAT_00085a6c;
 char * DAT_002046b8;
 char * DAT_002046c4;
-ushort * DAT_0010190c;
+uw_mobile_object_t *DAT_0010190c;
 byte * DAT_00202c6c;
 short DAT_0023beb4;
 undefined1 DAT_00204880_backing[128];

@@ -112,7 +112,7 @@ static void populate_debug_object_inspector(ushort *obj)
   }
   if ((id & 0x1c0) == 0x40) {
     int hp = *(byte *)((char *)obj + 8);
-    int maxhp = (&g_monster_max_stats_table)[(id & 0x3f) * 0x30];
+    int maxhp = g_monster_type_props[(id & 0x3f)].max_hp;
     snprintf(line, sizeof(line), "%d / %d", hp, maxhp);
     dbgui_field_text("hp", line);
   }
@@ -341,9 +341,10 @@ void uw_debug_force_item_id_once(void) {
   if (!obj) return;
   done = 1;
   int newid = (int)strtol(idstr, NULL, 16);
-  ushort old = *obj;
-  *obj = (old & ~(ushort)0x1ff) | (newid & 0x1ff);
-  fprintf(stderr, "[armor] forced slot12 object id 0x%03x -> 0x%03x\n", old & 0x1ff, *obj & 0x1ff);
+  ushort old = ((uw_object_hdr_t *)obj)->type_flags;
+  ((uw_object_hdr_t *)obj)->type_flags = (old & ~(ushort)0x1ff) | (newid & 0x1ff);
+  fprintf(stderr, "[armor] forced slot12 object id 0x%03x -> 0x%03x\n", old & 0x1ff,
+          ((uw_object_hdr_t *)obj)->object_id);
 }
 
 void uw_debug_dump_sprite_frames_once(void) {

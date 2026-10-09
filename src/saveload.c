@@ -962,9 +962,8 @@ int commit_level_to_save_slot(int level_number)
     object_list_unlink(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
   }
   DAT_00202080 = 0xffff;
-  uVar1 = *g_player_object;
-  *(char *)g_player_object = (char)(uVar1 & 0xfe3f);
-  *(char *)((char *)g_player_object + 1) = (char)((uVar1 & 0xfe3f) >> 8);
+  uVar1 = g_player_object->hdr.type_flags;
+  g_player_object->hdr.type_flags = (ushort)(uVar1 & 0xfe3f);
   iVar2 = open_level_archive(auStack_20,s__SAVE0_lev_ark_000842fc);
   if (getenv("UW_DEBUG_INPUTEVENT"))
     fprintf(stderr, "[0006bcd4] open_level_archive=%d\n", iVar2);

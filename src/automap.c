@@ -434,8 +434,9 @@ void draw_automap_screen(int level_number)
     iVar5 = (int)(short)level_number;
     if ((iVar5 == DAT_00201b68) && (iVar5 != 9)) {
       g_blit_transparent_mode = 1;
-      draw_sprite_by_id(0x103f,((*(ushort *)((char *)g_player_object + 0x16) >> 10) + 2) * 3,
-                   (((*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4) + 3) * -3 + 200,5,8);
+      draw_sprite_by_id(0x103f,((g_player_object->npc_xhome) + 2) * 3,
+                        ((g_player_object->npc_yhome) + 3) * -3 + 200,
+                        5,8);
       g_blit_transparent_mode = 0;
     }
     DAT_000ba9d0 = (short)level_number;
@@ -1061,7 +1062,8 @@ byte automap_reveal_byte(byte *tile_rec)
     ushort *pp = (ushort *)g_player_object;
     fprintf(stderr, "[automap-reveal] tile_rec=%p idx=%ld tile=(%ld,%ld) player_tile=(%u,%u) heading=0x%x\n",
             (void *)tile_rec, (long)idx, (long)(idx & 0x3f), (long)(idx >> 6),
-            (unsigned)(pp[0xb] >> 10), (unsigned)((pp[0xb] & 0x3f0) >> 4),
+            (unsigned)(((uw_mobile_object_t *)pp)->tile_x),
+            (unsigned)(((uw_mobile_object_t *)pp)->tile_y),
             (unsigned)(ushort)DAT_00201c70);
   }
   return (byte)DAT_0023ae40_backing[tile_rec[1] >> 2 & 0xf] |

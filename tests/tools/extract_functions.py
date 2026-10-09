@@ -21,7 +21,7 @@ def extract(source, name):
         name = name[1:]
         pattern = r"^[ \t]*\w[^\n;]*\b" + re.escape(name) + r"[^\n;]*=\s*"
     else:
-        pattern = r"^\w[^\n;]*\b" + re.escape(name) + r"\([^;]*?\)\s*\n"
+        pattern = r"^\w[^\n;]*\b" + re.escape(name) + r"\([^;]*?\)\s*(?=\{)"
     definition = re.search(
         pattern,
         source, re.MULTILINE,

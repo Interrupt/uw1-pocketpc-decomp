@@ -172,7 +172,7 @@ static void test_wake_transition_preserves_full_snapshot_addresses_and_pixels(vo
 static void test_sleep_at_reported_level_one_tile_runs_real_background_traps(void)
 {
     object_list_unlink((byte *)tilemap_lookup(18, 5) + 2, (byte *)g_player_object);
-    g_player_object[11] = (18 << 10) | (4 << 4);
+    ((ushort *)g_player_object)[11] = (18 << 10) | (4 << 4);
     DAT_002020a0 = DAT_0023c3dc = 18;
     DAT_002020a4 = DAT_0023c3d8 = 4;
     object_list_insert_head((char *)tilemap_lookup(18, 4) + 2, g_player_object);

@@ -28,7 +28,7 @@ void reset_cursor_confine_rect(void);
 void report_fatal_error_and_exit(ushort error_code);
 void uw_debug_dump_tmap(int level, const unsigned char *data);
 void *tilemap_lookup(short tile_x, short tile_y);
-void *resolve_object_link(void *link_field);
+uw_object_hdr_t *resolve_object_link(ushort *link_field);
 
 unsigned char arena[0x7c08], pristine_level[0x7c08];
 
@@ -245,7 +245,7 @@ void uw_debug_dump_tmap(int level, const unsigned char *data)
 
 void *tilemap_lookup(short tile_x, short tile_y) { (void)tile_x; (void)tile_y; return NULL; }
 
-void *resolve_object_link(void *link_field) { (void)link_field; return NULL; }
+uw_object_hdr_t *resolve_object_link(ushort *link_field) { (void)link_field; return NULL; }
 
 void new_game_fixture_reset(void)
 {

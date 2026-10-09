@@ -4,7 +4,7 @@
 
 /* Real rune recognition and cast checks; UI, RNG and effects are fixtures. */
 char *DAT_00086df8;
-ushort *g_player_object;
+uw_mobile_object_t *g_player_object;
 short *DAT_00085a6c;
 undefined2 g_cursor_holding_state;
 int DAT_002028d0;
@@ -41,7 +41,7 @@ void spell_runes_fixture_reset(void)
     memset(player, 0, sizeof player);
     memset(click, 0, sizeof click);
     DAT_00086df8 = (char *)player;
-    g_player_object = object;
+    g_player_object = (uw_mobile_object_t *)object;
     DAT_00085a6c = click;
     player[0x3d] = 15; /* enough level and mana for every circle */
     player[0x37] = 100;

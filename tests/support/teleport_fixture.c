@@ -21,7 +21,7 @@ void weapon_overlay_flash_restore(int passes);
 
 ushort player[16], other_object[16];
 
-ushort *g_player_object = player;
+uw_mobile_object_t *g_player_object = (uw_mobile_object_t *)player;
 
 short DAT_00201b68, DAT_00201c7c;
 

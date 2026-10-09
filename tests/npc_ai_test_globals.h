@@ -1,17 +1,19 @@
 #include "src/headers/uw.h"
 extern ushort npc[32], player[32], tile[4];
 extern char character[256];
-extern ushort *g_player_object , *DAT_0010190c;
+extern uw_mobile_object_t *g_player_object;
+extern uw_mobile_object_t *DAT_0010190c;
 extern char *DAT_00086df8;
-extern undefined1 DAT_001007d0_backing[3072];
-extern undefined1 DAT_00202c90_backing[8192];
+extern uw_monster_type_props_t g_monster_type_props[64];
+extern uw_object_type_props_t g_object_type_props[512];
 extern undefined2 DAT_002048c0_backing[64];
 extern undefined1 DAT_002048f0_backing[128], DAT_00204950_backing[128];
 extern undefined1 DAT_00204980_backing[32];
 extern undefined2 DAT_00204990_backing[16], DAT_002049b0_backing[16];
-extern undefined1 DAT_002027d0_backing[48];
+extern uw_ranged_type_props_t g_ranged_type_props[16];
 #define DAT_000853d8 DAT_000853d8_backing[0]
-extern char *DAT_00101400, *DAT_00101404, *DAT_00101438;
+extern char *DAT_00101400, *DAT_00101438;
+extern uw_monster_type_props_t *DAT_00101404;
 extern void *DAT_0010172c;
 extern char DAT_00101408, DAT_00101410, DAT_0010143c, DAT_0010173c;
 extern ushort DAT_00101900, DAT_00101910, DAT_0010141c, DAT_00101414;
@@ -44,12 +46,9 @@ extern char *DAT_00101904;
 #include <math.h>
 
 #ifndef DAT_002034b5
-#define DAT_002034b5 DAT_00202c90_backing[0x825] /* item 0xa0 value, loaded COMOBJ table */
+#define DAT_002034b5 ((byte *)g_object_type_props)[0x825] /* item 0xa0 value, loaded COMOBJ table */
 #endif
 
-#ifndef DAT_001007e1
-#define DAT_001007e1 DAT_001007d0_backing[0x11]
-#endif
 
 #ifndef DAT_00101568
 #define DAT_00101568 DAT_00101568_backing[0]

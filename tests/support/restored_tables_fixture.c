@@ -1,6 +1,7 @@
 #include "restored_tables_fixture.h"
 undefined2 DAT_00100630_backing[32];
-undefined1 DAT_00202800_backing[256], DAT_00202750_backing[128];
+uw_melee_type_props_t g_melee_type_props[16];
+uw_armor_type_props_t g_armor_type_props[32];
 undefined4 DAT_0024cff8;
 char *DAT_0024cfd4;
 int restored_spawn_id, restored_scan_count;
@@ -14,7 +15,7 @@ void restored_tables_fixture_reset(void)
     memset(character, 0, sizeof character);
     memset(player, 0, sizeof player);
     DAT_00086df8=character;
-    g_player_object=player;
+    g_player_object = (uw_mobile_object_t *)player;
     DAT_0024cff8=0;
     DAT_0024cfd4=NULL;
     restored_spawn_id=-1;
@@ -28,12 +29,14 @@ void restored_tables_fixture_reset(void)
     FILE *file=uw_test_open_data("DATA/OBJECTS.DAT");
     ushort header;
     TEST_ASSERT_EQUAL_UINT(2, fread(&header, 1, 2, file));
-    TEST_ASSERT_EQUAL_UINT(128, fread(DAT_00202800_backing, 1, 128, file));
+    TEST_ASSERT_EQUAL_UINT(128,
+                           fread(((byte *)g_melee_type_props), 1, 128, file));
     TEST_ASSERT_EQUAL_INT(0, fseek(file, 48, SEEK_CUR));
-    TEST_ASSERT_EQUAL_UINT(128, fread(DAT_00202750_backing, 1, 128, file));
+    TEST_ASSERT_EQUAL_UINT(128,
+                           fread(((byte *)g_armor_type_props), 1, 128, file));
     fclose(file);
 }
-void * spawn_new_object(uint id, int argument)
+uw_object_hdr_t *spawn_new_object(uint id, int argument)
 { TEST_ASSERT_EQUAL_INT(0, argument); restored_spawn_id=id; return NULL; }
 void scan_area_ahead_of_object(void *source, int radius, int (*callback)(), int a, byte b, char mode)
 {

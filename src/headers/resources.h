@@ -15,8 +15,7 @@ extern undefined1 DAT_0023b840_backing[8];
 #define DAT_0023b841 DAT_0023b840_backing[1]
 
 #define DAT_0023b840 DAT_0023b840_backing[0]
-extern undefined1 DAT_00202750_backing[128];
-#define DAT_00202750 DAT_00202750_backing[0]
+extern uw_armor_type_props_t g_armor_type_props[32];
 extern void * g_grtile_real_ptrs[320];
 extern char s__DATA__00085970[];
 

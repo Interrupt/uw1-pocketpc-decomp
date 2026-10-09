@@ -4,8 +4,8 @@
 #include "../npc_ai_test_globals.h"
 int read_file_handle(int handle, void *buffer, uint count);
 long ce_rand(void);
-int encode_object_slot_index(void *object);
-void *get_object_record_by_slot_index(short slot);
+int encode_object_slot_index(const uw_object_hdr_t *object);
+uw_object_hdr_t *get_object_record_by_slot_index(short slot);
 void *tilemap_lookup(short x, short y);
 int check_fine_line_of_sight(uint from_x, uint from_y, uint from_z, short to_x, short to_y, short to_z);
 int walk_using_cached_path(byte *cache_record);
@@ -33,11 +33,11 @@ int build_collision_height_field_for_object(ushort *object);
 int apply_placement_collision_sweep(void *snapshot, void *sweep_flags);
 int sync_object_tile_position(ushort *object, void *position);
 int resolve_unique_npc_special_behavior(void *npc, int event_mode);
-void object_list_unlink(void *link_field, void *object);
+void object_list_unlink(ushort *link_field, uw_object_hdr_t *object);
 void spawn_creature_death_loot(ushort *creature);
 void drop_monster_loot(void *monster, ushort gold_nibble, ushort item_nibble);
 void drop_creature_inventory_on_death(void *creature);
-void free_object_slot(void *object);
+void free_object_slot(uw_object_hdr_t *object);
 int compute_vertical_aim_offset(short has_target, int target);
 void spawn_npc_thrown_weapon(void *attacker, short launch_offset, short launch_flags);
 void dispatch_tile_special_action(uint tile_type, void *actor, void *target);

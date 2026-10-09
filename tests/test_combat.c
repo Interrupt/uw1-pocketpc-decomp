@@ -120,7 +120,7 @@ static void test_lethal_player_swing_marks_critter_dead_and_awards_experience(vo
     candidate(0, 2, 0);
     object_at(2)[4] = 4;
     ushort xp = 10;
-    memcpy(DAT_001007d0_backing + 5 * 0x30 + 0x28, &xp, sizeof(xp));
+    memcpy(((byte *)g_monster_type_props) + 5 * 0x30 + 0x28, &xp, sizeof(xp));
     TEST_ASSERT_EQUAL_UINT(1, process_melee_attack_swing());
     TEST_ASSERT_EQUAL_UINT8(0, (byte)object_at(2)[4]);
     TEST_ASSERT_EQUAL_UINT8(0xc, mobile_objects[2 * 27 + 0x15] & 0x3f);
@@ -341,8 +341,9 @@ static void test_blood_hit_outside_zones_uses_runtime_height(void)
 
 static void test_magic_arrow_impact_on_closed_door_preserves_target_pointer(void)
 {
-    uw_test_load_object_properties(DAT_00202c90_backing, sizeof DAT_00202c90_backing);
-    uw_test_read_data("DATA/OBJECTS.DAT", DAT_002027d0_backing, 0x30, 2+0x80, SEEK_SET);
+    uw_test_load_object_properties(((byte *)g_object_type_props), sizeof g_object_type_props);
+    uw_test_read_data("DATA/OBJECTS.DAT", ((byte *)g_ranged_type_props), 0x30,
+                      2+0x80, SEEK_SET);
     ushort *arrow=object_at(3);
     arrow[0]=0x17;
     arrow[1]=40; /* launch height */
@@ -365,8 +366,9 @@ static void test_magic_arrow_impact_on_closed_door_preserves_target_pointer(void
 }
 static void test_magic_arrow_breaks_door_and_cleans_up_linked_object(void)
 {
-    uw_test_load_object_properties(DAT_00202c90_backing, sizeof DAT_00202c90_backing);
-    uw_test_read_data("DATA/OBJECTS.DAT", DAT_002027d0_backing, 0x30, 2+0x80, SEEK_SET);
+    uw_test_load_object_properties(((byte *)g_object_type_props), sizeof g_object_type_props);
+    uw_test_read_data("DATA/OBJECTS.DAT", ((byte *)g_ranged_type_props), 0x30,
+                      2+0x80, SEEK_SET);
     ushort *arrow=object_at(3);
     arrow[0]=0x17;
     arrow[1]=40;

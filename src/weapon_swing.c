@@ -460,7 +460,7 @@ int find_and_consume_ammo(short weapon_type)
   ushort local_44 [4];
   char acStack_3c [52];
   
-  cVar1 = (&DAT_002027d2)[weapon_type * 3];
+  cVar1 = g_ranged_type_props[weapon_type].ammo_damage_selector;
   found_item = find_equipped_item_by_category(0,1,(int)cVar1,4,(ushort *)local_4c);
   if (found_item == 0) {
     local_44[0] = ((short)cVar1 + 0x10U ^ local_44[0]) & 0x1ff ^ local_44[0];
@@ -784,12 +784,12 @@ void fire_ranged_weapon(short weapon_type)
   uVar5 = find_and_consume_ammo(weapon_type);
   if (-1 < (short)uVar5) {
     iVar1 = (int)weapon_type;
-    cVar3 = (&DAT_002027d2)[iVar1 * 3];
-    DAT_00202a48 = (ushort)(byte)(&DAT_002027d1)[(short)cVar3 * 3];
+    cVar3 = g_ranged_type_props[iVar1].ammo_damage_selector;
+    DAT_00202a48 = (ushort)(byte) g_ranged_type_props[(short)cVar3].projectile_speed;
     DAT_00202a38 = cVar3 + 0x10;
-    DAT_00202a4c = (ushort)(*(byte *)((char *)g_player_object + 0x17) >> 2);
+    DAT_00202a4c = (ushort)(g_player_object->npc_xhome);
     DAT_00202a44 = g_player_object;
-    DAT_00202a50 = (undefined2)((*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4);
+    DAT_00202a50 = (undefined2)(g_player_object->npc_yhome);
     DAT_00202a54 = 1;
     compute_drop_aim_from_cursor();
     puVar6 = (ushort *)spawn_object_near_player();
@@ -798,27 +798,25 @@ void fire_ranged_weapon(short weapon_type)
     }
     else {
       puVar7 = (ushort *)extract_ammo_and_refresh(0,1,(int)cVar3,uVar5);
-      uVar8 = (*puVar7 ^ *puVar6) & 0x7fff ^ (uint)*puVar7;
-      *(char *)puVar6 = (char)uVar8;
-      *(char *)((char *)puVar6 + 1) = (char)(uVar8 >> 8);
+      uVar8 = (*puVar7 ^ ((uw_object_hdr_t *)puVar6)->type_flags) & 0x7fff ^ (uint)*puVar7;
+      ((uw_object_hdr_t *)puVar6)->type_flags = (ushort)uVar8;
       uVar4 = puVar7[3];
       bVar2 = (byte)uVar4;
-      *(byte *)(puVar6 + 3) = ((byte)puVar6[3] ^ bVar2) & 0x3f ^ bVar2;
-      *(char *)((char *)puVar6 + 7) = (char)(uVar4 >> 8);
+      ((uw_object_hdr_t *)puVar6)->link_word_low = ((byte)((uw_object_hdr_t *)puVar6)->link_word ^ bVar2) & 0x3f ^ bVar2;
+      ((uw_object_hdr_t *)puVar6)->link_word_high = (byte)(char)(uVar4 >> 8);
       bVar2 = *(byte *)((char *)puVar7 + 1);
-      *(char *)puVar6 = (char)*puVar6;
-      *(byte *)((char *)puVar6 + 1) =
-           (bVar2 ^ *(byte *)((char *)puVar6 + 1)) & 0x1e ^ *(byte *)((char *)puVar6 + 1);
-      *(byte *)(puVar6 + 4) = (byte)puVar7[2] & 0x3f;
-      *(byte *)(puVar6 + 3) = ((byte)puVar7[3] ^ (byte)puVar6[3]) & 0x3f ^ (byte)puVar6[3];
-      *(undefined1 *)((char *)puVar6 + 7) = *(undefined1 *)((char *)puVar6 + 7);
+      ((uw_object_hdr_t *)puVar6)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar6)->type_flags;
+      ((uw_object_hdr_t *)puVar6)->type_flags_high =
+          (bVar2 ^ ((uw_object_hdr_t *)puVar6)->type_flags_high) & 0x1e ^ ((uw_object_hdr_t *)puVar6)->type_flags_high;
+      ((uw_projectile_object_t *)puVar6)->lifetime = ((uw_object_hdr_t *)puVar7)->quality;
+      ((uw_object_hdr_t *)puVar6)->link_word_low = ((byte)puVar7[3] ^ (byte)((uw_object_hdr_t *)puVar6)->link_word) & 0x3f ^ (byte)((uw_object_hdr_t *)puVar6)->link_word;
+      ((uw_object_hdr_t *)puVar6)->link_word_high = ((uw_object_hdr_t *)puVar6)->link_word_high;
       bVar2 = *(byte *)((char *)puVar7 + 1);
-      *(char *)puVar6 = (char)*puVar6;
-      *(byte *)((char *)puVar6 + 1) =
-           (bVar2 ^ *(byte *)((char *)puVar6 + 1)) & 0x20 ^ *(byte *)((char *)puVar6 + 1);
+      ((uw_object_hdr_t *)puVar6)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar6)->type_flags;
+      ((uw_object_hdr_t *)puVar6)->doordir = (bVar2 >> 5) & 0x1;
       if ((*puVar7 & 0x1c0) != 0x140) {
-        if (((&DAT_00202c9a)[(*puVar7 & 0x1ff) * 0xd] & 3) != 2) {
-          *(byte *)(puVar6 + 0xd) = (byte)(puVar7[1] >> 7) & 7;
+        if ((g_object_type_props[(*puVar7 & 0x1ff)].class_flags & 3) != 2) {
+          ((uw_projectile_object_t *)puVar6)->original_heading = ((uw_object_hdr_t *)puVar7)->heading;
         }
       }
       /* Was a dropped argument -- free_object_slot(weapon_type) always takes the object pointer to free

@@ -41,15 +41,15 @@ int build_collision_height_field_for_object(ushort *object)
   slot_index = encode_object_slot_index(object);
   DAT_00202c6c[10] = (char)slot_index;
   DAT_00202c6c[0xb] = (char)((ushort)slot_index >> 8);
-  DAT_00202c6c[8] = (&DAT_00202c91)[(*object & 0x1ff) * 0xd] & 7;
-  DAT_00202c6c[9] = (&DAT_00202c90)[(*object & 0x1ff) * 0xd];
-  field = ((object[0xb] & 0xfc00) >> 7) + (uint)(*(byte *)((char *)object + 3) >> 5);
+  DAT_00202c6c[8] = g_object_type_props[(((uw_object_hdr_t *)object)->object_id)].collision_radius;
+  DAT_00202c6c[9] = g_object_type_props[(((uw_object_hdr_t *)object)->object_id)].height;
+  field = ((((uw_mobile_object_t *)object)->tile_x << 3)) + (uint)(((uw_object_hdr_t *)object)->xpos);
   *DAT_00202c6c = (char)field;
   DAT_00202c6c[1] = (char)((uint)field >> 8);
-  field = ((*(byte *)((char *)object + 3) & 0x1c) >> 2) + ((object[0xb] & 0x3f0) >> 1);
+  field = (((uw_object_hdr_t *)object)->ypos) + ((((uw_mobile_object_t *)object)->tile_y << 3));
   DAT_00202c6c[2] = (char)field;
   DAT_00202c6c[3] = (char)((uint)field >> 8);
-  DAT_00202c6c[4] = (byte)object[1] & 0x7f;
+  DAT_00202c6c[4] = ((uw_object_hdr_t *)object)->zpos;
   DAT_00202c6c[5] = 0;
   collision_build_height_field(8);
   return (int)(short)(*(ushort *)(DAT_00202c6c + 0xe) | *(ushort *)(DAT_00202c6c + 0xc));
@@ -70,7 +70,7 @@ int apply_placement_collision_sweep(void *snapshot, void *sweep_flags)
      DAT_0010172c after its own fix above) -- same class of bug as DAT_0010172c's own fix. */
   /* HACK: same ushort-vs-byte pointer-scaling bug as the rest of this NPC-AI cluster this session
      (see [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is `ushort *`... */
-  *(char *)(snapshot + 0x12) = (char)(((*(byte *)((char *)DAT_0010190c + 0x14) & 7) << 0x14) >> 0x10);
+  *(char *)(snapshot + 0x12) = (char)(((DAT_0010190c->attack_pitch & 7) << 0x14) >> 0x10);
   *(undefined1 *)(snapshot + 0x13) = 0;
   movement_collision_sweep(snapshot,sweep_flags);
   return 1;
@@ -401,12 +401,12 @@ void collision_height_envelope(int mode, int collision)
                  comment) where this loop's `while ((uVar3 & 0xffc0) != 0)` condition alone used to
                  guarantee success... */
               if (puVar7 == (ushort *)0x0) break;
-              iVar10 = (*puVar7 & 0x1ff) * 0xd;
-              if ((((local_3c == 0) || (((&DAT_00202c93)[iVar10] & 4) == 0)) &&
-                  (((&DAT_00202c90)[iVar10] != '\0' || ((char *)puVar7 < DAT_002046c4)))) &&
-                 ((((DAT_002046c4 <= (char *)puVar7 || ((*puVar7 & 0x1c0) == 0x40)) ||
-                   ((*(byte *)((char *)puVar7 + 0x15) & 0x80) == 0)) &&
-                  ((collision == 0 || (((&DAT_00202c97)[iVar10] & 1) != 0)))))) {
+              iVar10 = (((uw_object_hdr_t *)puVar7)->object_id) * 0xd;
+              if ((((local_3c == 0) || ((g_object_type_props[iVar10 / 0xd].flags & 4) == 0)) &&
+                   ((g_object_type_props[iVar10 / 0xd].height != '\0' || ((char *)puVar7 < DAT_002046c4)))) &&
+                  ((((DAT_002046c4 <= (char *)puVar7 || ((((uw_object_hdr_t *)puVar7)->object_id & 0x1c0) == 0x40)) ||
+                     ((((uw_mobile_object_t *)puVar7)->animation_flags & 0x80) == 0)) &&
+                    ((collision == 0 || ((g_object_type_props[iVar10 / 0xd].quality_flags & 1) != 0)))))) {
                 collision_add_candidate_object(puVar7,*puVar6 >> 6,iVar12,iVar14,local_3c);
               }
             }
@@ -526,16 +526,16 @@ void collision_add_candidate_object(ushort *object, ushort slot_index, char tile
   int tile_offset;
   char *props_dst;
   bool flag;
-  char class_props [16];
+  uw_object_type_props_t class_props;
   uint slot_value;
   
   slot_value = (uint)slot_index;
   candidate_count = *(byte *)(DAT_00202c6c + 0x14);
   if (candidate_count < 9) {
     object_word = *object;
-    props_src = &DAT_00202c90 + (object_word & 0x1ff) * 0xd;
+    props_src = (byte *)&g_object_type_props[object_word & 0x1ff];
     copy_count = 0xd;
-    props_dst = class_props;
+    props_dst = (char *)&class_props;
     do {
       tile_offset = copy_count + -1;
       *props_dst = *props_src;
@@ -544,7 +544,7 @@ void collision_add_candidate_object(ushort *object, ushort slot_index, char tile
       copy_count = tile_offset;
       props_dst = props_dst + 1;
     } while (tile_offset != 0 && flag);
-    if ((class_props[1] & 7U) == 4) {
+    if ((class_props.collision_radius) == 4) {
       cVar10 = tile_dx * '\b';
       cVar9 = tile_dy * '\b';
       cVar11 = cVar10 + '\a';
@@ -553,7 +553,7 @@ void collision_add_candidate_object(ushort *object, ushort slot_index, char tile
     else {
       cVar10 = (*(byte *)((char *)object + 3) >> 5) + tile_dx * '\b';
       cVar9 = (*(byte *)((char *)object + 3) >> 2 & 7) + tile_dy * '\b';
-      bVar8 = class_props[1] & 7;
+      bVar8 = class_props.collision_radius;
       if ((((object_word & 0x1c0) == 0x40) && (bVar8 != 0)) && (is_raised != 0)) {
         bVar8 = bVar8 - 1;
       }
@@ -568,14 +568,14 @@ void collision_add_candidate_object(ushort *object, ushort slot_index, char tile
       *(byte *)(DAT_00202c6c + 0x14) = candidate_count + 1;
       candidate_count = (byte)object[1] & 0x7f;
       (&DAT_00202c39)[copy_count] = candidate_count;
-      flag = class_props[0] == '\0';
-      cVar5 = candidate_count + class_props[0];
+      flag = class_props.height == '\0';
+      cVar5 = candidate_count + class_props.height;
       if (flag) {
-        class_props[0] = cVar5 + '\x01';
+        class_props.height = cVar5 + '\x01';
       }
       (&DAT_00202c38)[copy_count] = cVar5;
       if (flag) {
-        (&DAT_00202c38)[copy_count] = class_props[0];
+        (&DAT_00202c38)[copy_count] = class_props.height;
       }
       uVar3 = slot_value << 6 & 0xffff;
       (&DAT_00202c3a)[copy_count] = (byte)(slot_value << 6) | 9;
@@ -728,8 +728,8 @@ int check_object_placement_clearance(short catalog_type, short ignore_slot, shor
   uVar2 = DAT_00202c6c;
   ce_memset(local_pos_record, 0, sizeof(local_pos_record));
   DAT_00202c6c = local_pos_record;
-  local_33 = (&DAT_00202c90)[catalog_type * 0xd];
-  local_34 = (&DAT_00202c91)[catalog_type * 0xd] & 7;
+  local_33 = g_object_type_props[catalog_type].height;
+  local_34 = g_object_type_props[catalog_type].collision_radius;
   local_38 = height;
   if ((local_33 == 0x80) || ((int)((uint)local_33 + (int)height) < 0x80)) {
     uVar8 = (uint)step_limit;
@@ -808,7 +808,7 @@ int check_object_placement_clearance(short catalog_type, short ignore_slot, shor
           /* Was an unguarded `*puVar4` -- resolve_object_link legitimately returns NULL when the
              candidate slot (&DAT_00202c3a + sVar7*6) has no object linked there at all... */
           if ((puVar4 != (ushort *)0x0) &&
-             (((&DAT_00202c93)[(*puVar4 & 0x1ff) * 0xd] & 2) == 0)) {
+             ((g_object_type_props[(((uw_object_hdr_t *)puVar4)->object_id)].flags & 2) == 0)) {
             DAT_00202c6c = uVar2;
             return 0;
           }

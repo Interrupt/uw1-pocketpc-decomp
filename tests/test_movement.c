@@ -264,7 +264,7 @@ static void test_static_door_contact_builds_snapshot_without_moving_door(void)
 
 static void test_contact_snapshot_updates_contiguous_velocity_speed_and_heading(void)
 {
-    byte *row = DAT_00202c90_backing + 0x140 * 13;
+    byte *row = ((byte *)g_object_type_props) + 0x140 * 13;
     row[1] = 0x43; /* mass 4, radius 3 */
     row[2] = 0;
     movement_fixture_write_short(0x18, 4); /* moving object's mass */
@@ -285,7 +285,7 @@ static void test_contact_snapshot_updates_contiguous_velocity_speed_and_heading(
 
 static void test_contact_mass_ratio_caps_transferred_velocity(void)
 {
-    byte *row = DAT_00202c90_backing + 0x140 * 13;
+    byte *row = ((byte *)g_object_type_props) + 0x140 * 13;
     row[1] = 0x13; /* mass 1 */
     row[2] = 0;
     movement_fixture_write_short(0x18, 4);
@@ -309,13 +309,13 @@ static void test_real_door_types_use_collision_radius_three_not_shape_four(void)
        local_40[1]&7 == 4 into a fixed FULL-TILE box instead of a
        radius-centered one. movement_fixture_reset already loads the
        real data/DATA/COMOBJ.DAT (via uw_test_load_object_properties,
-       not synthetic data) into DAT_00202c90_backing, so this reads the
+       not synthetic data) into ((byte *)g_object_type_props), so this reads the
        real per-door-type byte directly: every one of the 8 door type
        ids (0x140-0x147 -- "7 door skins/types + secret", confirmed by
        src/tmap.c's emit_anim_object_frames comment) has collision_radius
        == 3, never 4, ruling out the full-tile branch for doors. */
     for (int door_type = 0x140; door_type <= 0x147; door_type++) {
-        byte *row = DAT_00202c90_backing + door_type * 13;
+        byte *row = ((byte *)g_object_type_props) + door_type * 13;
         TEST_ASSERT_EQUAL_INT_MESSAGE(3, row[1] & 7, "real COMOBJ.DAT door collision_radius");
     }
 }
@@ -352,7 +352,7 @@ static void test_door_bounds_use_original_radius_and_packed_position(void)
        collision extents from the leaf's currently rotated mesh. */
     for (int skin = 0; skin < 8; skin++) {
         fx.door[0] = 0x140 + skin;
-        TEST_ASSERT_EQUAL_UINT8(3, DAT_00202c90_backing[(0x140 + skin) * 13 + 1] & 7);
+        TEST_ASSERT_EQUAL_UINT8(3, ((byte *)g_object_type_props)[(0x140 + skin) * 13 + 1] & 7);
         assert_door_bounds_use_original_radius_and_packed_position();
     }
 }

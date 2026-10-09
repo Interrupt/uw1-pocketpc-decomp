@@ -222,21 +222,17 @@ void serialize_inventory_link_chain(byte *link_chain, byte *out_link)
   puVar1 = (undefined1 *)resolve_object_link(link_chain);
   while (puVar1 != (undefined1 *)0x0) {
     puVar2 = (undefined1 *)alloc_save_record_slot();
-    *puVar2 = *puVar1;
-    puVar2[1] = puVar1[1];
-    puVar2[2] = puVar1[2];
-    puVar2[3] = puVar1[3];
-    puVar2[4] = puVar1[4];
-    puVar2[5] = puVar1[5];
-    puVar2[6] = puVar1[6];
-    puVar2[7] = puVar1[7];
+    ((uw_object_hdr_t *)puVar2)->type_flags = ((uw_object_hdr_t *)puVar1)->type_flags;
+    ((uw_object_hdr_t *)puVar2)->position_word = ((uw_object_hdr_t *)puVar1)->position_word;
+    ((uw_object_hdr_t *)puVar2)->chain_word = ((uw_object_hdr_t *)puVar1)->chain_word;
+    ((uw_object_hdr_t *)puVar2)->link_word = ((uw_object_hdr_t *)puVar1)->link_word;
     uVar3 = (uint)g_save_record_count;
     *out_link = *out_link & 0x3f | (byte)((uVar3 & 0x3ff) << 6);
     out_link[1] = (byte)((uVar3 << 0x16) >> 0x18);
     encode_equipped_item_index((ushort *)link_chain,(ushort *)out_link);
     link_chain = puVar1 + 4;
     out_link = puVar2 + 4;
-    if (((puVar1[1] & 0x80) == 0) && ((*(ushort *)(puVar1 + 6) & 0xffc0) != 0)) {
+    if ((((uw_object_hdr_t *)puVar1)->is_quant == 0) && (((uw_object_hdr_t *)puVar1)->link != 0)) {
       serialize_inventory_link_chain(puVar1 + 6,puVar2 + 6);
     }
     puVar1 = (undefined1 *)resolve_object_link(link_chain);
@@ -256,14 +252,10 @@ void deserialize_inventory_link_chain(byte *link_field, void *saved_link_ptr)
   
   while (puVar3 = (undefined1 *)save_record_slot_from_index(*saved_link >> 6), puVar3 != (undefined1 *)0x0) {
     puVar1 = (undefined1 *)alloc_object_slot(0);
-    *puVar1 = *puVar3;
-    puVar1[1] = puVar3[1];
-    puVar1[2] = puVar3[2];
-    puVar1[3] = puVar3[3];
-    puVar1[4] = puVar3[4];
-    puVar1[5] = puVar3[5];
-    puVar1[6] = puVar3[6];
-    puVar1[7] = puVar3[7];
+    ((uw_object_hdr_t *)puVar1)->type_flags = ((uw_object_hdr_t *)puVar3)->type_flags;
+    ((uw_object_hdr_t *)puVar1)->position_word = ((uw_object_hdr_t *)puVar3)->position_word;
+    ((uw_object_hdr_t *)puVar1)->chain_word = ((uw_object_hdr_t *)puVar3)->chain_word;
+    ((uw_object_hdr_t *)puVar1)->link_word = ((uw_object_hdr_t *)puVar3)->link_word;
     uVar2 = encode_object_slot_index(puVar1);
     *link_field = *link_field & 0x3f | (byte)((uVar2 & 0x3ff) << 6);
     link_field[1] = (byte)((uVar2 << 0x16) >> 0x18);
@@ -333,8 +325,8 @@ void handle_inventory_panel_click(short slot)
       }
       if (((iVar9 != -1) && (iVar9 != 0x13)) && (iVar6 = wait_for_key_or_mouse_move(1), iVar6 != 0)) {
         puVar7 = (ushort *)resolve_object_link(&g_equipped_items + iVar9 * 2);
-        uVar3 = *puVar7;
-        if (((uVar3 & 0x8000) == 0) || ((puVar7[3] & 0x8000) != 0)) {
+        uVar3 = ((uw_object_hdr_t *)puVar7)->type_flags;
+        if (((uVar3 & 0x8000) == 0) || ((((uw_object_hdr_t *)puVar7)->link & 0x200) != 0)) {
           if (((uVar3 & 0x1c0) == 0x80) && ((uVar3 & 0x30) == 0)) {
             open_record = g_open_container_list;
             if ((DAT_00085a6c[4] == 4) && ((uVar3 & 0xf) != 0xf)) {
@@ -351,7 +343,7 @@ void handle_inventory_panel_click(short slot)
             }
           }
         }
-        else if ((puVar7[3] & 0xffc0) != 0x40) {
+        else if (((uw_object_hdr_t *)puVar7)->link != 1) {
           puVar10 = (ushort *)prompt_split_object_stack((byte *)puVar7);
           if (puVar10 == (ushort *)0x0) {
             return;
@@ -374,7 +366,7 @@ void handle_inventory_panel_click(short slot)
              removed item's weight all the way to the root) via CONCAT13/12/11 of the record's own
              byte-4..7 field... */
           for (; container_record != 0; container_record = *(char **)(container_record + 0x14)) {
-            iVar9 = calculate_object_weight(puVar7);
+            iVar9 = calculate_object_weight((uw_object_hdr_t *)puVar7);
             iVar9 = *(short *)(container_record + 10) - iVar9;
             *(char *)(container_record + 10) = (char)iVar9;
             *(char *)(container_record + 0xb) = (char)((uint)iVar9 >> 8);
@@ -542,14 +534,17 @@ joined_r0x00048308:
               if (puVar7 == 0) goto skip_slot_draw_iVar6;
               if (getenv("UW_DEBUG_INV"))
                 fprintf(stderr, "[inv] slot widget_id=%d slot_arr_idx=%d objid=0x%03x draw_x=%d draw_y=%d w=%d h=%d\n",
-                        iVar6, (char)(&g_backpack_widget_to_slot)[iVar6], *puVar7 & 0x1ff,
+                        iVar6, (char)(&g_backpack_widget_to_slot)[iVar6],
+                        ((uw_object_hdr_t *)puVar7)->object_id,
                         (int)(short)(&g_inv_hotspot_draw_x)[iVar6 * 7], (int)(short)(&g_inv_hotspot_draw_y)[iVar6 * 7],
                         (int)(&g_inv_hotspot_dirty_h)[iVar6 * 0xe], (int)(&g_inv_hotspot_dirty_w)[iVar6 * 0xe]);
-              draw_sprite_by_id(*puVar7 & 0x1ff,(int)(short)(&g_inv_hotspot_draw_x)[iVar6 * 7],
-                           (int)(short)(&g_inv_hotspot_draw_y)[iVar6 * 7],(&g_inv_hotspot_dirty_h)[iVar6 * 0xe],
-                           (&g_inv_hotspot_dirty_w)[iVar6 * 0xe]);
-              if ((((*puVar7 & 0x8000) != 0) && ((puVar7[3] & 0x8000) == 0)) &&
-                 (uVar4 = puVar7[3] >> 6, 1 < uVar4)) {
+              draw_sprite_by_id(((uw_object_hdr_t *)puVar7)->object_id,
+                                (int)(short)(&g_inv_hotspot_draw_x)[iVar6 * 7],
+                                (int)(short)(&g_inv_hotspot_draw_y)[iVar6 * 7],
+                                (&g_inv_hotspot_dirty_h)[iVar6 * 0xe],
+                                (&g_inv_hotspot_dirty_w)[iVar6 * 0xe]);
+              if (((((uw_object_hdr_t *)puVar7)->is_quant != 0) && ((((uw_object_hdr_t *)puVar7)->link & 0x200) == 0)) &&
+                  (uVar4 = ((uw_object_hdr_t *)puVar7)->link, 1 < uVar4)) {
                 auStack_54[iVar6] = uVar4;
                 bVar5 = true;
               }
@@ -593,11 +588,14 @@ joined_r0x00048308:
       if ((*(ushort *)(&g_equipped_items + DAT_00085c4c * 2) & 0xffc0) != 0) {
         puVar7 = (ushort *)resolve_object_link((ushort *)(&g_equipped_items + DAT_00085c4c * 2));
         if (getenv("UW_DEBUG_W20"))
-          fprintf(stderr, "[w20] resolved=%p id=0x%03x\n", (void *)puVar7, puVar7 ? (unsigned)(*puVar7 & 0x1ff) : 0u);
-        draw_sprite_by_id(*puVar7 & 0x1ff,(int)_DAT_00085bf0,(int)CONCAT11(DAT_00085bf3,DAT_00085bf2),
-                     DAT_00085bf5,DAT_00085bf4);
-        if ((((*puVar7 & 0x8000) != 0) && ((puVar7[3] & 0x8000) == 0)) &&
-           (uVar4 = puVar7[3] >> 6, 1 < uVar4)) {
+          fprintf(stderr, "[w20] resolved=%p id=0x%03x\n", (void *)puVar7,
+                  puVar7 ? (unsigned)(((uw_object_hdr_t *)puVar7)->object_id) : 0u);
+        draw_sprite_by_id(((uw_object_hdr_t *)puVar7)->object_id,
+                          (int)_DAT_00085bf0,
+                          (int)CONCAT11(DAT_00085bf3,DAT_00085bf2),
+                          DAT_00085bf5,DAT_00085bf4);
+        if (((((uw_object_hdr_t *)puVar7)->is_quant != 0) && ((((uw_object_hdr_t *)puVar7)->link & 0x200) == 0)) &&
+            (uVar4 = ((uw_object_hdr_t *)puVar7)->link, 1 < uVar4)) {
           bVar5 = true;
           local_2c = uVar4;
         }
@@ -692,7 +690,7 @@ void perform_object_search_check()
 LAB_0003f69c:
     uVar3 = *g_interact_target & 0x1c0;
     if (((uVar3 != 0x140) && (uVar3 != 0x180)) &&
-       (((&DAT_00202c9a)[(*g_interact_target & 0x1ff) * 0xd] & 3) != 2)) {
+       ((g_object_type_props[(*g_interact_target & 0x1ff)].class_flags & 3) != 2)) {
       uVar3 = (g_interact_target[1] & 0x380) >> 7;
       if ((uVar3 & 4) == 0) {
         iVar1 = roll_skill_check(*(undefined1 *)(DAT_00086df8 + 0x29),10);
@@ -703,7 +701,7 @@ LAB_0003f69c:
         if ((short)uVar2 < (short)((ushort)uVar3 & 3)) {
           uVar2 = uVar3 & 3;
         }
-        uVar3 = CONCAT11(*(undefined1 *)((char *)g_interact_target + 3),(char)g_interact_target[1]) & 0xfe7f |
+        uVar3 = (ushort)g_interact_target[1] & 0xfe7f |
                 (uVar2 & 3 | 4) << 7;
         *(char *)(g_interact_target + 1) = (char)uVar3;
         *(char *)((char *)g_interact_target + 3) = (char)(uVar3 >> 8);

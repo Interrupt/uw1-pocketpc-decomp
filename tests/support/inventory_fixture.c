@@ -2,8 +2,8 @@
 #include "inventory_fixture.h"
 
 /* Local service declarations; game function bodies link these mocks. */
-void *resolve_object_link(void *link);
-int encode_object_slot_index(void *object);
+uw_object_hdr_t *resolve_object_link(ushort *link_);
+int encode_object_slot_index(const uw_object_hdr_t *object);
 int build_object_display_name(char *text, void *object, int a, int b);
 void push_cursor_icon(int type);
 void pop_cursor_icon(ushort mode);
@@ -36,7 +36,7 @@ char *g_current_container_record;
 
 ushort *DAT_002046b4;
 
-void *resolve_object_link(void *link_)
+uw_object_hdr_t *resolve_object_link(ushort *link_)
 { ushort *link = (ushort *)link_;
     unsigned slot = *link >> 6;
     if (slot == 0) return NULL;
@@ -44,7 +44,7 @@ void *resolve_object_link(void *link_)
     return objects[slot];
 }
 
-int encode_object_slot_index(void *object)
+int encode_object_slot_index(const uw_object_hdr_t *object)
 {
     if (object == NULL) return 0;
     for (int i = 1; i < 5; i++)
@@ -71,7 +71,8 @@ short *DAT_00085a6c = click_state;
 
 undefined2 g_cursor_mode, g_cursor_holding_state;
 
-ushort *g_player_object, *g_interact_target;
+uw_mobile_object_t *g_player_object;
+ushort *g_interact_target;
 
 char *g_selected_object, *DAT_00202098, *DAT_002020b0;
 
@@ -215,7 +216,7 @@ void inventory_fixture_reset(void)
     prompt_prints = combination_calls = released_clicks = reset_cursor = 0;
     scroll_message = 0;
     target_reachable = 1; target_obstructed = 0;
-    g_player_object = objects[4];
+    g_player_object = (uw_mobile_object_t *)objects[4];
     strcpy((char *)DAT_000878ec_backing, "Use ");
     memset(objects, 0, sizeof(objects));
     memset(slots, 0, sizeof(slots));
@@ -255,7 +256,7 @@ undefined2 DAT_00201b60;
 undefined1 g_active_hud_panel;
 unsigned char g_inventory_hotspot_table[0x17 * 0xe + 2];
 unsigned char g_backpack_slot_to_widget_backing[0x1c];
-undefined1 DAT_00202c90_backing[8192];
+uw_object_type_props_t g_object_type_props[512];
 char *g_open_container_list;
 int container_grid_redraws, container_arrow_redraws;
 
@@ -296,7 +297,7 @@ static void reset_container_services(void)
     memset(DAT_002028a0_backing, 0, sizeof DAT_002028a0_backing);
     memset(DAT_002028e8_backing, 0, sizeof DAT_002028e8_backing);
     memset(DAT_00202978_backing, 0, sizeof DAT_00202978_backing);
-    memset(DAT_00202c90_backing, 0, sizeof DAT_00202c90_backing);
+    memset(((byte *)g_object_type_props), 0, sizeof g_object_type_props);
     memset(g_inventory_hotspot_table, 0, sizeof g_inventory_hotspot_table);
     memset(g_backpack_slot_to_widget_backing, 0, sizeof g_backpack_slot_to_widget_backing);
     DAT_00202986 = DAT_00202938 = DAT_0020299c = DAT_002029a0 = 0;

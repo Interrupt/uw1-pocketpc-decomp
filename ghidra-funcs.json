@@ -6365,7 +6365,7 @@
       "ghidra_origin": true,
       "param_count": 2,
       "variadic": false,
-      "description": "NOTE: for the item_id==0x1cf special-object branch inside close_door_object/open_door_object, this dispatch is provably always a no-op.",
+      "description": "NOTE: for the object_id==0x1cf special-object branch inside close_door_object/open_door_object, this dispatch is provably always a no-op.",
       "audited": true,
       "modernized": true
     },

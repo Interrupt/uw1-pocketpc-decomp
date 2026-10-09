@@ -4,11 +4,12 @@
 /* Exercise light toggling, equipment selection, real shading data and pixels.
    Inventory/UI services are fixtures; the game functions stay in their files. */
 char *DAT_00086df8, *DAT_0023be74, *DAT_0024fa2c, *DAT_0023cca0;
-ushort *g_scratch_object_ptr;
+uw_object_hdr_t *g_scratch_object_ptr;
 unsigned char g_fullbright_palette_mask[256];
 byte lighting_span_shade = 88;
 char *g_selected_object;
-undefined1 DAT_00086da8, DAT_00202800_backing[256];
+undefined1 DAT_00086da8;
+uw_melee_type_props_t g_melee_type_props[16];
 undefined1 DAT_0023b039_backing[4096];
 undefined4 DAT_000b5638_backing[160];
 undefined1 DAT_0023cca8_backing[1024];
@@ -26,10 +27,10 @@ ushort lights[4][4], *slots[11];
 byte light_records[32];
 int rebuilds, message;
 int g_ambient_bias_reduction;
-void *get_equipped_item_at_slot(short slot) { return slots[slot]; }
+uw_object_hdr_t *get_equipped_item_at_slot(short slot) { return slots[slot]; }
 void *get_scanned_object_class_effect_ptr(void)
 {
-    return light_records + (*g_scratch_object_ptr & 15) * 2;
+    return light_records + (g_scratch_object_ptr->type_flags & 15) * 2;
 }
 int compute_object_weight(ushort *object) { (void)object; return 0; }
 void request_weapon_swing_graphic(char category) {}
