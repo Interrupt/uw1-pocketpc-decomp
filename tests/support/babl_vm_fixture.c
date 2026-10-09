@@ -25,9 +25,10 @@ undefined1 DAT_001006d8_backing[8192];
 short DAT_00100770_backing[1024];
 undefined1 DAT_001007a0_backing[2048];
 char *DAT_000bbf80;
-ushort *DAT_00100674, *g_player_object;
+ushort *DAT_00100674;
+uw_mobile_object_t *g_player_object;
 char *DAT_00086df8;
-undefined1 DAT_00202c90_backing[8192];
+uw_object_type_props_t g_object_type_props[512];
 short babl_words[1024];
 static short script_words[1024];
 static unsigned char symbols[32 * 48];
@@ -69,9 +70,9 @@ void babl_fixture_reset(void)
     DAT_000bbf1c = DAT_000bbf78 = DAT_000bbf2c = DAT_000bbf74 = 0;
     DAT_00086df8 = character;
     DAT_00100674 = npc;
-    g_player_object = player;
+    g_player_object = (uw_mobile_object_t *)player;
     memset(babl_items, 0, sizeof babl_items);
-    memset(DAT_00202c90_backing, 0, sizeof DAT_00202c90_backing);
+    memset(((byte *)g_object_type_props), 0, sizeof g_object_type_props);
     babl_drop_count = babl_loot_calls = printed_lines = 0;
     babl_input_polls = babl_invalid_first_choice = 0; babl_next_choice = 1;
     DAT_000bc020 = DAT_000bc000 = NULL;
@@ -155,14 +156,14 @@ undefined s_scroll_newline_0008522c_backing[8192] = "\n";
 ushort babl_items[12][4];
 ushort *babl_dropped[8], *babl_drop_owner[8];
 int babl_drop_count, babl_loot_calls;
-void *get_object_record_by_slot_index(short slot)
+uw_object_hdr_t *get_object_record_by_slot_index(short slot)
 {
     TEST_ASSERT_GREATER_THAN_INT(0, slot);
     TEST_ASSERT_LESS_THAN_INT(12, slot);
     return babl_items[slot];
 }
-int encode_object_slot_index(void *object_) { char *object = (char *)object_; return (int)((object - (char *)babl_items[0]) / 8); }
-void *resolve_object_link(void *link_)
+int encode_object_slot_index(const uw_object_hdr_t *object_) { char *object = (char *)object_; return (int)((object - (char *)babl_items[0]) / 8); }
+uw_object_hdr_t *resolve_object_link(ushort *link_)
 { ushort *link = (ushort *)link_;
     if (link == (ushort *)((char *)DAT_00100674 + 6)) return *link ? babl_items[*link] : NULL;
     for (int i = 1; i < 12; i++)
@@ -170,14 +171,14 @@ void *resolve_object_link(void *link_)
     TEST_FAIL_MESSAGE("Inventory link must address the NPC byte offset 6 or an object's link word");
     return NULL;
 }
-void object_list_unlink(void *head_, void *object_)
+void object_list_unlink(ushort *head_, uw_object_hdr_t *object_)
 { byte *head = (byte *)head_; byte *object = (byte *)object_;
     TEST_ASSERT_EQUAL_PTR((char *)DAT_00100674 + 6, head);
     while (*head && (byte *)babl_items[*head] != object) head = (byte *)(babl_items[*head] + 2);
     TEST_ASSERT_NOT_EQUAL(0, *head);
     *head = object[2]; object[2] = 0;
 }
-void object_list_insert_head(void *head_, void *object_)
+void object_list_insert_head(ushort *head_, uw_object_hdr_t *object_)
 { byte *head = (byte *)head_; char *object = (char *)object_;
     TEST_ASSERT_EQUAL_PTR((char *)DAT_00100674 + 6, head);
     object[2] = *head;
@@ -200,16 +201,16 @@ undefined4 DAT_000bbf98_backing[8], DAT_000bbff0_backing[8];
 
 void babl_builtin_say(char *text) { strcpy(babl_speech, text); }
 void draw_hotspot_crosshair_marker(short side, short slot) {}
-void free_object_slot(void *object) { memset(object, 0, 8); }
+void free_object_slot(uw_object_hdr_t *object) { memset(object, 0, 8); }
 long ce_srand(long seed) { return 0; }
 int randomize_value_pct(short value, short low, short high) { return value; }
 void compute_dimension_volume(void) {}
 
-undefined1 DAT_001007d0_backing[3072];
+uw_monster_type_props_t g_monster_type_props[64];
 short DAT_00201b68, DAT_00201c74;
 int babl_awarded_xp;
 void grant_experience_points(short xp) { babl_awarded_xp += xp; }
-void npc_set_goal_for_object(void *object, int goal, int target)
+void npc_set_goal_for_object(uw_mobile_object_t *object, int goal, int target)
 {
     ushort packed = *(ushort *)(object + 11);
     *(ushort *)(object + 11) = (packed & 0xf000) | (target << 4) | goal;
@@ -227,7 +228,7 @@ void babl_bind_npc_variables(void)
     for (unsigned i=0; i<sizeof names/sizeof *names; i++)
         babl_symbol(i + 2, names[i], i + 2, 1, 0x126, 0);
     DAT_00201b68 = 1; DAT_00201c74 = 2;
-    memset(DAT_001007d0_backing, 0, sizeof DAT_001007d0_backing);
+    memset(((byte *)g_monster_type_props), 0, sizeof g_monster_type_props);
     babl_awarded_xp = 0;
 }
 short babl_named_word(char *name)

@@ -3,7 +3,7 @@
 static char character[256], attributes[256];
 static ushort player[16];
 char *DAT_00086df8, *DAT_0023be74;
-ushort *g_player_object;
+uw_mobile_object_t *g_player_object;
 short DAT_00201b68;
 undefined2 DAT_00201b60, g_cursor_holding_state, g_cursor_mode, DAT_000868d8;
 static short click_position[2];

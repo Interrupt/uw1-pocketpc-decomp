@@ -51,7 +51,8 @@ byte *prompt_split_object_stack(byte *object);
 uint check_object_fits_in_slot(ushort *object, int slot);
 void handle_backpack_slot_click(short slot);
 int place_held_item_in_empty_slot(void *held_object, short target_slot);
-int objects_can_stack(ushort *object_a, ushort *object_b);
+int objects_can_stack(const uw_object_hdr_t *object_a,
+		      const uw_object_hdr_t *object_b);
 int handle_backpack_slot_interact(void *object, uint slot);
 bool compute_drop_aim_from_cursor();
 int drop_held_object_near_player(void *held_object, int force);

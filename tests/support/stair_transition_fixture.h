@@ -15,10 +15,10 @@ void weapon_overlay_flash_hold(int passes);
 void weapon_overlay_flash_restore(int passes);
 void *ce_memset(void *buffer, int value, unsigned size);
 void *tilemap_lookup(short x, short y);
-int encode_object_slot_index(void *object);
+int encode_object_slot_index(const uw_object_hdr_t *object);
 int check_object_placement_clearance(short type, short slot, short x, short y, short z, int flag, byte radius);
-void *resolve_object_link(void *link);
-int object_ptr_in_arena(void *object);
+uw_object_hdr_t *resolve_object_link(ushort *link);
+int object_ptr_in_arena(const uw_object_hdr_t *object);
 ushort *discard_misplaced_object(void *head, ushort *object, int flag);
 void tick_weapon_swing_state(short flag);
 void set_hud_status_value(byte slot, ushort value);
@@ -29,7 +29,8 @@ void update_player_tick_effects(void);
 long ce_rand(void);
 void apply_level9_random_hazard_tick(void);
 void debug_print(char *format, ...);
-ushort *find_object_in_chain(void *link, int recursive, int group, int subclass, short type);
+uw_object_hdr_t *find_object_in_chain(ushort **link, int recursive, int group,
+				      int subclass, short type);
 void stair_transition_fixture_reset(void);
 void stair_transition_fixture_dispose(void);
 #endif

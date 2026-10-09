@@ -608,45 +608,15 @@ void close_panels_before_level_change()
 
 
 
-// was FUN_00066cb4 -- zeroes g_player_object's whole 0x1b-byte record then re-sets it to a fresh
-// blank object header/mobile-record: a default heading/quality pattern, item-id 0x7f (the player's
-// fixed item-id), and clears the container/link/status bitfields.
+// was FUN_00066cb4 -- clears the full mobile record, sets the player's fixed
+// item ID, and restores the original status value. Bits 4-7 in that status
+// value remain unnamed; preserve the complete initial word.
 void reset_player_object_record()
 
 {
-  ushort uVar1;
-
-  ce_memset(g_player_object,0,0x1b);
-  *(byte *)((char *)g_player_object + 3) = (byte)g_player_object[3] & 0x3f;
-  *(undefined1 *)((char *)g_player_object + 7) = 0;
-  *(undefined1 *)((char *)g_player_object + 0xd) = 0xfd;
-  uVar1 = *g_player_object;
-  *(char *)g_player_object = (char)(uVar1 & 0x7fff);
-  *(char *)((char *)g_player_object + 1) = (char)((uVar1 & 0x7fff) >> 8);
-  uVar1 = *g_player_object;
-  *(char *)g_player_object = (char)uVar1;
-  *(byte *)((char *)g_player_object + 1) = (byte)(uVar1 >> 8) | 0x20;
-  uVar1 = *g_player_object;
-  *(char *)g_player_object = (char)(uVar1 & 0xbfff);
-  *(char *)((char *)g_player_object + 1) = (char)((uVar1 & 0xbfff) >> 8);
-  uVar1 = g_player_object[1];
-  *(char *)((char *)g_player_object + 1) = (char)(uVar1 & 0xfc7f);
-  *(char *)((char *)g_player_object + 3) = (char)((uVar1 & 0xfc7f) >> 8);
-  *(byte *)((char *)g_player_object + 0xc) = (byte)g_player_object[0xc] & 0xe0;
-  uVar1 = g_player_object[2];
-  *(char *)((char *)g_player_object + 2) = (char)(uVar1 & 0xffc0);
-  *(char *)((char *)g_player_object + 5) = (char)((uVar1 & 0xffc0) >> 8);
-  *(byte *)((char *)g_player_object + 2) = (byte)g_player_object[2] & 0x3f;
-  *(undefined1 *)((char *)g_player_object + 5) = 0;
-  uVar1 = g_player_object[3];
-  *(char *)((char *)g_player_object + 3) = (char)(uVar1 & 0xffc0);
-  *(char *)((char *)g_player_object + 7) = (char)((uVar1 & 0xffc0) >> 8);
-  *(byte *)((char *)g_player_object + 3) = (byte)g_player_object[3] & 0x3f;
-  *(undefined1 *)((char *)g_player_object + 7) = 0;
-  *(undefined1 *)((char *)g_player_object + 0x11) = 0;
-  uVar1 = *g_player_object;
-  *(undefined1 *)g_player_object = 0x7f;
-  *(byte *)((char *)g_player_object + 1) = (byte)(uVar1 >> 8) & 0xfe;
+  ce_memset(g_player_object, 0, sizeof(*g_player_object));
+  g_player_object->hdr.object_id = 0x7f;
+  g_player_object->status_word = 0x00fd;
   return;
 }
 
@@ -681,7 +651,7 @@ void init_gameplay_session()
   DAT_002048b8 = check_and_reset_landing_state;
   DAT_002048b2 = 0x1100;
   DAT_002048b0 = 0;
-  g_player_object = (ushort *)DAT_0023b82c;
+  g_player_object = (uw_mobile_object_t *)(ushort *)DAT_0023b82c;
   load_shading_level_config(0);
   DAT_0023be8c = 0;
   DAT_00086df8 = &DAT_0023bca8;
@@ -692,9 +662,9 @@ void init_gameplay_session()
      per-tick call sites of scheduler_tick... */
   DAT_000879ac = 1;
   reset_player_object_record();
-  iVar1 = (*g_player_object & 0x3f) * 0x30;
+  iVar1 = (g_player_object->hdr.object_id & 0x3f) * 0x30;
   DAT_0023be74 = &DAT_001007d0 + iVar1;
-  g_player_object[8] = (&g_monster_max_stats_table)[iVar1];
+  ((ushort *)g_player_object)[8] = g_monster_type_props[(iVar1) / 0x30].max_hp;
   if (DAT_00201c74 == 0) {
     DAT_00201c74 = register_interned_string(DAT_00086df8,0x7d);
   }
@@ -858,10 +828,10 @@ void set_custom_view_target(short mode)
   }
   else if (mode < 0x100) {
     iVar1 = get_object_record_by_slot_index(mode);
-    DAT_0023be90 = (*(byte *)(iVar1 + 0x17) & 0xfc) * 0x40 + (*(byte *)(iVar1 + 3) & 0xe0);
-    DAT_0023be92 = (*(byte *)(iVar1 + 3) & 0x1c) * 8 + (*(ushort *)(iVar1 + 0x16) & 0x3f0) * 0x10;
-    DAT_0023be94 = (*(byte *)(iVar1 + 2) & 0x7f) << 3;
-    DAT_0023bf00 = (*(ushort *)(iVar1 + 2) & 0xff80) << 6;
+    DAT_0023be90 = ((((uw_mobile_object_t *)iVar1)->tile_x << 2)) * 0x40 + ((((uw_object_hdr_t *)iVar1)->xpos << 5));
+    DAT_0023be92 = ((((uw_object_hdr_t *)iVar1)->ypos << 2)) * 8 + ((((uw_mobile_object_t *)iVar1)->tile_y << 4)) * 0x10;
+    DAT_0023be94 = (((uw_object_hdr_t *)iVar1)->zpos) << 3;
+    DAT_0023bf00 = (((uw_object_hdr_t *)iVar1)->position_word & 0xff80) << 6;
   }
   if (DAT_0023b82c == 0) {
     set_pending_update_flags(2);

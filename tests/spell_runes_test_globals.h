@@ -1,6 +1,6 @@
 #include "src/headers/uw.h"
 extern char *DAT_00086df8;
-extern ushort *g_player_object;
+extern uw_mobile_object_t *g_player_object;
 extern short *DAT_00085a6c;
 extern undefined2 g_cursor_holding_state;
 extern int DAT_002028d0;

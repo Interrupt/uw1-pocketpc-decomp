@@ -226,12 +226,12 @@ static void test_status_save_restores_calculated_stats_and_carry_fields(void)
 
 static void test_armor_protection_uses_loaded_table_and_quality(void)
 {
-    uw_test_read_data("DATA/OBJECTS.DAT", DAT_00202750_backing, 0x80,
+    uw_test_read_data("DATA/OBJECTS.DAT", ((byte *)g_armor_type_props), 0x80,
                       2 + 0x80 + 0x30, SEEK_SET);
     for (int item = 0x20; item < 0x40; item++) {
         player_object[0] = item;
         player_object[2] = 63;
-        TEST_ASSERT_EQUAL_INT(1 + DAT_00202750_backing[(item - 0x20) * 4] * 63 / 64,
+        TEST_ASSERT_EQUAL_INT(1 + g_armor_type_props[item - 0x20].protection * 63 / 64,
                               compute_object_weight(player_object));
         player_object[2] = 0;
         TEST_ASSERT_EQUAL_INT(1, compute_object_weight(player_object));

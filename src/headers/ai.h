@@ -14,31 +14,11 @@ extern short DAT_00100608;
    same storage. */
 extern undefined DAT_00084f20_backing[128];
 
-#define DAT_001007d5 DAT_001007d0_backing[0x5]
-#define DAT_001007d9 DAT_001007d0_backing[0x9]
-/* Sizing-audit pass: these three were declared as independent 256-byte arrays in babl.c/combat.c,
-   but every use indexes them with the exact same per-class `(id&0x3f)*0x30` base as g_monster_max_
-   stats_table/DAT_001007d5 right alongside them in the same functions... */
-#define DAT_001007dd DAT_001007d0_backing[0xd]
-#define DAT_001007de DAT_001007d0_backing[0xe] // same monster record byte used by barter pricing
-#define DAT_001007e0 DAT_001007d0_backing[0x10]
-#define DAT_001007e3 DAT_001007d0_backing[0x13]
-#define DAT_001007fd DAT_001007d0_backing[0x2d]
-/* OBJECTS.DAT monster records are loaded at DAT_001007d0, stride 0x30. These original addresses are
-   fields of that same table: max HP (+4), flags (+0xa), defense (+0x12), perception (+0x1d).
-   Separate backing arrays left these fields zero even after load_monster_combat_stats. */
-#define g_monster_max_stats_table DAT_001007d0_backing[0x4]
-#define DAT_001007da DAT_001007d0_backing[0xa]
-#define DAT_001007e2 DAT_001007d0_backing[0x12]
-#define DAT_001007ed DAT_001007d0_backing[0x1d]
-#define DAT_001007ee DAT_001007d0_backing[0x1e] // per-class perception-range byte (>>4), read by alert_npc_to_noise_callback
-/* Monster effect flags at offset 8 of each loaded 0x30-byte record. */
-#define DAT_001007d8 DAT_001007d0_backing[8]
-#define DAT_001007f8 DAT_001007d0_backing[0x28] /* per-class XP, 16 bits; loaded monster table */
-
 #define DAT_00084f20 DAT_00084f20_backing[0]
-extern undefined1 DAT_001007d0_backing[3072];
-#define DAT_001007d0 DAT_001007d0_backing[0]
+/* UW1 OBJECTS.DAT critter rows, loaded without native expansion. */
+extern uw_monster_type_props_t g_monster_type_props[64];
+/* Temporary byte-address boundary for the remaining raw row-pointer users. */
+#define DAT_001007d0 g_monster_type_props[0].armor[0]
 extern undefined4 DAT_001013fc;
 extern ushort DAT_00101414;
 extern ushort DAT_0010141c;
@@ -94,7 +74,7 @@ void npc_react_to_nearby_player();
 void npc_wander_return_home_exact_tick();
 int detect_npc_wander_proximity(void *out_near, void *out_far);
 int compute_vertical_aim_offset(short has_target, int target);
-void setup_npc_ai_tick_state(ushort *npc);
+void setup_npc_ai_tick_state(uw_mobile_object_t *npc);
 void npc_ai_default_tick();
 int refresh_npc_target_delta();
 int check_npc_morale_flee(uint morale_stat, uint current_hp, uint hp_margin, uint flee_threshold);
@@ -103,7 +83,8 @@ void npc_set_goal(byte goal, uint goal_target);
 void npc_clear_special_goal();
 int initiate_npc_death(char *npc);
 int handle_monster_death(void *npc);
-void npc_set_goal_for_object(void *npc, int goal, int goal_target);
+void npc_set_goal_for_object(uw_mobile_object_t *npc, int goal,
+			     int goal_target);
 void randomize_active_npc_flags();
 int resolve_tile_entry_offset(char tile_type, byte *out_x, byte *out_y);
 void npc_movement_tick(ushort *npc_object, char *scratch);

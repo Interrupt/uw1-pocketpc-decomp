@@ -480,11 +480,12 @@ void demomode_pump(void) {
         {
             /* Print the player's tile so a scripted TELEPORT/REVEAL sweep
                can be correlated with what's on screen. */
-            extern ushort *g_player_object;
+            extern uw_mobile_object_t *g_player_object;
             unsigned short *pl = (unsigned short *)g_player_object;
             if (pl)
                 fprintf(stderr, "[demo] player tile = (%d,%d)\n",
-                        pl[0x16/2] >> 10, (pl[0x16/2] & 0x3f0) >> 4);
+                        ((uw_mobile_object_t *)pl)->tile_x,
+                        ((uw_mobile_object_t *)pl)->tile_y);
         }
         full_dungeon_redraw();
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
@@ -611,7 +612,8 @@ void demomode_pump(void) {
         if (contents) {
             unsigned short *c = (unsigned short *)contents;
             fprintf(stderr, "[dumpplayerinv] sp_link resolves to obj=%p type=0x%03x word0=0x%04x\n",
-                    contents, c[0] & 0x1ff, c[0]);
+                    contents, ((uw_object_hdr_t *)c)->object_id,
+                    ((uw_object_hdr_t *)c)->type_flags);
             int n = 0;
             unsigned short *next_link = c + 2;
             while (1) {
@@ -619,7 +621,8 @@ void demomode_pump(void) {
                 if (!nx) break;
                 unsigned short *nc = (unsigned short *)nx;
                 fprintf(stderr, "[dumpplayerinv]   +sibling #%d obj=%p type=0x%03x word0=0x%04x\n",
-                        n, nx, nc[0] & 0x1ff, nc[0]);
+                        n, nx, ((uw_object_hdr_t *)nc)->object_id,
+                        ((uw_object_hdr_t *)nc)->type_flags);
                 next_link = nc + 2;
                 if (++n > 32) break;
             }
@@ -646,7 +649,7 @@ void demomode_pump(void) {
         /* Diagnostic/regression hook for the "Spell crashes - test each" bug report: directly
            drives dispatch_special_action (the real per-spell effect dispatcher
            cast_spell_from_rune_combo calls after its mana/skill checks pass) once for each of... */
-        extern ushort *g_player_object;
+        extern uw_mobile_object_t *g_player_object;
         extern undefined DAT_00087530_backing[212];
         int i;
         for (i = 0; i < 48; i++) {
@@ -666,11 +669,11 @@ void demomode_pump(void) {
         /* Diagnostic: walk the current player tile's raw object chain (the same
            tilemap_lookup(row,col)+2 -> resolve_object_link -> +2 shorts -> resolve_object_link ...
            walk object_chain_max_barrier uses) and print each object's raw type/flags words... */
-        extern ushort *g_player_object;
+        extern uw_mobile_object_t *g_player_object;
         unsigned short *pl = (unsigned short *)g_player_object;
         if (pl) {
-            int row = pl[0x16/2] >> 10;
-            int col = (pl[0x16/2] & 0x3f0) >> 4;
+            int row = ((uw_mobile_object_t *)pl)->tile_x;
+            int col = ((uw_mobile_object_t *)pl)->tile_y;
             void *tile_rec = tilemap_lookup(row, col);
             unsigned short *link = (unsigned short *)((char *)tile_rec + 2);
             fprintf(stderr, "[dumptileobjs] tile=(%d,%d) tile_rec=%p raw_link_field=0x%04x\n",
@@ -679,7 +682,9 @@ void demomode_pump(void) {
             unsigned short *obj;
             while ((obj = (unsigned short *)resolve_object_link(link)) != NULL) {
                 fprintf(stderr, "[dumptileobjs]   #%d obj=%p type=0x%03x word0=0x%04x word1=0x%04x\n",
-                        n, (void *)obj, obj[0] & 0x1ff, obj[0], obj[1]);
+                        n, (void *)obj, ((uw_object_hdr_t *)obj)->object_id,
+                        ((uw_object_hdr_t *)obj)->type_flags,
+                        ((uw_object_hdr_t *)obj)->position_word);
                 link = obj + 2;
                 n++;
                 if (n > 64) { fprintf(stderr, "[dumptileobjs]   ...giving up after 64\n"); break; }

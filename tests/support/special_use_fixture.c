@@ -8,7 +8,8 @@ short *DAT_00085a6c;
 undefined2 DAT_002020a0, DAT_002020a4, g_cursor_holding_state;
 uint DAT_00202094, DAT_0024cfcc;
 undefined1 DAT_0023c3dc, DAT_0023c3d8;
-undefined1 DAT_00202c38_backing[1536], DAT_001007d0_backing[3072];
+undefined1 DAT_00202c38_backing[1536];
+uw_monster_type_props_t g_monster_type_props[64];
 undefined1 DAT_00087530_backing[212];
 char *g_selected_object;
 int DAT_00101954;
@@ -94,11 +95,11 @@ ushort *special_use_object(unsigned slot)
 void special_use_empty_area(int x, int y)
 {
     memset(special_use_fixture.map, 0, 0x4000);
-    g_player_object[11] = (x << 10) | (y << 4);
+    ((ushort *)g_player_object)[11] = (x << 10) | (y << 4);
     DAT_002020a0 = x; DAT_002020a4 = y;
     DAT_0023c3dc = x; DAT_0023c3d8 = y;
     *(ushort *)(special_use_fixture.map + (x + 64*y)*4 + 2) = 1 << 6;
-    g_player_object[2] = 0;
+    ((ushort *)g_player_object)[2] = 0;
 }
 ushort *special_use_npc(unsigned slot, int x, int y, int state, int alerted)
 {
