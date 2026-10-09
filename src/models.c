@@ -1400,7 +1400,28 @@ void emit_catalog_object(byte catalog, void *obj_ptr, char heading, short frame_
       *(char *)(_face_rec + 0x42) = (char)((uint)uVar17 >> 0x10);
       *(char *)(_face_rec + 0x43) = (char)((uint)uVar17 >> 0x18);
       local_58 = (byte *)((char *)local_58 + -0x18);
+      /* BUG FIX (dropped loop update): the original steps BOTH per-face
+         cursors here -- the byte offset into the part records (iVar22, -0x60)
+         and the int index into those same records (row_base, -0x18, the very
+         same step counted in ints rather than bytes). This decompile kept the
+         first and lost the second. Confirmed against a Ghidra decompile of
+         the real UU.exe (FUN_00061e60), whose loop tail is:
+
+             local_58 = (byte *)((int)local_58 + -0x18);
+             iVar25 = iVar25 + -0x60;
+
+         row_base feeds exactly one thing -- the door-frame ceiling clamp
+         earlier in this loop -- so frozen at `face_count - 1` the clamp
+         re-read the LAST face's four vertices on every iteration and never
+         once saw the lintel, whose vertices are the only ones authored at the
+         1024 ceiling sentinel. The lintel therefore kept a full 1024 of model
+         height stacked on the frame's world anchor and shot through the
+         ceiling. Measured on a real door frame: anchor 640 with the lintel at
+         model y 1024 put its top at 1664 against a 1024 ceiling; with the
+         step restored the clamp fires on vertices 17 and 19 and the top lands
+         at exactly 1024. */
       iVar22 = iVar22 + -0x60;
+      row_base = row_base + -0x18;
       faces_remaining = faces_remaining + -1;
     } while (faces_remaining != 0);
   }
