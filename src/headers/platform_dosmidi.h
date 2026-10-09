@@ -25,15 +25,15 @@
  * optional -- nothing here runs unless the player asks for it AND the
  * assets are present. */
 
-/* Is DOS audio mode live? True only when UW_AUDIO_MODE=dos (case-
- * insensitive, matching UW_LIGHT_MODE=dos in 3d.c/player.c) and
+/* Is DOS audio mode live? True only when --audio-mode=dos (case-
+ * insensitive, matching --light-mode=dos in 3d.c/player.c) and
  * platform_dosmidi_init then succeeded in loading every file it needs.
  * Reports false after a failed init, so missing assets degrade to the
  * normal path rather than to silence or a crash. */
 int platform_dos_audio_enabled(void);
 
 /* Should sound effects prefer this port's sampled WAVE resources over the
- * DOS notes, where a sample exists? True only for UW_AUDIO_MODE=hybrid.
+ * DOS notes, where a sample exists? True only for --audio-mode=hybrid.
  *
  * "dos" is the faithful setting: every effect is a note on UW.AD's bank-1
  * timbres, as a Sound Blaster Pro played it. "hybrid" keeps that driver
@@ -44,14 +44,14 @@ int platform_dos_audio_enabled(void);
 int platform_dos_prefer_wav_effects(void);
 
 /* Loads SOUND/ADLIB.ADV (the driver's own tables), SOUND/UW.AD (the
- * timbres) and SOUND/SOUNDS.DAT (the effect table) from UW_DOS_DATA_DIR,
+ * timbres) and SOUND/SOUNDS.DAT (the effect table) from --dos-data-dir,
  * and starts the driver. out_rate is the rate render() will be asked for.
  * Returns 1 on success, 0 on any failure. Call once, from
- * platform_music_init, only when UW_AUDIO_MODE=dos. */
+ * platform_music_init, only when --audio-mode=dos. */
 int platform_dosmidi_init(int out_rate);
 
 /* Maps one of audio.c's "\SOUND\uwNN.mod" game paths to the DOS XMI for
- * the same track: "<UW_DOS_DATA_DIR>/SOUND/AWNN.XMI".
+ * the same track: "<--dos-data-dir>/SOUND/AWNN.XMI".
  *
  * The AW set is deliberate: UW ships two variants of every track, UW*.XMI
  * voiced for the MT-32 and AW*.XMI voiced for AdLib/OPL. We synthesise OPL,
@@ -63,7 +63,7 @@ int platform_dosmidi_init(int out_rate);
  * Its own function because it is the one piece here worth pinning down in a
  * test: a wrong track number silently plays a real-but-wrong file, a bug
  * this project has already shipped once. Returns 1 on success, 0 if
- * UW_DOS_DATA_DIR is unset or the path is not a track path. */
+ * --dos-data-dir is unset or the path is not a track path. */
 int platform_dosmidi_xmi_path(const char *win_mod_path, char *out, unsigned int out_sz);
 
 /* Registers the XMI at a real filesystem path as the current track and
@@ -111,7 +111,7 @@ void platform_dosmidi_stop_effect(int id);
 /* Sets the music sequence's volume as a percentage, leaving sound effects
  * alone -- they play on channels locked outside the sequence, so the
  * sequence volume does not touch them. Called at init from
- * UW_DOS_MUSIC_VOLUME (default below 100, because the OPL music sits
+ * --dos-music-volume (default below 100, because the OPL music sits
  * louder than the effects at matched settings). */
 void platform_dosmidi_set_music_volume(int percent);
 

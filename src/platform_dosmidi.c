@@ -40,7 +40,7 @@ static struct {
   uw_blob xmi;
 
   int seq;                  /* the registered sequence handle, -1 for none */
-  int prefer_wav;           /* UW_AUDIO_MODE=hybrid: sample where we have one */
+  int prefer_wav;           /* --audio-mode=hybrid: sample where we have one */
   int music_volume;         /* percent, applied to the sequence only */
 
   /* One tick's worth of chip output, consumed by the resampler below. */

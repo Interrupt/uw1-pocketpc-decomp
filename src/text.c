@@ -61,7 +61,7 @@ static undefined4 DAT_0020250c;
 // was FUN_00011060
 void draw_text_string(char *text, short x, short y)
 {
-  /* Opt-in trace (UW_DIAG_TEXT=1): every text draw's calling function (via dladdr on the return
+  /* Opt-in trace (--diag-text=1): every text draw's calling function (via dladdr on the return
      address), position, and content. Zero cost when unset. */
   if (g_opts.diag_text) {
     Dl_info _dli;

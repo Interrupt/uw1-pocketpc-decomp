@@ -33,11 +33,11 @@ static undefined DAT_0018959f_backing[256];
    catalogs resets the rotation adjustment so it cannot carry between models. */
 static double g_tune_rotation_offset = 0.0;
 static int g_tune_last_catalog = -1;
-/* Debug-panel toggle (dbgui_field_toggle) for pick_object_under_cursor's own UW_PICK_DIAG trace --
+/* Debug-panel toggle (dbgui_field_toggle) for pick_object_under_cursor's own --pick-diag trace --
    lets the pick stencil/object-resolution trace be flipped on live from the object tuner panel
    instead of needing a relaunch with the env var set. */
 int g_uw_debug_pick_diag = 0;
-/* Debug-panel toggle for tick_anim_record's own UW_DISABLE_3D_OBJECTS
+/* Debug-panel toggle for tick_anim_record's own --disable-3d-objects
    gate -- see that function's own comment. -1 = env var not yet
    checked this process; resolved to a real 0/1 on first read (by
    tick_anim_record or by the general debug panel, whichever runs
@@ -425,7 +425,7 @@ static undefined1 DAT_000d977b_backing[256];
 #define DAT_000d977b DAT_000d977b_backing[0]
 static undefined1 DAT_000d977c_backing[256];
 #define DAT_000d977c DAT_000d977c_backing[0]
-/* Sizing pass: live instrumentation (UW_DEBUG_MODEL_PARSE_HWM) across the full 19-script regression
+/* Sizing pass: live instrumentation (--debug-model-parse-hwm) across the full 19-script regression
    suite (29 real .E model files loaded) showed a real high-water mark of 8 chars for the unbounded
    %[a-z] token this feeds. Sized to 64 bytes for headroom above that. */
 static undefined1 DAT_000d98c8_backing[64];

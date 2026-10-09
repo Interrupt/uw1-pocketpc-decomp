@@ -2223,8 +2223,8 @@ void emit_tile_objects(ushort *tile)
               int _heading = (((uw_object_hdr_t *)_rec)->position_word >> 6) & 7;
               int _quality = ((uw_object_hdr_t *)_rec)->owner;
 // Page 4 of comobj's string data is the base object-name table, indexed directly by
-              // id (see UW_DUMP_NAMES/this session's findings) -- not the quality-adjective group
-              // table UW_LOOK_SLOT resolves via namegrp*6+offset.
+              // id (see --dump-names/this session's findings) -- not the quality-adjective group
+              // table --look-slot resolves via namegrp*6+offset.
               char *_name = (char *)get_message_string(0x800 | _id);
               fprintf(_f, "%d\t%d\t0x%03x\t%s\t%d\t%d\t%d\t0x%04x\n",
                       _tx, _ty, _id, (_name && _name[0]) ? _name : "(unnamed)",
@@ -2240,8 +2240,8 @@ void emit_tile_objects(ushort *tile)
       }
     }
   }
-// Debug tool (UW_DUMP_CONTAINERS_FILE): scan every tile's object chain (correctly, via
-// resolve_object_link + the real "next" field at offset+4 -- NOT UW_DUMP_OBJECTS_FILE's own +6,
+// Debug tool (--dump-containers-file): scan every tile's object chain (correctly, via
+// resolve_object_link + the real "next" field at offset+4 -- NOT --dump-objects-file's own +6,
 // which is actually the "first item inside this container" field)...
   if (g_opts.dump_containers_file) {
     static int _dumped_containers = 0;

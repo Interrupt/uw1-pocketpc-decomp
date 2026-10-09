@@ -1225,7 +1225,7 @@ void run_visibility_flood()
     fprintf(stderr, "[visibility-flood] g_visibility_ring_depth=%d g_visibility_max_ring_passes=%d\n",
             (int)g_visibility_ring_depth, (int)g_visibility_max_ring_passes);
 
-  /* Hack - Testing (opt-in via UW_HACK_REVEAL_DEPTH): g_visibility_ring_depth is the row depth of
+  /* Hack - Testing (opt-in via --hack-reveal-depth): g_visibility_ring_depth is the row depth of
      walk_visible_tiles's reveal/visibility walk -- it starts at row &g_visibility_ring_buffer +
      g_visibility_ring_depth*0x42 and sweeps back to row 0... */
   if (g_opts.hack_reveal_depth) {

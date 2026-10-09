@@ -302,7 +302,7 @@ void handle_inventory_panel_click(short slot)
   iVar9 = (int)(short)uVar5;
   /* Permanent (not env-gated) debug line: which real widget got clicked and which
      g_backpack_widget_to_slot/g_equipped_items slot it resolves to -- DEBUG(INFO,...) prints by
-     default under normal play (run.sh's own UW_DEBUG_LEVEL=INFO)... */
+     default under normal play (run.sh's own --debug-level=INFO)... */
   if ((0 < iVar9) && (iVar9 < 0x17)) {
     DEBUG(INFO, "[inv] widget %d clicked -> slot %d\n", iVar9,
           (int)(char)(&g_backpack_widget_to_slot)[iVar9]);

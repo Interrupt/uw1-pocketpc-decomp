@@ -282,7 +282,7 @@ void set_player_tile_position(uint tile_x, uint tile_y, int flag)
 
 
 
-/* Debug-only helper (UW_DEBUG_THROW-gated): print both player-position representations side by side
+/* Debug-only helper (--debug-throw-gated): print both player-position representations side by side
    -- the fine, continuous DAT_00204880/2 (used by the camera and by demo_set_player_pos) vs. the
    coarser tile-position bytes packed into g_player_object's own record... */
 void debug_print_player_position(const char *label)
@@ -1597,7 +1597,7 @@ void sync_camera_from_player()
     }
     DAT_000db448 = (iVar6 >> 8) + (int)DAT_0023bf3c;
   }
-  /* Hack - Testing: UW_HACK_PITCH overrides the camera pitch angle (index into the sin/cos tables,
+  /* Hack - Testing: --hack-pitch overrides the camera pitch angle (index into the sin/cos tables,
      0..360). */
   if (UW_OPT_ISSET(g_opts.hack_pitch)) DAT_000db448 = g_opts.hack_pitch;
   if (cVar1 == '\0') {

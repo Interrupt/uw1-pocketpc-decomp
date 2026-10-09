@@ -13,7 +13,7 @@ static FILE *g_rec_file;
 static int g_rec_delay_ms = 0;
 static int g_rec_idle_ticks;
 
-/* Same truthy/falsy-by-value convention as UW_DEMO_KEEP_RUNNING (see demomode.c) -- getenv() alone
+/* Same truthy/falsy-by-value convention as --demo-keep-running (see demomode.c) -- getenv() alone
    can't tell "explicitly disabled" from "unset", and both need to mean different things here (unset
    defaults ON; explicitly "0" must still mean OFF). */
 static int env_is_falsy(const char *v) {
@@ -25,7 +25,7 @@ static int env_is_boolean_truthy(const char *v) {
            strcasecmp(v, "true") == 0 || strcasecmp(v, "yes") == 0;
 }
 
-/* Same truthy-by-value convention as demomode.c's own UW_DEMO_KEEP_RUNNING check (unset/"0"/"false"
+/* Same truthy-by-value convention as demomode.c's own --demo-keep-running check (unset/"0"/"false"
    -- case-insensitive -- all mean off; anything else, including the empty string from a bare
    `VAR=`, means on). */
 static int keep_running_requested(void) {
@@ -55,8 +55,8 @@ void democapture_init(void) {
         if (v > 0) g_rec_delay_ms = v; /* overrides only the written DELAY line -- see top comment */
     }
 
-    /* When we're recording ON TOP OF a scripted UW_DEMO_FILE playback (the KEEP_RUNNING case above,
-       or an explicit UW_RECORD_DEMOFILE during a playback run per this file's own top comment),
+    /* When we're recording ON TOP OF a scripted --demo-file playback (the KEEP_RUNNING case above,
+       or an explicit --record-demofile during a playback run per this file's own top comment),
        read the source script's own lines into memory BEFORE opening the output file... */
     char *replay_prefix = NULL;
     if (demo_file) {
@@ -78,16 +78,16 @@ void democapture_init(void) {
 
     g_rec_file = fopen(path, "w");
     if (!g_rec_file) {
-        fprintf(stderr, "[record] failed to open UW_RECORD_DEMOFILE=%s for writing\n", path);
+        fprintf(stderr, "[record] failed to open --record-demofile=%s for writing\n", path);
         free(replay_prefix);
         return;
     }
     setvbuf(g_rec_file, NULL, _IOLBF, 0); /* line-buffered: a crash mid-session shouldn't lose the tail */
-    fprintf(g_rec_file, "# recorded session, replay with UW_DEMO_FILE=%s\n", path);
+    fprintf(g_rec_file, "# recorded session, replay with --demo-file=%s\n", path);
     fprintf(g_rec_file, "DELAY %d\n", g_rec_delay_ms);
     if (replay_prefix) {
         /* Copy the scripted setup in verbatim so the result replays start to finish on its own --
-           UW_DEMO_FILE alone, no KEEP_RUNNING or original script needed -- instead of being just
+           --demo-file alone, no KEEP_RUNNING or original script needed -- instead of being just
            the live tail recorded after playback stopped. */
         fprintf(g_rec_file, "# --- scripted setup from %s, copied verbatim ---\n", demo_file);
         fputs(replay_prefix, g_rec_file);

@@ -112,7 +112,7 @@ long RemoveDirectoryW()
 
 /* CopyFileW-shaped call (source path, destination path, fail-if-exists). Used to seed SAVE0\lev.ark
    from DATA\lev.ark for a new game, and by older save-slot copy paths. The native conversion
-   adapters retain ANSI paths; uw_file_copy resolves them against UW_DATA_DIR and copies bytes. */
+   adapters retain ANSI paths; uw_file_copy resolves them against --data-dir and copies bytes. */
 long CopyFileW(const char *source, const char *destination, int fail_if_exists)
 {
     if (!source || !destination) return 0;
@@ -350,7 +350,7 @@ long RegSetValueExW(long key, const unsigned short *value_name, long reserved, l
 long Sleep(unsigned int ms)
 {
     DEBUG(TRACE, "[sleep] Sleep requested ms=%u", ms);
-    /* UW_FAST_SLEEP: debug-only switch to skip the real delay below (splash dwells, app_main_loop's
+    /* --fast-sleep: debug-only switch to skip the real delay below (splash dwells, app_main_loop's
        startup pause, etc. otherwise add up to real wall-clock seconds every run) so
        automated/demo-driven test runs reach gameplay quickly. */
     static int fast = -1;

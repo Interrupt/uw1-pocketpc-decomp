@@ -170,7 +170,7 @@ void demomode_abort(const char *reason) {
 void demomode_pump(void) {
     if (!g_demo_active || g_demo_done) return;
     Uint32 now = SDL_GetTicks();
-    /* g_demo_delay_ms == 0 (via a DELAY 0 line or UW_DEMO_DELAY_MS=0) means tick-native playback:
+    /* g_demo_delay_ms == 0 (via a DELAY 0 line or --demo-delay-ms=0) means tick-native playback:
        no wall-clock gate at all, process exactly one line every real uw_pump_events() call -- the
        same tick source democapture.c's recorder counts against (see its own top comment)... */
     if (g_demo_delay_ms > 0 && now < g_demo_next_tick) return;
@@ -252,7 +252,7 @@ void demomode_pump(void) {
     }
 
     if (strncasecmp(p, "DELAY ", 6) == 0) {
-        /* Sets the per-line pacing (same units/effect as UW_DEMO_DELAY_MS) from WITHIN the file
+        /* Sets the per-line pacing (same units/effect as --demo-delay-ms) from WITHIN the file
            itself, taking effect immediately (this line's own retry, and every line after it, use
            the new value)... */
         int ms = -1;

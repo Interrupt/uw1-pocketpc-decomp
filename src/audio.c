@@ -1030,14 +1030,14 @@ LAB_00073108:
   g_sound_channel_group[uVar2] = uVar3;
   /* The one place an effect's backend is chosen.
    *
-   * UW_AUDIO_MODE=dos sends everything to the DOS driver -- a note on
+   * --audio-mode=dos sends everything to the DOS driver -- a note on
    * UW.AD's bank-1 timbres -- with both the distance-attenuated volume
    * (`note`) and the pan (`flags`) the callers computed. Deliberately not
    * via trigger_sound_sample_note: the real FUN_00073140 takes one
    * argument, so that route structurally cannot carry a pan, and it is
    * where the shipped port discarded the volume.
    *
-   * UW_AUDIO_MODE=hybrid prefers this port's sampled WAVE resource where
+   * --audio-mode=hybrid prefers this port's sampled WAVE resource where
    * one exists and uses the DOS note only for the ids it lacks (0, 13, 14,
    * 15, 19, 21-23). Anything else -- including no DOS mode at all -- takes
    * the sampled path, which is silent for those same ids. */

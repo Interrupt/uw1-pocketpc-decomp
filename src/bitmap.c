@@ -299,7 +299,7 @@ void draw_sprite_by_id(int sprite_id, int x, int y, int width, short height)
 
 
 // was FUN_00040be0 -- the sprite-list compositor flush loop's second draw path ("path=FUN_00040be0"
-// in UW_DIAG_SPRLIST output, taken for entries with puVar4[5]!=0), a sibling of
+// in --diag-sprlist output, taken for entries with puVar4[5]!=0), a sibling of
 // draw_sprite_by_id...
 void sprite_list_flush_blit_raw(int sprite_id, int x, int y, short clip_top, short width, short clip_rows)
 {

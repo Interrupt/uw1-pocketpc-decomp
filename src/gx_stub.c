@@ -18,12 +18,12 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
-#include <dlfcn.h> /* UW_DEBUG_ENDDRAW's dladdr() caller lookup, see GXEndDraw */
+#include <dlfcn.h> /* --debug-enddraw's dladdr() caller lookup, see GXEndDraw */
 
 #define GX_W 320
 #define GX_H 240
 /* Keep the Pocket PC framebuffer/pitches intact; present only the DOS game
-   area unless UW_TOUCHSCREEN enables the extra 40-row touch input strip. */
+   area unless --touchscreen enables the extra 40-row touch input strip. */
 static int g_display_height = 200;
 
 /* The game's own screen-flush routines (flush_dirty_rect_to_display/flush_dirty_rect_to_display_240
@@ -1190,7 +1190,7 @@ void debug_framebuffer_dump(const char *tag) {
     static unsigned int every = 1;
     if (enabled < 0) {
         enabled = g_opts.debug_draw != 0;
-        /* UW_DEBUG_DRAW_EVERY=N: only actually write every Nth dump (still counting all of them, so
+        /* --debug-draw-every=N: only actually write every Nth dump (still counting all of them, so
            filenames stay a stable stride). Lets a huge sequence -- e.g. a full-level automap fill,
            ~30k pixel ops -- be sampled down to a manageable number of BMPs. */
         if (g_opts.debug_draw_every > 1) every = (unsigned int)g_opts.debug_draw_every;
@@ -1379,7 +1379,7 @@ int GXEndDraw(void) {
     int completed_frame = uw_take_completed_frame();
     if (!g_tex) return 0;
     if (!completed_frame && !uw_present_frame_due(uw_gx_time_us())) return 1;
-    /* UW_DEBUG_ENDDRAW: log every real call to this function (i.e. every
+    /* --debug-enddraw: log every real call to this function (i.e. every
        actual SDL_RenderPresent, the true screen-present) with its
        immediate caller's symbol. Early flushes return above without
        presenting or waiting on another vsync. */
@@ -1406,8 +1406,8 @@ int GXEndDraw(void) {
     SDL_RenderPresent(g_ren);
     if (completed_frame) uw_record_completed_present(uw_gx_time_us());
 
-    /* UW_DEBUG_TIMELAPSE=<ms>: save a numbered frame every <ms> of wall-clock time (min 1, "1" or
-       empty -> 250ms) into debug/timelapse/<run-timestamp>/. Pairs with UW_DEMO_DELAY_MS to pace a
+    /* --debug-timelapse=<ms>: save a numbered frame every <ms> of wall-clock time (min 1, "1" or
+       empty -> 250ms) into debug/timelapse/<run-timestamp>/. Pairs with --demo-delay-ms to pace a
        scripted demo into an even timelapse -- assemble the BMPs into a GIF afterwards. */
     {
         static int tl_ms = -1;

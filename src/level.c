@@ -136,11 +136,11 @@ int load_level_object_table(byte *archive_handle, int level_number)
     DAT_0020469c = DAT_002046bc + *(short *)(arena + 0x7c04) * 2;
     DAT_002046c8 = DAT_002046c0 + *(short *)(arena + 0x7c00);
     DAT_002029d0 = 0;
-    /* Debug tool (UW_DEBUG_DUMP_TMAP): dump this level's 64x64 tile map
+    /* Debug tool (--debug-dump-tmap): dump this level's 64x64 tile map
        right after a real load, magic marker and all -- see gx_stub.h's
        comment. */
     uw_debug_dump_tmap(level_number, (unsigned char *)arena);
-    /* Diagnostic (UW_DEBUG_BAG_TRACE): scan for a type-0x8f (rune bag) object's tile linkage
+    /* Diagnostic (--debug-bag-trace): scan for a type-0x8f (rune bag) object's tile linkage
        IMMEDIATELY after the raw level block lands in the arena, before any other code
        (chargen-completion, HUD init, etc.) gets a chance to touch it... */
     if (g_opts.debug_bag_trace) {

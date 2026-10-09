@@ -1,10 +1,10 @@
 /* Scripted input playback for unattended testing. Reads key names, one per line, from the file
-   named by the UW_DEMO_FILE env var and injects them as real keydown/keyup events on a timer, so a
+   named by the --demo-file env var and injects them as real keydown/keyup events on a timer, so a
    crash sequence can be reproduced without a human at the keyboard. */
 #ifndef DEMOMODE_H
 #define DEMOMODE_H
 
-/* Call once after SDL is initialized. No-op if UW_DEMO_FILE isn't set. */
+/* Call once after SDL is initialized. No-op if --demo-file isn't set. */
 void demomode_init();
 
 /* Call every time real events are pumped (uw_pump_events). Injects the

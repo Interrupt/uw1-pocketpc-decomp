@@ -121,7 +121,7 @@ static undefined1 DAT_001005ce;
 static undefined DAT_00088640_backing[768];
 #define DAT_00088640 DAT_00088640_backing[0]
 // HACK: RGB lighting calibration, default 64 when no override is set.
-// UW_AMBIENT_BIAS_REDUCTION=0 retains the ARM formulas.
+// --ambient-bias-reduction=0 retains the ARM formulas.
 static int g_ambient_bias_reduction = 64;
 
 /* Scratch buffer for rect_fill_or_save_restore's save/restore modes -- only ever used within this
@@ -804,8 +804,8 @@ void expand_pals_bytes(char *out_rgb8, char *pals_6bit, int copy_unscaled)
 
 /* The original Pocket PC build multiplies every palette channel by 1.5 (clamped at 255) before
    packing it to RGB565 (ARM 0x22b90/0x22bd8/0x22c20: `mov r1, #0x3fc00000`), presumably to
-   compensate for the handheld LCD; the DOS palettes are shown as-is. HACK: UW_BRIGHTNESS selects the
-   multiplier (e.g. UW_BRIGHTNESS=1.5 restores the Pocket PC look); default 1.0 matches DOS. Returns
+   compensate for the handheld LCD; the DOS palettes are shown as-is. HACK: --brightness selects the
+   multiplier (e.g. --brightness=1.5 restores the Pocket PC look); default 1.0 matches DOS. Returns
    the multiplier as IEEE-754 float bits, the form ordfloat_mul takes. */
 unsigned int get_palette_brightness_bits()
 {
@@ -1115,7 +1115,7 @@ int blit_framebuffer_to_gx_display()
 // stays inside the 0x30-0x3f groups, fire maps to itself), so rotating the palette animates every
 // light level without touching the shade tables. The port re-rasterises the 3D view every main-loop
 // pass, so a rotate + palette rebuild is all that is needed. The DOS clock rate is not known here:
-// one rotation step every UW_PALETTE_CYCLE_MS milliseconds (default 250; 0 disables). Returns 1 when
+// one rotation step every --palette-cycle-ms milliseconds (default 250; 0 disables). Returns 1 when
 // it rotated, so the caller can redraw already-drawn HUD pixels that use the cycled colours.
 int dungeon_palette_cycle_tick()
 {

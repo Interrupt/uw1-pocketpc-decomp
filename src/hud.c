@@ -965,7 +965,7 @@ void main_loop_hud_flush()
       }
       /* Rebuild AND re-rasterise the 3D dungeon view every main-loop iteration. */
       render_dungeon_frame_timed();
-      /* UW_DEBUG_PICK_VIEW: run a pick-mode render pass to fill the pick
+      /* --debug-pick-view: run a pick-mode render pass to fill the pick
          buffer, then paint it over the viewport (see
          uw_debug_blit_pick_buffer). */
       { static int _pv = -1;
@@ -3346,7 +3346,7 @@ void flush_sprite_list_compositor()
             puVar4 = (ushort *)((uint)*puVar7 * 0x14 + DAT_0023c3e8);
             uVar1 = *puVar4;
             if ((uVar1 & DAT_0008763c) != 0) {
-              /* UW_DIAG_SPRLIST: one line per sprite the HUD sprite-list compositor draws -- id / x
+              /* --diag-sprlist: one line per sprite the HUD sprite-list compositor draws -- id / x
                  / y / w / h -- handy for filling in the still-zero compass/dragon layout tables
                  (see the FIXME[hud-*-layout] blocks). */
               if (g_opts.diag_sprlist)

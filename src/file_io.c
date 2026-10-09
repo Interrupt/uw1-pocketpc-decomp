@@ -47,7 +47,7 @@ static int find_case_insensitive(const char *dir_path, const char *name, char *o
     return found;
 }
 
-/* Translate a Windows-style game path ("\DATA\cnv.ark") into a real path under UW_DATA_DIR,
+/* Translate a Windows-style game path ("\DATA\cnv.ark") into a real path under --data-dir,
    resolving each path component case-insensitively since the extracted CE install files are
    all-uppercase but the game code references them in mixed/lower case. */
 static int resolve_path(const char *win_path, char *out, size_t out_sz) {

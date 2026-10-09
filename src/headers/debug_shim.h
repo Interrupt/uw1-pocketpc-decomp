@@ -16,16 +16,16 @@ void dbgui_object_inspector_pick(void);
    dbgui_object_inspector_pick above) for the current frame; call once, right before dbgui_draw(). */
 void populate_debug_panel(void);
 
-/* Debug view (UW_DEBUG_PICK_VIEW): paint the per-pixel object-pick buffer over the 3D viewport
+/* Debug view (--debug-pick-view): paint the per-pixel object-pick buffer over the 3D viewport
    instead of the rendered dungeon. */
 void uw_debug_blit_pick_buffer(void);
-/* Debug view (UW_DEBUG_DRAW_INV_POSITIONS): outline every real inventory hotspot's click rect in
+/* Debug view (--debug-draw-inv-positions): outline every real inventory hotspot's click rect in
    bright red, directly into the framebuffer. */
 void uw_debug_draw_inv_hotspot_positions(void);
-/* Debug tool (UW_DUMP_CRITTER_SHEET): systematically drive decode_critter_sprite_page across every
+/* Debug tool (--dump-critter-sheet): systematically drive decode_critter_sprite_page across every
    (tier, direction, frame) combination for one or more critter type indices. */
 void uw_debug_dump_critter_sheet_once(void);
-/* Debug tool (UW_DUMP_SPRITE_FRAMES / UW_DUMP_SPRITE_IDS): dump individual sprites to standalone
+/* Debug tool (--dump-sprite-frames / --dump-sprite-ids): dump individual sprites to standalone
    BMP files by real resource id. */
 void uw_debug_dump_sprite_frames_once(void);
 /* Temporary test hook for verifying the armor paper-doll equip flow without a real "give item"

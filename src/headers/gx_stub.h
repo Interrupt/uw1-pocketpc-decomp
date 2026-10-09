@@ -41,19 +41,19 @@ int GXResume();
    on success, 0 on failure (no window yet, or the write failed). */
 int uw_save_screenshot(const char *path);
 
-/* Debug tool: if UW_DEBUG_DUMP_GR is set (and not "0"), dumps every .GR resource entry loaded
+/* Debug tool: if --debug-dump-gr is set (and not "0"), dumps every .GR resource entry loaded
    through FUN_000417b4 to a BMP under debug/gr/<resource-name>/<entry-index>.bmp, colored with the
    currently installed game palette. */
 void uw_debug_dump_gr_entry(const char *gr_name, int entry_index,
                              const unsigned char *entry_data, int entry_size);
 
-/* Debug tool: if UW_DEBUG_DUMP_CRIT is set (and not "0"), dumps every critter/NPC sprite frame
+/* Debug tool: if --debug-dump-crit is set (and not "0"), dumps every critter/NPC sprite frame
    decode_critter_sprite_page produces to a BMP under
    debug/crit/type<N>/tier<T>/dir<D>_frame<F>.bmp... */
 void uw_debug_dump_critter_sprite(int type, int tier, int direction, int frame,
                                    const unsigned char *pixels, int width, int height);
 
-/* Debug tool: if UW_DEBUG_DRAW is set (and not "0"), dumps the internal 320x240 RGB565 software
+/* Debug tool: if --debug-draw is set (and not "0"), dumps the internal 320x240 RGB565 software
    framebuffer (g_uw_framebuffer) to a BMP after every draw call that goes through graphics.c's
    rect_fill_or_save_restore or bitmap_blit_to_framebuffer... */
 void debug_framebuffer_dump(const char *tag);
@@ -71,12 +71,12 @@ int uw_debug_3d_frame_dump_finish();
    capture this process has started. */
 const char *uw_debug_3d_frame_dump_last_dir();
 
-/* Debug tool: if UW_DEBUG_DUMP_TMAP is set (and not "0"), dumps a level's 64x64 tile map to a BMP
+/* Debug tool: if --debug-dump-tmap is set (and not "0"), dumps a level's 64x64 tile map to a BMP
    right after it's loaded from the .ark file -- solid tiles (tile type 0, the classic UW "rock/no
    floor" type) as black... */
 void uw_debug_dump_tmap(int level, const unsigned char *tile_data);
 
-/* Debug tool: if UW_DEBUG_DUMP_REVEALMAP is set (and not "0"), dumps the current level's 64x64
+/* Debug tool: if --debug-dump-revealmap is set (and not "0"), dumps the current level's 64x64
    automap-reveal byte array (DAT_000b99d0 in uw.c, one byte per tile, nonzero = revealed) to a BMP
    -- unrevealed black, revealed white -- every time it's called. */
 void uw_debug_dump_revealmap(const unsigned char *reveal_data);

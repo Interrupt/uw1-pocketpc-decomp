@@ -57,7 +57,7 @@ static int g_uwmod_loaded;
 static int g_uwmod_playing;
 static SDL_AudioDeviceID g_uwmod_audiodev;
 /* Nonzero once platform_dosmidi_init has confirmed a usable DOS audio
- * path, i.e. the player asked for UW_AUDIO_MODE=dos AND the DOS driver,
+ * path, i.e. the player asked for --audio-mode=dos AND the DOS driver,
  * timbre bank and effect table were all readable. Decided once at init and never flipped
  * afterwards, so one audio device and one callback serve either backend
  * without ever mixing the two mid-session. Zero is the default and means
@@ -93,11 +93,11 @@ static void uwmod_audio_callback(void *userdata, Uint8 *stream, int len)
     hxcmod_fillbuffer(&g_uwmod_ctx, (msample *)stream, (mssize)(len / 4), NULL);
   }
 
-  /* UW_DEBUG_AUDIO: dump basic PCM sample statistics from real callback
+  /* --debug-audio: dump basic PCM sample statistics from real callback
    * output, to confirm real (non-silent, non-garbage) music data is
    * actually being produced -- same ad-hoc getenv()-gated tracing
    * convention used throughout this codebase (see e.g. 3d.c's
-   * UW_DEBUG_RASTER). */
+   * --debug-raster). */
   if (g_opts.debug_audio) {
     short *samples = (short *)stream;
     int n = len / 2;
@@ -172,7 +172,7 @@ void platform_music_init(void)
 }
 
 /* Reads the whole file at win_path (a "\SOUND\uwNN.mod"-style game path)
- * into a freshly malloc'd buffer via this codebase's existing UW_DATA_DIR
+ * into a freshly malloc'd buffer via this codebase's existing --data-dir
  * file helpers (uw_file_fopen), then hands it to hxcmod_load -- replacing
  * construct_and_load_mod_player's own loader, which (per this file's
  * block comment above) never once executed. hxcmod_load keeps pointers
@@ -184,7 +184,7 @@ void platform_music_load_track(const char *win_path)
 {
   /* DOS audio mode plays the original XMI for this same track number
    * instead. audio.c is deliberately untouched: it still asks for
-   * "\SOUND\uwNN.mod" and the mapping to <UW_DOS_DATA_DIR>/SOUND/UWNN.XMI
+   * "\SOUND\uwNN.mod" and the mapping to <--dos-data-dir>/SOUND/UWNN.XMI
    * happens here, so play_music_track's base-8 track numbering stays the
    * single source of truth for which track this is. */
   if (g_dos_mode) {

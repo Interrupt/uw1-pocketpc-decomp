@@ -2350,7 +2350,7 @@ void start_npc_conversation(int conversation_id, int npc_type)
        (bglobals-dat-readonly-handle-fix) end-to-end without needing to click the NPC a second time
        through a fragile, animation-position-dependent screen coordinate. */
     if (g_opts.debug_talk_twice) {
-      fprintf(stderr, "[babl] UW_DEBUG_TALK_TWICE: re-seeding from the same object right after natural conversation end\n");
+      fprintf(stderr, "[babl] --debug-talk-twice: re-seeding from the same object right after natural conversation end\n");
       sync_conv_vars_from_npc(DAT_00100674);
     }
     /* Debug-only: re-runs the exact same object-pick the mouse position already used to start this
@@ -2471,7 +2471,7 @@ int babl_menu(char *args)
   if (g_opts.debug_auto_farewell && (1 < DAT_00100794)) {
     int _far_i;
     int _far_pick = 1; /* no farewell offered this turn -- keep the conversation moving */
-    /* UW_DEBUG_AUTO_PICK=N overrides the "no farewell offered" default away from item 1, to explore
+    /* --debug-auto-pick=N overrides the "no farewell offered" default away from item 1, to explore
        branches a rigid "always pick 1" playthrough never reaches (e.g. hunting for where a script
        might call get_quest/set_quest) -- clamped into range... */
     { if (UW_OPT_ISSET(g_opts.debug_auto_pick)) {
@@ -2486,7 +2486,7 @@ int babl_menu(char *args)
         break;
       }
     }
-    if (g_opts.debug_babl) fprintf(stderr, "[babl] UW_DEBUG_AUTO_FAREWELL: auto-selecting item %d (\"%s\")\n", _far_pick, *(char **)(&DAT_00100680 + _far_pick * 8));
+    if (g_opts.debug_babl) fprintf(stderr, "[babl] --debug-auto-farewell: auto-selecting item %d (\"%s\")\n", _far_pick, *(char **)(&DAT_00100680 + _far_pick * 8));
     select_babl_menu_response((short)_far_pick);
     return (int)*(short *)(&DAT_001007a0 + DAT_00100788 * 2);
   }
@@ -5971,7 +5971,7 @@ void render_babl_dialog_window(short x, short y, short width, short height, shor
 {
   char *wptr_21485;
   /* WinCE obtained this directory from the registry. Its host stub leaves
-     it empty; resources live in CUTS under UW_DATA_DIR. */
+     it empty; resources live in CUTS under --data-dir. */
   const char *cutscene_directory = DAT_0023c698 ? (char *)&DAT_0023c698 : "\\CUTS";
   ushort *puVar1;
   ushort uVar2;
@@ -6725,7 +6725,7 @@ void record_illustration_discovery_and_display(uint page_id, uint flags)
   } while (cVar1 != '\0');
   ce_strcat(acStack_12c,acStack_144);
   /* Use the installation path just assembled above. The host file wrapper
-     resolves paths under UW_DATA_DIR; the bare name omits CUTS. */
+     resolves paths under --data-dir; the bare name omits CUTS. */
   iVar3 = open_existing_file_rw_alt(acStack_12c);
   iVar4 = seek_file_handle(iVar3,4,0);
   iVar5 = write_file_handle(iVar3,&uStack_c,2);

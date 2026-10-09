@@ -2620,7 +2620,7 @@ void look_at_inscribed_object(ushort *inscribed_object, short look_mode)
     if (pcVar_str != (char *)0x0) {
       /* Same dropped-argument pattern: format_object_display_name's real `undefined1 *` return
          (pcVar_str word-wrapped for the message scroll) is the actual real sign/inscription text
-         ("We attacked the entrance with all manner of tools..."), confirmed via UW_DEBUG_OBJPOS. */
+         ("We attacked the entrance with all manner of tools..."), confirmed via --debug-objpos. */
       message_scroll_print_wrapped((char *)format_object_display_name(pcVar_str,1,0));
       message_scroll_print_wrapped(&s_scroll_newline_0008522c);
     }

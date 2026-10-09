@@ -68,7 +68,7 @@ void platform_sfx_play(int resource_id);
  * 19 and 21-23 have no resource -- and also when no SFX audio device
  * opened, since then nothing here can be heard regardless. That makes it
  * a straight "can the sampled path serve this sound", which is what
- * UW_AUDIO_MODE=hybrid needs to decide between a sample and a DOS note. */
+ * --audio-mode=hybrid needs to decide between a sample and a DOS note. */
 int platform_sfx_has_resource(int resource_id);
 
 /* Closes the audio device and releases every cached sample buffer, for

@@ -171,7 +171,7 @@ void attach_picked_up_object_to_cursor(ushort *object)
       g_cursor_holding_state = 1;
       /* User QA report: "dragging and dropping into a paper doll slot does not show the item" --
          confirmed live (also reproduces for an ordinary backpack-grid drop under the same drag
-         pattern, so this isn't slot-specific) via UW_DEBUG_CURSORERASE/CURSORSHOW... */
+         pattern, so this isn't slot-specific) via --debug-cursorerase/CURSORSHOW... */
       if (erase_cursor_icon() != 0) {
         DAT_00204844 = 0;
       }
@@ -3555,7 +3555,7 @@ void handle_object_drop_target(short widget)
   if (puVar2 != 0) {
     /* Page 4 of comobj's string data is the base object-name table,
        indexed directly by id (0x800 | id) -- same lookup the
-       UW_DUMP_OBJECTS_FILE census tool already uses. */
+       --dump-objects-file census tool already uses. */
     char *_useName = (char *)get_message_string(0x800 | (((uw_object_hdr_t *)puVar2)->object_id));
     DEBUG(INFO, "[inv] use item: id=0x%03x type=0x%03x name=\"%s\"\n",
           (unsigned)(((uw_object_hdr_t *)puVar2)->object_id),

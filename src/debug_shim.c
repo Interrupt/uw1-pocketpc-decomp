@@ -209,7 +209,7 @@ void populate_debug_panel(void)
   dbgui_end();
 }
 
-/* Debug view (UW_DEBUG_PICK_VIEW): paint the per-pixel object-pick buffer DAT_0023cca0 over the 3D
+/* Debug view (--debug-pick-view): paint the per-pixel object-pick buffer DAT_0023cca0 over the 3D
    viewport instead of the rendered dungeon, so the pick/stencil coverage is directly visible. Call
    *after* a pick-mode render pass (render_dungeon_view_frame) has populated the buffer. */
 void uw_debug_blit_pick_buffer(void)
@@ -249,7 +249,7 @@ void uw_debug_blit_pick_buffer(void)
   }
 }
 
-/* Debug view (UW_DEBUG_DRAW_INV_POSITIONS): outline every real inventory hotspot's click rect
+/* Debug view (--debug-draw-inv-positions): outline every real inventory hotspot's click rect
    (g_inventory_hotspot_table's 23 records) in bright red, directly into the framebuffer... */
 void uw_debug_draw_inv_hotspot_positions(void)
 {
@@ -282,7 +282,7 @@ void uw_debug_draw_inv_hotspot_positions(void)
   if (max_x >= 0) dirty_rect_union(min_y, max_y, min_x, max_x);
 }
 
-/* Debug tool (UW_DUMP_SPRITE_FRAMES / UW_DUMP_SPRITE_IDS): dump individual sprites to standalone
+/* Debug tool (--dump-sprite-frames / --dump-sprite-ids): dump individual sprites to standalone
    BMP files by real resource id, one file per id, using the game's own real render path... */
 static void _uw_dump_sprite_to_file(int is_frame, int id, const char *dir) {
   unsigned short *fb = (unsigned short *)g_uw_framebuffer;
@@ -331,7 +331,7 @@ static void _uw_dump_sprite_ids_from_spec(const char *spec, int is_frame, const 
 
 /* Temporary test hook for verifying the armor paper-doll equip flow without a real "give item"
    mechanism: once per run, the first time backpack grid slot 12 holds a real object, overwrite its
-   low 9 id bits with UW_DEBUG_FORCE_ITEM_ID (hex) in place -- reusing a real... */
+   low 9 id bits with --debug-force-item-id (hex) in place -- reusing a real... */
 void uw_debug_force_item_id_once(void) {
   static int done = 0;
   if (done) return;
@@ -358,7 +358,7 @@ void uw_debug_dump_sprite_frames_once(void) {
   _uw_dump_sprite_ids_from_spec(g_opts.dump_sprite_ids, 0, dir);
 }
 
-/* Debug tool (UW_DUMP_CRITTER_SHEET): systematically drive decode_critter_sprite_page across every
+/* Debug tool (--dump-critter-sheet): systematically drive decode_critter_sprite_page across every
    (tier, direction, frame) combination for one or more critter type indices, instead of passively
    capturing whatever poses a demo happens to render. */
 void uw_debug_dump_critter_sheet_once(void) {
