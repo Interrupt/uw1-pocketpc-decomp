@@ -143,10 +143,6 @@ void handle_inventory_panel_normal_click()
   undefined4 uVar2;
 
   g_interact_target = 0;
-  if (g_opts.debug_inv)
-    fprintf(stderr, "[inv] handle_inventory_panel_normal_click called: g_cursor_holding_state=%d g_selected_object=%p DAT_00085a6c[3]=%d panel_x=%d panel_y=%d\n",
-            (int)g_cursor_holding_state, (void *)g_selected_object, (int)DAT_00085a6c[3],
-            (int)(*DAT_00085a6c + 0xf0), (int)(0x76 - DAT_00085a6c[1]));
   if (g_cursor_holding_state == 0) {
     if ((g_selected_object == 0) && (sVar1 = DAT_00085a6c[3], sVar1 != 1)) {
       if (sVar1 == 2) {
@@ -196,8 +192,6 @@ LAB_0003f91c:
 void inventory_panel_click_region()
 
 {
-  if (g_opts.debug_inv) fprintf(stderr, "[inv] inventory_panel_click_region ENTRY g_active_hud_panel=%d mouse=(%d,%d)\n",
-      (int)g_active_hud_panel, (int)g_mouse_x, (int)g_mouse_y);
   if (g_active_hud_panel == '\0') {
     handle_inventory_panel_normal_click();
   }
@@ -296,13 +290,10 @@ void handle_inventory_panel_click(short slot)
   puVar10 = (ushort *)0x0;
   bVar11 = g_selected_object != 0;
   uVar5 = hit_test_inventory_widget(*DAT_00085a6c + 0xf0,0x76 - DAT_00085a6c[1]);
-  if (g_opts.debug_inv)
-    fprintf(stderr, "[inv] handle_inventory_panel_click click test: panel_x=%d panel_y=%d -> widget_id=%d\n",
-            (int)(*DAT_00085a6c + 0xf0), (int)(0x76 - DAT_00085a6c[1]), (int)(short)uVar5);
   iVar9 = (int)(short)uVar5;
   /* Permanent (not env-gated) debug line: which real widget got clicked and which
      g_backpack_widget_to_slot/g_equipped_items slot it resolves to -- DEBUG(INFO,...) prints by
-     default under normal play (run.sh's own --debug-level=INFO)... */
+     default under normal play (run.sh's own log output)... */
   if ((0 < iVar9) && (iVar9 < 0x17)) {
     DEBUG(INFO, "[inv] widget %d clicked -> slot %d\n", iVar9,
           (int)(char)(&g_backpack_widget_to_slot)[iVar9]);
@@ -316,7 +307,6 @@ void handle_inventory_panel_click(short slot)
     cVar2 = (&g_backpack_widget_to_slot)[iVar9];
     if (g_selected_object == 0) {
       iVar9 = (int)(short)cVar2;
-      if (g_opts.debug_combat) fprintf(stderr, "[weapon-ready] click-dispatch: slot=%d equipped_raw=0x%04x weaponhand_target=%d\n", iVar9, (unsigned)*(ushort *)(&g_equipped_items + iVar9 * 2), 8 - (*(byte *)(DAT_00086df8 + 100) & 1));
       if ((*(ushort *)(&g_equipped_items + iVar9 * 2) & 0xffc0) == 0) {
         if (iVar9 == 8 - (*(byte *)(DAT_00086df8 + 100) & 1)) {
           toggle_weapon_ready();
@@ -390,9 +380,6 @@ void handle_inventory_panel_click(short slot)
   }
   wait_for_click_release(1);
   sVar1 = (short)uVar5;
-  if (g_opts.debug_inv)
-    fprintf(stderr, "[inv] handle_inventory_panel_click decision: g_selected_object=%p g_cursor_holding_state=%d sVar1=%d slot=%d\n",
-            (void *)g_selected_object, (int)g_cursor_holding_state, (int)sVar1, (int)slot);
   if ((g_selected_object == 0) || (g_cursor_holding_state == 2)) {
     if (0 < sVar1) {
       if (-1 < slot) {
@@ -520,25 +507,10 @@ joined_r0x00048308:
           restore_captured_grtile_backdrop((&DAT_002028e8)[iVar6]);
           g_blit_transparent_mode = 1;
           auStack_54[iVar6] = 1;
-          if (g_opts.debug_inv)
-            fprintf(stderr, "[inv] redraw_inventory_widget_range loop iVar6=%d slot_arr_idx=%d arr_val=0x%04x\n",
-                    iVar6, (char)(&g_backpack_widget_to_slot)[iVar6],
-                    (unsigned)*(ushort *)(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar6] * 2));
           if (iVar6 < 0x15) {
             if ((*(ushort *)(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar6] * 2) & 0xffc0) != 0) {
-              if (g_opts.debug_inv)
-                fprintf(stderr, "[inv] resolve addr=%p table=%p lo=%p hi=%p\n",
-                        (void *)(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar6] * 2),
-                        (void *)g_backpack_slot_table, (void *)(DAT_002046b8 - 0x4000),
-                        (void *)(DAT_002046c4 + 0x1800 + 0x38));
               puVar7 = (ushort *)resolve_object_link((ushort *)(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar6] * 2));
               if (puVar7 == 0) goto skip_slot_draw_iVar6;
-              if (g_opts.debug_inv)
-                fprintf(stderr, "[inv] slot widget_id=%d slot_arr_idx=%d objid=0x%03x draw_x=%d draw_y=%d w=%d h=%d\n",
-                        iVar6, (char)(&g_backpack_widget_to_slot)[iVar6],
-                        ((uw_object_hdr_t *)puVar7)->object_id,
-                        (int)(short)(&g_inv_hotspot_draw_x)[iVar6 * 7], (int)(short)(&g_inv_hotspot_draw_y)[iVar6 * 7],
-                        (int)(&g_inv_hotspot_dirty_h)[iVar6 * 0xe], (int)(&g_inv_hotspot_dirty_w)[iVar6 * 0xe]);
               draw_sprite_by_id(((uw_object_hdr_t *)puVar7)->object_id,
                                 (int)(short)(&g_inv_hotspot_draw_x)[iVar6 * 7],
                                 (int)(short)(&g_inv_hotspot_draw_y)[iVar6 * 7],
@@ -579,18 +551,8 @@ joined_r0x00048308:
     if (iVar3 == 0x14) {
       restore_captured_grtile_backdrop(DAT_00202938);
       local_2c = 1;
-      if (g_opts.debug_w20)
-        fprintf(stderr, "[w20] slot=%d raw=0x%04x occupied=%d DAT_00202938=%p x=%d y=%d w=%d h=%d\n",
-                (int)(unsigned char)DAT_00085c4c,
-                (unsigned)*(ushort *)(&g_equipped_items + DAT_00085c4c * 2),
-                (int)((*(ushort *)(&g_equipped_items + DAT_00085c4c * 2) & 0xffc0) != 0),
-                (void *)(uintptr_t)DAT_00202938, (int)_DAT_00085bf0, (int)CONCAT11(DAT_00085bf3,DAT_00085bf2),
-                (int)DAT_00085bf5, (int)DAT_00085bf4);
       if ((*(ushort *)(&g_equipped_items + DAT_00085c4c * 2) & 0xffc0) != 0) {
         puVar7 = (ushort *)resolve_object_link((ushort *)(&g_equipped_items + DAT_00085c4c * 2));
-        if (g_opts.debug_w20)
-          fprintf(stderr, "[w20] resolved=%p id=0x%03x\n", (void *)puVar7,
-                  puVar7 ? (unsigned)(((uw_object_hdr_t *)puVar7)->object_id) : 0u);
         draw_sprite_by_id(((uw_object_hdr_t *)puVar7)->object_id,
                           (int)_DAT_00085bf0,
                           (int)CONCAT11(DAT_00085bf3,DAT_00085bf2),
@@ -727,16 +689,12 @@ LAB_0003f7cc:
 void toggle_weapon_ready()
 
 {
-  if (g_opts.debug_combat)
-    fprintf(stderr, "[weapon-ready] toggle_weapon_ready CALLED: flags5f=0x%x\n", (unsigned)*(byte *)(DAT_00086df8 + 0x5f));
   if ((*(byte *)(DAT_00086df8 + 0x5f) & 2) == 0) {
     ready_weapon();
   }
   else {
     unready_weapon();
   }
-  if (g_opts.debug_combat)
-    fprintf(stderr, "[weapon-ready] toggle_weapon_ready DONE: flags5f=0x%x g_cursor_mode=%d\n", (unsigned)*(byte *)(DAT_00086df8 + 0x5f), (int)g_cursor_mode);
   return;
 }
 

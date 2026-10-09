@@ -4,7 +4,7 @@
 
    Command line:  --some-option            boolean on        --some-option=0   boolean off
                   --no-some-option         boolean off       --some-option=VALUE / --some-option VALUE
-   A field is named after its option: --debug-door -> g_opts.debug_door, --light-mode -> g_opts.light_mode.
+   A field is named after its option: --disable-3d-objects -> g_opts.disable_3d_objects, --light-mode -> g_opts.light_mode.
 
    For the existing scripts and habits, options_init also reads the legacy environment variable UW_<NAME>
    (UW_LIGHT_MODE=dos) for any option the command line did not set; the command line wins. That is the

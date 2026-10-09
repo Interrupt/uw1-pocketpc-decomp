@@ -101,8 +101,6 @@ void scheduler_finish_entry(int entry_slot)
   bool bVar11;
   
   iVar9 = (short)entry_slot * 6;
-  if (g_opts.debug_door)
-    fprintf(stderr, "[door] scheduler_finish_entry ENTERED: entry_slot(slot)=%d\n", (int)entry_slot);
   puVar4 = (ushort *)resolve_object_link(&DAT_00250778 + iVar9);
   /* HACK: resolve_object_link legitimately returns NULL (every other resolve_object_link call site
      in this file guards for it -- e.g. scheduler_add_entry's own identical fix a little above this
@@ -116,11 +114,6 @@ void scheduler_finish_entry(int entry_slot)
   if (!bVar11) {
     bVar11 = (&DAT_0025077a)[iVar9] == '\0' && (&DAT_0025077b)[iVar9] == '\0';
   }
-  if (g_opts.debug_door)
-    fprintf(stderr, "[door] scheduler_finish_entry: obj0=0x%04x class=%d flags=0x%x bVar11(skip-inc)=%d quality_before=%d\n",
-            (unsigned)((uw_object_hdr_t *)puVar4)->type_flags, (int)uVar5,
-            (unsigned)uVar1, (int)bVar11,
-            (int)(((uw_object_hdr_t *)puVar4)->owner));
   if (!bVar11) {
     /* HACK: was a bare `scheduler_step_entry(entry_slot);` -- dropped second argument (elapsed ticks),
        same class as this file's other Ghidra-decompiled dropped-argument calls.
@@ -131,10 +124,6 @@ void scheduler_finish_entry(int entry_slot)
     uVar10 = (byte)((byte)((uw_object_hdr_t *)puVar4)->link_word >> 4) & 3;
     uVar5 = ((uw_object_hdr_t *)puVar4)->owner & 0xf;
     uVar8 = ((uw_object_hdr_t *)puVar4)->zpos;
-    if (g_opts.debug_door)
-      fprintf(stderr, "[door] scheduler_finish_entry: FINALIZE class0xf obj0=0x%04x quality_low4=%d opening=%d\n",
-              (unsigned)((uw_object_hdr_t *)puVar4)->type_flags, (int)uVar5,
-              (int)(((uw_object_hdr_t *)puVar4)->enchanted == 0));
     if (((uw_object_hdr_t *)puVar4)->enchanted == 0) {
       uVar5 = uVar5 | 8;
     }
@@ -183,11 +172,6 @@ void scheduler_finish_entry(int entry_slot)
       uVar8 = uVar8 & 0xefff;
     }
     ((uw_object_hdr_t *)puVar4)->type_flags = (ushort)uVar8;
-    if (g_opts.debug_door)
-      fprintf(stderr, "[door] scheduler_finish_entry: AFTER direction toggle, obj0=0x%04x dirbit=%d openbits=%d\n",
-              (unsigned)((uw_object_hdr_t *)puVar4)->type_flags,
-              (int)(((uw_object_hdr_t *)puVar4)->enchanted != 0),
-              (int)(((uw_object_hdr_t *)puVar4)->flags_res));
   }
   if ((uVar1 & 0x20) != 0) {
     scheduler_despawn_entry(entry_slot);
@@ -303,31 +287,15 @@ void scheduler_step_entry(int entry_slot, int elapsed)
   ushort uVar7;
   ushort uVar8;
   
-  if (g_opts.debug_door)
-    fprintf(stderr, "[door] scheduler_step_entry ENTERED: entry_slot(slot)=%d elapsed=%d\n", (int)entry_slot, elapsed);
   puVar4 = (ushort *)resolve_object_link(&DAT_00250778 + (short)entry_slot * 6);
   /* HACK: same unguarded-NULL class as scheduler_finish_entry's identical fix --
      see its own comment. A stale queue entry resolves to NULL here too. */
   if (puVar4 == (ushort *)0x0) {
-    if (g_opts.debug_door)
-      fprintf(stderr, "[door] scheduler_step_entry: resolve_object_link returned NULL, skipping\n");
     return;
   }
-  if (g_opts.debug_door)
-    fprintf(stderr, "[door] scheduler_step_entry: resolved obj0=0x%04x (checking &0x1f0==0x1c0 -> %d)\n",
-            (unsigned)((uw_object_hdr_t *)puVar4)->type_flags,
-            (int)((((uw_object_hdr_t *)puVar4)->object_id & 0x1f0) == 0x1c0));
   if ((((uw_object_hdr_t *)puVar4)->object_id & 0x1f0) == 0x1c0) {
     iVar1 = (((uw_object_hdr_t *)puVar4)->object_id & 0xf) * 4;
     uVar3 = 1;
-    if (g_opts.debug_door)
-      fprintf(stderr, "[door] scheduler_step_entry: obj0=0x%04x class=%d iVar1=%d flags(uVar7)=0x%x DAT_00250732[iVar1]=%d DAT_00250733[iVar1]=%d quality_before=%d\n",
-              (unsigned)((uw_object_hdr_t *)puVar4)->type_flags,
-              (((uw_object_hdr_t *)puVar4)->object_id & 0xf), iVar1,
-              (unsigned)(ushort)g_animation_type_props[(iVar1) / 4].flags,
-              (int)(char) g_animation_type_props[(iVar1) / 4].start_frame,
-              (int)(byte) g_animation_type_props[(iVar1) / 4].frame_count,
-              (int)(((uw_object_hdr_t *)puVar4)->owner));
     for (uVar7 = (ushort)g_animation_type_props[(iVar1) / 4].flags; uVar7 != 0; uVar7 = uVar7 & uVar8) {
       uVar8 = uVar3 & uVar7;
       if (uVar8 == 1) {
@@ -341,8 +309,6 @@ void scheduler_step_entry(int entry_slot, int elapsed)
         }
 LAB_00081254:
         ((uw_object_hdr_t *)puVar4)->link_word = (ushort)uVar8;
-        if (g_opts.debug_door)
-          fprintf(stderr, "[door] scheduler_step_entry: quality_after=%d\n", (int)(uVar8 & 0x3f));
       }
       else {
         if (uVar8 == 2) {
@@ -372,10 +338,6 @@ LAB_00081254:
           uVar5 = ((uVar5 & 0xe00) + (uVar5 & 0xf000) + elapsed * 0x200 ^ uVar5) & 0x1e00 ^ uVar5;
           ((uw_object_hdr_t *)puVar4)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar4)->type_flags;
           ((uw_object_hdr_t *)puVar4)->type_flags_high = (byte)(char)(uVar5 >> 8);
-          if (g_opts.debug_door)
-            fprintf(stderr, "[door] scheduler_step_entry SWING: elapsed_in=%d dirbit_in=%d openbits_in=%d -> obj0=0x%04x dirbit_out=%d openbits_out=%d advance=%d\n",
-                    elapsed, _swing_dirbit_in, _swing_openbits_in, (unsigned)uVar5,
-                    (int)((uVar5 & 0x1000) != 0), (int)((uVar5 >> 9) & 7), (int)((uVar5 & 0x1000) != 0));
           if ((uVar5 & 0x1000) != 0) {
             scheduler_advance_effect(entry_slot,elapsed);
           }
@@ -399,9 +361,6 @@ void scheduler_tick(int elapsed)
   int iVar3;
   int iVar4;
 
-  if (g_opts.debug_door2)
-    fprintf(stderr, "[door] scheduler_tick called: elapsed(elapsed)=%d g_scheduler_count(queue_count)=%d\n",
-            elapsed, (int)(unsigned char)g_scheduler_count);
   iVar4 = 0;
   if (g_scheduler_count != 0) {
     iVar4 = elapsed;
@@ -603,15 +562,6 @@ int scheduler_advance_effect(short entry_slot, int elapsed)
                        (((uw_object_hdr_t *)puVar2)->ypos) + (short)DAT_00101454 * 8,
                        uVar9,1,
                        8);
-  if (g_opts.debug_door) {
-    int _type_id = (uVar7 & 0x30) + (uVar7 & 0xf) + 0x140;
-    fprintf(stderr, "[door] scheduler_advance_effect: check_object_placement_clearance returned iVar4=%d (0=settle proceeds, nonzero=skip) obj0=0x%04x quality_full=0x%02x type_id=0x%03x local_33=%d word1=0x%04x param5(height)=%d tile=(%d,%d)\n",
-            iVar4, (unsigned)((uw_object_hdr_t *)puVar2)->type_flags,
-            (unsigned)uVar7, _type_id,
-            (int)(unsigned char) g_object_type_props[_type_id].height,
-            (unsigned)((uw_object_hdr_t *)puVar2)->position_word, (int)uVar9,
-            (int)DAT_0010144c, (int)DAT_00101454);
-  }
   if (iVar4 == 0) {
     uVar5 = (uint)((uw_object_hdr_t *)puVar2)->type_flags;
     if ((((uVar5 & 0x1c0) == 0x140) && ((uVar5 & 7) == 6)) ||
@@ -623,20 +573,12 @@ int scheduler_advance_effect(short entry_slot, int elapsed)
     ((uw_object_hdr_t *)puVar2)->type_flags_high =
         ((byte)(((uVar5 & 0xe00) + (elapsed + 1) * -0x200) >> 8) ^ bVar1) & 0x1e ^ bVar1;
     iVar6 = scheduler_get_delay(puVar2);
-    if (g_opts.debug_door)
-      fprintf(stderr, "[door] scheduler_advance_effect: elapsed(elapsed)=%d obj0(after settle)=0x%04x dirbit=%d openbits=%d get_delay=%d anim_type(iVar10)=%d\n",
-              elapsed, (unsigned)((uw_object_hdr_t *)puVar2)->type_flags,
-              (int)(((uw_object_hdr_t *)puVar2)->enchanted != 0),
-              (int)(((uw_object_hdr_t *)puVar2)->flags_res),
-              (int)iVar6, iVar10);
     iVar4 = (int)(short)iVar6;
     bVar11 = -1 < iVar4;
     if (bVar11) {
       iVar4 = (iVar10 - iVar6) + 1;
       (&DAT_0025077a)[iVar8] = (char)iVar4;
       DAT_002508fc = 1;
-      if (g_opts.debug_door)
-        fprintf(stderr, "[door] scheduler_advance_effect: RE-ARMED new_delay=%d\n", iVar4);
     }
     uVar3 = 0;
     if (bVar11) {

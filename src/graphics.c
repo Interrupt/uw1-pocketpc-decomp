@@ -165,12 +165,6 @@ void rect_fill_or_save_restore(ushort left, uint top, short right, short bottom)
   
   DEBUG(TRACE, "[graphics] rect_fill_or_save_restore(%u,%u,%u,%u)", left, top, right, bottom);
 
-  if (DAT_00204848 != 0 && g_opts.debug_cursorclip) {
-    fprintf(stderr, "[cursorclip] request color=%d rect=(%d,%d,%d,%d) clip=(%d,%d,%d,%d)\n",
-            (int)DAT_000a85c0, (int)(short)left, (int)(short)top, (int)right, (int)bottom,
-            (int)(short)DAT_000a85c4, (int)(short)DAT_000a85c8,
-            (int)(short)DAT_000842a4, (int)(short)DAT_000842a8);
-  }
 
   iVar14 = (int)(short)left;
   iVar13 = (right - iVar14) * 0x10000;
@@ -207,10 +201,6 @@ void rect_fill_or_save_restore(ushort left, uint top, short right, short bottom)
           uVar9 = iVar12 + (top & 0xffff);
           iVar13 = 0;
           // DAT_00204848 is only ever set by the mouse-cursor code (save_cursor_background sets it to 1 right before deliberately drawing with color 0x14, to save what's under the cursor), so colors 0x14/0x15 only mean save/restore during that specific sequence -- with DAT_00204848 at its default 0 (every other caller), they're ordinary palette colors and this whole block is skipped in favor of the flat fill below. There are 256 real palette entries (0x100, see the palette-conversion loop), so 20/21 aren't reserved from the palette's own perspective either.
-          if (DAT_00204848 != 0 && g_opts.debug_cursorclip) {
-            fprintf(stderr, "[cursorclip] PROCEEDING color=%d clipped_rect=(%u,%u)-(%u,%u)\n",
-                    (int)DAT_000a85c0, uVar2, uVar5, (uint)left, uVar9);
-          }
           if (DAT_00204848 != 0) {
             if (DAT_000a85c0 == 0x14) {
               // SAVE mode: copy the rect from g_uw_framebuffer into the DAT_000879b8 scratch buffer.
@@ -224,9 +214,6 @@ void rect_fill_or_save_restore(ushort left, uint top, short right, short bottom)
                   /* Sizing-pass instrumentation (NEEDS_LIVE_INSTRUMENTATION): reusing hud.c's
                      save_cursor_background env var -- logs the real pixel count (= elements of
                      DAT_000879b8) written this call... */
-                  if (g_opts.debug_cursorshow) {
-                    fprintf(stderr, "[cursorshow] DAT_000879b8 pixels_written=%d\n", iVar13);
-                  }
                   return;
                 }
                 if (uVar2 < left) {
@@ -244,9 +231,6 @@ void rect_fill_or_save_restore(ushort left, uint top, short right, short bottom)
                 uVar5 = uVar5 + 1;
                 iVar15 = iVar15 + 0x140;
                 if ((int)(uVar9 & 0xffff) <= (int)uVar5) {
-                  if (g_opts.debug_cursorshow) {
-                    fprintf(stderr, "[cursorshow] DAT_000879b8 pixels_written=%d\n", iVar13);
-                  }
                   return;
                 }
               } while( true );
@@ -303,7 +287,6 @@ void rect_fill_or_save_restore(ushort left, uint top, short right, short bottom)
       }
     }
   }
-  debug_framebuffer_dump("rect_fill");
 }
 
 
@@ -368,11 +351,6 @@ void bitmap_blit_to_framebuffer(ushort x, ushort y, char *pixels, short height, 
   }
   /* Was a 3-argument call to a K&R-style `dirty_rect_union()` (no prototype, so this compiles
      without error) -- missing its 4th ("right" bound) argument entirely. */
-  if (g_opts.debug_blitraw) {
-    fprintf(stderr, "[blitfb] dstX=%d dstY=%d w=%d h=%d -> dirty top=%d bottom=%d left=%d right=%d\n",
-            (int)x, (int)y, (int)iVar9, (int)iVar2,
-            iVar7, iVar7 + iVar2, iVar8, iVar8 + iVar9);
-  }
   dirty_rect_union(iVar7,iVar7 + iVar2,iVar8,iVar8 + iVar9);
   iVar5 = (int)sVar14;
   if (g_blit_transparent_mode == 0) {
@@ -416,7 +394,6 @@ void bitmap_blit_to_framebuffer(ushort x, ushort y, char *pixels, short height, 
       local_34 = iVar11 + local_34;
     } while (iVar5 < iVar2 - sVar12);
   }
-  debug_framebuffer_dump("blit");
 }
 
 
@@ -481,7 +458,6 @@ void screen_backup_restore()
       iVar1 = iVar1 + 2;
     } while (iVar3 != 0);
   } while (iVar1 < 0x1f400);
-  debug_framebuffer_dump("screen_backup_restore");
   flush_dirty_rect_to_display(1);
 }
 
@@ -520,7 +496,6 @@ void screen_backup_restore_rect(uint left, uint top, uint right, uint bottom)
       iVar4 = iVar4 + 0x140;
     } while ((int)top < (int)(bottom & 0xffff));
   }
-  debug_framebuffer_dump("screen_backup_restore_rect");
 }
 
 
@@ -595,7 +570,6 @@ void fade_in(ushort *framebuffer, char *palette, int palette_flag)
   } while (iVar9 != 0);
   flush_dirty_rect_to_display(1);
   DEBUG(TRACE, "[fade] fade_in total elapsed=%ums", (read_realtime_clock_units() - diag_t0) * 4);
-  debug_framebuffer_dump("fade_in");
   LocalFree(puVar3);
   uw_end_modal_present();
 }
@@ -671,7 +645,6 @@ void fade_out(ushort *framebuffer, char *palette, int palette_flag)
   while ((fade_step_elapsed = (uint)GetTickCount() - fade_step_start) < 40)
     Sleep(40 - fade_step_elapsed);
   DEBUG(TRACE, "[fade] fade_out total elapsed=%ums", (read_realtime_clock_units() - diag_t0) * 4);
-  debug_framebuffer_dump("fade_out");
   LocalFree(puVar4);
   uw_end_modal_present();
 }
@@ -746,8 +719,6 @@ static int get_ambient_bias_reduction()
 void set_ambient_bias_with_light(char light_level)
 {
   DAT_000842b0 = -0x20 - light_level + get_ambient_bias_reduction();
-  if (g_opts.debug_ambient)
-    fprintf(stderr, "[ambient] set_ambient_bias_with_light(%d) -> DAT_000842b0=%d\n", (int)light_level, (int)DAT_000842b0);
 }
 
 
@@ -756,8 +727,6 @@ void set_ambient_bias_with_light(char light_level)
 void set_ambient_bias_without_light(char light_level)
 {
   DAT_000842b0 = '\b' - light_level + get_ambient_bias_reduction();
-  if (g_opts.debug_ambient)
-    fprintf(stderr, "[ambient] set_ambient_bias_without_light(%d) -> DAT_000842b0=%d\n", (int)light_level, (int)DAT_000842b0);
 }
 
 
@@ -1128,10 +1097,6 @@ int dungeon_palette_cycle_tick()
   now = read_realtime_clock_units();
   if ((int)(now - last_units) < interval_units) return 0;
   last_units = now;
-  if (g_opts.debug_palcycle)
-    fprintf(stderr, "[palcycle] dungeon step: 0x30=%02x%02x%02x 0x10=%02x%02x%02x\n",
-            (&DAT_00088d98)[0x90], (&DAT_00088d98)[0x91], (&DAT_00088d98)[0x92],
-            (&DAT_00088d98)[0x30], (&DAT_00088d98)[0x31], (&DAT_00088d98)[0x32]);
   palette_cycle_range(0x30,4,0);
   palette_cycle_range(0x34,4,0);
   palette_cycle_range(0x38,4,0);
@@ -1172,7 +1137,6 @@ void plot_pixel(short x, short y, short color_index)
    ((g_uw_framebuffer) + (iVar1 * 0x140 + (int)x) * 2) =
        (&g_palette_rgb565)[color_index];
   dirty_rect_union(iVar1,iVar1 + 1,(int)x,(int)x + 1);  /* 4th (right) bound was missing: dirty_rect_union takes (top,bottom,left,right) */
-  debug_framebuffer_dump("plot_pixel");
 }
 
 
@@ -1204,7 +1168,6 @@ void draw_horizontal_line(uint x_start, uint y, uint x_end)
       iVar2 = iVar2 + 2;
     } while (iVar3 != 0);
   }
-  debug_framebuffer_dump("draw_horizontal_line");
 }
 
 
@@ -1237,7 +1200,6 @@ void fill_viewport_and_flush()
       iVar5 = iVar5 + 0x140;
     } while (iVar4 < 200 - iVar3);
   }
-  debug_framebuffer_dump("fill_viewport_and_flush");
   flush_dirty_rect_to_display(1);
 }
 
@@ -1314,7 +1276,6 @@ void blit_bitmap_to_framebuffer_clipped(short x, short y, char *pixels, short he
       }
     }
   }
-  debug_framebuffer_dump("blit_bitmap_to_framebuffer_clipped");
 }
 
 
@@ -1368,7 +1329,6 @@ void copy_framebuffer_rect(short src_x, short src_y, short width, short height, 
         iVar7 = iVar10 + iVar7;
       } while (iVar9 < iVar4);
     }
-    debug_framebuffer_dump("copy_framebuffer_rect");
     flush_dirty_rect_to_display(1);
   }
 }
@@ -1437,11 +1397,6 @@ void tick_book_illustration_palette_cycles(ushort *cycle_record)
   
   iVar4 = 0x10;
   do {
-    if (g_opts.debug_palcycle_records && cycle_record[1] != 0) {
-      fprintf(stderr, "[palcycle] slot=%d last=%u rate=%u start=%d end=%d\n",
-              0x10 - iVar4, (unsigned)*cycle_record, (unsigned)cycle_record[1],
-              (int)(byte)cycle_record[3], (int)*(byte *)((char *)cycle_record + 7));
-    }
     if (cycle_record[1] != 0) {
       uVar2 = read_realtime_clock_units();
       iVar3 = ordint_divmod(cycle_record[1],0x38e).quot;

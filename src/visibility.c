@@ -253,14 +253,6 @@ bool load_level_texture_ids(byte *archive, int level_number)
     iVar4 = iVar1;
   } while (iVar1 < 10);
   load_terrain_texture_props((char *)&DAT_0023ae58,(char *)&DAT_0023adb8);
-  if (g_opts.debug_texids) {
-    int _i;
-    fprintf(stderr, "[texids] wall:");
-    for (_i = 0; _i < 0x30; _i++) fprintf(stderr, " %d", (int)(&DAT_0023ae58)[_i]);
-    fprintf(stderr, "\n[texids] floor:");
-    for (_i = 0; _i < 10; _i++) fprintf(stderr, " %d", (int)(&DAT_0023adb8)[_i]);
-    fprintf(stderr, "\n");
-  }
   iVar4 = 0;
   do {
     uVar2 = local_tmap_buf[58 + iVar4];
@@ -1221,9 +1213,6 @@ void run_visibility_flood()
     }
   } while (g_visibility_ring_done != 0xf);
 
-  if (g_opts.debug_automap_reveal)
-    fprintf(stderr, "[visibility-flood] g_visibility_ring_depth=%d g_visibility_max_ring_passes=%d\n",
-            (int)g_visibility_ring_depth, (int)g_visibility_max_ring_passes);
 
   /* Hack - Testing (opt-in via --hack-reveal-depth): g_visibility_ring_depth is the row depth of
      walk_visible_tiles's reveal/visibility walk -- it starts at row &g_visibility_ring_buffer +
@@ -1417,9 +1406,6 @@ void load_shading_level_config(char shading_level)
   char *pcVar2;
   int iVar3;
   char *pcVar4;
-  if (g_opts.debug_automap_reveal)
-    fprintf(stderr, "[load_shading_level_config] called shading_level=%d DAT_000872a0=%d DAT_00201b68=%d\n",
-            (int)shading_level, (int)DAT_000872a0, (int)DAT_00201b68);
   /* Ghidra modelled the 12-byte SHADES.DAT per-level header as six separate `short` locals that
      read_file_handle(&local_12c, 0xc) reads into as one contiguous block -- but the C compiler is
      free to lay them out non-contiguously / reorder them... */
@@ -1492,11 +1478,6 @@ LAB_0006fff4:
     DAT_00086b28 = local_124;
     DAT_00086b24 = local_122;
     CloseHandle(iVar3);
-    if (g_opts.debug_automap_reveal)
-      fprintf(stderr, "[load_shading_level_config] loaded SHADES.DAT record %d: DAT_0025063c=%d DAT_0025064c=%d"
-              " DAT_002506dc=%d g_visibility_max_ring_passes=%d DAT_00086b28=%d DAT_00086b24=%d\n",
-              (int)shading_level, (int)DAT_0025063c, (int)DAT_0025064c, (int)DAT_002506dc,
-              (int)g_visibility_max_ring_passes, (int)DAT_00086b28, (int)DAT_00086b24);
     build_visibility_light_grid((int)g_visibility_max_ring_passes);
     set_pending_update_flags(2);
   }
@@ -1525,7 +1506,6 @@ void load_light_tables()
   char acStack_11c [260];
   
   DAT_0024fa2c = ce_malloc(0x1000);
-  if (g_opts.debug_bag_trace) fprintf(stderr, "[bag-trace] DAT_0024fa2c allocated at %p\n", (void *)DAT_0024fa2c);
   if (DAT_0024fa2c == 0) {
     report_fatal_error_message_and_exit(s_cLightTabs_allocation_error_____000872e8);
   }

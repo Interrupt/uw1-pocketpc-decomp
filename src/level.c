@@ -139,41 +139,9 @@ int load_level_object_table(byte *archive_handle, int level_number)
     /* Debug tool (--debug-dump-tmap): dump this level's 64x64 tile map
        right after a real load, magic marker and all -- see gx_stub.h's
        comment. */
-    uw_debug_dump_tmap(level_number, (unsigned char *)arena);
     /* Diagnostic (--debug-bag-trace): scan for a type-0x8f (rune bag) object's tile linkage
        IMMEDIATELY after the raw level block lands in the arena, before any other code
        (chargen-completion, HUD init, etc.) gets a chance to touch it... */
-    if (g_opts.debug_bag_trace) {
-      int _found = 0;
-      for (int _i = 0x100; _i < 0x100 + 1064; _i++) {
-        unsigned char *_rec = (unsigned char *)DAT_002046c4 + (_i - 0x100) * 8;
-        unsigned _type = (_rec[0] | (_rec[1] << 8)) & 0x1ff;
-        if (_type == 0x8f) {
-          fprintf(stderr, "[bag-trace] post-load large-table slot=%d addr=%p word0=0x%04x word1=0x%04x\n",
-                  _i, (void *)_rec, (unsigned)(_rec[0] | (_rec[1] << 8)), (unsigned)(_rec[2] | (_rec[3] << 8)));
-          _found++;
-          int _hits = 0;
-          for (int _row = 0; _row < 64; _row++) {
-            for (int _col = 0; _col < 64; _col++) {
-              void *_tile_rec = tilemap_lookup(_row, _col);
-              if (!_tile_rec) continue;
-              unsigned short *_link = (unsigned short *)((char *)_tile_rec + 2);
-              void *_obj;
-              int _guard = 0;
-              while ((_obj = resolve_object_link(_link)) != NULL && _guard++ < 64) {
-                if (_obj == (void *)_rec) {
-                  fprintf(stderr, "[bag-trace]   linked on tile (%d,%d)\n", _row, _col);
-                  _hits++;
-                }
-                _link = (unsigned short *)_obj + 2;
-              }
-            }
-          }
-          fprintf(stderr, "[bag-trace]   tile-chain hits=%d\n", _hits);
-        }
-      }
-      if (!_found) fprintf(stderr, "[bag-trace] post-load: no type-0x8f object found at all\n");
-    }
   }
   else {
     report_fatal_error_and_exit(3);

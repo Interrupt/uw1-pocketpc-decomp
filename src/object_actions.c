@@ -252,20 +252,8 @@ int decode_critter_sprite_page(int page_base, int page_index, short column, shor
           iVar9, (int)*pbVar11, (int)column);
     return 0;
   }
-  if (g_opts.debug_critter)
-    fprintf(stderr, "[critter] decode_critter_sprite_page: page_base=%d iVar9(glyph_idx)=%d pbVar11[iVar9]=%d(0x%x) row(frame_count?)=%d\n",
-            (int)*pbVar11, iVar9, (int)pbVar11[iVar9], (int)pbVar11[iVar9], (int)row);
   if (pbVar11[iVar9] != 0xff) {
     pbVar6 = pbVar11 + (short)(ushort)pbVar11[1] + 2;
-    if (g_opts.debug_critter && page_base == 26) {
-      static int _dumped26 = 0;
-      if (!_dumped26) {
-        _dumped26 = 1;
-        fprintf(stderr, "[critter26] pbVar11[1]=%d *pbVar6=%d pbVar6[0..79]:", (int)pbVar11[1], (int)*pbVar6);
-        for (int _i = 0; _i < 80; _i++) fprintf(stderr, " %02x", pbVar6[_i]);
-        fprintf(stderr, "\n");
-      }
-    }
     uVar3 = (ushort)pbVar6[(((int)frame +
                             ((int)((uint)pbVar11[iVar9] << 0x13) >> 0x10)) * 0x10000 >> 0x10)
                            + 1];
@@ -275,16 +263,9 @@ int decode_critter_sprite_page(int page_base, int page_index, short column, shor
                       << 0x13) >> 0x10)) * 0x10000 >> 0x10) + 1] == 0xff) {
       uVar3 = 0;
     }
-    if (g_opts.debug_critter && page_base == 26)
-      fprintf(stderr, "[critter26] frame-check type=%d tier=%d dir=%d frame=%d tierbyte=%d uVar3(glyph_sel)=%d quality=%d *pbVar8(frame_count)=%d %s\n",
-              (int)page_base, (int)page_index, (int)column, (int)frame, (int)pbVar11[iVar9], (int)(short)uVar3, (int)row, (int)(uint)*pbVar8, (int)row <= (int)(uint)*pbVar8 ? "PASS" : "FAIL(returns 0, no decode)");
     if ((int)row <= (int)(uint)*pbVar8) {
       iVar9 = (uint)*pbVar8 * 0x20 + 3;
       iVar5 = ((int)(short)uVar3 << 0x11) >> 0x10;
-      if (g_opts.debug_critter && page_base == 26)
-        fprintf(stderr, "[critter26] iVar5(glyph_sel_signed)=%d iVar9(table_base)=%d final_offset_bytes=[%d,%d] -> glyph_ptr_offset=%u\n",
-                iVar5, iVar9, (int)pbVar8[iVar5+iVar9], (int)pbVar8[iVar5+iVar9+1],
-                (unsigned)(((uint)pbVar8[iVar5 + iVar9] + (uint)pbVar8[iVar5 + iVar9 + 1] * 0x100)));
       pbVar11 = pbVar11 + ((int)(((uint)pbVar8[iVar5 + iVar9] +
                                  (uint)pbVar8[iVar5 + iVar9 + 1] * 0x100) * 0x10000) >> 0x10);
       DAT_00202508 = (ushort)*pbVar11;
@@ -293,18 +274,10 @@ int decode_critter_sprite_page(int page_base, int page_index, short column, shor
       DAT_00202304 = (ushort)pbVar11[3];
       /* DAT_00202508 is WIDTH, DAT_002022f8 is HEIGHT -- confirmed against the class-0 item
          decoder's identical header read a few lines below... */
-      if (g_opts.debug_critter)
-        fprintf(stderr, "[critter] decode_critter_sprite_page: w=%d h=%d comp_type(pbVar11[4])=%d\n",
-                (int)(short)DAT_00202508, (int)(short)DAT_002022f8, (int)pbVar11[4]);
       /* The original decoder accepts the page's full byte-sized dimensions. Goblin combat frames
          legitimately exceed 64 pixels (e.g. direction 3, frame 3 is 68x44). Rejecting those after
          updating the dimensions left the previous texture paired with the new size, garbling it. */
       uVar7 = decompress_gr_bitmap(pbVar11 + 5,pbVar8 + row * 0x20 + 1,pbVar11[4]);
-      if (g_opts.debug_critter && uVar7) {
-        fprintf(stderr, "[critter] decode_critter_sprite_page: decoded row bytes[0..15]:");
-        for (int _i = 0; _i < 16; _i++) fprintf(stderr, " %02x", (unsigned char)uVar7[_i]);
-        fprintf(stderr, "\n");
-      }
       pvVar_glyphbuf = ce_malloc((int)(short)DAT_002022f8 * (int)(short)DAT_00202508);
       iVar10 = (int)(short)DAT_002022f8;
       iVar9 = (int)(short)DAT_00202508;
@@ -315,19 +288,6 @@ int decode_critter_sprite_page(int page_base, int page_index, short column, shor
       uw_debug_dump_critter_sprite(page_base,page_index,(int)column,(int)frame,
                                     (unsigned char *)*piVar12,
                                     (int)(short)DAT_00202508,(int)(short)DAT_002022f8);
-      if (g_opts.debug_critter) {
-        unsigned char *_gb = (unsigned char *)*piVar12;
-        int _w = (int)(short)DAT_00202508, _h = (int)(short)DAT_002022f8;
-        int _total = _w * _h;
-        int _hist[256] = {0};
-        for (int _i = 0; _i < _total; _i++) _hist[_gb[_i]]++;
-        fprintf(stderr, "[critter] decode_critter_sprite_page: glyphbuf w=%d h=%d total=%d nonzero-value-histogram:", _w, _h, _total);
-        for (int _i = 0; _i < 256; _i++) if (_hist[_i]) fprintf(stderr, " [%d]=%d", _i, _hist[_i]);
-        fprintf(stderr, "\n");
-        fprintf(stderr, "[critter] decode_critter_sprite_page: middle row (%d) bytes:", _h/2);
-        for (int _i = 0; _i < _w && _i < 48; _i++) fprintf(stderr, " %02x", _gb[(_h/2)*_w + _i]);
-        fprintf(stderr, "\n");
-      }
       if (*piVar12 != 0) {
         DAT_002022fc = (intptr_t)*piVar12;
         /* render_visible_tile_list reads each record's texture from the g_tile_texptr_out[] side
@@ -363,9 +323,6 @@ int resolve_critter_sprite_tier(short type_idx, int direction, short frame, uint
     frame = 0;
   }
   uVar4 = (uint)(byte)(&DAT_0023ce70)[type_idx * 2];
-  if (g_opts.debug_critter)
-    fprintf(stderr, "[critter] resolve_critter_sprite_tier: type_idx(type_idx)=%d direction(dir)=%d frame(frame)=%d shade(shade,unused-for-tier)=%d -> assoc[%d]=%u (0x%x)\n",
-            (int)type_idx, (int)(short)direction, (int)frame, (int)shade, (int)type_idx * 2, uVar4, uVar4);
   if (0xff < (short)direction) {
     direction = 0;
   }
@@ -380,9 +337,6 @@ int resolve_critter_sprite_tier(short type_idx, int direction, short frame, uint
       int base = (int)page[0];
       int span = (int)page[1];
       int match = ((int)(short)direction >= base) && ((int)(short)direction < base + span);
-      if (g_opts.debug_critter)
-        fprintf(stderr, "[critter] resolve_critter_sprite_tier: probe tier=%d base=%d span=%d valid=[%d,%d] dir=%d %s\n",
-                t, base, span, base, base + span - 1, (int)(short)direction, match ? "MATCH" : "no");
       if (match) {
         tier = t;
         break;
@@ -406,10 +360,6 @@ bool check_object_carry_weight(ushort *object)
   short sVar1;
 
   sVar1 = calculate_object_weight((uw_object_hdr_t *)object);
-  if (g_opts.debug_weight)
-    fprintf(stderr, "[weight] objid=0x%03x item_weight=%d current_load=%u max_capacity=%u fits=%d\n",
-            (int)(*object & 0x1ff), (int)sVar1, (unsigned)g_player_carry_weight, (unsigned)g_player_max_carry_weight,
-            (int)sVar1 + (uint)g_player_carry_weight <= (uint)g_player_max_carry_weight);
   return (int)((int)sVar1 + (uint)g_player_carry_weight) <= (int)(uint)g_player_max_carry_weight;
 }
 
@@ -573,23 +523,14 @@ int check_object_drop_height(ushort *object, ushort *reference)
   iVar5 = (short)(uVar2 & 0x1ff) * 0xd;
   *(byte *)(DAT_00202c6c + 8) = g_object_type_props[iVar5 / 0xd].collision_radius;
   *(undefined *)((char *)DAT_00202c6c + 9) = g_object_type_props[iVar5 / 0xd].height;
-  if (g_opts.debug_throw)
-    fprintf(stderr, "[throw-refine] ENTER object=%p object[0xb]=0x%x object+3byte=0x%x\n",
-            (void *)object,
-            (unsigned)((uw_mobile_object_t *)object)->tile_position,
-            (unsigned)((uw_object_hdr_t *)object)->position_word_high);
   iVar5 = ((((uw_mobile_object_t *)object)->tile_x << 3)) + (uint)(((uw_object_hdr_t *)object)->xpos);
   *(byte *)DAT_00202c6c = (byte)iVar5;
   *(byte *)((char *)DAT_00202c6c + 1) = (byte)((uint)iVar5 >> 8);
-  if (g_opts.debug_throw)
-    fprintf(stderr, "[throw-refine] X computed iVar5=%d (tile=%d)\n", iVar5, iVar5 >> 3);
   /* Was `DAT_00202c6c + 1` for Y's low byte -- disassembly-confirmed (0x4b288 @ 0x4b3b8: `strb
      r3,[r1,#0x2]`) the real write target is offset+2, not +1. */
   iVar5 = (((uw_object_hdr_t *)object)->ypos) + ((((uw_mobile_object_t *)object)->tile_y << 3));
   *(byte *)((char *)DAT_00202c6c + 2) = (byte)iVar5;
   *(byte *)((char *)DAT_00202c6c + 3) = (byte)((uint)iVar5 >> 8);
-  if (g_opts.debug_throw)
-    fprintf(stderr, "[throw-refine] Y computed iVar5=%d (tile=%d)\n", iVar5, iVar5 >> 3);
   /* Both pointer args below were `DAT_00202c6c`/`DAT_00202c6c + 1` -- the Y output must be `+2` to
      match the real Y storage (offset+2/+3, see the fix just above); `+1` is X's own high byte.
      Disassembly- confirmed (0x4b288 @ 0x4b458's `bl 0x69f2c` args). */
@@ -603,18 +544,8 @@ int check_object_drop_height(ushort *object, ushort *reference)
      via `*(short *)(DAT_00202c6c + 4)`), not offset+2... */
   *(byte *)((char *)DAT_00202c6c + 4) = ((uw_object_hdr_t *)object)->zpos;
   *(byte *)((char *)DAT_00202c6c + 5) = 0;
-  if (g_opts.debug_throw)
-    fprintf(stderr, "[throw-refine] pre-collision local_38[0..5]=%d,%d,%d,%d,%d,%d offset4(Z)=%d\n",
-            (int)local_38[0], (int)local_38[1], (int)local_38[2], (int)local_38[3],
-            (int)local_38[4], (int)local_38[5], (int)*(short *)((char *)DAT_00202c6c + 4));
   collision_height_envelope(0,1);
   collision_build_height_field(0);
-  if (g_opts.debug_throw)
-    fprintf(stderr, "[throw-refine] post-collision local_2c=%d local_2a=%d DAT_00202c6c[0]=%d DAT_00202c6c[1]=%d gate=0x%x ref_height(off4)=%d sampled_floor(off0x10)=%d steplim(off8)=%d\n",
-            (int)local_2c, (int)local_2a, (int)DAT_00202c6c[0], (int)DAT_00202c6c[1],
-            (unsigned)((local_2a | local_2c) & 0x300),
-            (int)*(short *)((char *)DAT_00202c6c + 4), (int)(byte)DAT_00202c6c[0x10],
-            (int)(byte)DAT_00202c6c[8]);
   if (((local_2a | local_2c) & 0x300) == 0) {
     if ((byte)DAT_00202c6c[20] != 0) {
       sort_collision_candidates();

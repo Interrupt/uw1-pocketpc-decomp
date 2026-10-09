@@ -5,14 +5,14 @@
 
 void setUp(void)
 {
-    unsetenv("UW_DEBUG_DOOR");
+    unsetenv("UW_DISABLE_3D_OBJECTS");
     unsetenv("UW_LIGHT_MODE");
     unsetenv("UW_WALK_ACCEL");
     options_reset();
 }
 void tearDown(void)
 {
-    unsetenv("UW_DEBUG_DOOR");
+    unsetenv("UW_DISABLE_3D_OBJECTS");
     unsetenv("UW_LIGHT_MODE");
     unsetenv("UW_WALK_ACCEL");
 }
@@ -22,7 +22,7 @@ static void test_defaults(void)
     TEST_ASSERT_EQUAL_INT(1, g_opts.dither);
     TEST_ASSERT_EQUAL_INT(1, g_opts.fullbright);
     TEST_ASSERT_EQUAL_INT(1, g_opts.always_show_cursor);
-    TEST_ASSERT_EQUAL_INT(0, g_opts.debug_door);
+    TEST_ASSERT_EQUAL_INT(0, g_opts.disable_3d_objects);
     TEST_ASSERT_EQUAL_FLOAT(1.0f, g_opts.brightness);
     TEST_ASSERT_EQUAL_INT(250, g_opts.palette_cycle_ms);
     TEST_ASSERT_EQUAL_INT(0x30, g_opts.walk_accel);
@@ -32,10 +32,10 @@ static void test_defaults(void)
 
 static void test_command_line_sets_each_type(void)
 {
-    char *argv[] = {"uw", "--debug-door", "--light-mode=dos", "--walk-accel", "64", "--no-dither",
+    char *argv[] = {"uw", "--disable-3d-objects", "--light-mode=dos", "--walk-accel", "64", "--no-dither",
                     "--brightness", "1.5", "--data-dir", "/some/dir", "--hack-pitch=-3"};
     options_init((int)(sizeof argv / sizeof *argv), argv);
-    TEST_ASSERT_EQUAL_INT(1, g_opts.debug_door);
+    TEST_ASSERT_EQUAL_INT(1, g_opts.disable_3d_objects);
     TEST_ASSERT_EQUAL_STRING("dos", g_opts.light_mode);
     TEST_ASSERT_EQUAL_INT(64, g_opts.walk_accel);
     TEST_ASSERT_EQUAL_INT(0, g_opts.dither);
@@ -77,22 +77,22 @@ static void test_set_and_unset_by_name(void)
 static void test_environment_is_a_fallback_the_command_line_overrides(void)
 {
     char *argv[] = {"uw", "--light-mode=dos"};
-    setenv("UW_DEBUG_DOOR", "1", 1);
+    setenv("UW_DISABLE_3D_OBJECTS", "1", 1);
     setenv("UW_LIGHT_MODE", "arm", 1);
     setenv("UW_WALK_ACCEL", "99", 1);
     options_init(2, argv);
-    TEST_ASSERT_EQUAL_INT(1, g_opts.debug_door);
+    TEST_ASSERT_EQUAL_INT(1, g_opts.disable_3d_objects);
     TEST_ASSERT_EQUAL_INT(99, g_opts.walk_accel);
     TEST_ASSERT_EQUAL_STRING("dos", g_opts.light_mode);
 }
 
 static void test_reset_restores_every_default(void)
 {
-    options_set("debug-door", NULL);
+    options_set("disable-3d-objects", NULL);
     options_set("data-dir", "/x");
     options_set("brightness", "2");
     options_reset();
-    TEST_ASSERT_EQUAL_INT(0, g_opts.debug_door);
+    TEST_ASSERT_EQUAL_INT(0, g_opts.disable_3d_objects);
     TEST_ASSERT_NULL(g_opts.data_dir);
     TEST_ASSERT_EQUAL_FLOAT(1.0f, g_opts.brightness);
 }

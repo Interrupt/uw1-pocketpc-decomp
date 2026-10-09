@@ -155,10 +155,6 @@ void leave_nested_container_level()
   char *iVar1;
   char *_old;
 
-  if (g_opts.debug_inv)
-    fprintf(stderr, "[inv] leave_nested_container_level entry: g_open_container_list=%p g_current_container_record=%p prev=%p\n",
-            (void *)g_open_container_list, (void *)g_current_container_record,
-            g_current_container_record ? *(void **)(g_current_container_record + 0x14) : 0);
   if (g_open_container_list != 0) {
     /* Was `*(int *)(g_current_container_record + 4) == 0` -- the legacy byte-4..7 "prev" field is
        only ever a truncated 32-bit half of a real 64-bit pointer (see open_backpack_container's own
@@ -184,9 +180,6 @@ void leave_nested_container_level()
       *(char **)(g_current_container_record + 0xc) = 0;
       g_current_container_link = *(undefined2 *)(g_current_container_record + 8);
       iVar1 = (char *)resolve_object_link(&g_current_container_link);
-      if (g_opts.debug_inv)
-        fprintf(stderr, "[inv] leave_nested_container_level: popped to record=%p g_current_container_link=0x%04x resolved=%p\n",
-                (void *)g_current_container_record, (unsigned)g_current_container_link, (void *)iVar1);
       _DAT_00202978 = (_DAT_00202978 ^ ((uw_object_hdr_t *)iVar1)->link_word) & 0x3f ^ ((uw_object_hdr_t *)iVar1)->link_word;
       /* User QA: "the container indicator does not update to show the current container icon" after
          popping back to a parent -- this is now the real widget 20 (see DAT_00085c4c's own
@@ -344,11 +337,7 @@ void open_backpack_container(short container_slot)
   
   iVar1 = (int)container_slot;
   puVar13 = (ushort *)(&g_equipped_items + iVar1 * 2);
-  if (g_opts.debug_inv)
-    fprintf(stderr, "[inv] open_backpack_container entry: container_slot=%d puVar13=%p\n", (int)container_slot, (void *)puVar13);
   puVar7 = (ushort *)resolve_object_link(puVar13);
-  if (g_opts.debug_inv)
-    fprintf(stderr, "[inv] open_backpack_container: resolve_object_link -> puVar7=%p\n", (void *)puVar7);
   uVar3 = ((uw_object_hdr_t *)puVar7)->type_flags;
   if (((uVar3 & 0x1c0) == 0x80) && ((uVar3 & 0x30) == 0)) {
     if ((uVar3 & 0xf) == 0xf) {
@@ -471,9 +460,6 @@ void open_backpack_container(short container_slot)
         g_current_container_link = uVar3;
         puVar14 = (ushort *)resolve_object_link(&g_current_container_link);
         puVar15 = (ushort *)resolve_object_link((ushort *)((char *)puVar14 + 6));
-        if (g_opts.debug_inv)
-          fprintf(stderr, "[inv] open_backpack_container open: container=%p contents_head=%p\n",
-                  (void *)puVar14, (void *)puVar15);
         sum_container_weight((ushort *)((char *)puVar14 + 6),(short *)((char *)g_current_container_record + 10));
         iVar10 = 0x14;
         do {

@@ -167,7 +167,6 @@ void draw_text_string(char *text, short x, short y)
   if (pcVar4 != (char *)0x0) {
     LocalFree(pcVar4);
   }
-  debug_framebuffer_dump("draw_text_string");
 }
 
 

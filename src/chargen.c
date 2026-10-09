@@ -571,10 +571,6 @@ void init_new_character_record(int mode)
   *(undefined1 *)(DAT_00086df8 + 0x66) = 0;
   *(undefined1 *)(DAT_00086df8 + 0x67) = 0;
   *(undefined1 *)(DAT_00086df8 + 0x68) = 0;
-  if (g_opts.debug_force_quest_test) {
-    *(unsigned int *)(DAT_00086df8 + 0x65) = 0x12345678;
-    fprintf(stderr, "[quest-persist] forced test quest_bits=0x%x at new-game init\n", *(unsigned int *)(DAT_00086df8 + 0x65));
-  }
   *(undefined1 *)(DAT_00086df8 + 0x6e) = 0;
   *(undefined1 *)(DAT_00086df8 + 0x6f) = 0;
   uVar5 = *(ushort *)(DAT_00086df8 + 0xb6) & 0xfff8;

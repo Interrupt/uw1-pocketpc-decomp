@@ -536,8 +536,6 @@ void uw_pump_events(void) {
                 landscape_y = SDL_clamp(landscape_y, 0, g_display_height - 1);
                 if (dbgui_visible()) {
                     if (ev.type == SDL_MOUSEBUTTONDOWN && ev.button.button == SDL_BUTTON_LEFT) {
-                        if (g_opts.debug_dbgui)
-                            fprintf(stderr, "[dbgui] click win=(%d,%d) landscape=(%d,%d)\n", win_x, win_y, landscape_x, landscape_y);
                         /* A click inside the 3D viewport's own registered
                            rect (the exact bounds pick_object_under_cursor
                            itself guards with -- see its own comment) runs
@@ -941,67 +939,10 @@ void uw_debug_mkdir_p(const char *path) {
     debug_mkdir_p(path);
 }
 
-void uw_debug_dump_gr_entry(const char *gr_name, int entry_index,
-                             const unsigned char *entry_data, int entry_size) {
-    static int enabled = -1;
-    if (enabled < 0) {
-        enabled = g_opts.debug_dump_gr != 0;
-    }
-    if (!enabled) return;
-
-    /* See the header comment: byte0=format, byte1=width, byte2=height, bytes3-4 unknown, then
-       width*height raw palette-index pixels. */
-    if (entry_size < 5) return;
-    int width = entry_data[1];
-    int height = entry_data[2];
-    int payload_len = entry_size - 5;
-    if (width == 0 || height == 0 || width * height > payload_len) {
-        fprintf(stderr, "[gr-dump] %s entry %d: header dims %dx%d don't fit a %d-byte payload -- skipped\n",
-                gr_name, entry_index, width, height, payload_len);
-        return;
-    }
-
-    char dir[280];
-    snprintf(dir, sizeof(dir), "debug/gr/%s", gr_name);
-    debug_mkdir_p(dir);
-
-    char path[320];
-    snprintf(path, sizeof(path), "%s/%03d.bmp", dir, entry_index);
-
-    SDL_Surface *surf = SDL_CreateRGBSurfaceWithFormat(0, width, height, 8, SDL_PIXELFORMAT_INDEX8);
-    if (!surf) {
-        fprintf(stderr, "[gr-dump] SDL_CreateRGBSurfaceWithFormat failed: %s\n", SDL_GetError());
-        return;
-    }
-
-    unsigned char *pal = uw_get_default_palette(gr_name);
-    SDL_Color colors[256];
-    for (int i = 0; i < 256; i++) {
-        colors[i].r = pal[i * 3 + 0];
-        colors[i].g = pal[i * 3 + 1];
-        colors[i].b = pal[i * 3 + 2];
-        colors[i].a = 255;
-    }
-    SDL_SetPaletteColors(surf->format->palette, colors, 0, 256);
-
-    const unsigned char *src = entry_data + 5;
-    for (int y = 0; y < height; y++) {
-        memcpy((unsigned char *)surf->pixels + y * surf->pitch, src + y * width, width);
-    }
-
-    if (SDL_SaveBMP(surf, path) != 0) {
-        fprintf(stderr, "[gr-dump] SDL_SaveBMP failed for %s: %s\n", path, SDL_GetError());
-    }
-    SDL_FreeSurface(surf);
-}
-
 void uw_debug_dump_critter_sprite(int type, int tier, int direction, int frame,
                                    const unsigned char *pixels, int width, int height) {
-    static int enabled = -1;
-    if (enabled < 0) {
-        enabled = g_opts.debug_dump_crit != 0;
-    }
-    if (!enabled) return;
+    /* Only used by --dump-critter-sheet (see debug_shim.c). */
+    if (!g_opts.dump_critter_sheet) return;
     if (width <= 0 || height <= 0 || !pixels) return;
 
     /* decode_critter_sprite_page re-decodes the same (type,tier,direction, frame) combo every
@@ -1010,13 +951,11 @@ void uw_debug_dump_critter_sprite(int type, int tier, int direction, int frame,
     static int seen_keys[4096];
     static int seen_count = 0;
     int key = ((type & 0xff) << 24) ^ ((tier & 0xff) << 16) ^ ((direction & 0xff) << 8) ^ (frame & 0xff);
-    if (!g_opts.debug_dump_crit_all) {
-        for (int i = 0; i < seen_count; i++) {
-            if (seen_keys[i] == key) return;
-        }
-        if (seen_count < (int)(sizeof(seen_keys) / sizeof(seen_keys[0]))) {
-            seen_keys[seen_count++] = key;
-        }
+    for (int i = 0; i < seen_count; i++) {
+        if (seen_keys[i] == key) return;
+    }
+    if (seen_count < (int)(sizeof(seen_keys) / sizeof(seen_keys[0]))) {
+        seen_keys[seen_count++] = key;
     }
 
     char dir[280];
@@ -1033,15 +972,6 @@ void uw_debug_dump_critter_sprite(int type, int tier, int direction, int frame,
     }
 
     unsigned char *pal = uw_get_default_palette("crit");
-    if (g_opts.debug_dump_crit_pal) {
-        int idxs[] = {0,1,131,133,148,152,154,156,158,169,171,187,229,233};
-        fprintf(stderr, "[crit-dump] palette sample:");
-        for (size_t i = 0; i < sizeof(idxs)/sizeof(idxs[0]); i++) {
-            int k = idxs[i];
-            fprintf(stderr, " [%d]=(%d,%d,%d)", k, pal[k*3], pal[k*3+1], pal[k*3+2]);
-        }
-        fprintf(stderr, "\n");
-    }
     SDL_Color colors[256];
     for (int i = 0; i < 256; i++) {
         colors[i].r = pal[i * 3 + 0];
@@ -1063,112 +993,6 @@ void uw_debug_dump_critter_sprite(int type, int tier, int direction, int frame,
     SDL_FreeSurface(surf);
 }
 
-void uw_debug_dump_tmap(int level, const unsigned char *tile_data) {
-    static int enabled = -1;
-    if (enabled < 0) {
-        enabled = g_opts.debug_dump_tmap != 0;
-    }
-    if (!enabled) return;
-
-    /* One directory per run (same convention as debug_framebuffer_dump's
-       drawdumps/<ts>/), created lazily. */
-    static char run_dir[300];
-    static int run_dir_ready = 0;
-    if (!run_dir_ready) {
-        time_t now = time(NULL);
-        struct tm tm_now;
-        localtime_r(&now, &tm_now);
-        char ts[32];
-        strftime(ts, sizeof(ts), "%Y%m%d_%H%M%S", &tm_now);
-        snprintf(run_dir, sizeof(run_dir), "debug/tmap/%s", ts);
-        debug_mkdir_p(run_dir);
-        run_dir_ready = 1;
-    }
-
-    static unsigned int counter = 0;
-    char path[360];
-    snprintf(path, sizeof(path), "%s/%03u_level%02d.bmp", run_dir, counter++, level);
-
-    /* 64x64, one pixel per tile: index = x + y*64 (see set_player_tile_position's `param_1 +
-       param_2*0x40` tile-index arithmetic in uw.c -- x is the fast-varying/column axis, y the row).
-       4 bytes per tile; only byte 0's low nibble (the tile-type field) matters here... */
-    SDL_Surface *surf = SDL_CreateRGBSurfaceWithFormat(0, 64, 64, 8, SDL_PIXELFORMAT_INDEX8);
-    if (!surf) {
-        fprintf(stderr, "[tmap-dump] SDL_CreateRGBSurfaceWithFormat failed: %s\n", SDL_GetError());
-        return;
-    }
-    SDL_Color colors[256] = {0};
-    colors[0].r = colors[0].g = colors[0].b = 0;   /* solid -> black */
-    colors[1].r = colors[1].g = colors[1].b = 255; /* everything else -> white */
-    SDL_SetPaletteColors(surf->format->palette, colors, 0, 2);
-
-    unsigned char *pixels = (unsigned char *)surf->pixels;
-    for (int y = 0; y < 64; y++) {
-        unsigned char *row = pixels + y * surf->pitch;
-        for (int x = 0; x < 64; x++) {
-            int tile_type = tile_data[(x + y * 64) * 4] & 0xf;
-            row[x] = (tile_type == 0) ? 0 : 1;
-        }
-    }
-
-    if (SDL_SaveBMP(surf, path) != 0) {
-        fprintf(stderr, "[tmap-dump] SDL_SaveBMP failed for %s: %s\n", path, SDL_GetError());
-    } else {
-        fprintf(stderr, "[tmap-dump] wrote %s\n", path);
-    }
-    SDL_FreeSurface(surf);
-}
-
-void uw_debug_dump_revealmap(const unsigned char *reveal_data) {
-    static int enabled = -1;
-    if (enabled < 0) {
-        enabled = g_opts.debug_dump_revealmap != 0;
-    }
-    if (!enabled) return;
-
-    static char run_dir[300];
-    static int run_dir_ready = 0;
-    if (!run_dir_ready) {
-        time_t now = time(NULL);
-        struct tm tm_now;
-        localtime_r(&now, &tm_now);
-        char ts[32];
-        strftime(ts, sizeof(ts), "%Y%m%d_%H%M%S", &tm_now);
-        snprintf(run_dir, sizeof(run_dir), "debug/revealmap/%s", ts);
-        debug_mkdir_p(run_dir);
-        run_dir_ready = 1;
-    }
-
-    static unsigned int counter = 0;
-    char path[360];
-    snprintf(path, sizeof(path), "%s/%03u.bmp", run_dir, counter++);
-
-    SDL_Surface *surf = SDL_CreateRGBSurfaceWithFormat(0, 64, 64, 8, SDL_PIXELFORMAT_INDEX8);
-    if (!surf) {
-        fprintf(stderr, "[revealmap-dump] SDL_CreateRGBSurfaceWithFormat failed: %s\n", SDL_GetError());
-        return;
-    }
-    SDL_Color colors[256] = {0};
-    colors[0].r = colors[0].g = colors[0].b = 0;   /* unrevealed -> black */
-    colors[1].r = colors[1].g = colors[1].b = 255; /* revealed -> white */
-    SDL_SetPaletteColors(surf->format->palette, colors, 0, 2);
-
-    unsigned char *pixels = (unsigned char *)surf->pixels;
-    for (int y = 0; y < 64; y++) {
-        unsigned char *row = pixels + y * surf->pitch;
-        for (int x = 0; x < 64; x++) {
-            row[x] = (reveal_data[x + y * 64] != 0) ? 1 : 0;
-        }
-    }
-
-    if (SDL_SaveBMP(surf, path) != 0) {
-        fprintf(stderr, "[revealmap-dump] SDL_SaveBMP failed for %s: %s\n", path, SDL_GetError());
-    } else {
-        fprintf(stderr, "[revealmap-dump] wrote %s\n", path);
-    }
-    SDL_FreeSurface(surf);
-}
-
 /* Shared by debug_framebuffer_dump and uw_debug_dump_3d_face below --
    both just want "snapshot g_uw_framebuffer to this path as a BMP",
    differing only in when they're gated/named. */
@@ -1185,46 +1009,6 @@ static void debug_save_framebuffer_bmp(const char *path, const char *log_tag) {
     SDL_FreeSurface(surf);
 }
 
-void debug_framebuffer_dump(const char *tag) {
-    static int enabled = -1;
-    static unsigned int every = 1;
-    if (enabled < 0) {
-        enabled = g_opts.debug_draw != 0;
-        /* --debug-draw-every=N: only actually write every Nth dump (still counting all of them, so
-           filenames stay a stable stride). Lets a huge sequence -- e.g. a full-level automap fill,
-           ~30k pixel ops -- be sampled down to a manageable number of BMPs. */
-        if (g_opts.debug_draw_every > 1) every = (unsigned int)g_opts.debug_draw_every;
-    }
-    if (!enabled) return;
-
-    static unsigned int call_no = 0;
-    if ((call_no++ % every) != 0) return;
-
-    /* One directory per run, named for when the run started; every dump
-       this process makes lands under it. Created lazily so a run that
-       never draws doesn't leave an empty folder behind. */
-    static char run_dir[300];
-    static int run_dir_ready = 0;
-    if (!run_dir_ready) {
-        time_t now = time(NULL);
-        struct tm tm_now;
-        localtime_r(&now, &tm_now);
-        char ts[32];
-        strftime(ts, sizeof(ts), "%Y%m%d_%H%M%S", &tm_now);
-        snprintf(run_dir, sizeof(run_dir), "debug/drawdumps/%s", ts);
-        debug_mkdir_p(run_dir);
-        run_dir_ready = 1;
-    }
-
-    static unsigned int counter = 0;
-    char path[360];
-    snprintf(path, sizeof(path), "%s/%06u_%s.bmp", run_dir, counter++, tag ? tag : "draw");
-
-    /* g_uw_framebuffer is the game's internal 320x240 RGB565 software framebuffer that every
-       graphics.c draw primitive writes into (see its declaration comment in uw.c) -- already
-       landscape-oriented, no rotation needed... */
-    debug_save_framebuffer_bmp(path, "draw-dump");
-}
 
 /* Debug tool: armed by the "dump_3d_frame" button in the UW_MODEL_TUNER debug panel
    (dbgui_field_button, see debug_ui.c) via uw_debug_request_3d_frame_dump() -- captures every
@@ -1236,6 +1020,14 @@ static int g_dump_3d_frame_active = 0;
 static int g_dump_3d_frame_last_count = -1;
 static unsigned int g_dump_3d_frame_counter = 0;
 static char g_dump_3d_frame_run_dir[300];
+
+void uw_debug_dump_3d_face(const char *tag) {
+    if (!g_dump_3d_frame_active) return;
+
+    char path[360];
+    snprintf(path, sizeof(path), "%s/%06u_%s.bmp", g_dump_3d_frame_run_dir, g_dump_3d_frame_counter++, tag ? tag : "face");
+    debug_save_framebuffer_bmp(path, "face-dump");
+}
 
 void uw_debug_request_3d_frame_dump(void) {
     static unsigned int capture_index = 0;
@@ -1251,14 +1043,6 @@ void uw_debug_request_3d_frame_dump(void) {
     g_dump_3d_frame_active = 1;
     fprintf(stderr, "[face-dump] requested -- capturing every 3D face draw for the next render pass into %s\n",
             g_dump_3d_frame_run_dir);
-}
-
-void uw_debug_dump_3d_face(const char *tag) {
-    if (!g_dump_3d_frame_active) return;
-
-    char path[360];
-    snprintf(path, sizeof(path), "%s/%06u_%s.bmp", g_dump_3d_frame_run_dir, g_dump_3d_frame_counter++, tag ? tag : "face");
-    debug_save_framebuffer_bmp(path, "face-dump");
 }
 
 int uw_debug_3d_frame_dump_finish(void) {
@@ -1383,14 +1167,6 @@ int GXEndDraw(void) {
        actual SDL_RenderPresent, the true screen-present) with its
        immediate caller's symbol. Early flushes return above without
        presenting or waiting on another vsync. */
-    if (g_opts.debug_enddraw) {
-        void *caller = __builtin_return_address(0);
-        Dl_info info;
-        const char *name = (dladdr(caller, &info) && info.dli_sname) ? info.dli_sname : "?";
-        static unsigned int call_count = 0;
-        call_count++;
-        fprintf(stderr, "[enddraw] call=%u tick=%u caller=%s(%p)\n", call_count, g_uw_frame_clock_units, name, caller);
-    }
     /* Un-rotate the portrait "hardware" framebuffer back to a natural landscape image for display
        -- see the HW_W/HW_H comment above. landscape(x,y) = portrait((HW_W-1-x), y), i.e. the
        inverse of the clockwise rotation the game's own blit performs. */
@@ -1406,46 +1182,6 @@ int GXEndDraw(void) {
     SDL_RenderPresent(g_ren);
     if (completed_frame) uw_record_completed_present(uw_gx_time_us());
 
-    /* --debug-timelapse=<ms>: save a numbered frame every <ms> of wall-clock time (min 1, "1" or
-       empty -> 250ms) into debug/timelapse/<run-timestamp>/. Pairs with --demo-delay-ms to pace a
-       scripted demo into an even timelapse -- assemble the BMPs into a GIF afterwards. */
-    {
-        static int tl_ms = -1;
-        static Uint32 tl_next = 0;
-        static char tl_dir[300];
-        static unsigned tl_n = 0;
-        if (tl_ms < 0) {
-            if (g_opts.debug_timelapse != 0) {
-                tl_ms = (g_opts.debug_timelapse > 1) ? g_opts.debug_timelapse : 250;
-                time_t now = time(NULL);
-                struct tm tm_now;
-                localtime_r(&now, &tm_now);
-                char ts[32];
-                strftime(ts, sizeof ts, "%Y%m%d_%H%M%S", &tm_now);
-                snprintf(tl_dir, sizeof tl_dir, "debug/timelapse/%s", ts);
-                debug_mkdir_p(tl_dir);
-                tl_next = SDL_GetTicks();
-                fprintf(stderr, "[timelapse] every %dms -> %s/\n", tl_ms, tl_dir);
-            } else {
-                tl_ms = 0;
-            }
-        }
-        if (tl_ms > 0) {
-            Uint32 now = SDL_GetTicks();
-            if (now >= tl_next && g_uw_framebuffer) {
-                char p[360];
-                snprintf(p, sizeof p, "%s/%05u.bmp", tl_dir, tl_n++);
-                SDL_Surface *tls = SDL_CreateRGBSurfaceWithFormat(
-                    0, GX_W, GX_H, 16, SDL_PIXELFORMAT_RGB565);
-                if (tls) {
-                    memcpy(tls->pixels, g_uw_framebuffer, (size_t)GX_W * GX_H * 2);
-                    SDL_SaveBMP(tls, p);
-                    SDL_FreeSurface(tls);
-                }
-                tl_next = now + (Uint32)tl_ms;
-            }
-        }
-    }
 
     return 1;
 }

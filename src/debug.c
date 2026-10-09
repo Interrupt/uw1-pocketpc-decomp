@@ -9,8 +9,8 @@
 #include <string.h>
 #include <strings.h>
 
-static DebugLevel g_min_level = TRACE;
-static int g_min_level_read = 0;
+/* Every message is printed; there is no runtime level filter. */
+static const DebugLevel g_min_level = TRACE;
 
 static const char *level_name(DebugLevel level) {
     switch (level) {
@@ -22,20 +22,7 @@ static const char *level_name(DebugLevel level) {
     return "?";
 }
 
-static void read_min_level_once(void) {
-    g_min_level_read = 1;
-    const char *env = g_opts.debug_level;
-    if (!env) return;
-    if (strcasecmp(env, "TRACE") == 0) g_min_level = TRACE;
-    else if (strcasecmp(env, "INFO") == 0) g_min_level = INFO;
-    else if (strcasecmp(env, "WARN") == 0) g_min_level = WARN;
-    else if (strcasecmp(env, "ERR") == 0 || strcasecmp(env, "ERROR") == 0) g_min_level = ERR;
-}
-
 void DEBUG_impl(DebugLevel level, const char *file, int line, const char *fmt, ...) {
-    if (!g_min_level_read) {
-        read_min_level_once();
-    }
     if (level < g_min_level) {
         return;
     }

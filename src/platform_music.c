@@ -98,22 +98,6 @@ static void uwmod_audio_callback(void *userdata, Uint8 *stream, int len)
    * actually being produced -- same ad-hoc getenv()-gated tracing
    * convention used throughout this codebase (see e.g. 3d.c's
    * --debug-raster). */
-  if (g_opts.debug_audio) {
-    short *samples = (short *)stream;
-    int n = len / 2;
-    int nonzero = 0;
-    short minv = 0, maxv = 0;
-    for (int i = 0; i < n; i++) {
-      if (samples[i] != 0) nonzero++;
-      if (samples[i] < minv) minv = samples[i];
-      if (samples[i] > maxv) maxv = samples[i];
-    }
-    fprintf(stderr,
-            "[audio] uwmod callback: len=%d samples=%d nonzero=%d min=%d max=%d first4=[%d,%d,%d,%d]\n",
-            len, n, nonzero, minv, maxv,
-            n > 0 ? samples[0] : 0, n > 1 ? samples[1] : 0,
-            n > 2 ? samples[2] : 0, n > 3 ? samples[3] : 0);
-  }
 }
 
 /* Opens the real SDL2 audio device and prepares the HxCModPlayer context.

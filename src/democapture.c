@@ -110,11 +110,6 @@ static Uint32 g_rec_debug_start;
 void democapture_tick(void) {
     if (!g_rec_file) return;
     if (demomode_active()) return; /* see democapture_record_event's own comment */
-    if (g_opts.debug_recordtick) {
-        if (g_rec_debug_start == 0) g_rec_debug_start = SDL_GetTicks();
-        Uint32 elapsed = SDL_GetTicks() - g_rec_debug_start;
-        fprintf(stderr, "[recordtick] idle_ticks=%d elapsed_ms=%u\n", g_rec_idle_ticks + 1, elapsed);
-    }
     g_rec_idle_ticks++;
 }
 

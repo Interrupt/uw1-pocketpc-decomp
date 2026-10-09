@@ -287,12 +287,6 @@ void set_player_tile_position(uint tile_x, uint tile_y, int flag)
    coarser tile-position bytes packed into g_player_object's own record... */
 void debug_print_player_position(const char *label)
 {
-  if (g_opts.debug_throw)
-    fprintf(stderr, "[playerpos:%s] fine=(%d,%d)=world(%g,%g) obj_bytes tile=(%d,%d)\n",
-            label, (int)DAT_00204880, (int)DAT_00204882,
-            (double)DAT_00204880 / 256.0, (double)DAT_00204882 / 256.0,
-            (int)((byte) g_player_object->tile_word_high >> 2),
-            (int)(g_player_object->npc_yhome));
 }
 
 
@@ -396,10 +390,6 @@ void commit_player_move()
 void demo_set_player_pos(double x, double y, double z, double yaw_deg, double pitch_deg)
 {
   set_player_tile_position((int)floor(x), (int)floor(y), 1);
-  if (g_opts.debug_floorz) {
-    fprintf(stderr, "[floorz] tile=(%d,%d) natural z (from set_player_tile_position) = %d, overriding to %g\n",
-            (int)floor(x), (int)floor(y), (int)DAT_00204884, z);
-  }
   /* Clear any in-flight smooth-turn interpolation (update_current_view_from_subject's
      DAT_0023bea8-gated add-on to DAT_00086e6c+0x2c): if a turn animation was still mid-flight when
      this runs... */
@@ -551,7 +541,6 @@ bool write_player_save_record(char *slot_dir)
     /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested): the real binary's own
        write_player_save_record never serializes DAT_0023bca8... */
     ce_memmove(g_save_record_buffer + 0x5b + g_save_record_count * 8,&DAT_0023bca8,220);
-    if (g_opts.debug_babl) fprintf(stderr, "[quest-persist] SAVE appending quest_bits=0x%x at buffer offset %d\n", *(unsigned int *)(DAT_00086df8 + 0x65), (int)(0x5b + g_save_record_count * 8));
     if (slot_dir != (char *)0x0) {
       pcDst = acStack_114;
       do {
@@ -623,7 +612,6 @@ void restore_player_save_record(byte *record)
      matching comment: restores DAT_0023bca8 from the same trailing offset that function now appends
      it at. g_save_record_count is already set here... */
   ce_memmove(&DAT_0023bca8,record + 0x5b + g_save_record_count * 8,220);
-  if (g_opts.debug_babl) fprintf(stderr, "[quest-persist] LOAD restored quest_bits=0x%x from buffer offset %d\n", *(unsigned int *)(DAT_00086df8 + 0x65), (int)(0x5b + g_save_record_count * 8));
 }
 
 
@@ -680,15 +668,11 @@ void refresh_player_equipment_effects()
   DAT_0023be74[0x12] = *(char *)(DAT_00086df8 + 0x22);
   g_scratch_object_ptr = get_equipped_item_at_slot(8 - (*(byte *)(DAT_00086df8 + 100) & 1));
   uVar11 = 2;
-  if (g_opts.debug_combat) fprintf(stderr, "[weapon-gfx] refresh_player_equipment_effects: weapon_hand_item=%p id=0x%x\n", (void *)g_scratch_object_ptr,
-                                         g_scratch_object_ptr ? (unsigned) g_scratch_object_ptr->type_flags : 0xffff);
   if (g_scratch_object_ptr != NULL) {
     uVar2 = g_scratch_object_ptr->type_flags;
     if (((uVar2 & 0x1c0) == 0) && ((uVar2 & 0x30) < 0x20)) {
       uVar8 = uVar2 & 0xf;
       if ((uVar2 & 0x30) == 0) {
-        if (g_opts.debug_combat) fprintf(stderr, "[weapon-gfx] family0 nibble=%u table_byte(offset+6)=%d\n", uVar8,
-                                               (int) g_melee_type_props[uVar8].skill);
         uVar11 = (ushort)(byte) g_melee_type_props[uVar8].skill;
         uVar8 = (uint)(short)(ushort)(byte) g_melee_type_props[uVar8].skill;
         bVar13 = SBORROW4(uVar8,3);
@@ -714,7 +698,6 @@ void refresh_player_equipment_effects()
   }
   iVar4 = 3;
 LAB_000669a8:
-  if (g_opts.debug_combat) fprintf(stderr, "[weapon-gfx] refresh_player_equipment_effects: resolved category=%d\n", iVar4);
   request_weapon_swing_graphic(iVar4);
   DAT_0023be74[0x12] = DAT_0023be74[0x12] + (*(byte *)(DAT_00086df8 + (short)uVar11 + 0x21) >> 1);
   reset_player_derived_state();
@@ -731,10 +714,6 @@ LAB_000669a8:
       puVar6 = (ushort *)get_equipped_item_at_slot((int)(char)(&g_light_source_slots)[iVar4]);
     }
     g_scratch_object_ptr = (uw_object_hdr_t *)puVar6;
-    if (g_opts.debug_ambient)
-      fprintf(stderr, "[ambient] light-scan slot=%d puVar6=%p id=0x%03x nibble=0x%x\n",
-              (int)iVar4, (void *)puVar6, puVar6 ? (unsigned)(*puVar6 & 0x1ff) : 0u,
-              puVar6 ? (unsigned)(*puVar6 & 0xf) : 0u);
     if ((((puVar6 != (ushort *)0x0) && ((*puVar6 & 0x1f0) == 0x90)) &&
         (uVar11 = *puVar6 & 0xf, 3 < uVar11)) && (uVar11 < 8)) {
       iVar7 = get_scanned_object_class_effect_ptr();
@@ -752,17 +731,6 @@ LAB_000669a8:
     bVar12 = iVar4 == 4;
   } while (iVar4 < 5);
   *(byte *)(DAT_00086df8 + 99) = bVar9 * '\x10' + (char)(uintptr_t)iVar5;
-  if (g_opts.debug_ambient) {
-    int _s;
-    fprintf(stderr, "[ambient] light-scan result: bVar9=%d iVar5=%d -> DAT_00086df8+99=0x%02x; full slot dump:\n",
-            (int)bVar9, (int)(uintptr_t)iVar5, (unsigned)*(byte *)(DAT_00086df8 + 99));
-    for (_s = 0; _s < 11; _s++) {
-      ushort *_o = (ushort *)get_equipped_item_at_slot(_s);
-      fprintf(stderr, "  slot=%d ptr=%p id=0x%03x nibble=0x%x\n", _s, (void *)_o,
-              _o ? (unsigned)(((uw_object_hdr_t *)_o)->object_id) : 0u,
-              _o ? (unsigned)(((uw_object_hdr_t *)_o)->object_id & 0xf) : 0u);
-    }
-  }
   if ((*(ushort *)(DAT_00086df8 + 0x5f) & 0x3c0) != 0) {
     iVar4 = 0;
     do {
@@ -1445,10 +1413,6 @@ void update_current_view_from_subject()
     if (DAT_0023bea8 == 0) {
       return;
     }
-    if (g_opts.debug_eyeheight)
-      fprintf(stderr, "[eyeheight] bea8=%d be98=%d base=%d -> %d\n",
-              (int)DAT_0023bea8, (int)DAT_0023be98, (int)g_current_view->view_elevation,
-              (int)(g_current_view->view_elevation + DAT_0023be98));
     g_current_view->view_elevation = g_current_view->view_elevation + DAT_0023be98;
     if (1000 < g_current_view->view_elevation) {
       g_current_view->view_elevation = 1000;
@@ -2126,7 +2090,6 @@ void handle_mantra_chant()
     pcVar_typed = (char *)_strupr(local_58);
     pcVar_name = get_message_string((int)(char)iVar10 | 0x400);
     iVar6 = ce_strcmp(pcVar_name,pcVar_typed);
-    if (g_opts.debug_mantra) fprintf(stderr, "[mantra] id=0x%02x name='%s' typed='%s' cmp=%d\n", iVar10, pcVar_name, pcVar_typed, iVar6);
     if (iVar6 == 0) break;
     iVar10 = iVar10 + 1;
   } while (iVar10 * 0x1000000 >> 0x18 < 0x4d);
@@ -3093,8 +3056,6 @@ void draw_stats_panel_content()
 {
   byte bVar1;
 
-  if (g_opts.debug_clickregion)
-    fprintf(stderr, "[stats] draw_stats_panel_content (draw stats panel) entry, DAT_0024af88=%d\n", (int)DAT_0024af88);
   if (DAT_0024af88 == 0) {
     DAT_0024af88 = grtile_alloc_registered(0x96,0x2b);
     if (DAT_0024af88 != 0) {
@@ -3104,8 +3065,6 @@ void draw_stats_panel_content()
     if (DAT_0024af8c != 0) {
       capture_framebuffer_rect_to_grtile(DAT_0024af8c,0x115,0x32,0x23,0x15);
     }
-    if (g_opts.debug_clickregion)
-      fprintf(stderr, "[stats] draw_stats_panel_content: allocated DAT_0024af88=%d DAT_0024af8c=%d\n", (int)DAT_0024af88, (int)DAT_0024af8c);
   }
   *g_draw_color_index = 0xf1;
   *DAT_00084298 = 0xf1;

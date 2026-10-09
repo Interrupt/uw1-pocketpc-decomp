@@ -238,14 +238,6 @@ void raster_triangle(int stride, void *buffer, uint *vertices, int surface, int 
 #define local_b8 (*(int *)(auStack_c4 + 0xc))
 #define local_70 (*(int *)(auStack_7c + 0xc))
 
-  if (g_opts.debug_raster) {
-    fprintf(stderr, "[raster] ENTRY texid=0x%x v0=(%g,%g) v1=(%g,%g) v2=(%g,%g) clip=(%d,%d,%d,%d) tex=%p\n",
-            (unsigned)surface,
-            *(float *)vertices, *(float *)(vertices + 1),
-            *(float *)(vertices + 5), *(float *)(vertices + 6),
-            *(float *)(vertices + 10), *(float *)(vertices + 11),
-            clip[0], clip[1], clip[2], clip[3], (void *)texture);
-  }
   uVar8 = vertices[6];
   uVar10 = vertices[0xb];
   uVar6 = vertices[1];
@@ -254,31 +246,26 @@ void raster_triangle(int stride, void *buffer, uint *vertices, int surface, int 
   iVar2 = ordfloat_lt(uVar4,uVar1);
   if (((iVar2 != 0) && (iVar2 = ordfloat_lt(vertices[5],uVar1), iVar2 != 0)) &&
      (iVar2 = ordfloat_ge(vertices[10],uVar1), iVar2 == 0)) {
-    if (g_opts.debug_raster) fprintf(stderr, "[raster] REJECT: all verts left of clip-left\n");
     return;
   }
   uVar1 = ordfloat_int_to_float2(clip[2]);
   iVar2 = ordfloat_gt(uVar4,uVar1);
   if (((iVar2 != 0) && (iVar2 = ordfloat_gt(vertices[5],uVar1), iVar2 != 0)) &&
      (iVar2 = ordfloat_le(vertices[10],uVar1), iVar2 == 0)) {
-    if (g_opts.debug_raster) fprintf(stderr, "[raster] REJECT: all verts right of clip-right\n");
     return;
   }
   uVar1 = ordfloat_int_to_float2(clip[1]);
   iVar2 = ordfloat_lt(uVar6,uVar1);
   if (((iVar2 != 0) && (iVar2 = ordfloat_lt(uVar8,uVar1), iVar2 != 0)) &&
      (iVar2 = ordfloat_ge(uVar10,uVar1), iVar2 == 0)) {
-    if (g_opts.debug_raster) fprintf(stderr, "[raster] REJECT: all verts above clip-top\n");
     return;
   }
   uVar1 = ordfloat_int_to_float2(clip[3]);
   iVar2 = ordfloat_gt(uVar6,uVar1);
   if (((iVar2 != 0) && (iVar2 = ordfloat_gt(uVar8,uVar1), iVar2 != 0)) &&
      (iVar2 = ordfloat_le(uVar10,uVar1), iVar2 == 0)) {
-    if (g_opts.debug_raster) fprintf(stderr, "[raster] REJECT: all verts below clip-bottom\n");
     return;
   }
-  if (g_opts.debug_raster) fprintf(stderr, "[raster] passed bbox reject, entering scanline setup\n");
   int _uw_span_calls = 0;
   iVar2 = ordfloat_lt(uVar6,uVar8);
   if (iVar2 == 0) {
@@ -331,14 +318,6 @@ LAB_00014684:
   raster_edge_setup(auStack_10c,(char *)vertices,uVar11,uVar4,clip[1],auStack_154);
   raster_edge_setup(auStack_10c,(char *)vertices,uVar11,uVar1,clip[1],auStack_c4);
   raster_edge_setup(auStack_10c,(char *)vertices,uVar1,uVar4,clip[1],auStack_7c);
-  if (g_opts.debug_raster) {
-    fprintf(stderr, "[raster] sort top=%u mid=%u bot=%u  uVar7(short-half-idx)=%u uVar9(cmp)=%u  long_x0=%d short1_x0=%d short2_x0=%d\n",
-            (unsigned)uVar11, (unsigned)uVar1, (unsigned)uVar4,
-            (unsigned)uVar7, (unsigned)uVar9,
-            *(int *)(auStack_154 + 0x28) >> 0xe,
-            *(int *)(auStack_c4 + 0x28) >> 0xe,
-            *(int *)(auStack_7c + 0x28) >> 0xe);
-  }
   if (uVar9 < uVar7) {
     puVar3 = auStack_154;
     puVar5 = auStack_c4;
@@ -346,10 +325,6 @@ LAB_00014684:
   else {
     puVar3 = auStack_c4;
     puVar5 = auStack_154;
-  }
-  if (g_opts.debug_raster) {
-    fprintf(stderr, "[raster] first-half puVar3(assumed-left)_x0=%d puVar5(assumed-right)_x0=%d\n",
-            *(int *)(puVar3 + 0x28) >> 0xe, *(int *)(puVar5 + 0x28) >> 0xe);
   }
   iVar2 = local_b8;
   while( true ) {
@@ -375,7 +350,6 @@ LAB_00014684:
         raster_edge_step(auStack_154);
         iVar2 = iVar2 + -1;
       }
-      if (g_opts.debug_raster) fprintf(stderr, "[raster] DONE span_calls=%d\n", _uw_span_calls);
       return;
     }
     iVar2 = iVar2 + -1;
@@ -389,7 +363,6 @@ LAB_00014684:
     raster_edge_step(auStack_c4);
     raster_edge_step(auStack_154);
   }
-  if (g_opts.debug_raster) fprintf(stderr, "[raster] DONE (broke on clip-bottom) span_calls=%d\n", _uw_span_calls);
 }
 #undef local_b8
 #undef local_70
@@ -905,8 +878,6 @@ void translate_verts_to_camera_space(int *vertex_list)
   }
   iVar3 = 0;
   piVar2 = vertex_list;
-  if (g_opts.debug_door_pos)
-    fprintf(stderr, "[doorpos] translate_verts_to_camera_space: second-list record count vertex_list[1]=%d\n", vertex_list[1]);
   if (0 < vertex_list[1]) {
     do {
       *(undefined1 *)(piVar2 + 0x121b) = 1;
@@ -1088,15 +1059,6 @@ void near_clip_visible_tiles(void *tile_list, int clip_mode)
               iVar7 = iVar7 * 0xc + tile_base;
               puVar8 = (undefined4 *)(iVar7 + 0x3010);
               uVar11 = *puVar8;
-              if (g_opts.debug_nearclip_range) {
-                int _lo = 0, _hi = -1;
-                sscanf(g_opts.debug_nearclip_range, "%d:%d", &_lo, &_hi);
-                if (local_48 >= _lo && local_48 <= _hi)
-                  fprintf(stderr, "[nearclip] rec=%d pointcount=%d edge=%d prev_vi=%d cur_vi=%d prev_w=%g cur_w=%g thresh=%g prev_behind=%d\n",
-                          local_48, iVar4, local_78, local_64,
-                          *(int *)(local_50 + 0x4818),
-                          *(float *)&uVar10, *(float *)&uVar11, *(float *)&DAT_00084608, (int)iVar6);
-              }
               if (iVar6 == 0) {
                 iVar6 = ordfloat_ge(uVar11,DAT_00084608);
                 if (iVar6 != 0) {
@@ -1269,16 +1231,6 @@ LAB_0002029c:
               local_64 = local_78;
               local_78 = local_78 + 1;
             } while (local_78 < iVar4);
-            if (g_opts.debug_door_pos && local_48 >= 26 && local_48 <= 32)
-              fprintf(stderr, "[doorpos] near_clip: emit_idx=%d iVar18(clipped_verts)=%d out_idx_if_kept=%d\n",
-                      local_48, iVar18, local_7c);
-            if (g_opts.debug_nearclip_range) {
-              int _lo = 0, _hi = -1;
-              sscanf(g_opts.debug_nearclip_range, "%d:%d", &_lo, &_hi);
-              if (local_48 >= _lo && local_48 <= _hi)
-                fprintf(stderr, "[nearclip] rec=%d FINAL iVar18(clipped_verts)=%d out_idx_if_kept=%d\n",
-                        local_48, iVar18, local_7c);
-            }
             if (iVar18 != 0) {
               *puVar20 = (char)iVar18;
               (&DAT_000bc039)[iVar19] = (char)((uint)iVar18 >> 8);
@@ -1287,9 +1239,6 @@ LAB_0002029c:
               /* carry the real texture pointer from emit index to render index */
               if ((unsigned)local_7c < UW_MAX_VIS_TILES && (unsigned)local_48 < UW_MAX_VIS_TILES) {
                 g_tile_texptr_out[local_7c] = g_tile_texptr_emit[local_48];
-                if (g_opts.debug_door_pos && local_48 >= 26 && local_48 <= 32)
-                  fprintf(stderr, "[doorpos] texptr carry: emit_idx=%d out_idx=%d texptr=%p\n",
-                          local_48, local_7c, g_tile_texptr_emit[local_48]);
               }
               local_7c = local_7c + 1;
               (&DAT_000bc03b)[iVar19] = (char)((uint)iVar18 >> 0x18);
@@ -1525,17 +1474,6 @@ void load_dungeon_texture_arenas()
   } while (cVar1 != '\0');
   DAT_0023ae30 = DAT_0023ae3c + local_11c[0] * 0x100;
   load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae30);
-  if (g_opts.debug_texture_arena) {
-    static long hwm_bytes = -1;
-    long used = (long)((DAT_0023ae30 + (int)DAT_0023aeb8 * 0x100) - (char *)&DAT_002049e0);
-    if (used > hwm_bytes) {
-      hwm_bytes = used;
-      fprintf(stderr, "[texture-arena] new high-water usage: %ld bytes (w16 count=%d f16 count=%d)\n",
-              used, (int)local_11c[0], (int)DAT_0023aeb8);
-    }
-  }
-  if (g_opts.debug_door)
-    fprintf(stderr, "[door] load_dungeon_texture_arenas: about to call load_door_frames (door loader), DAT_00202734=%d\n", (int)DAT_00202734);
   load_door_frames();
 }
 

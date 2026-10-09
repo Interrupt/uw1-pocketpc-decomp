@@ -337,7 +337,6 @@ void render_visible_tile_list()
       local_98 = local_98 + 1;
     } while (local_94 < iVar15);
   }
-  debug_framebuffer_dump("render_visible_tile_list");
   { int _dumped = uw_debug_3d_frame_dump_finish();
     if (_dumped >= 0) {
       char _msg[80];
@@ -534,17 +533,6 @@ void process_visible_tile_cell(byte *cell)
   
   bVar25 = *DAT_0023b820;
   local_48 = (uint)(short)(ushort)bVar25;
-  if (g_opts.debug_geometry_dist) {
-    intptr_t _dcell = (DAT_0023b4ec - (byte *)DAT_002029cc) / 4;
-    ushort *_dpp = (ushort *)g_player_object;
-    int _dcx = (int)(_dcell & 0x3f), _dcy = (int)(_dcell >> 6);
-    int _dpx = (int)(((uw_mobile_object_t *)_dpp)->tile_x), _dpy = (int)(((uw_mobile_object_t *)_dpp)->tile_y);
-    int _ddx = _dcx - _dpx; if (_ddx < 0) _ddx = -_ddx;
-    int _ddy = _dcy - _dpy; if (_ddy < 0) _ddy = -_ddy;
-    fprintf(stderr, "[geom-dist] bit80=%d rawbyte=0x%02x tile=(%d,%d) player=(%d,%d) dist=%d willreveal=%d\n",
-            (local_48 & 0x80) != 0, (unsigned)bVar25, _dcx, _dcy, _dpx, _dpy, _ddx > _ddy ? _ddx : _ddy,
-            (int)(*cell == 0));
-  }
   if ((local_48 & 0x80) == 0) {
     /* Unreached cells stay unknown. For reached cells without geometry,
        use the tile's shade to distinguish discovered floors from the
@@ -1805,15 +1793,6 @@ void emit_tile_features(ushort *tile)
             continue;
           }
           iVar7 = cVar8 * 4;
-          if (g_opts.debug_objpos && puVar5 && (((uw_object_hdr_t *)puVar5)->object_id) == 0x166)
-            fprintf(stderr, "[objpos] cVar8=%d iVar7=%d bb99=%d bb9a=%d b4e4=%d b4e8=%d\n",
-                    (int)cVar8, iVar7, (int)(char)(&DAT_0023bb99)[iVar7], (int)(char)(&DAT_0023bb9a)[iVar7],
-                    (int)DAT_0023b4e4, (int)DAT_0023b4e8);
-          if (g_opts.debug_door_pos && puVar5 && (((uw_object_hdr_t *)puVar5)->object_id & 0x1f0) == 0x140)
-            fprintf(stderr, "[doorpos] tile-grid: cVar8=%d slot_x=%d slot_z=%d b4e4(tileX)=%d b4e8(tileZ)=%d tile_origin=(%d,%d)\n",
-                    (int)cVar8, (int)(char)(&DAT_0023bb99)[iVar7], (int)(char)(&DAT_0023bb9a)[iVar7],
-                    (int)DAT_0023b4e4, (int)DAT_0023b4e8,
-                    (int)DAT_0023b4e4 * 256, (int)DAT_0023b4e8 * 256);
           DAT_0023b904 = ((short)(char)(&DAT_0023bb99)[iVar7] +
                          (short)((uint)((int)DAT_0023b4e4 << 0x13) >> 0x10)) * 0x20 + 0x10;
           DAT_0023b920 = ((short)(char)(&DAT_0023bb9a)[iVar7] +
@@ -1824,10 +1803,6 @@ void emit_tile_features(ushort *tile)
           else {
             DAT_0023b91c = (short)((uw_projectile_object_t *)puVar5)->precise_z;
           }
-          if (g_opts.debug_throw && (((uw_object_hdr_t *)puVar5)->object_id) == 0x80)
-            fprintf(stderr, "[throw-scrz] sack DAT_0023b91c=%d cam_ref(DAT_00086e6c+0xe)=%d in_arena=%d\n",
-                    (int)(short)DAT_0023b91c, (int)g_current_view->view_elevation,
-                    (int)object_ptr_in_arena(puVar5));
           if (DAT_0023b830 == '\0') {
             iVar7 = (int)(short)((int)((int)DAT_0023b904 -
                                       ((int)g_current_view->view_x & 0xffU)) >> 5);
@@ -2049,10 +2024,6 @@ void emit_tile_objects(ushort *tile)
   int iVar35;
   ushort local_54;
   
-  if (g_opts.debug_throw && ((*tile & 0x1ff) == 0x80 || (*tile & 0x1ff) == 0x16e))
-    fprintf(stderr, "[throw-emit] ENTER tile=%p type=0x%x is_player=%d flag4000=%d in_arena=%d DAT_002046c4=%p\n",
-            (void *)tile, (unsigned)(*tile & 0x1ff), tile == g_player_object,
-            (*tile & 0x4000) == 0x4000, (int)object_ptr_in_arena((char *)tile), (void *)DAT_002046c4);
   if (tile == g_player_object) {
     return;
   }
@@ -2309,21 +2280,6 @@ void emit_tile_objects(ushort *tile)
   uVar27 = (uint)*tile;
   bVar1 = g_object_type_props[(uVar27 & 0x1ff)].class_flags;
   bVar13 = bVar1 & 3;
-  if (g_opts.debug_objclass) {
-    int _iv = (uVar27 & 0x1ff) * 0xd;
-    int _grp = g_object_type_props[_iv / 0xd].quality_type;
-    fprintf(stderr, "[objclass] id=0x%03x renderclass=%d prop_byte=0x%02x quality=%d heading=%d namegrp=%d scrx=%d scry=%d scrz=%d names=",
-            (int)(uVar27 & 0x1ff), (int)bVar13, (int)bVar1,
-            (int)((byte)tile[3] & 0x3f), (int)(tile[1] >> 6 & 7), _grp,
-            (int)(short)DAT_0023b904, (int)(short)DAT_0023b920, (int)(short)DAT_0023b91c);
-    { int _k;
-      for (_k = 0; _k < 6; _k++) {
-        char *_n = (char *)get_message_string(_grp * 6 + _k | 0xa00);
-        fprintf(stderr, "[%d]='%s' ", _k, _n ? _n : "(null)");
-      }
-    }
-    fprintf(stderr, "\n");
-  }
   if ((uVar27 & 0x1c0) == 0x1c0) {
     DAT_0023b804 = 1;
     uVar27 = (byte)tile[3] & 0x3f;
@@ -2347,12 +2303,7 @@ LAB_emit_mesh_sprite_quad:
     /* Same arena-overflow risk as the tile-geometry guard a few hundred lines above this function
        (see its own comment for the full explanation of the ~512-vert/~490-record cap on
        DAT_000a85d0_backing) -- that guard only accounts for wall/floor geometry... */
-    if (g_opts.debug_throw && uVar27 == 0x80)
-      fprintf(stderr, "[throw-render] sack (id=0x80) reached quad emit: DAT_0023b838(vtx)=%u DAT_0023b83c(rec)=%d cap=(508,489)\n",
-              (unsigned)DAT_0023b838, (int)DAT_0023b83c);
     if ((int)(uint)DAT_0023b838 >= 512 - 4 || (int)DAT_0023b83c >= 490 - 1) {
-      if (g_opts.debug_throw && uVar27 == 0x80)
-        fprintf(stderr, "[throw-render] sack (id=0x80) -> arena FULL, quad SKIPPED (never emitted)\n");
       return;
     }
     if (g_billboard_angle_override_deg >= 0) {
@@ -2389,9 +2340,6 @@ LAB_emit_mesh_sprite_quad:
         _angle_idx = g_billboard_angle_override_deg;
         g_billboard_angle_override_deg = -1;
       }
-      if (g_opts.debug_objpos && (*tile & 0x1ff) == 0x166)
-        fprintf(stderr, "[decalangle] overridden=%d angle_idx=%d cam_yaw=%d\n",
-                _overridden, _angle_idx, (int)DAT_000db44c);
       uVar30 = (&DAT_000d9ed8)[_angle_idx];
       uVar18 = ordfloat_negate((&DAT_000d9930)[_angle_idx]);
     }
@@ -2571,14 +2519,6 @@ LAB_00061d34:
     DAT_0023b83c = DAT_0023b83c + 1;
     DAT_000a85d4 = DAT_0023b83c;
     DAT_000a85d0 = iVar17 + 1;
-    if ((g_opts.debug_objpos && (*tile & 0x1ff) == 0x166) ||
-        (g_opts.debug_door && (*tile & 0x1ff) == 0x140)) {
-      float _fx, _fy, _fz;
-      unsigned int _bx = (unsigned int)uVar22, _by = (unsigned int)uVar19, _bz = (unsigned int)uVar25;
-      memcpy(&_fx, &_bx, 4); memcpy(&_fy, &_by, 4); memcpy(&_fz, &_bz, 4);
-      fprintf(stderr, "[objpos-final] id=0x%03x uVar27(sprite_id)=0x%x vtx_x(float)=%f vtx_y(float)=%f vtx_z(float)=%f DAT_00202508(w)=%d DAT_002022f8(h)=%d\n",
-              (unsigned)(*tile & 0x1ff), uVar27, _fx, _fy, _fz, (int)(short)DAT_00202508, (int)(short)DAT_002022f8);
-    }
     return;
   }
   if (bVar13 == 1) {
@@ -2604,11 +2544,6 @@ LAB_00061d34:
                  ((int)((int)_col_angle +
                         (uint)*(ushort *)(&DAT_00086a18 + DAT_0023b4a0 * 2)) >> 0xb)) + 0x20;
       bVar13 = (&DAT_00086cc0)[((_dm % 0x20) + 0x20) % 0x20];
-      if (g_opts.debug_critter)
-        fprintf(stderr, "[critter] dirtable: id=0x%03x own_heading_bits=%d col_angle=%d quad_term=%d sum=%d shifted=%d _dm=%d bVar13=%d\n",
-                uVar27 & 0x1ff, (int)(tile[1] >> 5 & 0x1c),
-                (int)_col_angle, (int)_quad_term, (int)_col_angle + (int)(unsigned short)_quad_term,
-                (int)((int)((int)_col_angle + (uint)(unsigned short)_quad_term) >> 0xb), _dm, (int)bVar13);
     }
     if ((ushort)uVar29 < 0x20) {
       /* REVERTED (checked against a fresh disassembly of this exact block, real addresses
@@ -2622,31 +2557,6 @@ LAB_00061d34:
     }
     else {
       uVar29 = (uint)bVar13 + (uVar29 - 0x1c) * 8;
-    }
-    if (g_opts.debug_critter)
-      fprintf(stderr, "[critter] emit_tile_objects: id=0x%03x type_idx=%d raw_slot=%d own_heading_bits=%d cam_yaw=%d quadrant=%d dir(uVar29)=%d\n",
-              uVar27 & 0x1ff, uVar27 & 0x3f, *(byte *)((char *)tile + 0x15) & 0x3f,
-              (int)(tile[1] >> 5 & 0x1c), (int)DAT_000db44c, (int)DAT_0023b4a0, (int)uVar29);
-    if (g_opts.debug_critter_z)
-      fprintf(stderr, "[critter-z] id=0x%03x world_x(b904)=%d world_z(b920)=%d HEIGHT(b91c)=%d raw_b9=%d raw_b13=%d\n",
-              uVar27 & 0x1ff, (int)(short)DAT_0023b904, (int)(short)DAT_0023b920, (int)(short)DAT_0023b91c,
-              (int)*(byte *)((char *)tile + 9), (int)*(byte *)((char *)tile + 0x13));
-    if (g_opts.debug_critter_name) {
-      static int _named = 0;
-      if (!_named) {
-        _named = 1;
-        int _id = uVar27 & 0x1ff;
-        int _iv = _id * 0xd;
-        int _grp = g_object_type_props[_iv / 0xd].quality_type;
-        int _qual = (byte)tile[2] & 0x3f;
-        int _off = 0;
-        if (_qual != 0) {
-          _off = ((g_object_type_props[_iv / 0xd].quality_flags & 0xc) == 0xc) ? 5 : (((byte)tile[2] >> 4 & 3) + 1);
-        }
-        char *_nm = (char *)get_message_string(_grp * 6 + _off | 0xa00);
-        fprintf(stderr, "[critter-name] id=0x%03x namegrp=%d name='%s'\n",
-                _id, _grp, _nm ? _nm : "(null)");
-      }
     }
     {
       short _frame_arg = (byte)tile[6] >> 4;
@@ -2800,10 +2710,6 @@ LAB_00061d34:
       /* Doors. emit_anim_object_frames is the real handler for this branch: it draws through
          emit_catalog_object, whose own tick_anim_record helper resolves a "catalog" id to the same
          29 real .E model buffers loaded at startup... */
-      if (g_opts.debug_door_pos)
-        fprintf(stderr, "[doorpos] anchor=(%d,%d,%d) tile_word0=0x%04x\n",
-                (int)(short)DAT_0023b904, (int)(short)DAT_0023b91c, (int)(short)DAT_0023b920,
-                (unsigned)*tile);
       emit_anim_object_frames(uVar27 & 7, tile);
       return;
     }
@@ -2822,11 +2728,6 @@ LAB_00061d34:
     /* frame_or_texid=-1, exactly as the real call site (FUN_00060aa0: `FUN_00061e60(uVar26 & 0xff,
        tile, -1, -1)`): emit_catalog_object's own catalog-2 branch resolves a_bridge's TMOBJ
        30/31 plank frame (or its flags>=2 floor texture) from the object's flags. */
-    if (g_opts.debug_door)
-      fprintf(stderr, "[sign] variant=%d table_val=%d heading=%d -> emit_catalog_object(catalog_idx=%d)\n",
-              iVar17, (short)*(ushort *)(&DAT_00086c80 + iVar17 * 2),
-              (int)((tile[1] >> 7 & 7) << 1),
-              (unsigned char)*(ushort *)(&DAT_00086c80 + iVar17 * 2));
     emit_catalog_object((uint)(unsigned char)*(ushort *)(&DAT_00086c80 + iVar17 * 2),
                         tile, (tile[1] >> 7 & 7) << 1, -1);
     return;

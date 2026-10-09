@@ -194,9 +194,6 @@ int uw_file_write(int handle, const void *buf, unsigned int size) {
     fseek(f, 0, SEEK_CUR);
     errno = 0;
     int n = (int)fwrite(buf, 1, size, f);
-    if (g_opts.debug_inputevent)
-        fprintf(stderr, "[fileio] write: handle %d requested=%u wrote=%d errno=%d(%s) ferror=%d feof=%d\n",
-                handle, size, n, errno, strerror(errno), ferror(f), feof(f));
     return n;
 }
 
