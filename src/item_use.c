@@ -246,14 +246,14 @@ int drop_held_object_near_player(void *held_object_ptr, int force)
       ((uw_object_hdr_t *)puVar5)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar5)->type_flags;
       ((uw_object_hdr_t *)puVar5)->type_flags_high =
           (bVar1 ^ ((uw_object_hdr_t *)puVar5)->type_flags_high) & 0x1e ^ ((uw_object_hdr_t *)puVar5)->type_flags_high;
-      *(byte *)(puVar5 + 4) = (byte)held_object[2] & 0x3f;
+      ((uw_projectile_object_t *)puVar5)->lifetime = ((uw_object_hdr_t *)held_object)->quality;
       ((uw_object_hdr_t *)puVar5)->link_word_low = ((byte)held_object[3] ^ (byte)((uw_object_hdr_t *)puVar5)->link_word) & 0x3f ^ (byte)((uw_object_hdr_t *)puVar5)->link_word;
       ((uw_object_hdr_t *)puVar5)->link_word_high = ((uw_object_hdr_t *)puVar5)->link_word_high;
       bVar1 = *(byte *)((char *)held_object + 1);
       ((uw_object_hdr_t *)puVar5)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar5)->type_flags;
       ((uw_object_hdr_t *)puVar5)->doordir = (bVar1 >> 5) & 0x1;
       if (((*held_object & 0x1c0) != 0x140) && ((g_object_type_props[(*held_object & 0x1ff)].class_flags & 3) != 2)) {
-        *(byte *)(puVar5 + 0xd) = (byte)(held_object[1] >> 7) & 7;
+        ((uw_projectile_object_t *)puVar5)->original_heading = ((uw_object_hdr_t *)held_object)->heading;
       }
       free_object_slot(held_object);
       held_object = (ushort *)0x0;

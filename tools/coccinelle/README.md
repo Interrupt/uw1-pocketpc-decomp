@@ -685,3 +685,25 @@ checks getters, sentinel and negative setters, floor fallback, quantity,
 quality, barter results and neighboring storage. The same tests also pass
 against the pre-conversion builtins. This batch removes 35 raw-access inventory
 entries; 138 remain, alongside packed operations requiring further review.
+
+### Projectile launch and settling fields
+
+`generate_projectile_lifecycle_rules.py` generates the function-scoped
+`projectile-lifecycle-fields.cocci` recipe for dropped items, ranged ammunition,
+mobile arena replacement and settling. Launch copies header `quality` into
+projectile `lifetime`, and saves header `heading` in `original_heading` at byte
+26. Settling restores the three-bit header heading from that byte. Existing
+item-class guards stay in place: byte 26 has other meanings in other record
+layouts. These conversions never interpret projectile coordinate words as NPC
+status or goal fields.
+
+The settling recipe retains the resulting packed word in `uVar11`, so a live
+consumer of that temporary remains valid. Its low-three-bit source mask also
+makes the saved byte's truncation explicit. No service call or pointer capture
+is moved. `test_projectile_lifecycle_fields.py` checks scope and idempotence,
+compares entire record buffers against independent byte expectations for all
+16,777,216 heading-byte/position-word combinations, and verifies the returned
+word temporary. It tests the converted access sequences; the game unit tests
+provide the surrounding function coverage. Optional `--asan` enables address
+sanitization, and `--reference-dir` checks exact conversion of saved pre-change
+source functions against their current bodies.

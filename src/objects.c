@@ -1875,7 +1875,7 @@ uw_object_hdr_t *reallocate_object_to_arena(ushort *object)
     compute_object_placement_fields(puVar2,(int)DAT_0010144c,(int)DAT_00101454);
     ((uw_mobile_object_t *)puVar2)->hit_points = ((uw_object_hdr_t *)object)->quality;
     if (((((uw_object_hdr_t *)object)->item_id & 0x1c0) != 0x140) && ((g_object_type_props[(((uw_object_hdr_t *)object)->item_id)].class_flags & 3) != 2)) {
-      *(byte *)(puVar2 + 0xd) = ((uw_object_hdr_t *)object)->heading;
+      ((uw_projectile_object_t *)puVar2)->original_heading = ((uw_object_hdr_t *)object)->heading;
     }
     if ((((uw_object_hdr_t *)puVar2)->item_id & 0x1c0) == 0x1c0) {
       scheduler_relink_entry(puVar2,object);

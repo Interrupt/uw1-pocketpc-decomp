@@ -808,7 +808,7 @@ void fire_ranged_weapon(short weapon_type)
       ((uw_object_hdr_t *)puVar6)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar6)->type_flags;
       ((uw_object_hdr_t *)puVar6)->type_flags_high =
           (bVar2 ^ ((uw_object_hdr_t *)puVar6)->type_flags_high) & 0x1e ^ ((uw_object_hdr_t *)puVar6)->type_flags_high;
-      *(byte *)(puVar6 + 4) = (byte)puVar7[2] & 0x3f;
+      ((uw_projectile_object_t *)puVar6)->lifetime = ((uw_object_hdr_t *)puVar7)->quality;
       ((uw_object_hdr_t *)puVar6)->link_word_low = ((byte)puVar7[3] ^ (byte)((uw_object_hdr_t *)puVar6)->link_word) & 0x3f ^ (byte)((uw_object_hdr_t *)puVar6)->link_word;
       ((uw_object_hdr_t *)puVar6)->link_word_high = ((uw_object_hdr_t *)puVar6)->link_word_high;
       bVar2 = *(byte *)((char *)puVar7 + 1);
@@ -816,7 +816,7 @@ void fire_ranged_weapon(short weapon_type)
       ((uw_object_hdr_t *)puVar6)->doordir = (bVar2 >> 5) & 0x1;
       if ((*puVar7 & 0x1c0) != 0x140) {
         if ((g_object_type_props[(*puVar7 & 0x1ff)].class_flags & 3) != 2) {
-          *(byte *)(puVar6 + 0xd) = (byte)(puVar7[1] >> 7) & 7;
+          ((uw_projectile_object_t *)puVar6)->original_heading = ((uw_object_hdr_t *)puVar7)->heading;
         }
       }
       /* Was a dropped argument -- free_object_slot(weapon_type) always takes the object pointer to free

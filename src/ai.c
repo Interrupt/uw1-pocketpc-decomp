@@ -1332,8 +1332,8 @@ ushort *settle_mobile_to_immobile(ushort *object)
     uVar11 = uVar12 & 0x1c0;
     if (((uVar11 != 0x140) && (uVar11 != 0x180)) &&
        ((g_object_type_props[(uVar12 & 0x1ff)].class_flags & 3) != 2)) {
-      uVar11 = ((uw_object_hdr_t *)puVar9)->position_word & 0xfc7f | ((byte)object[0xd] & 7) << 7;
-      ((uw_object_hdr_t *)puVar9)->position_word = (ushort)uVar11;
+      ((uw_object_hdr_t *)puVar9)->heading = ((uw_projectile_object_t *)object)->original_heading & 7;
+      uVar11 = ((uw_object_hdr_t *)puVar9)->position_word;
     }
   }
   else {

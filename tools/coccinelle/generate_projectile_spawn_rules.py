@@ -9,14 +9,14 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 
 
-def rule(key, before, after, meta=''):
+def rule(key, before, after, meta='', function='spawn_object_near_player'):
     forms = before if isinstance(before, list) else [before]
     # The audited formulas are emitted in source order. Expanding arithmetic
     # permutations of the nested height formula costs minutes and adds no
     # coverage for this scoped conversion.
     return f'''@projectile_spawn_{key} disable drop_cast, plus_comm, mult_comm, plus_assoc, minus_assoc, plus_minus_assoc1, plus_minus_assoc2, times_assoc, bitand_comm, bitor_comm@
 type R;
-identifier F =~ "^spawn_object_near_player$";
+identifier F =~ "^{function}$";
 typedef byte, ushort, uint, uw_object_hdr_t, uw_projectile_object_t;
 {meta}
 @@

@@ -1025,6 +1025,10 @@ if(UW_SPATCH_EXECUTABLE)
     COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_projectile_spawn_fields.py"
       "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME projectile_lifecycle_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_projectile_lifecycle_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
   add_test(NAME void_object_headers
     COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_void_object_headers.py"

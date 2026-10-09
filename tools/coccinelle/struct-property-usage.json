@@ -2,8 +2,8 @@
   "scope": "Named packed views and existing audited object-pointer roles in src/*.c; unrecorded aliases and other structures still require independent auditing.",
   "counts": {
     "byte_view": 372,
-    "packed_word": 398,
-    "raw_audited_object_access": 30,
+    "packed_word": 397,
+    "raw_audited_object_access": 24,
     "signed_word_view": 9
   },
   "records": [
@@ -406,29 +406,11 @@
     {
       "source": "src/ai.c",
       "function": "settle_mobile_to_immobile",
-      "line": 1335,
-      "category": "packed_word",
-      "member": "position_word",
-      "pointer": null,
-      "code": "uVar11 = ((uw_object_hdr_t *)puVar9)->position_word & 0xfc7f | ((byte)object[0xd] & 7) << 7;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "settle_mobile_to_immobile",
-      "line": 1335,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "object",
-      "code": "uVar11 = ((uw_object_hdr_t *)puVar9)->position_word & 0xfc7f | ((byte)object[0xd] & 7) << 7;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "settle_mobile_to_immobile",
       "line": 1336,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar9)->position_word = (ushort)uVar11;"
+      "code": "uVar11 = ((uw_object_hdr_t *)puVar9)->position_word;"
     },
     {
       "source": "src/ai.c",
@@ -3637,15 +3619,6 @@
     {
       "source": "src/item_use.c",
       "function": "drop_held_object_near_player",
-      "line": 249,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar5",
-      "code": "*(byte *)(puVar5 + 4) = (byte)held_object[2] & 0x3f;"
-    },
-    {
-      "source": "src/item_use.c",
-      "function": "drop_held_object_near_player",
       "line": 250,
       "category": "byte_view",
       "member": "link_word",
@@ -3705,15 +3678,6 @@
       "member": "type_flags",
       "pointer": null,
       "code": "((uw_object_hdr_t *)puVar5)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar5)->type_flags;"
-    },
-    {
-      "source": "src/item_use.c",
-      "function": "drop_held_object_near_player",
-      "line": 256,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar5",
-      "code": "*(byte *)(puVar5 + 0xd) = (byte)(held_object[1] >> 7) & 7;"
     },
     {
       "source": "src/item_use.c",
@@ -5271,15 +5235,6 @@
       "member": "link_word",
       "pointer": null,
       "code": "((uw_object_hdr_t *)puVar2)->link_word = ((uw_object_hdr_t *)object)->link_word;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "reallocate_object_to_arena",
-      "line": 1878,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar2",
-      "code": "*(byte *)(puVar2 + 0xd) = ((uw_object_hdr_t *)object)->heading;"
     },
     {
       "source": "src/player.c",
@@ -7210,15 +7165,6 @@
     {
       "source": "src/weapon_swing.c",
       "function": "fire_ranged_weapon",
-      "line": 811,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "*(byte *)(puVar6 + 4) = (byte)puVar7[2] & 0x3f;"
-    },
-    {
-      "source": "src/weapon_swing.c",
-      "function": "fire_ranged_weapon",
       "line": 812,
       "category": "byte_view",
       "member": "link_word",
@@ -7278,15 +7224,6 @@
       "member": "type_flags",
       "pointer": null,
       "code": "((uw_object_hdr_t *)puVar6)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar6)->type_flags;"
-    },
-    {
-      "source": "src/weapon_swing.c",
-      "function": "fire_ranged_weapon",
-      "line": 819,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "*(byte *)(puVar6 + 0xd) = (byte)(puVar7[1] >> 7) & 7;"
     }
   ]
 }
