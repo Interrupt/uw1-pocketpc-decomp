@@ -70,6 +70,24 @@ void platform_dosmidi_stop(void);
  * out. A no-op when the id has no record. */
 void platform_dosmidi_play_effect(int id);
 
+/* Stops any voice currently sounding effect `id`, releasing its channel.
+ *
+ * Needed because a few effects are long by design -- id 0, the movement
+ * sound, runs 25 seconds where every other effect is under 1.5 -- and the
+ * engine stops those explicitly rather than waiting them out
+ * (stop_movement_sound_handle, called from movement.c around the
+ * DAT_00086e84 handle). That stop is an empty function in the WinCE
+ * binary, which was harmless there only because the id whitelist meant
+ * id 0 never actually played. A no-op when the id is not sounding. */
+void platform_dosmidi_stop_effect(int id);
+
+/* Sets the music sequence's volume as a percentage, leaving sound effects
+ * alone -- they play on channels locked outside the sequence, so the
+ * sequence volume does not touch them. Called at init from
+ * UW_DOS_MUSIC_VOLUME (default below 100, because the OPL music sits
+ * louder than the effects at matched settings). */
+void platform_dosmidi_set_music_volume(int percent);
+
 /* Renders `frames` stereo frames of interleaved 16-bit audio, advancing the
  * driver's 120Hz timer and the chip as needed.
  *

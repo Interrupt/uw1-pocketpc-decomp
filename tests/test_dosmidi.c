@@ -135,6 +135,29 @@ static void test_render_produces_nothing_when_no_track_is_loaded(void)
     TEST_ASSERT_EQUAL_INT(0, platform_dosmidi_render(buf, 32));
 }
 
+/* BUG FIX regression (confirmed live: falling in water started a sound
+   that never stopped). Effect id 0, the movement sound, runs 25s where
+   every other effect is under 1.5, and movement.c stops it explicitly via
+   stop_movement_sound_handle. Both of these must be safe to call when DOS
+   mode is not live, since the default path reaches them too. */
+static void test_stop_effect_is_safe_when_dos_mode_is_off(void)
+{
+    platform_dosmidi_stop_effect(0);
+    platform_dosmidi_stop_effect(23);
+    platform_dosmidi_stop_effect(-1);
+    TEST_ASSERT_FALSE(platform_dos_audio_enabled());
+}
+
+/* The music volume is a percentage and must stay one whatever it is
+   handed -- it reaches the driver, which has no range check of its own. */
+static void test_music_volume_is_clamped_to_a_percentage(void)
+{
+    platform_dosmidi_set_music_volume(-20);
+    platform_dosmidi_set_music_volume(500);
+    platform_dosmidi_set_music_volume(80);
+    TEST_ASSERT_FALSE(platform_dos_audio_enabled());
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -149,5 +172,7 @@ int main(void)
     RUN_TEST(test_xmi_path_rejects_a_too_small_buffer);
     RUN_TEST(test_xmi_path_rejects_a_pathological_path);
     RUN_TEST(test_render_produces_nothing_when_no_track_is_loaded);
+    RUN_TEST(test_stop_effect_is_safe_when_dos_mode_is_off);
+    RUN_TEST(test_music_volume_is_clamped_to_a_percentage);
     return UNITY_END();
 }

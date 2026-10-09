@@ -836,6 +836,21 @@ int play_sound_effect_at_object(int sound_id, ushort *object, int volume_bias)
 void stop_movement_sound_handle()
 
 {
+  /* BUG FIX (DOS audio mode, confirmed live: falling in water started a
+   * sound that never stopped). The empty body above is what the WinCE
+   * binary really has, and it was harmless there for one reason only: the
+   * movement sound is id 0, which allocate_and_play_sound_channel's
+   * whitelist rejected, so there was never a voice for this to stop.
+   *
+   * DOS mode plays every id, and id 0 is 25 seconds long where every
+   * other effect is under 1.5 (SOUNDS.DAT's own durations), so without a
+   * real stop it reads as stuck. movement.c already does the right thing
+   * around DAT_00086e84 -- it calls this and clears the handle when the
+   * player leaves the water, and again on a timer -- so honouring that
+   * call is all this needs. The default path keeps the original no-op. */
+  if (platform_dos_audio_enabled()) {
+    platform_dosmidi_stop_effect(0);
+  }
   return;
 }
 

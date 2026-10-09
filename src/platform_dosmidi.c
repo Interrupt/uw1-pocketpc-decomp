@@ -38,6 +38,7 @@ static struct {
   uw_blob xmi;
 
   int seq;                  /* the registered sequence handle, -1 for none */
+  int music_volume;         /* percent, applied to the sequence only */
 
   /* One tick's worth of chip output, consumed by the resampler below. */
   short tick_buf[(int)(UW_OPL_RATE / UW_AIL_TICK_HZ) + 2];
@@ -56,7 +57,7 @@ static struct {
   /* Sound effects: a locked channel per voice, released when its note's
    * duration runs out. Durations are in SOUNDS.DAT's 1/256s units; count
    * them down in driver ticks. */
-  struct { int channel, note, ticks_left; } sfx[4];
+  struct { int channel, note, ticks_left, id; } sfx[4];
 } g;
 
 static int dos_mode_requested(void)
@@ -147,6 +148,21 @@ int platform_dosmidi_init(int out_rate)
 
   g.out_rate = out_rate > 0 ? out_rate : UW_OPL_RATE;
   g.seq = -1;
+  /* BUG FIX (confirmed live: the music drowned the effects). At their own
+   * settings the OPL music peaks about 7x an effect, so the default trims
+   * the music -- never the effects, which stay at the velocities
+   * SOUNDS.DAT gives them.
+   *
+   * The scale is an OPL attenuation curve, so it is steeply non-linear and
+   * "50%" is nowhere near half: measured against a 1143 effect peak,
+   * 100% gives 8368, 90% 4368, 85% 3374, 80% 2595, 75% 2029, 70% 1490,
+   * 50% just 577. 80 leaves the music about twice an effect, which is
+   * roughly where continuous music against transient effects wants to be.
+   * UW_DOS_MUSIC_VOLUME overrides it without a rebuild. */
+  const char *vol = getenv("UW_DOS_MUSIC_VOLUME");
+  g.music_volume = vol ? atoi(vol) : 80;
+  if (g.music_volume < 0) g.music_volume = 0;
+  if (g.music_volume > 100) g.music_volume = 100;
   for (int i = 0; i < (int)(sizeof(g.sfx) / sizeof(g.sfx[0])); i++) {
     g.sfx[i].channel = 0;
   }
@@ -254,7 +270,8 @@ int platform_dosmidi_load_file(const char *real_path)
     }
   }
 
-  DEBUG(INFO, "[audio] loaded DOS XMI track %s\n", real_path);
+  DEBUG(INFO, "[audio] loaded DOS XMI track %s (music volume %d%%)\n",
+        real_path, g.music_volume);
   return 1;
 }
 
@@ -262,6 +279,11 @@ void platform_dosmidi_start(void)
 {
   if (g.live && g.seq >= 0) {
     uw_ail_start_sequence(&g.ail, g.seq);
+    /* After the start, not before: uw_ail_start_sequence resets the
+     * sequence (seq_reset), which puts its volume back to full. */
+    if (g.music_volume != 100) {
+      uw_ail_set_sequence_volume(&g.ail, g.seq, g.music_volume, 0);
+    }
   }
 }
 
@@ -289,6 +311,12 @@ void platform_dosmidi_play_effect(int id)
     return;
   }
 
+  /* Retriggering an id that is still sounding replaces it rather than
+   * stacking a second voice on it. The engine retriggers the long movement
+   * sound on a timer (movement.c around DAT_00086e84), so stacking would
+   * pile up voices that each outlive the next retrigger. */
+  platform_dosmidi_stop_effect(id);
+
   int slot = -1;
   for (int i = 0; i < (int)(sizeof(g.sfx) / sizeof(g.sfx[0])); i++) {
     if (!g.sfx[i].channel) { slot = i; break; }
@@ -315,8 +343,48 @@ void platform_dosmidi_play_effect(int id)
   /* duration is in 1/256s; the timer runs at UW_AIL_TICK_HZ. */
   int ticks = (int)(((long)e.duration * UW_AIL_TICK_HZ) / 256);
   g.sfx[slot].channel = ch;
+  g.sfx[slot].id = id;
   g.sfx[slot].note = e.note;
   g.sfx[slot].ticks_left = ticks > 0 ? ticks : 1;
+}
+
+/* Silences one effect slot and gives its channel back. CC 123 (all notes
+ * off) as well as the note-off because the note-off alone can leave a
+ * bank-1 effect's own release stream still running -- these timbres are
+ * command streams, not plain notes, so they do not necessarily stop just
+ * because the key went up. */
+static void release_sfx_slot(int i)
+{
+  int ch = g.sfx[i].channel;
+  if (!ch) {
+    return;
+  }
+  uw_ail_send_voice(&g.ail, (uint8_t)(0x7f + ch), (uint8_t)g.sfx[i].note, 0);
+  uw_ail_send_voice(&g.ail, (uint8_t)(0xaf + ch), 0x7b, 0);
+  uw_ail_release_channel(&g.ail, ch);
+  g.sfx[i].channel = 0;
+}
+
+void platform_dosmidi_stop_effect(int id)
+{
+  if (!g.live) {
+    return;
+  }
+  for (int i = 0; i < (int)(sizeof(g.sfx) / sizeof(g.sfx[0])); i++) {
+    if (g.sfx[i].channel && g.sfx[i].id == id) {
+      release_sfx_slot(i);
+    }
+  }
+}
+
+void platform_dosmidi_set_music_volume(int percent)
+{
+  if (percent < 0) percent = 0;
+  if (percent > 100) percent = 100;
+  g.music_volume = percent;
+  if (g.live && g.seq >= 0) {
+    uw_ail_set_sequence_volume(&g.ail, g.seq, percent, 0);
+  }
 }
 
 /* One driver timer call: the effect voices' durations, then the sequencer
@@ -328,10 +396,7 @@ static void driver_tick(void)
       continue;
     }
     if (--g.sfx[i].ticks_left <= 0) {
-      int ch = g.sfx[i].channel;
-      uw_ail_send_voice(&g.ail, (uint8_t)(0x7f + ch), (uint8_t)g.sfx[i].note, 0);
-      uw_ail_release_channel(&g.ail, ch);
-      g.sfx[i].channel = 0;
+      release_sfx_slot(i);
     }
   }
   uw_ail_tick(&g.ail);
