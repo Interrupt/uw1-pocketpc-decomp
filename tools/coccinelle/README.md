@@ -1038,3 +1038,30 @@ does not establish a new layout for the real container-state allocation.
 Use `--reference PATH` with the original `item_use.c` and `--asan` for the
 same oracle under AddressSanitizer. The worklist now contains 190 byte views
 (14 fewer); named full-word copies and retained captures remain intentional.
+
+`generate_held_drop_rules.py`, `held-drop-fields.json` and
+`apply_held_drop_rules.py` convert the common-header accesses in
+`drop_held_object_near_player`. The held record uses a header pointer and the
+spawned record uses the projectile layout already established by the spawn
+path. Named quantity, link, owner, flag, position and object-ID writes replace
+byte reconstruction and self-stores. Full scalar captures, callback order,
+clearance retries and the existing placement behavior remain intact. The
+diagnostic read at offset 0xe remains raw because arbitrary held records do
+not establish a particular extension layout.
+
+This batch uses an exact-source Python rule because the full-body Coccinelle
+match did not convert this function. The applier masks comments and literals
+when locating the definition, then requires the entire original function to
+match byte for byte. Changed callbacks, captures, constants or function scope
+reject conversion. The test requires an actual change and the exact expected
+result, checks generation and idempotence, and verifies rejection guards,
+including an original body embedded in a comment.
+
+`test_held_drop_fields.py` compares 1,310,720 real before/after executions across
+all source type words, projectile creation failures, callback-mutated records,
+clearance retries, fallback exits and light-ID changes. Record and guard bytes,
+player/tile state, return values and callback arguments/events/counts are
+compared. Use `--reference PATH` with the original `item_use.c` and `--asan`
+for the same oracle under AddressSanitizer. The refreshed worklist contains
+180 byte views (10 fewer), 462 packed-word uses, seven raw audited accesses
+and nine signed-word views; retained snapshots remain intentional.

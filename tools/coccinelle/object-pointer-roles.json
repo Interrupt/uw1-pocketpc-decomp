@@ -2521,9 +2521,9 @@
           "roles": [
             {
               "name": "puVar5",
-              "type": "ushort *",
+              "type": "uw_projectile_object_t *",
               "parameter": false,
-              "evidence": "UW1 object struct member access",
+              "evidence": "typed UW1 object pointer declaration",
               "current_mobile_alias": false
             }
           ],

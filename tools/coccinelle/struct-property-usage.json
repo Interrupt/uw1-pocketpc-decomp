@@ -1,7 +1,7 @@
 {
   "scope": "Named packed views and existing audited object-pointer roles in src/*.c; unrecorded aliases and other structures still require independent auditing.",
   "counts": {
-    "byte_view": 190,
+    "byte_view": 180,
     "packed_word": 462,
     "raw_audited_object_access": 7,
     "signed_word_view": 9
@@ -2813,165 +2813,75 @@
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
-      "code": "uVar6 = (((uw_object_hdr_t *)puVar5)->type_flags ^ *held_object) & 0x7fff ^ (uint)*held_object;"
+      "code": "uVar6 = (puVar5->hdr.type_flags ^ held_object->type_flags) & 0x7fff ^ (uint)held_object->type_flags;"
     },
     {
       "source": "src/item_use.c",
       "function": "drop_held_object_near_player",
-      "line": 240,
+      "line": 239,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar5)->type_flags = (ushort)uVar6;"
+      "code": "uVar6 = (puVar5->hdr.type_flags ^ held_object->type_flags) & 0x7fff ^ (uint)held_object->type_flags;"
     },
     {
       "source": "src/item_use.c",
       "function": "drop_held_object_near_player",
-      "line": 243,
-      "category": "byte_view",
-      "member": "link_word",
+      "line": 239,
+      "category": "packed_word",
+      "member": "type_flags",
       "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar5)->link_word_low = ((byte)((uw_object_hdr_t *)puVar5)->link_word ^ bVar1) & 0x3f ^ bVar1;"
+      "code": "uVar6 = (puVar5->hdr.type_flags ^ held_object->type_flags) & 0x7fff ^ (uint)held_object->type_flags;"
     },
     {
       "source": "src/item_use.c",
       "function": "drop_held_object_near_player",
-      "line": 243,
+      "line": 241,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar5)->link_word_low = ((byte)((uw_object_hdr_t *)puVar5)->link_word ^ bVar1) & 0x3f ^ bVar1;"
+      "code": "uVar2 = held_object->link_word;"
     },
     {
       "source": "src/item_use.c",
       "function": "drop_held_object_near_player",
       "line": 244,
-      "category": "byte_view",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar5)->link_word_high = (byte)(char)(uVar2 >> 8);"
-    },
-    {
-      "source": "src/item_use.c",
-      "function": "drop_held_object_near_player",
-      "line": 246,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar5)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar5)->type_flags;"
-    },
-    {
-      "source": "src/item_use.c",
-      "function": "drop_held_object_near_player",
-      "line": 246,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar5)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar5)->type_flags;"
+      "code": "bVar1 = (byte)(held_object->type_flags >> 8);"
     },
     {
       "source": "src/item_use.c",
       "function": "drop_held_object_near_player",
-      "line": 247,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar5)->type_flags_high ="
-    },
-    {
-      "source": "src/item_use.c",
-      "function": "drop_held_object_near_player",
-      "line": 248,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "(bVar1 ^ ((uw_object_hdr_t *)puVar5)->type_flags_high) & 0x1e ^ ((uw_object_hdr_t *)puVar5)->type_flags_high;"
-    },
-    {
-      "source": "src/item_use.c",
-      "function": "drop_held_object_near_player",
-      "line": 248,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "(bVar1 ^ ((uw_object_hdr_t *)puVar5)->type_flags_high) & 0x1e ^ ((uw_object_hdr_t *)puVar5)->type_flags_high;"
-    },
-    {
-      "source": "src/item_use.c",
-      "function": "drop_held_object_near_player",
-      "line": 250,
-      "category": "byte_view",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar5)->link_word_low = ((byte)held_object[3] ^ (byte)((uw_object_hdr_t *)puVar5)->link_word) & 0x3f ^ (byte)((uw_object_hdr_t *)puVar5)->link_word;"
-    },
-    {
-      "source": "src/item_use.c",
-      "function": "drop_held_object_near_player",
-      "line": 250,
-      "category": "packed_word",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar5)->link_word_low = ((byte)held_object[3] ^ (byte)((uw_object_hdr_t *)puVar5)->link_word) & 0x3f ^ (byte)((uw_object_hdr_t *)puVar5)->link_word;"
-    },
-    {
-      "source": "src/item_use.c",
-      "function": "drop_held_object_near_player",
-      "line": 250,
-      "category": "packed_word",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar5)->link_word_low = ((byte)held_object[3] ^ (byte)((uw_object_hdr_t *)puVar5)->link_word) & 0x3f ^ (byte)((uw_object_hdr_t *)puVar5)->link_word;"
-    },
-    {
-      "source": "src/item_use.c",
-      "function": "drop_held_object_near_player",
-      "line": 251,
-      "category": "byte_view",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar5)->link_word_high = ((uw_object_hdr_t *)puVar5)->link_word_high;"
-    },
-    {
-      "source": "src/item_use.c",
-      "function": "drop_held_object_near_player",
-      "line": 251,
-      "category": "byte_view",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar5)->link_word_high = ((uw_object_hdr_t *)puVar5)->link_word_high;"
-    },
-    {
-      "source": "src/item_use.c",
-      "function": "drop_held_object_near_player",
-      "line": 253,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar5)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar5)->type_flags;"
-    },
-    {
-      "source": "src/item_use.c",
-      "function": "drop_held_object_near_player",
-      "line": 253,
+      "line": 249,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar5)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar5)->type_flags;"
+      "code": "bVar1 = (byte)(held_object->type_flags >> 8);"
     },
     {
       "source": "src/item_use.c",
       "function": "drop_held_object_near_player",
-      "line": 265,
+      "line": 318,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
-      "code": "*(byte *)(held_object + 1) = ((byte) g_player_object->hdr.position_word ^ (byte)held_object[1]) & 0x7f ^ (byte)held_object[1];"
+      "code": "uVar2 = held_object->position_word;"
+    },
+    {
+      "source": "src/item_use.c",
+      "function": "drop_held_object_near_player",
+      "line": 328,
+      "category": "packed_word",
+      "member": "type_flags",
+      "pointer": null,
+      "code": "uVar2 = held_object->type_flags;"
     },
     {
       "source": "src/item_use.c",
       "function": "begin_holding_object_on_cursor",
-      "line": 917,
+      "line": 909,
       "category": "signed_word_view",
       "member": "type_flags",
       "pointer": null,
@@ -2980,7 +2890,7 @@
     {
       "source": "src/item_use.c",
       "function": "complete_use_item_scatter_spawn",
-      "line": 1421,
+      "line": 1413,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -2989,7 +2899,7 @@
     {
       "source": "src/item_use.c",
       "function": "complete_use_item_scatter_spawn",
-      "line": 1421,
+      "line": 1413,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -2998,7 +2908,7 @@
     {
       "source": "src/item_use.c",
       "function": "complete_use_item_scatter_spawn",
-      "line": 1422,
+      "line": 1414,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -3007,7 +2917,7 @@
     {
       "source": "src/item_use.c",
       "function": "complete_use_item_scatter_spawn",
-      "line": 1422,
+      "line": 1414,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -3016,7 +2926,7 @@
     {
       "source": "src/item_use.c",
       "function": "complete_use_item_scatter_spawn",
-      "line": 1423,
+      "line": 1415,
       "category": "packed_word",
       "member": "chain_word",
       "pointer": null,
@@ -3025,7 +2935,7 @@
     {
       "source": "src/item_use.c",
       "function": "complete_use_item_scatter_spawn",
-      "line": 1423,
+      "line": 1415,
       "category": "packed_word",
       "member": "chain_word",
       "pointer": null,
@@ -3034,7 +2944,7 @@
     {
       "source": "src/item_use.c",
       "function": "complete_use_item_scatter_spawn",
-      "line": 1424,
+      "line": 1416,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -3043,7 +2953,7 @@
     {
       "source": "src/item_use.c",
       "function": "complete_use_item_scatter_spawn",
-      "line": 1424,
+      "line": 1416,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -3052,7 +2962,7 @@
     {
       "source": "src/item_use.c",
       "function": "complete_use_item_scatter_spawn",
-      "line": 1430,
+      "line": 1422,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -3061,7 +2971,7 @@
     {
       "source": "src/item_use.c",
       "function": "complete_use_item_scatter_spawn",
-      "line": 1430,
+      "line": 1422,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -3070,7 +2980,7 @@
     {
       "source": "src/item_use.c",
       "function": "complete_use_item_scatter_spawn",
-      "line": 1441,
+      "line": 1433,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -3079,7 +2989,7 @@
     {
       "source": "src/item_use.c",
       "function": "trigger_object_trap_or_use_action",
-      "line": 1861,
+      "line": 1853,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -3088,7 +2998,7 @@
     {
       "source": "src/item_use.c",
       "function": "check_offering_container_puzzle",
-      "line": 2011,
+      "line": 2003,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -3097,7 +3007,7 @@
     {
       "source": "src/item_use.c",
       "function": "check_offering_container_puzzle",
-      "line": 2012,
+      "line": 2004,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -3106,7 +3016,7 @@
     {
       "source": "src/item_use.c",
       "function": "objects_can_stack",
-      "line": 2244,
+      "line": 2236,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -3115,7 +3025,7 @@
     {
       "source": "src/item_use.c",
       "function": "objects_can_stack",
-      "line": 2245,
+      "line": 2237,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -3124,7 +3034,7 @@
     {
       "source": "src/item_use.c",
       "function": "objects_can_stack",
-      "line": 2248,
+      "line": 2240,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -3133,7 +3043,7 @@
     {
       "source": "src/item_use.c",
       "function": "objects_can_stack",
-      "line": 2248,
+      "line": 2240,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -3142,7 +3052,7 @@
     {
       "source": "src/item_use.c",
       "function": "reduce_object_count",
-      "line": 2503,
+      "line": 2495,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -3151,7 +3061,7 @@
     {
       "source": "src/item_use.c",
       "function": "reduce_object_count",
-      "line": 2512,
+      "line": 2504,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -3160,7 +3070,7 @@
     {
       "source": "src/item_use.c",
       "function": "reduce_object_count",
-      "line": 2512,
+      "line": 2504,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -3169,7 +3079,7 @@
     {
       "source": "src/item_use.c",
       "function": "reduce_object_count",
-      "line": 2513,
+      "line": 2505,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -3178,7 +3088,7 @@
     {
       "source": "src/item_use.c",
       "function": "reduce_object_count",
-      "line": 2513,
+      "line": 2505,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -3187,7 +3097,7 @@
     {
       "source": "src/item_use.c",
       "function": "reduce_object_count",
-      "line": 2514,
+      "line": 2506,
       "category": "packed_word",
       "member": "chain_word",
       "pointer": null,
@@ -3196,7 +3106,7 @@
     {
       "source": "src/item_use.c",
       "function": "reduce_object_count",
-      "line": 2514,
+      "line": 2506,
       "category": "packed_word",
       "member": "chain_word",
       "pointer": null,
@@ -3205,7 +3115,7 @@
     {
       "source": "src/item_use.c",
       "function": "reduce_object_count",
-      "line": 2515,
+      "line": 2507,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -3214,7 +3124,7 @@
     {
       "source": "src/item_use.c",
       "function": "reduce_object_count",
-      "line": 2515,
+      "line": 2507,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -3223,7 +3133,7 @@
     {
       "source": "src/item_use.c",
       "function": "reduce_object_count",
-      "line": 2519,
+      "line": 2511,
       "category": "packed_word",
       "member": "chain_word",
       "pointer": null,
@@ -3232,7 +3142,7 @@
     {
       "source": "src/item_use.c",
       "function": "extract_matching_object_from_slot",
-      "line": 2627,
+      "line": 2619,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -3241,7 +3151,7 @@
     {
       "source": "src/item_use.c",
       "function": "extract_matching_object_from_slot",
-      "line": 2627,
+      "line": 2619,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -3250,7 +3160,7 @@
     {
       "source": "src/item_use.c",
       "function": "extract_matching_object_from_slot",
-      "line": 2628,
+      "line": 2620,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -3259,7 +3169,7 @@
     {
       "source": "src/item_use.c",
       "function": "extract_matching_object_from_slot",
-      "line": 2628,
+      "line": 2620,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -3268,7 +3178,7 @@
     {
       "source": "src/item_use.c",
       "function": "extract_matching_object_from_slot",
-      "line": 2629,
+      "line": 2621,
       "category": "packed_word",
       "member": "chain_word",
       "pointer": null,
@@ -3277,7 +3187,7 @@
     {
       "source": "src/item_use.c",
       "function": "extract_matching_object_from_slot",
-      "line": 2629,
+      "line": 2621,
       "category": "packed_word",
       "member": "chain_word",
       "pointer": null,
@@ -3286,7 +3196,7 @@
     {
       "source": "src/item_use.c",
       "function": "extract_matching_object_from_slot",
-      "line": 2630,
+      "line": 2622,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -3295,7 +3205,7 @@
     {
       "source": "src/item_use.c",
       "function": "extract_matching_object_from_slot",
-      "line": 2630,
+      "line": 2622,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -3304,7 +3214,7 @@
     {
       "source": "src/item_use.c",
       "function": "extract_matching_object_from_slot",
-      "line": 2635,
+      "line": 2627,
       "category": "packed_word",
       "member": "chain_word",
       "pointer": null,
@@ -3313,7 +3223,7 @@
     {
       "source": "src/item_use.c",
       "function": "extract_matching_object_from_slot",
-      "line": 2649,
+      "line": 2641,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
