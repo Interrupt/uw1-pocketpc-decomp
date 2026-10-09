@@ -770,6 +770,29 @@ set_source_files_properties("${CMAKE_CURRENT_BINARY_DIR}/uw_test_look_pacing_fun
   PROPERTIES HEADER_FILE_ONLY TRUE)
 target_include_directories(uw_test_look_pacing PUBLIC ${SDL2_INCLUDE_DIRS} "${CMAKE_CURRENT_BINARY_DIR}")
 
+# platform_voice.c's voice_source_load picks between the Pocket PC asset
+# set's RIFF \SOUND\VOCnn.WAV and the DOS set's Creative \SOUND\nn.VOC for
+# the same sample id. It is static and stays that way -- its real body is
+# compiled into the fixture, the arrangement uw_test_look_pacing uses for
+# its own static poller -- so this needs the real SDL, file_io.c and the
+# vendored OpenAbyss VOC reader rather than stubs for any of them.
+add_game_test_library(uw_test_voice
+  src/platform_voice.c:@voice_source
+  src/platform_voice.c:voice_source_load)
+set_source_files_properties("${CMAKE_CURRENT_BINARY_DIR}/uw_test_voice_functions.c"
+  PROPERTIES HEADER_FILE_ONLY TRUE)
+target_sources(uw_test_voice PRIVATE support/voice_fixture.c
+  "${PROJECT_SOURCE_DIR}/src/file_io.c" "${PROJECT_SOURCE_DIR}/src/debug.c"
+  "${PROJECT_SOURCE_DIR}/third_party/openabyss/uw_sound.c"
+  "${PROJECT_SOURCE_DIR}/third_party/openabyss/uw_blob.c")
+target_include_directories(uw_test_voice PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/support" "${CMAKE_CURRENT_BINARY_DIR}"
+  ${SDL2_INCLUDE_DIRS} "${PROJECT_SOURCE_DIR}/third_party/openabyss")
+target_link_directories(uw_test_voice PUBLIC ${SDL2_LIBRARY_DIRS})
+target_link_libraries(uw_test_voice PUBLIC ${SDL2_LIBRARIES})
+target_compile_definitions(uw_test_voice PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+add_supported_game_unit_test(voice uw_test_voice)
+
 add_library(uw_test_division STATIC support/division.c)
 uw_configure_test_target(uw_test_division)
 foreach(suite npc_ai throw throw_cursor lighting creatures stair_transition inventory_drag)
