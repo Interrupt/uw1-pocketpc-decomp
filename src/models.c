@@ -74,14 +74,45 @@ static int DAT_000db470;
 static int DAT_000db4d4;
 static int DAT_000db4d8;
 static int DAT_000db4d0;
-// DAT_000db494: gates whether parse_e_model_file resolves each PARTS entry's EXTENDED_COLORS index
-// against g_model_known_ext_colors (and the function's own final scratch-to-scratch
-// color-inheritance pass).
+/* DAT_000db494: gates whether parse_e_model_file resolves each PARTS entry's EXTENDED_COLORS index
+   against g_model_known_ext_colors (and the function's own final scratch-to-scratch
+   color-inheritance pass).
+
+   NOT a dropped initialisation -- it reads 0 in the real UU.exe too, so the shipped game never
+   resolved extended colours either and this decompile is faithful in leaving it zero. Checked by
+   reading the original's own gate: parse_e_model_file is FUN_00020a74 there, its test is
+   `*DAT_00022348`, and that literal-pool entry holds 0x000db494, whose contents are 0x00000000.
+
+   So a .E file's per-face colour is dead in both this port and the original. It is worth knowing
+   WHY before anyone tries to revive it, since "use the per-face colours the .E files already
+   carry" sounds like an easy win: the PARTS colour field's low byte indexes the 32-entry RGB table
+   below, which parse_e_model_file's own error message calls the "Mac color table", and the entries
+   the shipped art actually names are authoring placeholders rather than final colours --
+
+       entry  4  rgb(178,0,0)   bright red  <- DFRAME, DOOR, BEAM, FBRIDGE, GRAVE, GATE, ARROW
+       entry  5  rgb(153,0,102) magenta     <- DFRAME, ARROW
+       entry  6  rgb(153,46,1)  brown       <- BENCH, TABLF3, CHEST, BARRCLOS, 40LOTUS, CHAIRSIM
+       entry  8  rgb(54,46,20)  dark brown  <- ROCKSMAL, CHAIRSIM
+       entry 12  rgb(255,0,0)   pure red    <- CHAIRSIM
+       entry 14  rgb(255,255,0) yellow      <- BARRCLOS
+       entry 15  rgb(255,255,255) white     <- SHRINE, BED2
+
+   -- i.e. honouring them would render door frames and doors bright red, the shrine white and
+   barrel faces yellow. The colours the game really uses are the per-model auxiliary palette in
+   DAT_00086c08_backing further down. (The DOS asset set is the opposite case and genuinely worth
+   decoding: its per-face colour operand indexes that same auxiliary palette, which is what
+   models_dos.c's uw_dos_model_face_colour supplies.) */
 static int DAT_000db494;
 static int DAT_000db4e0;
-// was DAT_00084678 -- a fixed table of up to 32 known 24-bit RGB values (0x00RRGGBB-shaped ints)
-// that parse_e_model_file's EXTENDED_COLORS handling linearly searches to turn each entry's literal
-// RGB (e.g. "545454" in ROCKSMAL.E) into a small index, stored per-part...
+/* was DAT_00084678 -- a fixed table of 32 known 24-bit RGB values (0x00RRGGBB-shaped ints) that
+   parse_e_model_file's EXTENDED_COLORS handling linearly searches to turn each entry's literal RGB
+   (e.g. "545454" in ROCKSMAL.E) into a small index, stored per-part.
+
+   Left as a single scalar on purpose: every path that reads it is behind DAT_000db494, which is
+   zero in the real UU.exe as well (see its comment above), so filling the table in would add
+   32 words of data that nothing can reach. Its real contents, read out of the original at
+   0x00084678 should they ever be needed, are the 16 saturated authoring colours listed in that
+   comment followed by a 16-step grey ramp from 0xffffff down to 0xa5a5a5. */
 static undefined4 g_model_known_ext_colors;
 static char s_unexpected_EOF___no_END_statemen_000846f8[] = "unexpected EOF - no END statement\n";
 static char s________c_0008471c[] = "%*[^}]%c";
