@@ -451,7 +451,7 @@ int spawn_scheduled_effect_object(ushort *source_object, int effect_group, int d
   byte bVar2;
   undefined2 uVar3;
   short sVar4;
-  char *iVar5;  /* was `int` -- truncated spawn_new_object's real pointer */
+  uw_object_hdr_t *iVar5;/* was `int` -- truncated spawn_new_object's real pointer */
   uint uVar6;
   undefined4 uVar7;
   char *iVar8;  /* was `int` -- truncated tilemap_lookup's real pointer, same
@@ -459,35 +459,32 @@ int spawn_scheduled_effect_object(ushort *source_object, int effect_group, int d
                    shape at FUN_0004ad10/settle_mobile_to_immobile (see their comments) */
   byte bVar9;
 
-  iVar5 = (char *)spawn_new_object(effect_group + 0x1c0,0);
-  if (iVar5 == (char *)0x0) {
+  iVar5 = spawn_new_object(effect_group + 0x1c0, 0);
+  if (iVar5 == (uw_object_hdr_t *)0x0) {
     return 0;
   }
   if (source_object != (ushort *)0x0) {
-    uVar6 = (((uw_object_hdr_t *)iVar5)->position_word ^ ((uw_object_hdr_t *)source_object)->position_word) & 0x1fff ^ (uint)((uw_object_hdr_t *)source_object)->position_word;
+    uVar6 = (iVar5->position_word ^ ((uw_object_hdr_t *)source_object)->position_word) & 0x1fff ^ (uint)((uw_object_hdr_t *)source_object)->position_word;
     uVar1 = (undefined1)uVar6;
-    ((uw_object_hdr_t *)iVar5)->position_word_low = uVar1;
     bVar2 = (byte)(uVar6 >> 8);
-    ((uw_object_hdr_t *)iVar5)->position_word_high = bVar2;
-    bVar9 = ((uw_object_hdr_t *)source_object)->position_word_high;
-    ((uw_object_hdr_t *)iVar5)->position_word_low = uVar1;
-    ((uw_object_hdr_t *)iVar5)->position_word_high = (bVar9 ^ bVar2) & 0x1c ^ bVar2;
+    iVar5->xpos = (uVar6 >> 13) & 7;
+    bVar9 = (byte)(((uw_object_hdr_t *)source_object)->position_word >> 8);
+    iVar5->ypos = (bVar9 >> 2) & 7;
   }
   if ((short)heading_adjust < 0) {
-    uVar3 = ((uw_object_hdr_t *)iVar5)->position_word;
+    uVar3 = iVar5->position_word;
     bVar9 = (byte)uVar3 ^ (byte)((uint)heading_adjust * -0x10000 >> 0x10);
   }
   else {
     if (source_object == (ushort *)0x0) goto LAB_00081980;
     bVar9 = (byte) g_object_type_props[(((uw_object_hdr_t *)source_object)->object_id)].height >> 3;
-    uVar3 = ((uw_object_hdr_t *)iVar5)->position_word;
+    uVar3 = iVar5->position_word;
     if (bVar9 == 0) {
       bVar9 = 1;
     }
     bVar9 = (char)heading_adjust * bVar9 + (char)((uw_object_hdr_t *)source_object)->position_word ^ (byte)uVar3;
   }
-  ((uw_object_hdr_t *)iVar5)->position_word_low = bVar9 & 0x7f ^ (byte)uVar3;
-  ((uw_object_hdr_t *)iVar5)->position_word_high = (byte)(char)((ushort)uVar3 >> 8);
+  iVar5->zpos = (bVar9 ^ (byte)uVar3) & 0x7f;
 LAB_00081980:
   uVar7 = encode_object_slot_index(iVar5);
   sVar4 = scheduler_add_entry(uVar7,delay,animation_offset,(int)tile_x & 0xff,(char)tile_y);

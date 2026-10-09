@@ -135,7 +135,7 @@ int spawn_scheduled_door_texture_object()
   undefined4 slot_index;
   ushort *tile;
   int clearance;
-  undefined1 *door_texture;
+  uw_object_hdr_t *door_texture;
   uint object_word;
   undefined2 object_word_low16;
   undefined1 object_word_high_byte;
@@ -160,18 +160,14 @@ int spawn_scheduled_door_texture_object()
                                                  object_word_low16, 0, 0);
     object_word_high_byte = (undefined1)((ushort)object_word_low16 >> 8);
     if (clearance != 0) {
-      door_texture = (undefined1 *)spawn_new_object(0x1ca, 0);
-      tile_word = ((uw_object_hdr_t *)door_texture)->position_word;
+      door_texture = spawn_new_object(0x1ca, 0);
+      tile_word = door_texture->position_word;
       object_word = (tile_word ^ object_word) & 0x7f ^ (uint)tile_word;
-      ((uw_object_hdr_t *)door_texture)->position_word_low = (char)object_word;
-      ((uw_object_hdr_t *)door_texture)->position_word_high = (char)(tile_word >> 8);
+      door_texture->zpos = object_word & 0x7f;
       position_high_bits = (byte)(((target_x & 7) << 0xd) >> 8);
-      ((uw_object_hdr_t *)door_texture)->position_word_low = (char)(object_word & 0x1fff);
-      ((uw_object_hdr_t *)door_texture)->position_word_high = (byte)((object_word & 0x1fff) >> 8) | position_high_bits;
-      ((uw_object_hdr_t *)door_texture)->position_word_low = (char)(object_word & 0x3ff);
-      ((uw_object_hdr_t *)door_texture)->position_word_high = (byte)((object_word & 0x3ff) >> 8) | position_high_bits | (byte)(((target_y & 7) << 10) >> 8);
-      ((uw_object_hdr_t *)door_texture)->type_flags_low = ((uw_object_hdr_t *)door_texture)->type_flags_low;
-      ((uw_object_hdr_t *)door_texture)->doordir = 0x1;
+      door_texture->xpos = target_x & 7;
+      door_texture->ypos = target_y & 7;
+      door_texture->doordir = 0x1;
       slot_index = encode_object_slot_index(door_texture);
       tile_type = scheduler_add_entry(slot_index, 0xffffffff, 0, (short)target_x >> 3 & 0xff,
                                       CONCAT11(object_word_high_byte, (char)((short)target_y >> 3)));

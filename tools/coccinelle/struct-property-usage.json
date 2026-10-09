@@ -1,8 +1,8 @@
 {
   "scope": "Named packed views and existing audited object-pointer roles in src/*.c; unrecorded aliases and other structures still require independent auditing.",
   "counts": {
-    "byte_view": 233,
-    "packed_word": 440,
+    "byte_view": 218,
+    "packed_word": 441,
     "raw_audited_object_access": 7,
     "signed_word_view": 9
   },
@@ -2543,79 +2543,7 @@
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
-      "code": "tile_word = ((uw_object_hdr_t *)door_texture)->position_word;"
-    },
-    {
-      "source": "src/doors.c",
-      "function": "spawn_scheduled_door_texture_object",
-      "line": 166,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)door_texture)->position_word_low = (char)object_word;"
-    },
-    {
-      "source": "src/doors.c",
-      "function": "spawn_scheduled_door_texture_object",
-      "line": 167,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)door_texture)->position_word_high = (char)(tile_word >> 8);"
-    },
-    {
-      "source": "src/doors.c",
-      "function": "spawn_scheduled_door_texture_object",
-      "line": 169,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)door_texture)->position_word_low = (char)(object_word & 0x1fff);"
-    },
-    {
-      "source": "src/doors.c",
-      "function": "spawn_scheduled_door_texture_object",
-      "line": 170,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)door_texture)->position_word_high = (byte)((object_word & 0x1fff) >> 8) | position_high_bits;"
-    },
-    {
-      "source": "src/doors.c",
-      "function": "spawn_scheduled_door_texture_object",
-      "line": 171,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)door_texture)->position_word_low = (char)(object_word & 0x3ff);"
-    },
-    {
-      "source": "src/doors.c",
-      "function": "spawn_scheduled_door_texture_object",
-      "line": 172,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)door_texture)->position_word_high = (byte)((object_word & 0x3ff) >> 8) | position_high_bits | (byte)(((target_y & 7) << 10) >> 8);"
-    },
-    {
-      "source": "src/doors.c",
-      "function": "spawn_scheduled_door_texture_object",
-      "line": 173,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)door_texture)->type_flags_low = ((uw_object_hdr_t *)door_texture)->type_flags_low;"
-    },
-    {
-      "source": "src/doors.c",
-      "function": "spawn_scheduled_door_texture_object",
-      "line": 173,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)door_texture)->type_flags_low = ((uw_object_hdr_t *)door_texture)->type_flags_low;"
+      "code": "tile_word = door_texture->position_word;"
     },
     {
       "source": "src/game.c",
@@ -5342,7 +5270,7 @@
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
-      "code": "uVar6 = (((uw_object_hdr_t *)iVar5)->position_word ^ ((uw_object_hdr_t *)source_object)->position_word) & 0x1fff ^ (uint)((uw_object_hdr_t *)source_object)->position_word;"
+      "code": "uVar6 = (iVar5->position_word ^ ((uw_object_hdr_t *)source_object)->position_word) & 0x1fff ^ (uint)((uw_object_hdr_t *)source_object)->position_word;"
     },
     {
       "source": "src/scheduler.c",
@@ -5351,7 +5279,7 @@
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
-      "code": "uVar6 = (((uw_object_hdr_t *)iVar5)->position_word ^ ((uw_object_hdr_t *)source_object)->position_word) & 0x1fff ^ (uint)((uw_object_hdr_t *)source_object)->position_word;"
+      "code": "uVar6 = (iVar5->position_word ^ ((uw_object_hdr_t *)source_object)->position_word) & 0x1fff ^ (uint)((uw_object_hdr_t *)source_object)->position_word;"
     },
     {
       "source": "src/scheduler.c",
@@ -5360,75 +5288,39 @@
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
-      "code": "uVar6 = (((uw_object_hdr_t *)iVar5)->position_word ^ ((uw_object_hdr_t *)source_object)->position_word) & 0x1fff ^ (uint)((uw_object_hdr_t *)source_object)->position_word;"
-    },
-    {
-      "source": "src/scheduler.c",
-      "function": "spawn_scheduled_effect_object",
-      "line": 469,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)iVar5)->position_word_low = uVar1;"
+      "code": "uVar6 = (iVar5->position_word ^ ((uw_object_hdr_t *)source_object)->position_word) & 0x1fff ^ (uint)((uw_object_hdr_t *)source_object)->position_word;"
     },
     {
       "source": "src/scheduler.c",
       "function": "spawn_scheduled_effect_object",
       "line": 471,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)iVar5)->position_word_high = bVar2;"
-    },
-    {
-      "source": "src/scheduler.c",
-      "function": "spawn_scheduled_effect_object",
-      "line": 472,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "bVar9 = ((uw_object_hdr_t *)source_object)->position_word_high;"
-    },
-    {
-      "source": "src/scheduler.c",
-      "function": "spawn_scheduled_effect_object",
-      "line": 473,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)iVar5)->position_word_low = uVar1;"
-    },
-    {
-      "source": "src/scheduler.c",
-      "function": "spawn_scheduled_effect_object",
-      "line": 474,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)iVar5)->position_word_high = (bVar9 ^ bVar2) & 0x1c ^ bVar2;"
-    },
-    {
-      "source": "src/scheduler.c",
-      "function": "spawn_scheduled_effect_object",
-      "line": 477,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
-      "code": "uVar3 = ((uw_object_hdr_t *)iVar5)->position_word;"
+      "code": "bVar9 = (byte)(((uw_object_hdr_t *)source_object)->position_word >> 8);"
     },
     {
       "source": "src/scheduler.c",
       "function": "spawn_scheduled_effect_object",
-      "line": 483,
+      "line": 475,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
-      "code": "uVar3 = ((uw_object_hdr_t *)iVar5)->position_word;"
+      "code": "uVar3 = iVar5->position_word;"
     },
     {
       "source": "src/scheduler.c",
       "function": "spawn_scheduled_effect_object",
-      "line": 487,
+      "line": 481,
+      "category": "packed_word",
+      "member": "position_word",
+      "pointer": null,
+      "code": "uVar3 = iVar5->position_word;"
+    },
+    {
+      "source": "src/scheduler.c",
+      "function": "spawn_scheduled_effect_object",
+      "line": 485,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -5436,26 +5328,8 @@
     },
     {
       "source": "src/scheduler.c",
-      "function": "spawn_scheduled_effect_object",
-      "line": 489,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)iVar5)->position_word_low = bVar9 & 0x7f ^ (byte)uVar3;"
-    },
-    {
-      "source": "src/scheduler.c",
-      "function": "spawn_scheduled_effect_object",
-      "line": 490,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)iVar5)->position_word_high = (byte)(char)((ushort)uVar3 >> 8);"
-    },
-    {
-      "source": "src/scheduler.c",
       "function": "scheduler_advance_effect",
-      "line": 595,
+      "line": 592,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -5464,7 +5338,7 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_advance_effect",
-      "line": 611,
+      "line": 608,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -5473,7 +5347,7 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_advance_effect",
-      "line": 614,
+      "line": 611,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -5482,7 +5356,7 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_advance_effect",
-      "line": 618,
+      "line": 615,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -5491,7 +5365,7 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_advance_effect",
-      "line": 624,
+      "line": 621,
       "category": "byte_view",
       "member": "type_flags",
       "pointer": null,
@@ -5500,7 +5374,7 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_advance_effect",
-      "line": 625,
+      "line": 622,
       "category": "byte_view",
       "member": "type_flags",
       "pointer": null,
@@ -5509,7 +5383,7 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_advance_effect",
-      "line": 630,
+      "line": 627,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,

@@ -14,9 +14,6 @@ R F(...) {
 |
 - *(ushort *)door_texture
 + ((uw_object_hdr_t *)door_texture)->type_flags
-|
-- *(ushort *)(door_texture + 0)
-+ ((uw_object_hdr_t *)door_texture)->type_flags
 )
 ...>
 }
@@ -33,9 +30,6 @@ R F(...) {
 + ((uw_object_hdr_t *)door_texture)->position_word
 |
 - ((ushort *)door_texture)[1]
-+ ((uw_object_hdr_t *)door_texture)->position_word
-|
-- *(ushort *)(door_texture + 2)
 + ((uw_object_hdr_t *)door_texture)->position_word
 )
 ...>
@@ -54,9 +48,6 @@ R F(...) {
 |
 - ((ushort *)door_texture)[2]
 + ((uw_object_hdr_t *)door_texture)->chain_word
-|
-- *(ushort *)(door_texture + 4)
-+ ((uw_object_hdr_t *)door_texture)->chain_word
 )
 ...>
 }
@@ -73,9 +64,6 @@ R F(...) {
 + ((uw_object_hdr_t *)door_texture)->link_word
 |
 - ((ushort *)door_texture)[3]
-+ ((uw_object_hdr_t *)door_texture)->link_word
-|
-- *(ushort *)(door_texture + 6)
 + ((uw_object_hdr_t *)door_texture)->link_word
 )
 ...>

@@ -939,3 +939,35 @@ arguments. Run with `--reference PATH` to verify against a saved original
 source, and `--asan` for the same oracle under AddressSanitizer.
 The worklist now has 233 byte views (14 fewer); four direct word copies and
 retained snapshots account for the increase in packed-word entries.
+
+`generate_scheduled_spawn_rules.py` / `scheduled-spawn-fields.cocci` name the
+confirmed coordinate writes in `spawn_scheduled_door_texture_object` and
+`spawn_scheduled_effect_object`, using typed destination headers. The door
+spawner sets z/x/y and retains its full captured position/type values and
+coordinate intermediates. Its plain, unobserved self-store is removed. The
+effect spawner copies source x/y while preserving the destination z/heading,
+then adjusts z; copying the entire position word would change that behavior.
+The source high-byte capture becomes a named position-word read with the
+same byte value. The order of the x write and subsequent source read remains
+important when source and destination alias.
+
+Complete original bodies guard these conversions. Added callbacks, volatile
+captures, changed arithmetic or escaping/observed locals reject the rule.
+The rules disable Coccinelle's `paren` isomorphism as well as qualifier/cast
+and arithmetic isomorphisms: expanding optional parentheses over the door's
+large condition caused excessive parsing work, while an exact-body recipe
+requires the existing expressions. Functions and comments remain in place;
+full-word captures and their packed calculations are intentional to preserve
+original scalar values, including intermediates no longer needed for stores.
+
+`test_scheduled_spawn_fields.py` checks the generated patch, exact conversion,
+idempotence and rejection guards, then compares 3,145,728 executions of the
+real original/current functions. Cases cover every 16-bit destination header
+pattern, distinct source coordinates, identical source/destination slots,
+null sources, signed height adjustments, callback mutations, level-9/tile/
+clearance early returns, allocation failures and each scheduler failure
+contract. All record/guard/tile/character bytes, returns, callback arguments
+and counts are compared. Use `--reference-dir DIR` with original `doors.c`
+and `scheduler.c`, and `--asan` to run the same oracle with AddressSanitizer.
+The refreshed worklist contains 218 byte views (15 fewer); remaining packed
+captures still require their own review.
