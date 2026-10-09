@@ -62,6 +62,9 @@ static SDL_AudioDeviceID g_uwmod_audiodev;
  * without ever mixing the two mid-session. Zero is the default and means
  * everything below behaves exactly as it always has. */
 static int g_dos_mode;
+/* basicmidi: the DOS backend plays the effects while hxcmod keeps the
+ * music, so the callback renders both and sums them. */
+static int g_dos_effects_only;
 
 /* SDL audio device fill callback -- runs on SDL's own audio thread, not
  * the game's main thread, so every access to the shared g_uwmod_* state
@@ -74,6 +77,7 @@ static void uwmod_audio_callback(void *userdata, Uint8 *stream, int len)
 {
   (void)userdata;
   memset(stream, 0, (size_t)len);
+  const int frames = len / 4;
   if (g_dos_mode) {
     /* The DOS driver model and its OPL2, resampled to this device's rate.
      *
@@ -84,12 +88,26 @@ static void uwmod_audio_callback(void *userdata, Uint8 *stream, int len)
      * at the sequencer (platform_dosmidi_stop), which leaves the driver
      * running for effects. Renders nothing when DOS mode has no track and
      * no effect sounding, so this costs nothing while idle. */
-    platform_dosmidi_render((short *)stream, len / 4);
+    platform_dosmidi_render((short *)stream, frames);
   } else {
-    if (!g_uwmod_playing || !g_uwmod_loaded) {
-      return;
+    if (g_uwmod_playing && g_uwmod_loaded) {
+      hxcmod_fillbuffer(&g_uwmod_ctx, (msample *)stream, (mssize)frames, NULL);
     }
-    hxcmod_fillbuffer(&g_uwmod_ctx, (msample *)stream, (mssize)(len / 4), NULL);
+    if (g_dos_effects_only) {
+      /* basicmidi: hxcmod has the music above, the OPL has the effects.
+       * Two sources, one device, so sum them with a clamp. Rendered into a
+       * scratch buffer rather than in place because the backend writes
+       * rather than accumulates. */
+      static short mix[4096 * 2];
+      int n = frames > 4096 ? 4096 : frames;
+      if (platform_dosmidi_render(mix, n) > 0) {
+        short *out = (short *)stream;
+        for (int i = 0; i < n * 2; i++) {
+          int v = out[i] + mix[i];
+          out[i] = (short)(v > 32767 ? 32767 : (v < -32768 ? -32768 : v));
+        }
+      }
+    }
   }
 
   /* UW_DEBUG_AUDIO: dump basic PCM sample statistics from real callback
@@ -159,11 +177,21 @@ void platform_music_init(void)
    * DOS install degrades to the .MOD path below rather than to silence --
    * see platform_dosmidi_init for the specific failure cases. It is told
    * the device's real rate because its chip runs at 49716Hz and resamples. */
-  g_dos_mode = platform_dosmidi_init(have.freq);
+  /* Three outcomes: not asked for or unusable (0), effects-only with the
+   * music left on .MOD (basicmidi), or the DOS driver carrying both. */
+  if (platform_dosmidi_init(have.freq)) {
+    if (platform_dosmidi_music_from_xmi()) {
+      g_dos_mode = 1;
+    } else {
+      g_dos_effects_only = 1;
+    }
+  }
 
   DEBUG(INFO, "[audio] music playback ready: %dHz %dch %d samples/buffer (%s)\n",
         have.freq, have.channels, have.samples,
-        g_dos_mode ? "DOS XMI/OPL2" : "converted MOD");
+        g_dos_mode ? "DOS XMI/OPL2"
+          : g_dos_effects_only ? "converted MOD + OPL2 effect notes"
+          : "converted MOD");
 
   DAT_00087454 = 1;
   DAT_00087448 = 1;
@@ -315,6 +343,7 @@ void platform_music_shutdown(void)
    * from the synth while it is being torn down. */
   platform_dosmidi_shutdown();
   g_dos_mode = 0;
+  g_dos_effects_only = 0;
   if (g_uwmod_loaded) {
     hxcmod_unload(&g_uwmod_ctx);
     g_uwmod_loaded = 0;
