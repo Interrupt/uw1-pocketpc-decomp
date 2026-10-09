@@ -372,6 +372,34 @@ static void test_dos_mode_is_case_insensitive_for_equipment_and_surface_shading(
         TEST_ASSERT_EQUAL_INT(-80, DAT_000842b0);
     }
 }
+static void test_fullbright_mask_is_the_indices_light_dat_never_changes(void)
+{
+    for (int i = 0; i < 0x18; i++) TEST_ASSERT_EQUAL_INT_MESSAGE(1, g_fullbright_palette_mask[i], "0x00-0x17");
+    for (int i = 0xf0; i < 0x100; i++) TEST_ASSERT_EQUAL_INT_MESSAGE(1, g_fullbright_palette_mask[i], "0xf0-0xff");
+    TEST_ASSERT_EQUAL_INT(0, g_fullbright_palette_mask[88]);
+    TEST_ASSERT_EQUAL_INT(0, g_fullbright_palette_mask[0x30]); /* water ramp is shaded */
+    mappings[5 * 256 + 0x10] = 0x40; /* a shaded row mapping lava elsewhere ... */
+    update_fullbright_palette_mask();
+    TEST_ASSERT_EQUAL_INT(0, g_fullbright_palette_mask[0x10]);
+    mappings[0 * 256 + 0x11] = 0;    /* ... but the flicker-zeroed row 0 does not count */
+    update_fullbright_palette_mask();
+    TEST_ASSERT_EQUAL_INT(1, g_fullbright_palette_mask[0x11]);
+}
+
+static void test_arm_fullbright_colours_skip_distance_falloff_only_when_enabled(void)
+{
+    set_ambient_bias_without_light(0);
+    lighting_span_shade = 0x12; /* lava ramp */
+    TEST_ASSERT_NOT_EQUAL(0x112, draw_one_texel(4096)); /* dimmed by default */
+    setenv("UW_FULLBRIGHT", "1", 1);
+    TEST_ASSERT_EQUAL_HEX16(0x112, draw_one_texel(4096));
+    lighting_span_shade = 88; /* an ordinary colour still falls off */
+    TEST_ASSERT_NOT_EQUAL(0x158, draw_one_texel(4096));
+    setenv("UW_LIGHT_MODE", "dos", 1);
+    lighting_span_shade = 0x12;
+    TEST_ASSERT_EQUAL_HEX16(0x112, draw_one_texel(4096)); /* DOS table already leaves it alone */
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -396,5 +424,7 @@ int main(void)
     RUN_TEST(test_arm_surfaces_use_original_rgb_lut_and_clamps);
     RUN_TEST(test_ambient_bias_calibration_restores_default_and_env_override);
     RUN_TEST(test_arm_light_types_step_bias_by_sixteen_and_keep_calibration);
+    RUN_TEST(test_fullbright_mask_is_the_indices_light_dat_never_changes);
+    RUN_TEST(test_arm_fullbright_colours_skip_distance_falloff_only_when_enabled);
     return UNITY_END();
 }

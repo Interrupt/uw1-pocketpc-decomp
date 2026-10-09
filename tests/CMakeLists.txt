@@ -621,7 +621,7 @@ add_game_test_library(uw_test_lighting
   src/visibility.c:load_shading_level_config
   src/visibility.c:build_visibility_light_grid
   src/math.c:integer_sqrt
-  src/3d.c:raster_textured_span
+  src/3d.c:raster_textured_span src/3d.c:update_fullbright_palette_mask
   src/graphics.c:build_shade_lut
   src/graphics.c:get_ambient_bias_reduction
   src/graphics.c:set_ambient_bias_with_light
