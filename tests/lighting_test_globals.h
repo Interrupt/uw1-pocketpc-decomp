@@ -1,8 +1,9 @@
 #include "src/headers/uw.h"
 extern char *DAT_00086df8, *DAT_0023be74, *DAT_0024fa2c, *DAT_0023cca0;
-extern ushort *g_scratch_object_ptr;
+extern uw_object_hdr_t *g_scratch_object_ptr;
 extern char *g_selected_object;
-extern undefined1 DAT_00086da8, DAT_00202800_backing[256];
+extern undefined1 DAT_00086da8;
+extern uw_melee_type_props_t g_melee_type_props[16];
 extern undefined1 DAT_0023b039_backing[4096];
 extern undefined4 DAT_000b5638_backing[160];
 extern undefined1 DAT_0023cca8_backing[1024];

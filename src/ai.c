@@ -15,7 +15,7 @@ short DAT_00100608;
 /* Sizing-audit pass: `read_file_handle(param_1,&DAT_001007d0,0xc00)` (combat.c's
    load_monster_combat_stats) reads exactly 0xc00 (3072) bytes, matching every indexed access's
    `&0x3f` class-id mask * 0x30 stride (63*48+48=3072). HARD exact bound. Down from 6144. */
- undefined1 DAT_001007d0_backing[3072];
+ uw_monster_type_props_t g_monster_type_props[64];
 /* Reused-global-holding-a-real-string pattern (see the s_scroll_newline_0008522c comment in
    player.h) -- interact.c, ai.c and player.c all pass `&DAT_00084f20` straight into
    message_scroll_print_wrapped/ce_strcat with no write beforehand... */
@@ -176,44 +176,37 @@ static undefined DAT_000868c0_backing[24] = {
 static char *g_despawn_creature_record;
 /* Treasure values are fields of the loaded COMOBJ table (type 0xa0,
    offset 5), not an independent, never-loaded array. */
-#define DAT_002034b5 DAT_00202c90_backing[0x825] /* item 0xa0 value, loaded COMOBJ table */
-
-
-
-
-
-
-// was FUN_0002b47c. Per-object per-tick processor for non-NPC mobile objects (thrown/dropped items,
-// debris, ...) -- tick_mobile_objects' sibling dispatch to npc_ai_tick for class-0x40 (NPC)
-// objects.
+#define DAT_002034b5 ((byte *)g_object_type_props)[0x825] /* item 0xa0 value, loaded COMOBJ table */
 int mobile_object_tick()
-
 {
   byte bVar1;
   int iVar2;
-  char *tile_rec;  /* tilemap_lookup / discard_misplaced_object pointer results */
-
-  if (((char)DAT_0010190c[4] == '\0') &&
-     (((&DAT_00202c97)[(*DAT_0010190c & 0x1ff) * 0xd] & 0xc) < 0xc)) {
-    tile_rec = (char *)tilemap_lookup(DAT_0010190c[0xb] >> 10,(DAT_0010190c[0xb] & 0x3f0) >> 4);
-    tile_rec = (char *)discard_misplaced_object(tile_rec + 2,DAT_0010190c,0);
+  char *tile_rec;/* tilemap_lookup / discard_misplaced_object pointer results */
+  if (((char)((uw_projectile_object_t *)DAT_0010190c)->lifetime == '\0') && ((g_object_type_props[(((uw_projectile_object_t *)DAT_0010190c)->hdr.object_id)].quality_flags & 0xc) < 0xc)) {
+    tile_rec = (char *)tilemap_lookup(((uw_projectile_object_t *)DAT_0010190c)->tile_x,
+                                      ((uw_projectile_object_t *)DAT_0010190c)->tile_y);
+    tile_rec = (char *)discard_misplaced_object(tile_rec + 2,
+                                                ((uw_projectile_object_t *)DAT_0010190c),
+                                                0);
     if (tile_rec == 0) {
       return 0;
     }
-    *(undefined1 *)(DAT_0010190c + 4) = 1;
+    ((uw_projectile_object_t *)DAT_0010190c)->lifetime = 1;
   }
   DAT_002049a0 = 0x1000;
-  if (((&DAT_00202c93)[(*DAT_0010190c & 0x1ff) * 0xd] & 8) == 0) {
+  if ((g_object_type_props[(((uw_projectile_object_t *)DAT_0010190c)->hdr.object_id)].flags & 8) == 0) {
     DAT_002049a0 = 0;
   }
-  build_object_placement_snapshot(DAT_0010190c,&DAT_00204920);
-  apply_placement_collision_sweep(&DAT_00204920,&DAT_002049a0);
-  DAT_0010144c = (ushort)(*(byte *)((char *)DAT_0010190c + 0x17) >> 2);
-  DAT_00101454 = (undefined2)((DAT_0010190c[0xb] & 0x3f0) >> 4);
-  iVar2 = sync_object_tile_position(DAT_0010190c,&DAT_00204920);
+  build_object_placement_snapshot(((uw_projectile_object_t *)DAT_0010190c),
+                                  &DAT_00204920);
+  apply_placement_collision_sweep(&DAT_00204920, &DAT_002049a0);
+  DAT_0010144c = (ushort)(((uw_projectile_object_t *)DAT_0010190c)->tile_x);
+  DAT_00101454 = (undefined2)(((uw_projectile_object_t *)DAT_0010190c)->tile_y);
+  iVar2 = sync_object_tile_position(((uw_projectile_object_t *)DAT_0010190c),
+                                    &DAT_00204920);
   if (iVar2 != 0) {
-    bVar1 = (byte)DAT_0010190c[5];
-    *(byte *)(DAT_0010190c + 5) = (((byte)DAT_0010190c[10] & 7) + bVar1 ^ bVar1) & 0xf ^ bVar1;
+    bVar1 = ((uw_projectile_object_t *)DAT_0010190c)->movement_flags;
+    ((uw_projectile_object_t *)DAT_0010190c)->movement_flags = ((((uw_projectile_object_t *)DAT_0010190c)->pitch_flags & 7) + bVar1 ^ bVar1) & 0xf ^ bVar1;
   }
   return iVar2;
 }
@@ -469,24 +462,24 @@ void npc_walk_toward_tile(uint goal, char goal_target, byte attitude)
      own three incoming parameters (the prologue spills all three, `stmdb sp!,{r0,r1,r2}`), so the
      destination y and the third value were whatever this port's ABI left in those registers... */
   npc_set_walk_target(goal,goal_target,attitude);
-  if (((*(byte *)((char *)DAT_0010190c + 0x18) & 0x20) != 0) &&
-     ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) != 0)) {
-    DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (*(byte *)((char *)DAT_0010190c + 0x16) & 0xf));
-    *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0x7f;
+  if (((DAT_0010190c->heading_flags & 0x20) != 0) &&
+      ((DAT_0010190c->animation_flags & 0x80) != 0)) {
+    DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (DAT_0010190c->npc_path_slot));
+    DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 0x7f;
   }
   iVar1 = ((int)(char)goal - (int)DAT_00101918) * 0x1000000 >> 0x18;
   iVar6 = ((int)goal_target - (int)DAT_001013f8) * 0x1000000;
   iVar2 = (int)(iVar6) >> 0x18;
   if ((iVar1 == 0) && ((char)((uint)iVar6 >> 0x18) == '\0')) {
-    if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) != 0) {
-      DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (*(byte *)((char *)DAT_0010190c + 0x16) & 0xf));
-      *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0x7f;
+    if ((DAT_0010190c->animation_flags & 0x80) != 0) {
+      DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (DAT_0010190c->npc_path_slot));
+      DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 0x7f;
     }
-    if ((*(byte *)((char *)DAT_0010190c + 0xb) & 0xf) != 1) {
+    if ((DAT_0010190c->npc_goal) != 1) {
       if (DAT_00101734 != 0) {
-        *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
-        *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) | 0x40;
-        *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xe0 | 0x20;
+        DAT_0010190c->motion_flags = DAT_0010190c->motion_flags & 0x80;
+        DAT_0010190c->animation_flags = DAT_0010190c->animation_flags | 0x40;
+        DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 0xe0 | 0x20;
         return;
       }
       goto LAB_0002e6fc;
@@ -495,9 +488,9 @@ void npc_walk_toward_tile(uint goal, char goal_target, byte attitude)
   }
   if (DAT_00101734 == 0) {
 LAB_0002e6fc:
-    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xf9 | 1;
-    if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) != 0) {
-      uVar3 = *(ushort *)((char *)DAT_0010190c + 0x16);
+    DAT_0010190c->attack_pitch = DAT_0010190c->attack_pitch & 0xf9 | 1;
+    if ((DAT_0010190c->animation_flags & 0x80) != 0) {
+      uVar3 = DAT_0010190c->tile_word;
       iVar6 = (uVar3 & 0xf) * 0x1c;
       if ((uVar3 >> 10 == (ushort)(byte)(&DAT_00101568)[(int)iVar6]) &&
          ((uVar3 & 0x3f0) >> 4 == (uint)(byte)(&DAT_00101569)[(int)iVar6])) {
@@ -508,94 +501,92 @@ LAB_0002e6fc:
     return;
   }
   if (((DAT_00101924 != 0) && (DAT_00101430 == 0)) &&
-     (bVar9 = *(byte *)((char *)DAT_0010190c + 0x18), (bVar9 & 0x40) == 0)) {
+     (bVar9 = DAT_0010190c->heading_flags, (bVar9 & 0x40) == 0)) {
     if (DAT_001013fc != 0) {
       if (DAT_00101560 == 0) {
         uVar3 = *DAT_00101904;
         if (((uVar3 & 0x1c0) == 0x40) && ((uVar3 & 0x1ff) != 0x7f)) {
-          if (((*(byte *)((char *)DAT_0010190c + 0xb) & 0xf) == 5) &&
-             ((*(byte *)((char *)DAT_00101904 + 0xb) & 0xf) == 5)) {
+          if (((DAT_0010190c->npc_goal) == 5) &&
+              ((*(byte *)((char *)DAT_00101904 + 0xb) & 0xf) == 5)) {
             goal = goal & 0xff;
             goto LAB_0002e998;
           }
           goal = goal & 0xff;
         }
         if ((((uVar3 & 0x1f0) == 0x140) && (7 < (uVar3 & 0xf))) &&
-           ((*(byte *)(DAT_00101404 + 10) & 0x80) != 0)) {
+           ((DAT_00101404->movement_flags & 0x80) != 0)) {
           local_38 = 1;
-          *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 7 | 0x70;
+          DAT_0010190c->attack_pitch = DAT_0010190c->attack_pitch & 7 | 0x70;
           DAT_00101924 = 0;
           DAT_00101914 = 1;
           goto LAB_0002ea00;
         }
       }
       else {
-        *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xe0 | 0x20;
+        DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 0xe0 | 0x20;
         uVar7 = ce_rand();
         uw_ord2005_rem_17 = ((int)(uVar7)) % (4);
-        if ((uw_ord2005_rem_17 != 0) && ((*(byte *)((char *)DAT_0010190c + 0xe) & 0xc0) == 0)) {
+        if ((uw_ord2005_rem_17 != 0) && (DAT_0010190c->npc_attitude == 0)) {
           npc_arrival_interaction(DAT_00101904);
           goto LAB_0002e998;
         }
-        bVar9 = *(byte *)((char *)DAT_0010190c + 0x18);
+        bVar9 = DAT_0010190c->heading_flags;
       }
-      *(byte *)((char *)DAT_0010190c + 0x18) = bVar9 | 0x40;
+      DAT_0010190c->heading_flags = bVar9 | 0x40;
     }
 LAB_0002e998:
     if (DAT_00101924 != 0) {
-      if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) != 0) {
-        DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (*(byte *)((char *)DAT_0010190c + 0x16) & 0xf));
-        *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0x7f;
+      if ((DAT_0010190c->animation_flags & 0x80) != 0) {
+        DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (DAT_0010190c->npc_path_slot));
+        DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 0x7f;
       }
       local_3c = 1;
-      *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0x7f;
+      DAT_0010190c->heading_flags = DAT_0010190c->heading_flags & 0x7f;
     }
   }
 LAB_0002ea00:
-  if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) != 0) {
-    iVar6 = walk_using_cached_path(&DAT_00101568 + (*(byte *)((char *)DAT_0010190c + 0x16) & 0xf) * 0x1c);
+  if ((DAT_0010190c->animation_flags & 0x80) != 0) {
+    iVar6 = walk_using_cached_path(&DAT_00101568 + (DAT_0010190c->npc_path_slot) * 0x1c);
     if (iVar6 != 0) goto LAB_0002ed50;
 LAB_0002ebfc:
-    DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (*(byte *)((char *)DAT_0010190c + 0x16) & 0xf));
-    *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0x7f;
+    DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (DAT_0010190c->npc_path_slot));
+    DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 0x7f;
 LAB_0002ed50:
     if (DAT_00101920 != 0) {
       return;
     }
-    *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xbf;
-    *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xec | 0x2c;
+    DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 0xbf;
+    DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 0xec | 0x2c;
     if (local_38 == 0) {
-      if ((*(byte *)((char *)DAT_0010190c + 0xb) & 0xf) == 5) {
-        bVar9 = *(byte *)(DAT_00101404 + 0xc);
+      if ((DAT_0010190c->npc_goal) == 5) {
+        bVar9 = DAT_00101404->movement_speed;
       }
       else {
-        bVar9 = *(byte *)(DAT_00101404 + 0xb);
+        bVar9 = DAT_00101404->magic_power;
       }
-      bVar9 = (*(byte *)((char *)DAT_0010190c + 0x13) ^ bVar9) & 0x7f ^ *(byte *)((char *)DAT_0010190c + 0x13);
+      bVar9 = (DAT_0010190c->motion_flags ^ bVar9) & 0x7f ^ DAT_0010190c->motion_flags;
     }
     else {
-      bVar9 = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
+      bVar9 = DAT_0010190c->motion_flags & 0x80;
     }
-    *(byte *)((char *)DAT_0010190c + 0x13) = bVar9;
+    DAT_0010190c->motion_flags = bVar9;
     npc_bytes = (char *)DAT_0010190c;
-    uVar3 = *(ushort *)((char *)DAT_0010190c + 0xb);
+    uVar3 = DAT_0010190c->goal_word;
     uw_ord2005_rem_18 = ((int)((uVar3 >> 0xc) + 1)) % (4);
     uVar8 = uVar3 & 0xfff;
-    *(char *)(npc_bytes + 0xb) = (char)uVar8;
-    *(byte *)((char *)DAT_0010190c + 0xc) =
-         (byte)(uVar8 >> 8) | (byte)(((uw_ord2005_rem_18 & 0xf) << 0xc) >> 8);
-    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
+    ((uw_mobile_object_t *)npc_bytes)->goal_word_low = (byte)(char)uVar8;
+    DAT_0010190c->goal_word_high =
+      (byte)(uVar8 >> 8) | (byte)(((uw_ord2005_rem_18 & 0xf) << 0xc) >> 8);
+    DAT_0010190c->attack_pitch = DAT_0010190c->attack_pitch & 0xfc | 4;
     return;
   }
-  bVar9 = *(byte *)((char *)DAT_0010190c + 0x18);
+  bVar9 = DAT_0010190c->heading_flags;
   if (((bVar9 & 0x20) == 0) && ((bVar9 & 0x80) != 0)) {
     uVar8 = compute_movement_heading(iVar1,iVar2);
-    *(char *)((char *)DAT_0010190c + 9) = (char)((uVar8 & 0xff) << 5);
-    uVar8 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar8 & 7) << 7;
-    *(char *)((char *)DAT_0010190c + 2) = (char)uVar8;
-    *(char *)((char *)DAT_0010190c + 3) = (char)(uVar8 >> 8);
-    *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
-    if ((*(byte *)(DAT_00101404 + 10) & 0x80) != 0) {
+    DAT_0010190c->full_heading = (byte)((uVar8 & 0xff) << 5);
+    DAT_0010190c->hdr.heading = uVar8 & 0x7;
+    DAT_0010190c->npc_heading = 0;
+    if ((DAT_00101404->movement_flags & 0x80) != 0) {
       set_npc_altitude_state(goal,goal_target);
     }
     goto LAB_0002ed50;
@@ -604,43 +595,43 @@ LAB_0002ed50:
     uVar7 = ce_rand();
     uw_ord2005_rem_19 = ((int)(uVar7)) % (8);
     if (uw_ord2005_rem_19 != 0) goto LAB_0002ee74;
-    bVar9 = *(byte *)((char *)DAT_0010190c + 0x18) & 0xbf;
+    bVar9 = DAT_0010190c->heading_flags & 0xbf;
   }
   else {
     if ((local_3c == 0) &&
        (sVar5 = try_direct_line_walk(DAT_00101918,DAT_001013f8,goal & 0xff,goal_target), sVar5 == 1)) {
-      *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) | 0x80;
+      DAT_0010190c->heading_flags = DAT_0010190c->heading_flags | 0x80;
       uVar8 = compute_movement_heading(iVar1,iVar2);
-      *(char *)((char *)DAT_0010190c + 9) = (char)((uVar8 & 0xff) << 5);
-      uVar8 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar8 & 7) << 7;
-      *(char *)((char *)DAT_0010190c + 2) = (char)uVar8;
-      *(char *)((char *)DAT_0010190c + 3) = (char)(uVar8 >> 8);
-      *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
-      *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xbf;
-      if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) == 0) goto LAB_0002ed50;
+      DAT_0010190c->full_heading = (byte)((uVar8 & 0xff) << 5);
+      DAT_0010190c->hdr.heading = uVar8 & 0x7;
+      DAT_0010190c->npc_heading = 0;
+      DAT_0010190c->heading_flags = DAT_0010190c->heading_flags & 0xbf;
+      if ((DAT_0010190c->animation_flags & 0x80) == 0) goto LAB_0002ed50;
       goto LAB_0002ebfc;
     }
     iVar6 = pop_pending_path_cache_slot(local_40);
     if (iVar6 != 0) {
       uVar4 = compute_pathfind_search_radius();
-      iVar6 = creature_find_path_to_tile(DAT_00101918,DAT_001013f8,*(byte *)((char *)DAT_0010190c + 2) >> 3 & 0xf,goal,
-                           goal_target,attitude,uVar4);
+      iVar6 = creature_find_path_to_tile(DAT_00101918,DAT_001013f8,
+                                         DAT_0010190c->hdr.zpos >> 3,
+                                         goal,
+                                         goal_target,attitude,uVar4);
       if (iVar6 != 0) {
         DAT_000853b8 = DAT_000853b8 & ~(ushort)(1 << (uint)local_40[0]);
         save_walk_path_to_cache_slot(&DAT_00101568 + (uint)local_40[0] * 0x1c);
-        *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xbf;
-        *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) | 0x80;
-        uVar8 = *(ushort *)((char *)DAT_0010190c + 0x16) & 0xfff0;
-        *(byte *)((char *)DAT_0010190c + 0x16) = local_40[0] & 0xf | (byte)uVar8;
-        *(char *)((char *)DAT_0010190c + 0x17) = (char)(uVar8 >> 8);
-        walk_using_cached_path(&DAT_00101568 + (*(byte *)((char *)DAT_0010190c + 0x16) & 0xf) * 0x1c);
+        DAT_0010190c->heading_flags = DAT_0010190c->heading_flags & 0xbf;
+        DAT_0010190c->animation_flags = DAT_0010190c->animation_flags | 0x80;
+        uVar8 = DAT_0010190c->tile_word & 0xfff0;
+        DAT_0010190c->tile_word_low = local_40[0] & 0xf | (byte)uVar8;
+        DAT_0010190c->tile_word_high = (byte)(char)(uVar8 >> 8);
+        walk_using_cached_path(&DAT_00101568 + (DAT_0010190c->npc_path_slot) * 0x1c);
         goto LAB_0002ed50;
       }
     }
-    *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) | 0x40;
-    bVar9 = *(byte *)((char *)DAT_0010190c + 0x18) & 0x7f;
+    DAT_0010190c->heading_flags = DAT_0010190c->heading_flags | 0x40;
+    bVar9 = DAT_0010190c->heading_flags & 0x7f;
   }
-  *(byte *)((char *)DAT_0010190c + 0x18) = bVar9;
+  DAT_0010190c->heading_flags = bVar9;
 LAB_0002ee74:
   npc_idle_behavior_tick();
 }
@@ -675,13 +666,14 @@ int npc_ai_tick()
 
   if (getenv("UW_DEBUG_NPC_POS"))
     fprintf(stderr, "[npc-pos] obj=%p type=0x%x tile=(%u,%u) hp=%d\n", (void *)DAT_0010190c,
-            (unsigned)(*DAT_0010190c & 0x1ff),
-            (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4),
-            (int)(byte)DAT_0010190c[4]);
+            (unsigned)(DAT_0010190c->hdr.object_id),
+            (unsigned)(DAT_0010190c->npc_xhome),
+            (unsigned)(DAT_0010190c->npc_yhome),
+            (int) DAT_0010190c->npc_hp);
   DAT_00101738 = encode_object_slot_index(DAT_0010190c);
-  DAT_00101404 = &DAT_001007d0 + ((byte)*DAT_0010190c & 0x3f) * 0x30;
-  DAT_00101918 = *(byte *)((char *)DAT_0010190c + 0x17) >> 2;
-  DAT_001013f8 = (byte)(DAT_0010190c[0xb] >> 4) & 0x3f;
+  DAT_00101404 = &g_monster_type_props[(DAT_0010190c->hdr.object_id & 0x3f)];
+  DAT_00101918 = DAT_0010190c->npc_xhome;
+  DAT_001013f8 = DAT_0010190c->npc_yhome;
   player_rec = get_object_record_by_slot_index(1);
   puVar11 = DAT_0010190c;
   if (((100 < ((((int)(char)DAT_00101918 - (int)DAT_00101938) * 0x10000 >> 0x10) *
@@ -689,11 +681,11 @@ int npc_ai_tick()
               (((int)(char)DAT_001013f8 - (int)DAT_0010193c) * 0x10000 >> 0x10) *
               (((int)(char)DAT_001013f8 - (int)DAT_0010193c) * 0x10000 >> 0x10)) * 0x10000 >> 0x10)
       && (iVar6 = (int)(char)DAT_001013f8 -
-                  (int)(char)((byte)(*(ushort *)(player_rec + 0x16) >> 4) & 0x3f),
-         iVar5 = (int)(char)DAT_00101918 - (int)(char)(byte)(*(ushort *)(player_rec + 0x16) >> 10),
-         100 < (iVar5 * iVar5 + iVar6 * iVar6) * 0x10000 >> 0x10)) &&
-     ((*(byte *)((char *)DAT_0010190c + 0xb) & 0xf) != 3)) {
-    bVar3 = (byte)DAT_0010190c[5];
+                  (int)(char)(((uw_mobile_object_t *)player_rec)->tile_y),
+                  iVar5 = (int)(char)DAT_00101918 - (int)(char)(byte)(((uw_mobile_object_t *)player_rec)->tile_x),
+                  100 < (iVar5 * iVar5 + iVar6 * iVar6) * 0x10000 >> 0x10)) &&
+      ((DAT_0010190c->npc_goal) != 3)) {
+    bVar3 = DAT_0010190c->movement_flags;
     /* Was `ordint_divmod(0x10,(bVar3&0xf)+8); bVar8 = extraout_r1;` -- the classic "call idivmod,
        then read its remainder back through the extraout_r1 register-leftover fiction" pattern
        already fixed elsewhere this session (itoa_radix, draw_chargen_field_options's sVar_rem)... */
@@ -702,8 +694,8 @@ int npc_ai_tick()
       fprintf(stderr, "[npc-branch] obj=%p took too-far-early-exit\n", (void *)DAT_0010190c);
     goto LAB_00033860;
   }
-  if ((DAT_00101404[10] & 0x80) == 0) {
-    if ((DAT_00101404[10] & 0x40) == 0) {
+  if ((*(char *)&DAT_00101404->movement_flags & 0x80) == 0) {
+    if ((*(char *)&DAT_00101404->movement_flags & 0x40) == 0) {
       DAT_0010172c = &DAT_002048c0;
       DAT_00101438 = &DAT_00204980;
     }
@@ -716,7 +708,7 @@ int npc_ai_tick()
     DAT_0010172c = (undefined2 *)&DAT_002048f0;
     DAT_00101438 = (byte *)&DAT_00204990;
   }
-  if (((&DAT_00202c99)[(*DAT_0010190c & 0x1ff) * 0xd] & 8) != 0) {
+  if ((g_object_type_props[(DAT_0010190c->hdr.object_id)].scale_flags & 8) != 0) {
     uVar2 = *(undefined2 *)(DAT_00101438 + 2);
     DAT_00101438[2] = (byte)uVar2 & 0xdf;
     DAT_00101438[3] = (byte)((ushort)uVar2 >> 8);
@@ -734,19 +726,20 @@ int npc_ai_tick()
   DAT_001013fc = 0;
   DAT_00101560 = 0;
   DAT_00101914 = 0;
-  bVar3 = *(byte *)((char *)DAT_0010190c + 0x15) & 0x3f;
-  if (((bVar3 != 0x2c) && (bVar3 != 0x20)) && ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) != 0)) {
-    DAT_000853b8 = DAT_000853b8 | (ushort)(1 << ((byte)DAT_0010190c[0xb] & 0xf));
-    *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0x7f;
+  bVar3 = DAT_0010190c->animation_flags & 0x3f;
+  if (((bVar3 != 0x2c) && (bVar3 != 0x20)) && ((DAT_0010190c->animation_flags & 0x80) != 0)) {
+    DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (DAT_0010190c->npc_path_slot));
+    DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 0x7f;
   }
-  if ((((*(byte *)((char *)DAT_0010190c + 0x15) & 0x40) == 0) ||
-      ((*(byte *)((char *)DAT_0010190c + 0x13) & 0x7f) != 0)) || ((DAT_0010190c[10] & 0xf8) != 0x80)) {
+  if ((((DAT_0010190c->animation_flags & 0x40) == 0) ||
+       ((DAT_0010190c->motion_flags & 0x7f) != 0)) || ((((ushort *)DAT_0010190c)[10] & 0xf8) != 0x80)) {
     build_object_placement_snapshot(DAT_0010190c,DAT_0010172c);
-    bVar3 = *(byte *)((char *)DAT_0010190c + 9);
+    bVar3 = DAT_0010190c->full_heading;
     if (getenv("UW_DEBUG_NPC_WANDER"))
       fprintf(stderr, "[npc-sweep] obj=%p pre_tile=(%u,%u) snap0=0x%04x snap1=0x%04x\n",
               (void *)DAT_0010190c,
-              (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4),
+              (unsigned)(DAT_0010190c->npc_xhome),
+              (unsigned)(DAT_0010190c->npc_yhome),
               (unsigned)((ushort *)DAT_0010172c)[0], (unsigned)((ushort *)DAT_0010172c)[1]);
     /* Was `build_collision_height_field_for_object()` -- a dropped argument (K&R declared, relying
        on whatever register-content reuse the real ARM code got for free).
@@ -759,18 +752,19 @@ int npc_ai_tick()
               (unsigned)((ushort *)DAT_0010172c)[0], (unsigned)((ushort *)DAT_0010172c)[1],
               (unsigned)(byte)(((ushort *)DAT_0010172c)[0] >> 8),
               (unsigned)(byte)(((ushort *)DAT_0010172c)[1] >> 8));
-    DAT_0010144c = (ushort)(*(byte *)((char *)DAT_0010190c + 0x17) >> 2);
-    DAT_00101454 = (undefined2)((DAT_0010190c[0xb] & 0x3f0) >> 4);
+    DAT_0010144c = (ushort)(DAT_0010190c->npc_xhome);
+    DAT_00101454 = (undefined2)(DAT_0010190c->npc_yhome);
     sync_object_tile_position(DAT_0010190c,DAT_0010172c);
     if (getenv("UW_DEBUG_NPC_WANDER"))
       fprintf(stderr, "[npc-sweep] obj=%p post_sync tile=(%u,%u)\n",
               (void *)DAT_0010190c,
-              (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4));
-    if (*(byte *)((char *)DAT_0010190c + 9) != bVar3) {
+              (unsigned)(DAT_0010190c->npc_xhome),
+              (unsigned)(DAT_0010190c->npc_yhome));
+    if (DAT_0010190c->full_heading != bVar3) {
       DAT_00101430 = 1;
     }
   }
-  if (((&DAT_00202c99)[(*DAT_0010190c & 0x1ff) * 0xd] & 8) != 0) {
+  if ((g_object_type_props[(DAT_0010190c->hdr.object_id)].scale_flags & 8) != 0) {
     uVar2 = *(undefined2 *)(DAT_00101438 + 2);
     DAT_00101438[2] = (byte)uVar2 | 0x20;
     DAT_00101438[3] = (byte)((ushort)uVar2 >> 8);
@@ -781,127 +775,133 @@ int npc_ai_tick()
     *DAT_00101438 = (byte)uVar2 & 0xdf;
     DAT_00101438[1] = (byte)((ushort)uVar2 >> 8);
   }
-  DAT_00101918 = *(byte *)((char *)DAT_0010190c + 0x17) >> 2;
-  uVar9 = DAT_0010190c[0xb] >> 4 & 0x3f;
+  DAT_00101918 = DAT_0010190c->npc_xhome;
+  uVar9 = DAT_0010190c->npc_yhome;
   DAT_001013f8 = (byte)uVar9;
-  DAT_0010140c = (byte)DAT_0010190c[1] >> 3 & 0xf;
+  DAT_0010140c = DAT_0010190c->hdr.zpos >> 3;
   DAT_00101910 = (short)(((uint)DAT_00101918 << 0x13) >> 0x10) +
-                 (ushort)(*(byte *)((char *)DAT_0010190c + 3) >> 5);
-  DAT_0010141c = (*(byte *)((char *)DAT_0010190c + 3) >> 2 & 7) + (short)((uVar9 << 0x13) >> 0x10);
-  DAT_0010143c = (byte)DAT_0010190c[2] & 0x3f;
-  DAT_0010173c = (byte)DAT_0010190c[3] & 0x3f;
-  DAT_00101458 = *(byte *)((char *)DAT_0010190c + 9);
-  bVar3 = (byte)(DAT_0010190c[1] >> 2);
-  DAT_001018fc = (bVar3 ^ (byte)DAT_0010190c[0xc]) & 0x1f ^ bVar3;
-  DAT_00101434 = *(byte *)((char *)DAT_0010190c + 0x13) & 0x7f;
-  DAT_00101730 = (&DAT_00202c90)[(*DAT_0010190c & 0x1ff) * 0xd];
-  uVar9 = (uint)*(ushort *)((char *)DAT_0010190c + 0xb);
+                 (ushort)(DAT_0010190c->hdr.xpos);
+  DAT_0010141c = (DAT_0010190c->hdr.ypos) + (short)((uVar9 << 0x13) >> 0x10);
+  DAT_0010143c = DAT_0010190c->hdr.quality;
+  DAT_0010173c = DAT_0010190c->hdr.owner;
+  DAT_00101458 = DAT_0010190c->full_heading;
+  bVar3 = (byte)(DAT_0010190c->hdr.position_word >> 2);
+  DAT_001018fc = (bVar3 ^ DAT_0010190c->heading_flags) & 0x1f ^ bVar3;
+  DAT_00101434 = DAT_0010190c->motion_flags & 0x7f;
+  DAT_00101730 = g_object_type_props[(DAT_0010190c->hdr.object_id)].height;
+  uVar9 = (uint) DAT_0010190c->goal_word;
   if (getenv("UW_DEBUG_NPC_STATE"))
     fprintf(stderr, "[npc-state] obj=%p uVar9=0x%x class=0x%x byte15=0x%x\n", (void *)DAT_0010190c,
             uVar9, (unsigned)(uVar9 & 0xf000),
-            (unsigned)(*(byte *)((char *)DAT_0010190c + 0x15) & 0x3f));
+            (unsigned)(DAT_0010190c->animation_flags & 0x3f));
   if (((uVar9 & 0xf) == 0xb) || ((uVar9 & 0xf) == 3)) {
 LAB_00033830:
     if (getenv("UW_DEBUG_NPC_WANDER"))
       fprintf(stderr, "[npc-branch] obj=%p entering npc_ai_default_tick pre_tile=(%u,%u)\n",
               (void *)DAT_0010190c,
-              (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4));
+              (unsigned)(DAT_0010190c->npc_xhome),
+              (unsigned)(DAT_0010190c->npc_yhome));
     npc_ai_default_tick();
     if (getenv("UW_DEBUG_NPC_WANDER"))
       fprintf(stderr, "[npc-branch] obj=%p returned from npc_ai_default_tick post_tile=(%u,%u)\n",
               (void *)DAT_0010190c,
-              (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4));
+              (unsigned)(DAT_0010190c->npc_xhome),
+              (unsigned)(DAT_0010190c->npc_yhome));
     goto LAB_00033834;
   }
-  bVar3 = *(byte *)((char *)DAT_0010190c + 0x15) & 0x3f;
+  bVar3 = DAT_0010190c->animation_flags & 0x3f;
   if (bVar3 == 0xc) {
     if ((uVar9 & 0xf000) == 0x3000) {
       resolve_unique_npc_special_behavior(DAT_0010190c,1);
-      DAT_0010144c = (ushort)(*(byte *)((char *)DAT_0010190c + 0x17) >> 2);
-      DAT_00101454 = (undefined2)((DAT_0010190c[0xb] & 0x3f0) >> 4);
+      DAT_0010144c = (ushort)(DAT_0010190c->npc_xhome);
+      DAT_00101454 = (undefined2)(DAT_0010190c->npc_yhome);
       /* ARM 0x3343c..0x33470 passes the dead NPC's tile x/y in r0/r1.
          Dropping these arguments leaves its final frame in the old tile list. */
       tile_pos = tilemap_lookup(DAT_0010144c,DAT_00101454);
       object_list_unlink(tile_pos + 2,DAT_0010190c);
       spawn_creature_death_loot(DAT_0010190c);
-      drop_monster_loot(DAT_0010190c,(byte)DAT_00101404[8] >> 5,(byte)DAT_00101404[10] >> 2 & 7);
+      drop_monster_loot(DAT_0010190c,
+                        (byte)*(char *)&DAT_00101404->effects_flags >> 5,
+                        (byte)*(char *)&DAT_00101404->movement_flags >> 2 & 7);
       drop_creature_inventory_on_death(DAT_0010190c);
       free_object_slot(DAT_0010190c);
       return 0;
     }
 LAB_00033810:
     uVar10 = (uVar9 & 0xf000) + 0x1000 ^ uVar9 & 0xfff;
-    *(byte *)((char *)DAT_0010190c + 0xb) = (byte)(uVar9 & 0xfff);
+    DAT_0010190c->goal_word_low = (byte)(uVar9 & 0xfff);
 LAB_000337fc:
-    *(byte *)(DAT_0010190c + 6) = (byte)(uVar10 >> 8);
+    DAT_0010190c->goal_word_high = (byte)(uVar10 >> 8);
   }
-  else if (((*(byte *)((char *)DAT_0010190c + 0x15) & 0x3f) == 0) || (3 < bVar3)) {
-    if ((bVar3 != 0xd) || ((*(byte *)((char *)DAT_0010190c + 0x19) & 0xc) == 0)) {
+  else if (((DAT_0010190c->animation_flags & 0x3f) == 0) || (3 < bVar3)) {
+    if ((bVar3 != 0xd) || ((DAT_0010190c->npc_ai_flags & 0xc) == 0)) {
       if (bVar3 != 5) goto LAB_00033830;
       if ((uVar9 & 0xf000) != 0x4000) goto LAB_00033810;
-      uVar9 = ((byte)DAT_00101404[0x20] & 0x1e) >> 1;
+      uVar9 = ((byte)*(char *)&DAT_00101404->weapon_loot[0] & 0x1e) >> 1;
       iVar5 = (short)uVar9 * 3;
-      cVar4 = compute_vertical_aim_offset((&DAT_002027d1)[iVar5],1);
+      cVar4 = compute_vertical_aim_offset(g_ranged_type_props[(iVar5) / 3].projectile_speed,
+                                          1);
       DAT_00202a3c = (short)cVar4;
-      spawn_npc_thrown_weapon(DAT_0010190c,uVar9,(&DAT_002027d1)[iVar5]);
-      *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xc0;
-      uVar10 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xfff;
-      *(byte *)((char *)DAT_0010190c + 0xb) = (byte)uVar10;
+      spawn_npc_thrown_weapon(DAT_0010190c,uVar9,
+                              g_ranged_type_props[(iVar5) / 3].projectile_speed);
+      DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 0xc0;
+      uVar10 = DAT_0010190c->goal_word & 0xfff;
+      DAT_0010190c->goal_word_low = (byte)uVar10;
       goto LAB_000337fc;
     }
     if ((uVar9 & 0xf000) != 0x4000) goto LAB_00033810;
     cVar4 = compute_vertical_aim_offset(0x1e,0);
     DAT_00202a3c = (short)cVar4;
-    dispatch_tile_special_action(DAT_00101404[(*(byte *)((char *)DAT_0010190c + 0x19) >> 2 & 3) + 0x29],DAT_0010190c,0)
+    dispatch_tile_special_action(*(char *)&DAT_00101404->spells[(DAT_0010190c->npc_ai_flags >> 2 & 3) - 1],
+                                 DAT_0010190c,0)
     ;
-    *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xc0;
-    uVar9 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xfff;
-    *(byte *)((char *)DAT_0010190c + 0xb) = (byte)uVar9;
-    *(byte *)(DAT_0010190c + 6) = (byte)(uVar9 >> 8);
-    *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) & 0xf3;
+    DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 0xc0;
+    DAT_0010190c->npc_animation_frame = 0x0;
+    uVar9 = DAT_0010190c->goal_word;
+    DAT_0010190c->npc_ai_flags = DAT_0010190c->npc_ai_flags & 0xf3;
   }
   else {
-    if (((*(ushort *)((char *)DAT_0010190c + 0xb) & 0xf000) == 0) && ((uVar9 & 0xff0) == 0x10)) {
+    if ((DAT_0010190c->npc_animation_frame == 0) && ((uVar9 & 0xff0) == 0x10)) {
       bVar3 = get_current_music_track();
       if ((bVar3 < 5) || (bVar3 = get_current_music_track(), 7 < bVar3)) {
         set_pending_music_track(6);
       }
       DAT_00101944 = read_realtime_clock_units();
     }
-    uVar9 = (uint)*(ushort *)((char *)DAT_0010190c + 0xb);
+    uVar9 = (uint) DAT_0010190c->goal_word;
     if ((uVar9 & 0xf000) != 0x4000) goto LAB_00033810;
     uVar7 = ce_rand();
     puVar11 = DAT_0010190c;
-    bVar3 = *(byte *)((char *)DAT_0010190c + 0x15);
-    uVar1 = (&DAT_000853d8)[(uint)(byte)((byte)DAT_0010190c[8] >> 4) * 2];
+    bVar3 = DAT_0010190c->animation_flags;
+    uVar1 = (&DAT_000853d8)[(uint)(byte)(DAT_0010190c->npc_swing_charge) * 2];
     /* Was `ordint_divmod(9,uVar7,*(byte*)(DAT_0010190c+0xf),ordint_divmod_exref,
        DAT_00101404[0xf]); resolve_npc_melee_attack(puVar11,(int)extraout_r1_01,uVar1,
        (bVar3&0x3f)-1);` -- badly garbled. */
-    resolve_npc_melee_attack(puVar11,(short)(uVar7 % 9),uVar1,(bVar3 & 0x3f) - 1,(short)DAT_00101404[0xf]);
-    *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xc0;
-    uVar9 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xfff;
-    *(byte *)((char *)DAT_0010190c + 0xb) = (byte)uVar9;
-    *(byte *)(DAT_0010190c + 6) = (byte)(uVar9 >> 8);
-    uVar9 = *(ushort *)((char *)DAT_0010190c + 0xf) & 0xfff;
-    *(byte *)((char *)DAT_0010190c + 0xf) = (byte)uVar9;
-    *(byte *)(DAT_0010190c + 8) = (byte)(uVar9 >> 8);
+    resolve_npc_melee_attack(puVar11,(short)(uVar7 % 9),uVar1,(bVar3 & 0x3f) - 1,
+                             (short)*(char *)&DAT_00101404->poison_damage);
+    DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 0xc0;
+    DAT_0010190c->npc_animation_frame = 0x0;
+    uVar9 = DAT_0010190c->goal_word;
+    DAT_0010190c->npc_swing_charge = 0x0;
+    uVar9 = DAT_0010190c->target_word;
   }
 LAB_00033834:
   puVar11 = DAT_0010190c;
-  bVar3 = (byte)DAT_0010190c[5];
+  bVar3 = DAT_0010190c->movement_flags;
   /* Was `ordint_divmod(...); bVar8 = extraout_r1_00;` -- same fabricated-
      remainder bug as the other ordint_divmod call above in this function,
      see that comment. Compute the remainder directly instead. */
-  bVar8 = (((byte)DAT_0010190c[10] & 7) + (bVar3 & 0xf)) % 0x10;
+  bVar8 = ((DAT_0010190c->attack_pitch & 7) + (bVar3 & 0xf)) % 0x10;
 LAB_00033860:
-  *(byte *)(puVar11 + 5) = (bVar3 ^ bVar8) & 0xf ^ bVar3;
+  ((uw_mobile_object_t *)puVar11)->movement_flags = (bVar3 ^ bVar8) & 0xf ^ bVar3;
   if (getenv("UW_DEBUG_NPC_PHASE"))
     fprintf(stderr, "[npc-phase] obj=%p old=0x%x new=0x%x bVar8=0x%x speed=0x%x\n",
             (void *)puVar11, bVar3, (unsigned)((bVar3 ^ bVar8) & 0xf ^ bVar3), bVar8,
-            (unsigned)((byte)puVar11[10] & 7));
+            (unsigned)(((uw_mobile_object_t *)puVar11)->attack_pitch & 7));
   if (getenv("UW_DEBUG_NPC_WANDER"))
     fprintf(stderr, "[npc-exit] obj=%p exit_tile=(%u,%u)\n", (void *)DAT_0010190c,
-            (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4));
+            (unsigned)(DAT_0010190c->npc_xhome),
+            (unsigned)(DAT_0010190c->npc_yhome));
   return 1;
 }
 
@@ -914,16 +914,17 @@ void tick_mobile_objects(char elapsed)
   int iVar1;
   byte *pbVar2;
 
-  DAT_0010190c = (ushort *)0x0;
+  DAT_0010190c = (uw_mobile_object_t *)0x0;
   DAT_00101928 = DAT_00101948 + elapsed & 0xf;
   pbVar2 = DAT_002046c0;
   if (DAT_002046c0 < DAT_002046c8) {
     do {
-      DAT_0010190c = (ushort *)((uint)*pbVar2 * 0x1b + DAT_002046b8);
+      DAT_0010190c = (uw_mobile_object_t *)((uint)*pbVar2 * 0x1b + DAT_002046b8);
       do {
-        iVar1 = object_tick_is_due((byte)DAT_0010190c[5] & 0xf,(byte)DAT_0010190c[10] & 7);
+        iVar1 = object_tick_is_due(DAT_0010190c->tick_phase,
+                                   DAT_0010190c->attack_pitch & 7);
         if (iVar1 == 0) goto LAB_00034a98;
-        if ((*DAT_0010190c & 0x1c0) == 0x40) {
+        if ((DAT_0010190c->hdr.object_id & 0x1c0) == 0x40) {
           iVar1 = npc_ai_tick();
         }
         else {
@@ -1102,42 +1103,36 @@ int sync_object_tile_position(ushort *object, void *position_ptr)
       object_list_insert_head((char *)tile_cell + 2,object);
     }
   }
-  uVar7 = (uint)object[1];
+  uVar7 = (uint)((uw_object_hdr_t *)object)->position_word;
   bVar9 = (byte)((int)(((int)(short)position[2] & 0x3f8U) << 0x10) >> 0x13);
-  *(byte *)(object + 1) = (byte)(uVar7 & 0xff80) | bVar9;
-  *(char *)((char *)object + 3) = (char)((uVar7 & 0xff80) >> 8);
+  ((uw_object_hdr_t *)object)->zpos = bVar9;
   bVar3 = (byte)((uint)(((int)(short)(*position & 0xe0) >> 5) << 0xd) >> 8);
-  *(byte *)(object + 1) = (byte)(uVar7 & 0x1f80) | bVar9;
-  *(byte *)((char *)object + 3) = (byte)((uVar7 & 0x1f80) >> 8) | bVar3;
+  ((uw_object_hdr_t *)object)->xpos = (bVar3 >> 5) & 7;
   uVar1 = position[1];
-  *(byte *)(object + 1) = (byte)(uVar7 & 0x380) | bVar9;
-  *(byte *)((char *)object + 3) =
-       (byte)((uVar7 & 0x380) >> 8) | bVar3 |
-       (byte)((uint)(((int)(short)(uVar1 & 0xe0) >> 5) << 10) >> 8);
+  ((uw_object_hdr_t *)object)->ypos = (uVar1 >> 5) & 7;
   if ((char *)object < DAT_002046c4) {
-    *(byte *)(object + 4) = (byte)position[0xf];
+    ((uw_mobile_object_t *)object)->hit_points = (byte)position[0xf];
   }
   else {
-    uVar1 = object[2];
-    *(byte *)(object + 2) = (byte)position[0xf] & 0x3f | (byte)(uVar1 & 0xffc0);
-    *(char *)((char *)object + 5) = (char)((uVar1 & 0xffc0) >> 8);
+    uVar1 = ((uw_object_hdr_t *)object)->chain_word;
+    ((uw_object_hdr_t *)object)->quality = position[0xf] & 0x3f;
   }
   uVar1 = *(ushort *)((char *)position + 0x29);
   if (0x100 < uVar1) {
-    if ((*object & 0x1c0) != 0x40) {
-      uVar2 = ordint_divmod(0x32,(short)(*(ushort *)(&DAT_00202c91 + (*object & 0x1ff) * 0xd) >> 4)
+    if ((((uw_object_hdr_t *)object)->object_id & 0x1c0) != 0x40) {
+      uVar2 = ordint_divmod(0x32,
+                                (short)(g_object_type_props[(((uw_object_hdr_t *)object)->object_id)].unit_weight)
                                 + -600).quot;
       play_sound_effect_at_object(0xf,object,uVar2);
     }
     apply_typed_damage_to_object(object,0,(int)(short)DAT_0010144c,(int)DAT_00101454,(char)(uVar1 >> 8),0);
   }
   if ((char *)object < DAT_002046c4) {
-    *(byte *)(object + 4) = (byte)position[0xf];
+    ((uw_mobile_object_t *)object)->hit_points = (byte)position[0xf];
   }
   else {
-    uVar1 = object[2];
-    *(byte *)(object + 2) = (byte)position[0xf] & 0x3f | (byte)(uVar1 & 0xffc0);
-    *(char *)((char *)object + 5) = (char)((uVar1 & 0xffc0) >> 8);
+    uVar1 = ((uw_object_hdr_t *)object)->chain_word;
+    ((uw_object_hdr_t *)object)->quality = position[0xf] & 0x3f;
   }
   if ((position[0x14] & 4) != 0) {
     uVar6 = ce_rand();
@@ -1146,15 +1141,14 @@ int sync_object_tile_position(ushort *object, void *position_ptr)
       apply_typed_damage_to_object(object,0,(int)(short)DAT_0010144c,(int)DAT_00101454,1,8);
     }
   }
-  if ((*object & 0x1c0) != 0x40) {
+  if ((((uw_object_hdr_t *)object)->object_id & 0x1c0) != 0x40) {
     if (DAT_002046c4 < (char *)object) {
       if ((position[10] != 0 || position[8] != 0) || position[5] != 0) {
         object = (ushort *)reallocate_object_to_arena(object);
       }
     }
     else if ((position[10] == 0 && position[8] == 0) && position[5] == 0) {
-      *(byte *)(object + 5) =
-           (byte)object[5] & 0x8f | ((&DAT_000868c0)[(byte)position[0x14]] & 7) << 4;
+      ((uw_mobile_object_t *)object)->movement_mode = (&DAT_000868c0)[(byte)position[0x14]] & 7;
       settled = settle_mobile_to_immobile(object);
       if (settled == 0) {
         return 0;
@@ -1168,18 +1162,16 @@ int sync_object_tile_position(ushort *object, void *position_ptr)
     }
   }
   if ((char *)object < DAT_002046c4) {
-    uVar1 = object[0xb];
-    *(char *)((char *)object + 9) = (char)((ushort)*(undefined2 *)((char *)position + 0x21) >> 8);
+    uVar1 = ((uw_mobile_object_t *)object)->tile_position;
+    ((uw_mobile_object_t *)object)->full_heading = (byte)(char)((ushort)*(undefined2 *)((char *)position + 0x21) >> 8);
     uVar8 = uVar1 & 0x3ff;
     uVar7 = (DAT_0010144c & 0x3f) << 10;
-    *(char *)(object + 0xb) = (char)uVar8;
-    *(byte *)((char *)object + 0x17) = (byte)(uVar8 >> 8) | (byte)(uVar7 >> 8);
+    ((uw_mobile_object_t *)object)->tile_x = (uVar7 >> 10) & 0x3f;
     uVar7 = uVar1 & 0xf | uVar7 | ((int)DAT_00101454 & 0x3fU) << 4;
-    *(char *)(object + 0xb) = (char)uVar7;
-    *(char *)((char *)object + 0x17) = (char)(uVar7 >> 8);
+    ((uw_mobile_object_t *)object)->tile_y = (uVar7 >> 4) & 0x3f;
     bVar11 = SBORROW4((int)(short)position[8],-4);
-    bVar9 = ((short)position[8] == -4) << 7 | *(byte *)((char *)object + 0x13) & 0x7f;
-    *(byte *)((char *)object + 0x13) = bVar9;
+    bVar9 = ((short)position[8] == -4) << 7 | ((uw_mobile_object_t *)object)->motion_flags & 0x7f;
+    ((uw_mobile_object_t *)object)->gravity_flag = bVar9 >> 7;
     iVar5 = (int)(short)position[5];
     if (iVar5 < 0) {
       iVar5 = iVar5 + 0x3f;
@@ -1198,29 +1190,25 @@ int sync_object_tile_position(ushort *object, void *position_ptr)
     if (!bVar10 && (iVar5 < 0 || iVar5 + -0x1f < 0) == bVar11) {
       sVar4 = 0x1f;
     }
-    *(byte *)(object + 10) = (byte)((int)sVar4 << 3) | (byte)object[10] & 7;
+    ((uw_mobile_object_t *)object)->pitch = (byte)sVar4 & 0x1f;
     bVar3 = ordint_divmod(0x2f,(int)(short)position[10]).quot;
-    *(byte *)((char *)object + 0x13) = (bVar3 ^ bVar9) & 0x7f ^ bVar9;
-    *(byte *)(object + 5) =
-         (byte)object[5] & 0x8f | ((&DAT_000868c0)[(byte)position[0x14]] & 7) << 4;
-    if ((CONCAT11(*(undefined1 *)((char *)object + 1),(char)*object) & 0x1c0) != 0x40) {
+    ((uw_mobile_object_t *)object)->speed = bVar3 & 0x7f;
+    ((uw_mobile_object_t *)object)->movement_mode = (&DAT_000868c0)[(byte)position[0x14]] & 7;
+    if ((((uw_object_hdr_t *)object)->object_id & 0x1c0) != 0x40) {
+      uw_projectile_object_t *projectile = (uw_projectile_object_t *)object;
       uVar1 = *position;
-      *(char *)((char *)object + 0xb) = (char)uVar1;
-      *(char *)(object + 6) = (char)(uVar1 >> 8);
+      projectile->precise_x = uVar1;
       uVar1 = position[1];
-      *(char *)((char *)object + 0xd) = (char)uVar1;
-      *(char *)(object + 7) = (char)(uVar1 >> 8);
+      projectile->precise_y = uVar1;
       uVar1 = position[2];
-      *(char *)((char *)object + 0xf) = (char)uVar1;
-      *(char *)(object + 8) = (char)(uVar1 >> 8);
+      projectile->precise_z = uVar1;
     }
     return 1;
   }
 LAB_0005559c:
-  if ((*object & 0x1c0) == 0x140) {
-    uVar7 = object[1] & 0xfc7f | ((int)*(short *)((char *)position + 0x21) >> 0xd & 7U) << 7;
-    *(char *)(object + 1) = (char)uVar7;
-    *(char *)((char *)object + 3) = (char)(uVar7 >> 8);
+  if ((((uw_object_hdr_t *)object)->object_id & 0x1c0) == 0x140) {
+    uVar7 = ((uw_object_hdr_t *)object)->position_word & 0xfc7f | ((int)*(short *)((char *)position + 0x21) >> 0xd & 7U) << 7;
+    ((uw_object_hdr_t *)object)->heading = (uVar7 >> 7) & 7;
   }
   return 0;
 }
@@ -1250,8 +1238,8 @@ ushort *settle_mobile_to_immobile(ushort *object)
   byte local_2c;
   
   bVar3 = true;
-  bVar13 = (byte)(&DAT_00202c98)[(*object & 0x1ff) * 0xd] >> 1 & 0xf;
-  bVar5 = (byte)object[5] & 0x70;
+  bVar13 = (byte) g_object_type_props[(((uw_object_hdr_t *)object)->object_id)].owner_flags >> 1 & 0xf;
+  bVar5 = (((uw_mobile_object_t *)object)->movement_mode << 4);
   if (bVar5 == 0x10) {
     bVar13 = 8;
     spawn_scheduled_effect_object(object,6,3,0,0,DAT_0010144c,DAT_00101454);
@@ -1261,7 +1249,7 @@ ushort *settle_mobile_to_immobile(ushort *object)
            uVar12 = (int)((int)DAT_00101454 - 0x20U) >> 0x1f,
            (int)((((int)DAT_00101454 - 0x20U ^ uVar12) - uVar12) +
                 (((int)DAT_0010144c - 0x20U ^ uVar11) - uVar11)) < 6 &&
-           (*(char *)((char *)g_player_object + 8) != '\0')))) {
+           ((char)g_player_object->npc_hp != '\0')))) {
     if ((*(byte *)(DAT_00086df8 + 0x62) & 4) == 0) {
       uVar2 = *(undefined2 *)(DAT_00086df8 + 0x6e);
       *(byte *)(DAT_00086df8 + 0x6e) = (byte)uVar2 | 8;
@@ -1276,17 +1264,16 @@ ushort *settle_mobile_to_immobile(ushort *object)
         set_pending_update_flags(0x400);
       }
       else {
-        uVar11 = *object & 0xffc2 | 0x1c2;
-        *(byte *)object = (byte)uVar11;
-        *(byte *)((char *)object + 1) = (byte)(uVar11 >> 8);
+        uVar11 = ((uw_object_hdr_t *)object)->type_flags & 0xffc2 | 0x1c2;
+        ((uw_object_hdr_t *)object)->type_flags = (ushort)uVar11;
         if (*(byte *)(DAT_00086df8 + 0x6d) < 9) {
           iVar8 = 8;
           do {
             bVar4 = ce_rand();
-            uVar1 = object[1];
+            uVar1 = ((uw_object_hdr_t *)object)->position_word;
             bVar5 = (byte)uVar1;
-            *(byte *)(object + 1) = ((bVar4 & 7) + bVar5 + 4 ^ bVar5) & 0x7f ^ bVar5;
-            *(byte *)((char *)object + 3) = (byte)(uVar1 >> 8);
+            ((uw_object_hdr_t *)object)->position_word_low = ((bVar4 & 7) + bVar5 + 4 ^ bVar5) & 0x7f ^ bVar5;
+            ((uw_object_hdr_t *)object)->position_word_high = (byte)(uVar1 >> 8);
             uVar6 = ce_rand();
             uVar7 = ce_rand();
             /* Was `ordint_divmod(3,uVar6); ... extraout_r1_00` / same for uVar7/extraout_r1 -- the
@@ -1322,47 +1309,42 @@ ushort *settle_mobile_to_immobile(ushort *object)
   }
   pbTile = pbTile + 2;
   if ((bVar3) && (puVar9 = (ushort *)alloc_object_slot(0), puVar9 != (ushort *)0x0)) {
-    *(byte *)puVar9 = (byte)*object;
-    *(byte *)((char *)puVar9 + 1) = *(byte *)((char *)object + 1);
-    *(byte *)(puVar9 + 1) = (byte)object[1];
-    *(byte *)((char *)puVar9 + 3) = *(byte *)((char *)object + 3);
-    *(byte *)(puVar9 + 2) = (byte)object[2];
-    *(byte *)((char *)puVar9 + 5) = *(byte *)((char *)object + 5);
-    *(byte *)(puVar9 + 3) = (byte)object[3];
-    *(byte *)((char *)puVar9 + 7) = *(byte *)((char *)object + 7);
-    *(byte *)(object + 3) = (byte)object[3] & 0x3f;
-    *(byte *)((char *)object + 7) = 0;
-    uVar1 = *puVar9;
+    ((uw_object_hdr_t *)puVar9)->type_flags = ((uw_object_hdr_t *)object)->type_flags;
+    ((uw_object_hdr_t *)puVar9)->position_word = ((uw_object_hdr_t *)object)->position_word;
+    ((uw_object_hdr_t *)puVar9)->chain_word = ((uw_object_hdr_t *)object)->chain_word;
+    ((uw_object_hdr_t *)puVar9)->link_word = ((uw_object_hdr_t *)object)->link_word;
+    ((uw_object_hdr_t *)object)->link_word_low = ((uw_object_hdr_t *)object)->owner;
+    ((uw_object_hdr_t *)object)->link_word_high = 0;
+    uVar1 = ((uw_object_hdr_t *)puVar9)->type_flags;
     if ((uVar1 & 0x1c0) == 0x1c0) {
       scheduler_relink_entry(puVar9,object);
     }
     else if ((((uVar1 & 0x1f0) == 0x90) && (3 < (uVar1 & 0xf))) && ((uVar1 & 0xf) < 7)) {
       bVar5 = (byte)uVar1;
-      *(byte *)puVar9 = (bVar5 - 4 ^ bVar5) & 0xf ^ bVar5;
-      *(byte *)((char *)puVar9 + 1) = (byte)(uVar1 >> 8);
+      ((uw_object_hdr_t *)puVar9)->type_flags_low = (bVar5 - 4 ^ bVar5) & 0xf ^ bVar5;
+      ((uw_object_hdr_t *)puVar9)->type_flags_high = (byte)(uVar1 >> 8);
       set_ambient_bias_without_light(0);
     }
-    uVar1 = puVar9[2];
-    *(byte *)(puVar9 + 2) = (byte)object[4] & 0x3f | (byte)(uVar1 & 0xffc0);
-    *(byte *)((char *)puVar9 + 5) = (byte)((uVar1 & 0xffc0) >> 8);
-    uVar12 = (uint)CONCAT11(*(byte *)((char *)puVar9 + 1),(byte)*puVar9);
+    uVar1 = ((uw_object_hdr_t *)puVar9)->chain_word;
+    ((uw_object_hdr_t *)puVar9)->chain_word_low = ((uw_mobile_object_t *)object)->hit_points & 0x3f | (byte)(uVar1 & 0xffc0);
+    ((uw_object_hdr_t *)puVar9)->chain_word_high = (byte)((uVar1 & 0xffc0) >> 8);
+    uVar12 = (uint)(ushort)((uw_object_hdr_t *)puVar9)->type_flags;
     uVar11 = uVar12 & 0x1c0;
     if (((uVar11 != 0x140) && (uVar11 != 0x180)) &&
-       (((&DAT_00202c9a)[(uVar12 & 0x1ff) * 0xd] & 3) != 2)) {
-      uVar11 = puVar9[1] & 0xfc7f | ((byte)object[0xd] & 7) << 7;
-      *(byte *)(puVar9 + 1) = (byte)uVar11;
-      *(byte *)((char *)puVar9 + 3) = (byte)(uVar11 >> 8);
+       ((g_object_type_props[(uVar12 & 0x1ff)].class_flags & 3) != 2)) {
+      ((uw_object_hdr_t *)puVar9)->heading = ((uw_projectile_object_t *)object)->original_heading & 7;
+      uVar11 = ((uw_object_hdr_t *)puVar9)->position_word;
     }
   }
   else {
     puVar9 = (ushort *)0x0;
   }
   if (bVar13 == 9) {
-    if ((*object & 0x1c0) == 0x40) {
+    if ((((uw_object_hdr_t *)object)->object_id & 0x1c0) == 0x40) {
       local_2c = 0;
     }
     else {
-      local_2c = (byte)object[9];
+      local_2c = ((uw_projectile_object_t *)object)->source_slot;
     }
   }
   discard_misplaced_object(pbTile,object,1);
@@ -1387,7 +1369,8 @@ ushort *settle_mobile_to_immobile(ushort *object)
 void drop_creature_inventory_on_death(void *creature_ptr)
 {
   byte *creature = (byte *)creature_ptr;
-  empty_container_into_world(creature,(&DAT_001007d9)[(*creature & 0x3f) * 0x30]);
+  empty_container_into_world(creature,
+                             g_monster_type_props[(*creature & 0x3f)].race_flags);
 }
 
 
@@ -1463,8 +1446,8 @@ void spawn_creature_treasure_drop(void *creature_ptr)
     uVar2 = (uint)cVar5;
     if (0 < (int)uVar2) {
       pObj = (char *)spawn_new_object((short)cVar4 + 0xa0,0);
-      *(byte *)(pObj + 6) = *(byte *)(pObj + 6) & 0x3f | (byte)((uVar2 & 0x3ff) << 6);
-      *(char *)(pObj + 7) = (char)((uVar2 << 0x16) >> 0x18);
+      ((uw_object_hdr_t *)pObj)->link_word_low = ((uw_object_hdr_t *)pObj)->owner | (byte)((uVar2 & 0x3ff) << 6);
+      ((uw_object_hdr_t *)pObj)->link_word_high = (byte)(char)((uVar2 << 0x16) >> 0x18);
       object_list_insert_head(creature + 6,pObj);
     }
   }
@@ -1537,17 +1520,17 @@ void spawn_creature_equipment_drop(void *creature_ptr)
         uw_ord2005_rem_162 = ((int)(uVar5)) % (0x40);
         bVar6 = uw_ord2005_rem_162;
       }
-      uVar1 = *(undefined2 *)(pbVar4 + 4);
+      uVar1 = ((uw_object_hdr_t *)pbVar4)->chain_word;
       bVar2 = (byte)uVar1;
-      pbVar4[4] = (bVar2 ^ bVar6) & 0x3f ^ bVar2;
-      pbVar4[5] = (byte)((ushort)uVar1 >> 8);
-      if ((*pbVar4 & 0x30) == 0x10) {
-        if ((&DAT_002027d2)[(*pbVar4 & 0xf) * 3] == 0xc0) {  /* byte value 0xc0 (was compared against -0x40, never true for an unsigned byte) */
+      ((uw_object_hdr_t *)pbVar4)->chain_word_low = (bVar2 ^ bVar6) & 0x3f ^ bVar2;
+      ((uw_object_hdr_t *)pbVar4)->chain_word_high = (byte)((ushort)uVar1 >> 8);
+      if ((((uw_object_hdr_t *)pbVar4)->object_id & 0x30) == 0x10) {
+        if (g_ranged_type_props[(((uw_object_hdr_t *)pbVar4)->object_id & 0xf)].ammo_damage_selector == 0xc0) {  /* byte value 0xc0 (was compared against -0x40, never true for an unsigned byte) */
           uVar5 = ce_rand();
           uw_ord2005_rem_163 = ((int)(uVar5)) % (8);
           uVar7 = (uw_ord2005_rem_163 & 0xffff) + 4;
-          pbVar4[6] = pbVar4[6] & 0x3f ^ (char)uVar7 * '@';
-          pbVar4[7] = (byte)(uVar7 >> 2);
+          ((uw_object_hdr_t *)pbVar4)->link_word_low = ((uw_object_hdr_t *)pbVar4)->owner ^ (char)uVar7 * '@';
+          ((uw_object_hdr_t *)pbVar4)->link_word_high = (byte)(uVar7 >> 2);
         }
       }
       object_list_insert_head(creature + 6,pbVar4);
@@ -1604,10 +1587,10 @@ void spawn_creature_misc_item_drop(void *creature_ptr)
         uw_ord2005_rem_166 = ((int)(uVar5)) % (0x40);
         bVar7 = uw_ord2005_rem_166;
       }
-      uVar2 = *(undefined2 *)(iVar6 + 4);
+      uVar2 = ((uw_object_hdr_t *)iVar6)->chain_word;
       bVar3 = (byte)uVar2;
-      *(byte *)(iVar6 + 4) = (bVar3 ^ bVar7) & 0x3f ^ bVar3;
-      *(char *)(iVar6 + 5) = (char)((ushort)uVar2 >> 8);
+      ((uw_object_hdr_t *)iVar6)->chain_word_low = (bVar3 ^ bVar7) & 0x3f ^ bVar3;
+      ((uw_object_hdr_t *)iVar6)->chain_word_high = (byte)(char)((ushort)uVar2 >> 8);
       object_list_insert_head(creature + 6,iVar6);
     }
     uVar8 = uVar8 + 1 & 0xff;
@@ -1711,20 +1694,20 @@ void drop_monster_loot(void *monster_ptr, ushort gold_nibble, ushort item_nibble
   ;
   if (((gold_nibble & 0xff) != 0) &&
      (pDropObj = (char *)spawn_new_object((short)(gold_nibble & 0xff) + 0xd8,0), pDropObj != NULL)) {
-    uVar6 = (*(ushort *)(pDropObj + 2) ^ *(ushort *)(monster + 2)) & 0x1fff ^
+    uVar6 = (((uw_object_hdr_t *)pDropObj)->position_word ^ *(ushort *)(monster + 2)) & 0x1fff ^
             (uint)*(ushort *)(monster + 2);
     bVar1 = (byte)uVar6;
-    *(byte *)(pDropObj + 2) = bVar1;
+    ((uw_object_hdr_t *)pDropObj)->position_word_low = bVar1;
     bVar2 = (byte)(uVar6 >> 8);
-    *(byte *)(pDropObj + 3) = bVar2;
+    ((uw_object_hdr_t *)pDropObj)->position_word_high = bVar2;
     bVar2 = (monster[3] ^ bVar2) & 0x1c ^ bVar2;
-    *(byte *)(pDropObj + 2) = bVar1;
-    *(byte *)(pDropObj + 3) = bVar2;
-    *(byte *)(pDropObj + 2) = (monster[2] ^ bVar1) & 0x7f ^ bVar1;
-    *(byte *)(pDropObj + 3) = bVar2;
-    uVar6 = CONCAT11(*(undefined1 *)(pDropObj + 5),*(undefined1 *)(pDropObj + 4)) & 0xffe8;
-    *(byte *)(pDropObj + 4) = (byte)uVar6 | 0x28;
-    *(char *)(pDropObj + 5) = (char)(uVar6 >> 8);
+    ((uw_object_hdr_t *)pDropObj)->position_word_low = bVar1;
+    ((uw_object_hdr_t *)pDropObj)->position_word_high = bVar2;
+    ((uw_object_hdr_t *)pDropObj)->position_word_low = (monster[2] ^ bVar1) & 0x7f ^ bVar1;
+    ((uw_object_hdr_t *)pDropObj)->position_word_high = bVar2;
+    uVar6 = ((uw_object_hdr_t *)pDropObj)->chain_word & 0xffe8;
+    ((uw_object_hdr_t *)pDropObj)->chain_word_low = (byte)uVar6 | 0x28;
+    ((uw_object_hdr_t *)pDropObj)->chain_word_high = (byte)(char)(uVar6 >> 8);
     object_list_insert_head(iVar4 + 2,pDropObj);
     settle_dropped_object(pDropObj,(int)DAT_0010144c,(int)DAT_00101454,1);
   }
@@ -1733,10 +1716,10 @@ void drop_monster_loot(void *monster_ptr, ushort gold_nibble, ushort item_nibble
     uw_ord2005_rem_12 = ((int)(uVar7)) % (0x10);
     if ((uw_ord2005_rem_12 < 7) &&
        (pDropObj = (char *)spawn_new_object((short)(item_nibble & 0xff) + 0xc0,0), pDropObj != NULL)) {
-      uVar3 = *(undefined2 *)(pDropObj + 6);
+      uVar3 = ((uw_object_hdr_t *)pDropObj)->link_word;
       bVar1 = (byte)uVar3;
-      *(byte *)(pDropObj + 6) = (*monster ^ bVar1) & 0x3f ^ bVar1;
-      *(char *)(pDropObj + 7) = (char)((ushort)uVar3 >> 8);
+      ((uw_object_hdr_t *)pDropObj)->link_word_low = (*monster ^ bVar1) & 0x3f ^ bVar1;
+      ((uw_object_hdr_t *)pDropObj)->link_word_high = (byte)(char)((ushort)uVar3 >> 8);
       drop_object_near_target(monster,pDropObj,4,0);
     }
   }
@@ -2181,7 +2164,7 @@ void reset_npc_path_cache()
   iVar2 = 2;
   do {
     iVar1 = get_object_record_by_slot_index(iVar2);
-    *(byte *)(iVar1 + 0x15) = *(byte *)(iVar1 + 0x15) & 0x7f;
+    ((uw_mobile_object_t *)iVar1)->animation_flags = ((uw_mobile_object_t *)iVar1)->animation_flags & 0x7f;
     iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
   } while (iVar2 < 0x100);
   DAT_000853b8 = 0xffff;
@@ -2377,9 +2360,9 @@ int walk_using_cached_path(byte *cache_record)
   bVar4 = DAT_001013f8;
   if ((iVar5 == 0) || (iVar5 = advance_cached_path_step(cache_record), bVar3 = bVar1, bVar4 = bVar2, iVar5 != 0)) {
     if ((cache_record[2] & 0x80) == 0) {
-      if ((*(byte *)(DAT_00101404 + 10) & 0x80) != 0) {
-        set_npc_altitude_state(*(ushort *)((char *)DAT_0010190c + 0xf) & 0x3f,
-                     *(ushort *)((char *)DAT_0010190c + 0xf) >> 6 & 0x3f);
+      if ((DAT_00101404->movement_flags & 0x80) != 0) {
+        set_npc_altitude_state(DAT_0010190c->npc_target_tile_x,
+                               DAT_0010190c->npc_target_tile_y);
       }
       uVar7 = (uint)*cache_record;
       iVar5 = uVar7 * 8;
@@ -2399,11 +2382,9 @@ int walk_using_cached_path(byte *cache_record)
       }
       uVar7 = compute_movement_heading((int)((iVar5 - (uint)DAT_00101910) * 0x1000000) >> 0x18,
                            (int)((iVar8 - (uint)DAT_0010141c) * 0x1000000) >> 0x18);
-      *(char *)((char *)DAT_0010190c + 9) = (char)((uVar7 & 0xff) << 5);
-      uVar7 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar7 & 7) << 7;
-      *(char *)((char *)DAT_0010190c + 2) = (char)uVar7;
-      *(char *)((char *)DAT_0010190c + 3) = (char)(uVar7 >> 8);
-      *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
+      DAT_0010190c->full_heading = (byte)((uVar7 & 0xff) << 5);
+      DAT_0010190c->hdr.heading = uVar7 & 0x7;
+      DAT_0010190c->npc_heading = 0;
     }
     else {
       handle_blocked_cached_path(cache_record);
@@ -2458,26 +2439,22 @@ void handle_blocked_cached_path(byte *cache_record)
     uw_ord2005_rem_16 = ((int)(cache_record[2] & 0x7f)) % (4);
     iVar1 = (short)(bVar2 >> ((uw_ord2005_rem_16 & 0x7f) << 1) & 3) * 2;
     uVar3 = compute_movement_heading(((int)(char)(&DAT_000853b0)[iVar1] + uVar7 & 0xff) -
-                         (uint)(*(ushort *)((char *)DAT_0010190c + 0x16) >> 10),
+                         (uint)(DAT_0010190c->npc_xhome),
                          ((int)(char)(&DAT_000853b1)[iVar1] + uVar6 & 0xff) -
-                         (*(ushort *)((char *)DAT_0010190c + 0x16) >> 4 & 0x3f));
+                         (DAT_0010190c->npc_yhome));
     DAT_00101920 = 1;
-    *(char *)((char *)DAT_0010190c + 9) = (char)((uVar3 & 0xff) << 5);
-    uVar3 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar3 & 7) << 7;
-    *(char *)((char *)DAT_0010190c + 2) = (char)uVar3;
-    *(char *)((char *)DAT_0010190c + 3) = (char)(uVar3 >> 8);
-    *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
-    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xf9 | 1;
-    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 7 | 0xb0;
-    *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x8b | 0xb;
+    DAT_0010190c->full_heading = (byte)((uVar3 & 0xff) << 5);
+    DAT_0010190c->hdr.heading = uVar3 & 0x7;
+    DAT_0010190c->npc_heading = 0;
+    DAT_0010190c->attack_pitch = DAT_0010190c->attack_pitch & 0xf9 | 1;
+    DAT_0010190c->attack_pitch = DAT_0010190c->attack_pitch & 7 | 0xb0;
+    DAT_0010190c->motion_flags = DAT_0010190c->motion_flags & 0x8b | 0xb;
   }
   else {
     uVar3 = compute_movement_heading((int)(uVar4 * 0x1000000) >> 0x18,(int)(uVar3 * 0x1000000) >> 0x18);
-    *(char *)((char *)DAT_0010190c + 9) = (char)((uVar3 & 0xff) << 5);
-    uVar3 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar3 & 7) << 7;
-    *(char *)((char *)DAT_0010190c + 2) = (char)uVar3;
-    *(char *)((char *)DAT_0010190c + 3) = (char)(uVar3 >> 8);
-    *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
+    DAT_0010190c->full_heading = (byte)((uVar3 & 0xff) << 5);
+    DAT_0010190c->hdr.heading = uVar3 & 0x7;
+    DAT_0010190c->npc_heading = 0;
   }
 }
 
@@ -2543,7 +2520,7 @@ void set_npc_altitude_state(byte tile_x, byte tile_y)
   
   if (DAT_00101914 == 0) {
     pbVar2 = (byte *)tilemap_lookup(tile_x,tile_y);
-    uVar5 = *(byte *)((char *)DAT_0010190c + 2) & 0x7f;
+    uVar5 = DAT_0010190c->hdr.zpos;
     uVar3 = (uint)(*pbVar2 >> 4) * 8 + 0x14;
     if (0x78 < uVar3) {
       uVar3 = 0x78;
@@ -2561,7 +2538,7 @@ void set_npc_altitude_state(byte tile_x, byte tile_y)
     else {
       cVar1 = '\x12';
     }
-    *(byte *)((char *)DAT_0010190c + 0x14) = cVar1 << 3 | *(byte *)((char *)DAT_0010190c + 0x14) & 7;
+    DAT_0010190c->attack_pitch = cVar1 << 3 | DAT_0010190c->attack_pitch & 7;
   }
 }
 
@@ -2580,18 +2557,18 @@ void npc_arrival_interaction(void *npc_ptr)
   undefined1 uVar2;
   
   if ((*npc & 7) != 7) {
-    if (*(char *)(DAT_00101404 + 0x2e) != '\0') {
+    if (*(char *)&DAT_00101404->door_skill != '\0') {
       DAT_002020a0 = (ushort)DAT_00101424;
       DAT_002020a4 = (ushort)DAT_00101428;
       use_object_on_target(DAT_0010190c,npc,0);
     }
     if (((*npc & 0x1f0) == 0x140) && ((*npc & 0xf) < 8)) {
-      if (*(char *)(DAT_00101404 + 0x2e) != '\0') {
+      if (*(char *)&DAT_00101404->door_skill != '\0') {
         uVar1 = ce_rand();
         uw_ord2005_rem_21 = ((int)(uVar1)) % (2);
         if (uw_ord2005_rem_21 != 0) {
           check_object_combination(DAT_0010190c,npc,
-                       (int)((uint)*(byte *)(DAT_00101404 + 0x2e) * -0x10000) >> 0x10);
+                       (int)((uint) DAT_00101404->door_skill * -0x10000) >> 0x10);
           return;
         }
       }
@@ -2603,7 +2580,7 @@ void npc_arrival_interaction(void *npc_ptr)
         /* Was `ordint_divmod(...); apply_typed_damage_to_object(...,extraout_r1,...)` -- same
            fabricated-remainder bug fixed throughout this session (this port's ordint_divmod never
            populates extraout_r1). ordint_divmod(divisor,dividend).quot here divides the... */
-        uw_ord2005_rem_21 = (int)uVar1 % (int)(uint)(*(byte *)(DAT_00101404 + 0x14));
+        uw_ord2005_rem_21 = (int)uVar1 % (int)(uint)(DAT_00101404->attacks[0].damage);
         apply_typed_damage_to_object(npc,DAT_0010190c,DAT_00101424,DAT_00101428,uw_ord2005_rem_21,uVar2);
       }
     }
@@ -2632,18 +2609,18 @@ void npc_wander_reposition(uint saved_a, uint saved_b, uint saved_c)
   local_10 = saved_a;
   local_c = saved_b;
   uStack_8 = saved_c;
-  if (((saved_a & 0xff) != (*(ushort *)((char *)DAT_0010190c + 0xf) & 0x3f)) ||
-     ((saved_b & 0xff) != (*(ushort *)((char *)DAT_0010190c + 0xf) & 0xfc0) >> 6)) {
+  if (((saved_a & 0xff) != (DAT_0010190c->npc_target_tile_x)) ||
+      ((saved_b & 0xff) != DAT_0010190c->npc_target_tile_y)) {
     uVar3 = ce_rand();
     uw_ord2005_rem_57 = ((int)(uVar3)) % (8);
     if (uw_ord2005_rem_57 == 0) {
       cVar2 = detect_npc_wander_proximity(&local_10,&local_c);
       if (cVar2 != '\0') {
         if (cVar2 == '\x01') {
-          *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) & 0xfe;
-          bVar4 = *(byte *)((char *)DAT_0010190c + 0x19) & 0xfd;
+          DAT_0010190c->npc_ai_flags = DAT_0010190c->npc_ai_flags & 0xfe;
+          bVar4 = DAT_0010190c->npc_ai_flags & 0xfd;
 LAB_00030984:
-          *(byte *)((char *)DAT_0010190c + 0x19) = bVar4;
+          DAT_0010190c->npc_ai_flags = bVar4;
           npc_clear_special_goal();
           return;
         }
@@ -2651,8 +2628,8 @@ LAB_00030984:
         uVar3 = ce_rand();
         uw_ord2005_rem_58 = ((int)(uVar3)) % (2);
         if (uw_ord2005_rem_58 == 0) {
-          *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) & 0xfe;
-          bVar4 = *(byte *)((char *)DAT_0010190c + 0x19) | 2;
+          DAT_0010190c->npc_ai_flags = DAT_0010190c->npc_ai_flags & 0xfe;
+          bVar4 = DAT_0010190c->npc_ai_flags | 2;
           goto LAB_00030984;
         }
       }
@@ -2671,10 +2648,10 @@ LAB_000309a0:
       /* Dropped third argument: at the real call (0x30a6c) r2 still holds
          DAT_00101420 from the `ldrb r2,[r5]` that fed the
          npc_set_walk_target call above -- pass it explicitly. */
-      (npc_walk_toward_tile(local_10 & 0xff,local_c & 0xff,DAT_00101420), (*(byte *)((char *)DAT_0010190c + 0x18) & 0x40) != 0)))
+      (npc_walk_toward_tile(local_10 & 0xff,local_c & 0xff,DAT_00101420), (DAT_0010190c->heading_flags & 0x40) != 0)))
      ) {
     npc_clear_special_goal();
-    *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) & 0xfd;
+    DAT_0010190c->npc_ai_flags = DAT_0010190c->npc_ai_flags & 0xfd;
   }
 }
 
@@ -2694,31 +2671,26 @@ void npc_react_to_nearby_player()
   uint uVar4;
   uint uVar5;
   
-  if (((*(byte *)((char *)DAT_0010190c + 0x13) & 0x7f) == 0) || ((*(byte *)(DAT_00086df8 + 0x5f) & 2) != 0))
+  if (((DAT_0010190c->motion_flags & 0x7f) == 0) || ((*(byte *)(DAT_00086df8 + 0x5f) & 2) != 0))
   {
-    uVar5 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xf01f;
-    *(byte *)((char *)DAT_0010190c + 0xb) = (byte)uVar5 | 0x10;
-    *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar5 >> 8);
+    uVar5 = DAT_0010190c->goal_word & 0xf01f;
+    DAT_0010190c->npc_gtarg = 1;
     refresh_npc_target_delta();
     if ((ushort)(DAT_00101444 * DAT_00101444 + DAT_00101448 * DAT_00101448) < 0x90) {
       uVar5 = compute_movement_heading((int)(char)DAT_00101444,(int)(char)DAT_00101448);
-      *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
-      *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xe0 | 0x20;
-      *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfe | 6;
+      DAT_0010190c->motion_flags = DAT_0010190c->motion_flags & 0x80;
+      DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 0xe0 | 0x20;
+      DAT_0010190c->attack_pitch = DAT_0010190c->attack_pitch & 0xfe | 6;
       uVar3 = ce_rand();
       uw_ord2005_rem_82 = ((int)(uVar3)) % (2);
       if (uw_ord2005_rem_82 != 0) {
-        uVar1 = *(ushort *)((char *)DAT_0010190c + 0xb);
-        uw_ord2005_rem_83 = ((int)((uVar1 >> 0xc) + 1)) % (4);
+        uVar1 = DAT_0010190c->goal_word;
+        uw_ord2005_rem_83 = ((int)(DAT_0010190c->npc_animation_frame + 1)) % (4);
         uVar4 = uVar1 & 0xfff;
-        *(char *)((char *)DAT_0010190c + 0xb) = (char)uVar4;
-        *(byte *)((char *)DAT_0010190c + 0xc) =
-             (byte)(uVar4 >> 8) | (byte)(((uw_ord2005_rem_83 & 0xf) << 0xc) >> 8);
+        DAT_0010190c->npc_animation_frame = uw_ord2005_rem_83 & 0xf;
       }
-      uVar5 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar5 & 7) << 7;
-      *(char *)((char *)DAT_0010190c + 2) = (char)uVar5;
-      *(char *)((char *)DAT_0010190c + 3) = (char)(uVar5 >> 8);
-      *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
+      DAT_0010190c->hdr.heading = uVar5 & 0x7;
+      DAT_0010190c->npc_heading = 0;
     }
   }
   return;
@@ -2754,16 +2726,16 @@ int detect_npc_wander_proximity(void *out_near_ptr, void *out_far_ptr)
   deltaX = iVar1;
   deltaY = iVar2;
   iVar2 = (iVar1 * iVar1 + iVar2 * iVar2) * 0x10000 >> 0x10;
-  iVar1 = (int)((*(byte *)(DAT_00101404 + 0x1e) & 0xf) *
-               ((byte)(&DAT_001007ed)[((byte)*DAT_00101400 & 0x3f) * 0x30] & 0xf)) >> 4;
+  iVar1 = (int)((DAT_00101404->awareness_ranges & 0xf) *
+                ((byte) g_monster_type_props[((byte)*DAT_00101400 & 0x3f)].detection_ranges & 0xf)) >> 4;
   iVar1 = iVar1 * iVar1 * 0x10000;
   if (iVar2 < iVar1 >> 0x12) {
 LAB_000323ac:
     uVar6 = 0;
   }
   else {
-    iVar5 = (int)((uint)(*(byte *)(DAT_00101404 + 0x1e) >> 4) *
-                 (uint)((byte)(&DAT_001007ed)[((byte)*DAT_00101400 & 0x3f) * 0x30] >> 4)) >> 4;
+    iVar5 = (int)((uint)(DAT_00101404->awareness_ranges >> 4) *
+                  (uint)((byte) g_monster_type_props[((byte)*DAT_00101400 & 0x3f)].detection_ranges >> 4)) >> 4;
     puVar7 = DAT_0010190c;
     if (iVar2 <= iVar5 * iVar5 * 0x10000 >> 0x10) {
       /* Was a dropped register-forwarding argument -- was `compute_movement_heading();` with no
@@ -2771,16 +2743,16 @@ LAB_000323ac:
          got squashed into the squared-distance iVar2), are exactly what this call needs. */
       cVar4 = compute_movement_heading(deltaX,deltaY);
       puVar7 = DAT_0010190c;
-      uVar3 = DAT_0010190c[1];
+      uVar3 = DAT_0010190c->hdr.position_word;
       uw_ord2005_rem_86 = ((int)(((int)cVar4 - ((int)(char)(uVar3 >> 7) & 7U)) + 8)) % (8);
       if ((((uw_ord2005_rem_86 == '\0') || (uw_ord2005_rem_86 == '\x01')) || (uw_ord2005_rem_86 == '\a')) &&
          (iVar5 = check_fine_line_of_sight(DAT_00101910,DAT_0010141c,
-                               (ushort)(byte)(&DAT_00202c90)[(*puVar7 & 0x1ff) * 0xd] +
+                               (ushort)(byte) g_object_type_props[(((uw_object_hdr_t *)puVar7)->object_id)].height +
                                (uVar3 & 0x7f),DAT_00101908,DAT_00101418,
-                               (ushort)(byte)(&DAT_00202c90)[(*DAT_00101400 & 0x1ff) * 0xd] +
+                               (ushort)(byte) g_object_type_props[(*DAT_00101400 & 0x1ff)].height +
                                ((byte)DAT_00101400[1] & 0x7f)), puVar7 = DAT_0010190c, iVar5 != 0))
       {
-        *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) | 1;
+        DAT_0010190c->npc_ai_flags = DAT_0010190c->npc_ai_flags | 1;
         goto LAB_000323ac;
       }
     }
@@ -2789,7 +2761,7 @@ LAB_000323ac:
     }
     else {
       uVar6 = 1;
-      *(byte *)((char *)puVar7 + 0x19) = *(byte *)((char *)puVar7 + 0x19) & 0xfe;
+      ((uw_mobile_object_t *)puVar7)->npc_ai_flags = ((uw_mobile_object_t *)puVar7)->npc_ai_flags & 0xfe;
     }
   }
   return uVar6;
@@ -2809,7 +2781,7 @@ int compute_vertical_aim_offset(short has_target, int target)
   int iVar6;
   
   refresh_npc_target_delta();
-  bVar1 = *(byte *)((char *)DAT_0010190c + 2);
+  bVar1 = DAT_0010190c->hdr.position_word_low;
   bVar2 = *(byte *)(DAT_00101400 + 2);
   uVar3 = integer_sqrt(DAT_00101728);
   iVar6 = (int)(((bVar2 & 0x7f) - (bVar1 & 0x7f)) * 0x10000) >> 0x10;
@@ -2844,7 +2816,7 @@ int compute_vertical_aim_offset(short has_target, int target)
 // was FUN_00032aa4 -- the per-tick NPC AI setup step: stashes the current NPC object into
 // DAT_0010190c and computes the whole derived-state fan-out virtually every other function in this
 // NPC AI cluster reads -- its own stat template pointer (DAT_00101404)...
-void setup_npc_ai_tick_state(ushort *npc)
+void setup_npc_ai_tick_state(uw_mobile_object_t *npc)
 {
   byte bVar1;
   uint uVar2;
@@ -2855,24 +2827,24 @@ void setup_npc_ai_tick_state(ushort *npc)
      above as DAT_0010190c, the "current NPC" this whole per-tick setup is for) is the obvious
      intended argument. */
   DAT_00101738 = encode_object_slot_index(npc);
-  iVar3 = ((byte)*DAT_0010190c & 0x3f) * 0x30;
-  DAT_00101404 = &DAT_001007d0 + iVar3;
-  DAT_00101918 = *(byte *)((char *)DAT_0010190c + 0x17) >> 2;
-  uVar2 = DAT_0010190c[0xb] >> 4 & 0x3f;
+  iVar3 = (DAT_0010190c->hdr.object_id & 0x3f) * 0x30;
+  DAT_00101404 = &g_monster_type_props[(iVar3) / 0x30];
+  DAT_00101918 = DAT_0010190c->npc_xhome;
+  uVar2 = DAT_0010190c->npc_yhome;
   DAT_001013f8 = (char)uVar2;
-  DAT_0010140c = (byte)DAT_0010190c[1] >> 3 & 0xf;
+  DAT_0010140c = DAT_0010190c->hdr.zpos >> 3;
   DAT_00101910 = (short)(((uint)DAT_00101918 << 0x13) >> 0x10) +
-                 (ushort)(*(byte *)((char *)DAT_0010190c + 3) >> 5);
-  DAT_0010141c = (*(byte *)((char *)DAT_0010190c + 3) >> 2 & 7) + (short)((uVar2 << 0x13) >> 0x10);
-  DAT_0010143c = (byte)DAT_0010190c[2] & 0x3f;
-  DAT_0010173c = (byte)DAT_0010190c[3] & 0x3f;
-  DAT_00101458 = *(byte *)((char *)DAT_0010190c + 9);
-  bVar1 = (byte)(DAT_0010190c[1] >> 2);
-  DAT_001018fc = (bVar1 ^ (byte)DAT_0010190c[0xc]) & 0x1f ^ bVar1;
-  DAT_00101434 = *(byte *)((char *)DAT_0010190c + 0x13) & 0x7f;
-  DAT_00101730 = (&DAT_00202c90)[(*DAT_0010190c & 0x1ff) * 0xd];
-  if (((&DAT_001007da)[iVar3] & 0x80) == 0) {
-    if (((&DAT_001007da)[iVar3] & 0x40) == 0) {
+                 (ushort)(DAT_0010190c->hdr.xpos);
+  DAT_0010141c = (DAT_0010190c->hdr.ypos) + (short)((uVar2 << 0x13) >> 0x10);
+  DAT_0010143c = DAT_0010190c->hdr.quality;
+  DAT_0010173c = DAT_0010190c->hdr.owner;
+  DAT_00101458 = DAT_0010190c->full_heading;
+  bVar1 = (byte)(DAT_0010190c->hdr.position_word >> 2);
+  DAT_001018fc = (bVar1 ^ DAT_0010190c->heading_flags) & 0x1f ^ bVar1;
+  DAT_00101434 = DAT_0010190c->motion_flags & 0x7f;
+  DAT_00101730 = g_object_type_props[(DAT_0010190c->hdr.object_id)].height;
+  if ((g_monster_type_props[(iVar3) / 0x30].movement_flags & 0x80) == 0) {
+    if ((g_monster_type_props[(iVar3) / 0x30].movement_flags & 0x40) == 0) {
       DAT_0010172c = &DAT_002048c0;
       DAT_00101438 = (char *)&DAT_00204980;
     }
@@ -2928,12 +2900,12 @@ void npc_ai_default_tick()
   
   bVar3 = false;
   DAT_00101920 = 0;
-  *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xdf;
-  *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xbf;
-  uVar2 = *(ushort *)((char *)DAT_0010190c + 0xb);
+  DAT_0010190c->heading_flags = DAT_0010190c->heading_flags & 0xdf;
+  DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 0xbf;
+  uVar2 = DAT_0010190c->goal_word;
   if ((uVar2 & 0xf) != 0xb) {
-    if (((*(byte *)((char *)DAT_0010190c + 0x15) & 0x3f) == 0x2c) && ((uVar2 & 0x1000) == 0x1000)) {
-      bVar10 = *(byte *)(DAT_00101404 + 0x10) & 0xf;
+    if (((DAT_0010190c->animation_flags & 0x3f) == 0x2c) && ((uVar2 & 0x1000) == 0x1000)) {
+      bVar10 = DAT_00101404->category & 0xf;
       if (bVar10 == 1) {
         if ((uVar2 & 0xf000) == 0x1000) {
           uVar6 = 1;
@@ -2959,85 +2931,82 @@ void npc_ai_default_tick()
       play_positional_sound_effect(uVar6,DAT_00101910,DAT_0010141c,0);
     }
 LAB_000339fc:
-    if ((*(byte *)(DAT_00101404 + 10) & 2) == 0) {
-      if (((((((*(byte *)((char *)DAT_0010190c + 0x19) & 0x40) == 0) && (DAT_0010194c != DAT_00101738)) &&
-            (DAT_000853d0 == *(char *)(DAT_00101404 + 9))) &&
-           ((*(byte *)((char *)DAT_0010190c + 10) & 0x80) == 0)) ||
-          ((*(byte *)((char *)DAT_0010190c + 0x19) & 0x40) != 0)) &&
-         ((*(uint *)(DAT_00086df8 + 0xce) < DAT_00101940 + 0x200U &&
-          (uVar11 = (int)((uint)DAT_00101918 - (uint)DAT_0010192c) >> 0x1f,
-          uVar5 = (int)((uint)DAT_001013f8 - (uint)DAT_00101930) >> 0x1f,
-          (int)((((uint)DAT_001013f8 - (uint)DAT_00101930 ^ uVar5) - uVar5) +
-               (((uint)DAT_00101918 - (uint)DAT_0010192c ^ uVar11) - uVar11)) <
-          (int)(*(byte *)(DAT_00101404 + 0x1e) & 0xf))))) {
-        uVar11 = *(ushort *)((char *)DAT_0010190c + 0xd) & 0x3fff;
-        *(char *)((char *)DAT_0010190c + 0xd) = (char)uVar11;
-        *(char *)((char *)DAT_0010190c + 0xe) = (char)(uVar11 >> 8);
-        *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) | 1;
-        bVar10 = *(byte *)((char *)DAT_0010190c + 0xb) & 0xf;
+    if ((DAT_00101404->movement_flags & 2) == 0) {
+      if (((((((DAT_0010190c->npc_ai_flags & 0x40) == 0) && (DAT_0010194c != DAT_00101738)) &&
+             (DAT_000853d0 == *(char *)&DAT_00101404->race_flags)) &&
+            ((DAT_0010190c->movement_flags & 0x80) == 0)) ||
+           ((DAT_0010190c->npc_ai_flags & 0x40) != 0)) &&
+          ((*(uint *)(DAT_00086df8 + 0xce) < DAT_00101940 + 0x200U &&
+            (uVar11 = (int)((uint)DAT_00101918 - (uint)DAT_0010192c) >> 0x1f,
+             uVar5 = (int)((uint)DAT_001013f8 - (uint)DAT_00101930) >> 0x1f,
+             (int)((((uint)DAT_001013f8 - (uint)DAT_00101930 ^ uVar5) - uVar5) +
+                   (((uint)DAT_00101918 - (uint)DAT_0010192c ^ uVar11) - uVar11)) <
+             (int)(DAT_00101404->awareness_ranges & 0xf))))) {
+        DAT_0010190c->npc_attitude = 0x0;
+        uVar11 = DAT_0010190c->status_word;
+        DAT_0010190c->npc_ai_flags = DAT_0010190c->npc_ai_flags | 1;
+        bVar10 = DAT_0010190c->npc_goal;
         if ((bVar10 != 9) && (bVar10 != 6)) {
           cVar4 = DAT_0010194c;
-          if ((*(byte *)((char *)DAT_0010190c + 0x19) & 0x40) == 0) {
+          if ((DAT_0010190c->npc_ai_flags & 0x40) == 0) {
             cVar4 = '\x01';
           }
           npc_set_goal(5,cVar4);
           npc_set_walk_target(DAT_0010192c,DAT_00101930,DAT_00101934);
         }
       }
-      cVar4 = *(char *)((char *)DAT_0010190c + 0x12);
+      cVar4 = *(char *)&DAT_0010190c->damage_source;
       /* Added a NULL guard on get_object_record_by_slot_index's result: it legitimately returns
          NULL for an out-of-range slot index (its own established behavior/contract), and this code
          unconditionally dereferenced it. */
       if ((cVar4 != '\0') &&
-         (((cVar4 == '\x01' && ((*(byte *)((char *)DAT_0010190c + 0x19) & 0x40) == 0)) ||
-          (((*(byte *)((char *)DAT_0010190c + 0x19) & 0x40) != 0 ||
-           (npc_rec = get_object_record_by_slot_index(cVar4), (npc_rec != 0) && (*(byte *)(npc_rec + 0x19) & 0x40) != 0)))))) {
-        if ((uint)*(byte *)((char *)DAT_0010190c + 0x12) != (*(ushort *)((char *)DAT_0010190c + 0xb) >> 4 & 0xff)) {
-          uVar11 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xf00f |
-                   (uint)*(byte *)((char *)DAT_0010190c + 0x12) << 4;
-          *(char *)((char *)DAT_0010190c + 0xb) = (char)uVar11;
-          *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar11 >> 8);
+         (((cVar4 == '\x01' && ((DAT_0010190c->npc_ai_flags & 0x40) == 0)) ||
+           (((DAT_0010190c->npc_ai_flags & 0x40) != 0 ||
+             (npc_rec = get_object_record_by_slot_index(cVar4), (npc_rec != 0) && (*(byte *)(npc_rec + 0x19) & 0x40) != 0)))))) {
+        if ((uint) DAT_0010190c->damage_source != (DAT_0010190c->npc_gtarg)) {
+          uVar11 = DAT_0010190c->goal_word & 0xf00f |
+                   (uint) DAT_0010190c->damage_source << 4;
+          DAT_0010190c->goal_word = (ushort)uVar11;
         }
         iVar7 = refresh_npc_target_delta();
         if (iVar7 != 0) {
           bVar3 = true;
-          if (*(char *)((char *)DAT_0010190c + 0x12) == '\x01') {
-            uVar11 = *(ushort *)((char *)DAT_0010190c + 0xd) & 0x3fff;
-            *(char *)((char *)DAT_0010190c + 0xd) = (char)uVar11;
-            *(char *)((char *)DAT_0010190c + 0xe) = (char)(uVar11 >> 8);
-            npc_set_walk_target(*(ushort *)((char *)g_player_object + 0x16) >> 10,
-                         *(ushort *)((char *)g_player_object + 0x16) >> 4 & 0x3f,
-                         *(byte *)((char *)g_player_object + 2) >> 3 & 0xf);
-            *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) | 1;
+          if (*(char *)&DAT_0010190c->damage_source == '\x01') {
+            DAT_0010190c->npc_attitude = 0x0;
+            uVar11 = DAT_0010190c->status_word;
+            npc_set_walk_target(g_player_object->npc_xhome,
+                                g_player_object->npc_yhome,
+                                g_player_object->hdr.zpos >> 3);
+            DAT_0010190c->npc_ai_flags = DAT_0010190c->npc_ai_flags | 1;
           }
           if ((DAT_00101900 < 3) ||
-             (((*(byte *)(DAT_00101404 + 0x2d) & 1) != 0 &&
-              (iVar7 = tile_is_no_magic(DAT_00101918,DAT_001013f8), iVar7 == 0)))) {
-            if ((*(byte *)((char *)DAT_0010190c + 0x19) & 0x20) != 0) goto LAB_00033d18;
-            if (((*(byte *)((char *)DAT_0010190c + 0x19) & 0x10) == 0) &&
-               (iVar7 = check_npc_morale_flee(*(undefined1 *)(DAT_00101404 + 4),
-                                     *(undefined1 *)((char *)DAT_0010190c + 8),
-                                     *(byte *)(DAT_00101404 + 0x1c) & 0xf,
-                                     *(undefined1 *)((char *)DAT_0010190c + 0x11)), iVar7 != 0)) {
-              uVar9 = *(undefined1 *)((char *)DAT_0010190c + 0x12);
+             (((DAT_00101404->spell_flags & 1) != 0 &&
+               (iVar7 = tile_is_no_magic(DAT_00101918,DAT_001013f8), iVar7 == 0)))) {
+            if ((DAT_0010190c->npc_ai_flags & 0x20) != 0) goto LAB_00033d18;
+            if (((DAT_0010190c->npc_ai_flags & 0x10) == 0) &&
+                (iVar7 = check_npc_morale_flee(DAT_00101404->max_hp,
+                                               DAT_0010190c->npc_hp,
+                                               DAT_00101404->morale_flags & 0xf,
+                                               DAT_0010190c->recent_damage), iVar7 != 0)) {
+              uVar9 = DAT_0010190c->damage_source;
               uVar6 = 6;
             }
             else {
-              if ((*(byte *)((char *)DAT_0010190c + 0x19) & 0x10) == 0) goto LAB_00033d18;
-              *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) | 0x10;
-              uVar9 = *(undefined1 *)((char *)DAT_0010190c + 0x12);
+              if ((DAT_0010190c->npc_ai_flags & 0x10) == 0) goto LAB_00033d18;
+              DAT_0010190c->npc_ai_flags = DAT_0010190c->npc_ai_flags | 0x10;
+              uVar9 = DAT_0010190c->damage_source;
               uVar6 = 9;
             }
           }
           else {
-            *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) | 0x20;
+            DAT_0010190c->npc_ai_flags = DAT_0010190c->npc_ai_flags | 0x20;
 LAB_00033d18:
-            uVar9 = *(undefined1 *)((char *)DAT_0010190c + 0x12);
+            uVar9 = DAT_0010190c->damage_source;
             uVar6 = 5;
           }
           npc_set_goal(uVar6,uVar9);
-          *(undefined1 *)((char *)DAT_0010190c + 0x12) = 0;
-          *(undefined1 *)((char *)DAT_0010190c + 0x11) = 0;
+          DAT_0010190c->damage_source = 0;
+          DAT_0010190c->recent_damage = 0;
         }
       }
     }
@@ -3047,9 +3016,10 @@ LAB_00033d18:
      0x16 instead of the real goal nibble at byte 0xb). */
   if (getenv("UW_DEBUG_NPC_GOAL_SWITCH"))
     fprintf(stderr, "[npc-goal-switch] obj=%p goal=%d tile=(%u,%u)\n", (void *)DAT_0010190c,
-            (int)(*(ushort *)((char *)DAT_0010190c + 0xb) & 0xf),
-            (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4));
-  switch(*(ushort *)((char *)DAT_0010190c + 0xb) & 0xf) {
+            (int)(DAT_0010190c->npc_goal),
+            (unsigned)(DAT_0010190c->npc_xhome),
+            (unsigned)(DAT_0010190c->npc_yhome));
+  switch(DAT_0010190c->npc_goal) {
   case 0:
     goto LAB_00033e9c;
   case 1:
@@ -3093,42 +3063,40 @@ LAB_00033e9c:
     npc_combat_disengage_tick();
     break;
   case 0xb:
-    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
+    DAT_0010190c->attack_pitch = DAT_0010190c->attack_pitch & 0xfc | 4;
     uVar6 = ce_rand();
     npc_rec = (char *)DAT_0010190c;
-    bVar10 = *(byte *)((char *)DAT_0010190c + 0x13);
+    bVar10 = DAT_0010190c->motion_flags;
     uw_ord2005_rem_93 = ((int)(uVar6)) % (2);
-    *(byte *)(npc_rec + 0x13) = (uw_ord2005_rem_93 ^ bVar10) & 0x7f ^ bVar10;
+    ((uw_mobile_object_t *)npc_rec)->motion_flags = (uw_ord2005_rem_93 ^ bVar10) & 0x7f ^ bVar10;
     uVar6 = ce_rand();
     uw_ord2005_rem_94 = ((int)(uVar6)) % (0x100);
-    *(undefined1 *)((char *)DAT_0010190c + 9) = uw_ord2005_rem_94;
+    DAT_0010190c->full_heading = uw_ord2005_rem_94;
     uVar6 = ce_rand();
     uw_ord2005_rem_95 = ((int)(uVar6)) % (3);
-    *(byte *)((char *)DAT_0010190c + 0x14) =
-         *(byte *)((char *)DAT_0010190c + 0x14) & 7 ^ (uw_ord2005_rem_95 + '\x0f') * '\b';
+    DAT_0010190c->attack_pitch =
+      DAT_0010190c->attack_pitch & 7 ^ (uw_ord2005_rem_95 + '\x0f') * '\b';
     npc_rec = (char *)DAT_0010190c;
-    uVar2 = *(ushort *)((char *)DAT_0010190c + 0xb);
-    uw_ord2005_rem_96 = ((int)((uVar2 >> 0xc) + 1)) % (4);
+    uVar2 = DAT_0010190c->goal_word;
+    uw_ord2005_rem_96 = ((int)(DAT_0010190c->npc_animation_frame + 1)) % (4);
     uVar11 = uVar2 & 0xfff;
-    *(char *)(npc_rec + 0xb) = (char)uVar11;
-    *(byte *)((char *)DAT_0010190c + 0xc) =
-         (byte)(uVar11 >> 8) | (byte)(((uw_ord2005_rem_96 & 0xf) << 0xc) >> 8);
-    *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) | 0x40;
+    DAT_0010190c->npc_animation_frame = uw_ord2005_rem_96 & 0xf;
+    DAT_0010190c->animation_flags = DAT_0010190c->animation_flags | 0x40;
     break;
   case 0xc:
     npc_wander_return_home_exact_tick();
     break;
   default:
-    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) | 7;
+    DAT_0010190c->attack_pitch = DAT_0010190c->attack_pitch | 7;
   }
   npc_rec = (char *)DAT_0010190c;
   /* HACK: same ushort-vs-byte pointer-arithmetic scaling bug as process_visible_tile_cell's sibling
      npc_notice_and_idle_tick (fixed earlier this session) -- DAT_0010190c is `ushort *`, so bare
      `DAT_0010190c + 2` scales to byte offset 4... */
-  uVar2 = *(ushort *)((char *)DAT_0010190c + 2);
-  bVar10 = *(byte *)((char *)DAT_0010190c + 9);
+  uVar2 = DAT_0010190c->hdr.position_word;
+  bVar10 = DAT_0010190c->full_heading;
   uVar11 = uVar2 >> 2 & 0xff;
-  uVar11 = (uVar11 ^ *(byte *)((char *)DAT_0010190c + 0x18)) & 0x1f ^ uVar11;
+  uVar11 = (uVar11 ^ DAT_0010190c->heading_flags) & 0x1f ^ uVar11;
   uVar12 = (uint)DAT_001018fc;
   /* Was `ordint_divmod(0x100,(uVar11-uVar12)+0x100,*(undefined1*)(DAT_0010190c+2),
      ordint_divmod_exref,unaff_r4,unaff_r5,unaff_r6,unaff_r7,unaff_r8,unaff_r9, unaff_lr);` -- badly
@@ -3144,10 +3112,10 @@ LAB_00033e9c:
     uVar11 = uVar11 & 0xff;
   }
   uVar5 = uVar2 & 0xfc7f | (uVar11 & 0xffe0) << 2;
-  *(char *)(npc_rec + 2) = (char)uVar5;
-  *(char *)((char *)DAT_0010190c + 3) = (char)(uVar5 >> 8);
-  *(byte *)((char *)DAT_0010190c + 0x18) =
-       (*(byte *)((char *)DAT_0010190c + 0x18) ^ (byte)uVar11) & 0x1f ^ *(byte *)((char *)DAT_0010190c + 0x18);
+  ((uw_object_hdr_t *)npc_rec)->position_word_low = (byte)(char)uVar5;
+  DAT_0010190c->hdr.position_word_high = (byte)(char)(uVar5 >> 8);
+  DAT_0010190c->heading_flags =
+    (DAT_0010190c->heading_flags ^ (byte)uVar11) & 0x1f ^ DAT_0010190c->heading_flags;
   npc_rec = (char *)DAT_0010190c;
   /* Was `if (DAT_00101430 == 0)` -- an inverted condition, confirmed via real disassembly (`cmp
      r0,#0x0; beq 0x326a4`, where r0 is DAT_00101430 and 0x326a4 is the simple "just copy
@@ -3156,14 +3124,14 @@ LAB_00033e9c:
     if (DAT_00101434 < 2) {
       return;
     }
-    bVar1 = *(byte *)((char *)DAT_0010190c + 0x13);
+    bVar1 = DAT_0010190c->motion_flags;
     if ((bVar1 & 0x7f) < 2) {
       return;
     }
     uVar5 = (uint)DAT_00101458;
     uVar11 = ((bVar10 - uVar5) + 0x100) & 0xff;
     if ((uVar11 < 0x20) || (0xe0 < uVar11)) {
-      *(byte *)(npc_rec + 9) = bVar10;
+      ((uw_mobile_object_t *)npc_rec)->full_heading = bVar10;
       return;
     }
     if (uVar11 < 0x40) {
@@ -3171,16 +3139,16 @@ LAB_00033e9c:
     }
     else {
       if (uVar11 < 0xc1) {
-        *(byte *)(npc_rec + 0x13) = bVar1 & 0x80;
+        ((uw_mobile_object_t *)npc_rec)->motion_flags = bVar1 & 0x80;
         goto LAB_00032690;
       }
       uVar9 = (uVar5 + 0xe0) & 0xff;
     }
-    *(undefined1 *)(npc_rec + 9) = uVar9;
+    ((uw_mobile_object_t *)npc_rec)->full_heading = uVar9;
   }
   else {
 LAB_00032690:
-    *(byte *)((char *)DAT_0010190c + 9) = DAT_00101458;
+    DAT_0010190c->full_heading = DAT_00101458;
   }
   return;
 }
@@ -3198,7 +3166,7 @@ int refresh_npc_target_delta()
   uint uVar4;
   int iVar5;
   
-  DAT_00101400 = get_object_record_by_slot_index((*(ushort *)((char *)DAT_0010190c + 0xb) & 0xff0) >> 4);
+  DAT_00101400 = get_object_record_by_slot_index(DAT_0010190c->npc_gtarg);
   if ((DAT_00101400 == 0) || (*(char *)(DAT_00101400 + 8) == '\0')) {
     uVar1 = 0;
   }
@@ -3267,10 +3235,11 @@ int compute_pathfind_search_radius()
   uint uVar2;
   
   iVar1 = DAT_00101404;
-  if (((((*(byte *)((char *)DAT_0010190c + 0xe) & 0xc0) == 0) && (*(char *)(DAT_00101404 + 4) != '\0')) &&
-      ((*(byte *)((char *)DAT_0010190c + 1) & 0x20) == 0)) &&
-     ((DAT_00201b68 != 6 || (*(char *)((char *)DAT_0010190c + 0x1a) != '\x16')))) {
-    uVar2 = ordint_divmod(*(char *)(DAT_00101404 + 4),(uint)*(byte *)((char *)DAT_0010190c + 8) << 2).quot;
+  if ((((DAT_0010190c->npc_attitude == 0) && (*(char *)&DAT_00101404->max_hp != '\0')) &&
+       (DAT_0010190c->hdr.doordir == 0)) &&
+      ((DAT_00201b68 != 6 || (*(char *)&DAT_0010190c->npc_whoami != '\x16')))) {
+    uVar2 = ordint_divmod(*(char *)&DAT_00101404->max_hp,
+                          (uint) DAT_0010190c->npc_hp << 2).quot;
     return (uVar2 & 0xff) + (*(byte *)(iVar1 + 0x1c) >> 2 & 3);
   }
   return 0;
@@ -3287,14 +3256,13 @@ int initiate_npc_death(char *npc)
   undefined4 uVar2;
   uint uVar3;
 
-  if ((*(char *)(npc + 0x1a) == '\0') || (iVar1 = resolve_unique_npc_special_behavior(npc,0), iVar1 != 0)) {
+  if (((char)((uw_mobile_object_t *)npc)->npc_whoami == '\0') || (iVar1 = resolve_unique_npc_special_behavior(npc,0), iVar1 != 0)) {
     uVar2 = 1;
-    *(byte *)(npc + 0x15) = *(byte *)(npc + 0x15) & 0xcc | 0xc;
-    uVar3 = CONCAT11(*(undefined1 *)(npc + 0xc),*(undefined1 *)(npc + 0xb)) & 0xfff;
-    *(char *)(npc + 0xb) = (char)uVar3;
-    *(char *)(npc + 0xc) = (char)(uVar3 >> 8);
-    *(byte *)(npc + 0x14) = *(byte *)(npc + 0x14) & 0xfc | 4;
-    *(undefined1 *)(npc + 8) = 0;
+    ((uw_mobile_object_t *)npc)->animation_flags = ((uw_mobile_object_t *)npc)->animation_flags & 0xcc | 0xc;
+    ((uw_mobile_object_t *)npc)->npc_animation_frame = 0x0;
+    uVar3 = ((uw_mobile_object_t *)npc)->goal_word;
+    ((uw_mobile_object_t *)npc)->attack_pitch = ((uw_mobile_object_t *)npc)->attack_pitch & 0xfc | 4;
+    ((uw_mobile_object_t *)npc)->npc_hp = 0;
   }
   else {
     uVar2 = 0;
@@ -3314,11 +3282,11 @@ int handle_monster_death(void *npc_ptr)
   int iVar1;
   undefined4 uVar2;
 
-  if (((*(byte *)(npc + 0x15) & 0x3f) == 0xc) || (iVar1 = initiate_npc_death(npc), iVar1 == 0)) {
+  if (((((uw_mobile_object_t *)npc)->animation_flags & 0x3f) == 0xc) || (iVar1 = initiate_npc_death(npc), iVar1 == 0)) {
     uVar2 = 0;
   }
   else {
-    if ((*(byte *)(DAT_00101404 + 8) & 7) == 1) {
+    if ((DAT_00101404->effects_flags & 7) == 1) {
       play_positional_sound_effect(6,DAT_00101910,DAT_0010141c,0);
     }
     uVar2 = 1;
@@ -3330,10 +3298,11 @@ int handle_monster_death(void *npc_ptr)
 // was FUN_00034ac4 -- calls npc_set_goal(param_2,param_3) as if param_1 were the "current NPC"
 // (DAT_0010190c), temporarily swapping that context pointer in and restoring the caller's own value
 // afterward.
-void npc_set_goal_for_object(void *npc_ptr, int goal, int goal_target)
+void npc_set_goal_for_object(uw_mobile_object_t *npc_ptr, int goal,
+                             int goal_target)
 {
-  ushort *npc = (ushort *)npc_ptr;
-  ushort *saved_npc;
+  uw_mobile_object_t *npc = npc_ptr;
+  uw_mobile_object_t *saved_npc;
 
   saved_npc = DAT_0010190c;
   DAT_0010190c = npc;
@@ -3448,19 +3417,19 @@ void npc_movement_tick(ushort *npc_object, char *scratch)
   uVar8 = npc_object[1] & 0xfc7f | (uw_ord2005_rem_100 & 7) << 7;
   *(byte *)(npc_object + 1) = (byte)uVar8;
   *(byte *)((char *)npc_object + 3) = (byte)(uVar8 >> 8);
-  if (((uint)(byte)npc_object[4] < (uint)(byte)(&g_monster_max_stats_table)[iVar6]) && ((npc_object[7] & 2) == 0)) {
+  if (((uint)(byte)npc_object[4] < (uint)(byte) g_monster_type_props[(iVar6) / 0x30].max_hp) && ((npc_object[7] & 2) == 0)) {
     *(byte *)(npc_object + 4) =
-         (byte)((int)((uint)(byte)npc_object[4] + (uint)(byte)(&g_monster_max_stats_table)[iVar6]) >> 1);
+         (byte)((int)((uint)(byte)npc_object[4] + (uint)(byte) g_monster_type_props[(iVar6) / 0x30].max_hp) >> 1);
   }
   if ((npc_object[5] & 0x80) == 0) {
     bVar1 = (byte)npc_object[7] >> 6;
     if (bVar1 == 0) {
-      pcVar3 = (char *)(scratch + (uint)(byte)(&DAT_001007d9)[iVar6]);
+      pcVar3 = (char *)(scratch + (uint)(byte) g_monster_type_props[(iVar6) / 0x30].race_flags);
       cVar7 = *pcVar3 + -1;
     }
     else {
       if (bVar1 != 3) goto LAB_00034db4;
-      pcVar3 = (char *)(scratch + (uint)(byte)(&DAT_001007d9)[iVar6]);
+      pcVar3 = (char *)(scratch + (uint)(byte) g_monster_type_props[(iVar6) / 0x30].race_flags);
       cVar7 = *pcVar3 + '\x01';
     }
     *pcVar3 = cVar7;
@@ -3471,7 +3440,7 @@ LAB_00034db4:
   puVar4 = (ushort *)tilemap_lookup(uVar10,uVar8);
   if (((uVar9 != uVar10) || (uVar11 != uVar8)) &&
      (iVar5 = resolve_tile_entry_offset(*puVar4 & 0xf,&local_2c,local_2b), iVar5 != 0)) {
-    if (((&DAT_001007da)[iVar6] & 0x80) == 0) {
+    if ((g_monster_type_props[(iVar6) / 0x30].movement_flags & 0x80) == 0) {
       uVar9 = (uint)(byte)((byte)*puVar4 >> 4) << 3;
     }
     else {
@@ -3481,7 +3450,8 @@ LAB_00034db4:
     iVar6 = check_object_placement_clearance(*npc_object & 0x1ff,uVar2,
                          (int)(((uint)local_2c + uVar10 * 8) * 0x10000) >> 0x10,
                          (int)(((uint)local_2b[0] + uVar8 * 8) * 0x10000) >> 0x10,(short)uVar9,
-                         (byte)(&DAT_001007da)[iVar6] >> 7,8);
+                         (byte) g_monster_type_props[(iVar6) / 0x30].movement_flags >> 7,
+                         8);
     if (iVar6 != 0) {
       object_list_unlink(local_28 + 2,npc_object);
       object_list_insert_head(puVar4 + 1,npc_object);
@@ -3489,7 +3459,7 @@ LAB_00034db4:
       *(byte *)(npc_object + 0xb) = (byte)npc_object[0xb] & 0xf | (byte)(uVar8 << 4);
       *(byte *)((char *)npc_object + 0x17) = (byte)((uVar8 << 0x14) >> 0x18);
       uVar9 = uVar9 | (local_2b[0] & 7 | (local_2c & 7) << 3) << 10 |
-              CONCAT11(*(byte *)((char *)npc_object + 3),(byte)npc_object[1]) & 0x380;
+              (ushort)npc_object[1] & 0x380;
       *(byte *)(npc_object + 1) = (byte)uVar9;
       *(byte *)((char *)npc_object + 3) = (byte)(uVar9 >> 8);
     }
@@ -3576,7 +3546,7 @@ void advance_mobile_objects()
     do {
       pbVar2 = (byte *)((uint)*pbVar8 * 0x1b + DAT_002046b8);
       if (((pbVar2[10] & 0x80) == 0) &&
-         (iVar5 = (int)acStack_58[(byte)(&DAT_001007d9)[(*pbVar2 & 0x3f) * 0x30]], iVar5 != 0)) {
+         (iVar5 = (int)acStack_58[(byte) g_monster_type_props[(*pbVar2 & 0x3f)].race_flags], iVar5 != 0)) {
         iVar4 = (uint)(*(ushort *)(pbVar2 + 0xd) >> 0xe) + iVar5;
         cVar3 = (char)iVar4;
         iVar4 = iVar4 * 0x1000000 >> 0x18;
@@ -3636,19 +3606,19 @@ int spawn_rest_interrupt_monster_callback(int scan_x, int scan_y, ushort *object
     uw_ord2005_rem_101 = ((int)(uVar6)) % (2);
     if (uw_ord2005_rem_101 != 0) {
       setup_npc_ai_tick_state(object);
-      uVar4 = *(ushort *)((char *)g_player_object + 0x16);
+      uVar4 = g_player_object->tile_word;
       iVar13 = (uint)DAT_001013f8 - ((uVar4 & 0x3f0) >> 4);
       iVar11 = (uint)DAT_00101918 - (uint)(uVar4 >> 10);
-      uVar9 = (uint)(*(byte *)(DAT_00101404 + 0x1c) >> 4);
+      uVar9 = (uint)(DAT_00101404->morale_flags >> 4);
       if (((((iVar11 * 0x10000 >> 0x10) * (iVar11 * 0x10000 >> 0x10) +
             (iVar13 * 0x10000 >> 0x10) * (iVar13 * 0x10000 >> 0x10)) * 0x10000 >> 0x10 <=
             (int)(uVar9 * uVar9 * 3)) &&
           (iVar11 = creature_find_path_to_tile((uint)DAT_00101918,(uint)DAT_001013f8,
-                                 *(byte *)((char *)DAT_0010190c + 2) >> 3 & 0xf,(uint)(uVar4 >> 10),
+                                 DAT_0010190c->hdr.zpos >> 3,(uint)(uVar4 >> 10),
                                  CONCAT11(uVar16,(char)(uVar4 >> 4)) & 0xff3f,
                                  CONCAT31((int3)((uint)in_stack_ffffffd0 >> 8),
-                                          *(byte *)((char *)g_player_object + 2) >> 3) & 0xffffff0f,0),
-          iVar11 != 0)) && (1 < DAT_0010142c)) {
+                                          g_player_object->hdr.position_word_low >> 3) & 0xffffff0f,0),
+           iVar11 != 0)) && (1 < DAT_0010142c)) {
         uVar9 = 0;
         if (DAT_0010142c != 0) {
           uVar12 = 0;
@@ -3661,10 +3631,10 @@ int spawn_rest_interrupt_monster_callback(int scan_x, int scan_y, ushort *object
               if ((((*puVar7 & 0x1c0) == 0x180) && ((*puVar7 & 0x30) == 0x20)) &&
                  ((puVar7[3] & 0xffc0) != 0)) {
                 puVar8 = (ushort *)resolve_object_link(puVar7 + 3);
-                uVar9 = (uint)*puVar8;
+                uVar9 = (uint)((uw_object_hdr_t *)puVar8)->type_flags;
                 if ((uVar9 & 0x1c0) == 0x180) {
                   uVar10 = uVar9 & 0x30;
-                  bVar14 = (*puVar8 & 0x30) == 0;
+                  bVar14 = (((uw_object_hdr_t *)puVar8)->object_id & 0x30) == 0;
                   if (bVar14) {
                     uVar10 = uVar9 & 0xf;
                   }
@@ -3690,7 +3660,7 @@ int spawn_rest_interrupt_monster_callback(int scan_x, int scan_y, ushort *object
                                 (int)(((uint)local_28 + (short)(ushort)bVar2 * 8) * 0x10000) >> 0x10
                                 ,(int)(((uint)local_27[0] + (short)(ushort)bVar1 * 8) * 0x10000) >>
                                  0x10,(ushort)((uint)bVar3 << 3) & 0xff,
-                                *(byte *)(DAT_00101404 + 10) >> 7,8);
+                                DAT_00101404->movement_flags >> 7,8);
           if (iVar11 != 0) {
             /* was folded into `int iVar11` (reused above for unrelated
                int arithmetic) -- truncated tilemap_lookup's real
@@ -3702,13 +3672,13 @@ int spawn_rest_interrupt_monster_callback(int scan_x, int scan_y, ushort *object
             *(byte *)(object + 0xb) = (byte)object[0xb] & 0xf | (byte)(uVar9 << 4);
             *(char *)((char *)object + 0x17) = (char)(uVar9 >> 4);
             uVar9 = (uint)bVar3 << 3 & 0x7f | (local_27[0] & 7 | (local_28 & 7) << 3) << 10 |
-                    CONCAT11(*(undefined1 *)((char *)object + 3),(char)object[1]) & 0x380;
+                    (ushort)object[1] & 0x380;
             *(char *)(object + 1) = (char)uVar9;
             *(char *)((char *)object + 3) = (char)(uVar9 >> 8);
             *(byte *)((char *)object + 0x19) = *(byte *)((char *)object + 0x19) | 1;
-            npc_set_walk_target(*(ushort *)((char *)g_player_object + 0x16) >> 10,
-                         *(ushort *)((char *)g_player_object + 0x16) >> 4 & 0x3f,
-                         *(byte *)((char *)g_player_object + 2) >> 3 & 0xf);
+            npc_set_walk_target(g_player_object->npc_xhome,
+                                g_player_object->npc_yhome,
+                                g_player_object->hdr.zpos >> 3);
             DAT_00101950 = 1;
             return 1;
           }
@@ -3805,12 +3775,12 @@ int alert_npc_to_noise_callback(int scan_x, int scan_y, ushort *npc)
   int iVar12;
   undefined1 auStack_74 [80];
   
-  iVar10 = (*npc & 0x3f) * 0x30;
-  if (((((&DAT_001007d9)[iVar10] == (DAT_0010195c & 0x1f)) &&
-       (((npc[5] & 0x80) == 0 || ((DAT_0010195c & 0x20) != 0)))) &&
-      ((DAT_0010195c != 0x20 || ((npc[5] & 0x80) != 0)))) &&
-     ((DAT_0010195c != 0xd || (*(byte *)(DAT_00086df8 + 0x69) < 3)))) {
-    uVar1 = npc[1];
+  iVar10 = (((uw_object_hdr_t *)npc)->object_id & 0x3f) * 0x30;
+  if ((((g_monster_type_props[(iVar10) / 0x30].race_flags == (DAT_0010195c & 0x1f)) &&
+        (((((uw_mobile_object_t *)npc)->movement_flags & 0x80) == 0 || ((DAT_0010195c & 0x20) != 0)))) &&
+       ((DAT_0010195c != 0x20 || ((((uw_mobile_object_t *)npc)->movement_flags & 0x80) != 0)))) &&
+      ((DAT_0010195c != 0xd || (*(byte *)(DAT_00086df8 + 0x69) < 3)))) {
+    uVar1 = ((uw_object_hdr_t *)npc)->position_word;
     iVar3 = (uint)(uVar1 >> 0xd) + scan_x * 8;
     iVar5 = ((uVar1 & 0x1c00) >> 10) + scan_y * 8;
     uVar2 = DAT_00101958[1];
@@ -3827,20 +3797,19 @@ int alert_npc_to_noise_callback(int scan_x, int scan_y, ushort *npc)
     }
     iVar12 = (int)(short)(iVar12 >> 3);
     if ((iVar11 * iVar11 + iVar12 * iVar12 <=
-         (int)((uint)((byte)(&DAT_001007ee)[iVar10] >> 4) *
-              (uint)((byte)(&DAT_001007ee)[iVar10] >> 4))) &&
-       (iVar10 = check_fine_line_of_sight(iVar3,iVar5,
-                              (uint)(byte)(&DAT_00202c90)[(*npc & 0x1ff) * 0xd] + (uVar1 & 0x7f)
-                              ,iVar7,(short)iVar9,
-                              (ushort)(byte)(&DAT_00202c90)[(*DAT_00101958 & 0x1ff) * 0xd] +
-                              (uVar2 & 0x7f) + 0xc), iVar10 != 0)) {
-      uVar8 = (*(ushort *)((char *)npc + 0xd) >> 0xe) - 1;
+         (int)((uint)((byte) g_monster_type_props[(iVar10) / 0x30].awareness_ranges >> 4) *
+               (uint)((byte) g_monster_type_props[(iVar10) / 0x30].awareness_ranges >> 4))) &&
+        (iVar10 = check_fine_line_of_sight(iVar3,iVar5,
+                                           (uint)(byte) g_object_type_props[(((uw_object_hdr_t *)npc)->object_id)].height + (uVar1 & 0x7f)
+                                           ,iVar7,(short)iVar9,
+                                           (ushort)(byte) g_object_type_props[(*DAT_00101958 & 0x1ff)].height +
+                                           (uVar2 & 0x7f) + 0xc), iVar10 != 0)) {
+      uVar8 = (((uw_mobile_object_t *)npc)->npc_attitude) - 1;
       if ((int)(uVar8 * 0x10000) >> 0x10 < 0) {
         uVar8 = 0;
       }
-      uVar6 = *(ushort *)((char *)npc + 0xd) & 0x3fff;
-      *(char *)((char *)npc + 0xd) = (char)uVar6;
-      *(byte *)(npc + 7) = (byte)(uVar6 >> 8) | (byte)(((uVar8 & 3) << 0xe) >> 8);
+      uVar6 = ((uw_mobile_object_t *)npc)->status_word & 0x3fff;
+      ((uw_mobile_object_t *)npc)->npc_attitude = uVar8 & 3;
       build_object_display_name(auStack_74,npc,1,0);
       uVar4 = get_message_string(uVar8 + 0xe1 | 0x200);
       ce_strcat(auStack_74,uVar4);
@@ -3864,17 +3833,16 @@ void emit_noise_alert(ushort *source, byte noise_type)
   DAT_0010195c = 0;
   bVar1 = noise_type;
   if ((noise_type == 0) &&
-     (bVar1 = DAT_0010195c, g_object_type_props[*source & 0x1ff].is_container)) {
-    bVar1 = (byte)source[3] & 0x3f;
+     (bVar1 = DAT_0010195c, g_object_type_props[((uw_object_hdr_t *)source)->object_id].can_have_owner)) {
+    bVar1 = ((uw_object_hdr_t *)source)->owner;
   }
   DAT_0010195c = bVar1;
   if (DAT_0010195c != 0) {
     DAT_00101958 = source;
     scan_area_for_matching_objects(0x14,0,alert_npc_to_noise_callback,0,(char)DAT_002020a0 + -7,(char)DAT_002020a4 + -7,0xf,0xf);
-    if ((source[3] & 0x1f) < 0x1c) {
-      uVar2 = source[3] & 0xffc0;
-      *(char *)(source + 3) = (char)uVar2;
-      *(char *)((char *)source + 7) = (char)(uVar2 >> 8);
+    if ((((uw_object_hdr_t *)source)->owner & 0x1f) < 0x1c) {
+      uVar2 = ((uw_object_hdr_t *)source)->link << 6;
+      ((uw_object_hdr_t *)source)->link_word = (ushort)uVar2;
     }
   }
 }
@@ -3905,7 +3873,7 @@ int resolve_unique_npc_special_behavior(void *npc_ptr, int event_mode)
       *(undefined1 *)(npc + 0x12) = 0;
       cancel_weapon_swing();
       *(byte *)(npc + 0x15) = *(byte *)(npc + 0x15) & 0xe0 | 0x20;
-      uVar2 = CONCAT11(*(undefined1 *)(npc + 0xc),*(undefined1 *)(npc + 0xb)) & 0xfff;
+      uVar2 = ((uw_mobile_object_t *)npc)->goal_word & 0xfff;
       *(char *)(npc + 0xb) = (char)uVar2;
       *(char *)(npc + 0xc) = (char)(uVar2 >> 8);
       attempt_talk_interaction(npc);
@@ -4122,29 +4090,14 @@ void spawn_npc_thrown_weapon(void *attacker_ptr, short launch_offset, short laun
   DAT_00202a48 = launch_flags;
   spawn_object_near_player();
 }
-
-
-// was npc_set_walk_target -- write an NPC's goal (byte 0xf bits 0-5), goal target
-// (bits 6-11) and attitude (byte 0xd bits 4-7), flagging the change in byte 0x18
-// was FUN_0002e454
 void npc_set_walk_target(byte goal, uint goal_target, byte attitude)
 {
-  ushort uVar1;
-  uint uVar2;
-  
-  uVar1 = *(ushort *)((char *)DAT_0010190c + 0xf);
-  if ((((uint)goal != (uVar1 & 0x3f)) || ((goal_target & 0xff) != (uVar1 & 0xfc0) >> 6)) ||
-     (attitude != *(byte *)((char *)DAT_0010190c + 0xd) >> 4)) {
-    *(byte *)((char *)DAT_0010190c + 0xf) = ((byte)uVar1 ^ goal) & 0x3f ^ (byte)uVar1;
-    *(char *)((char *)DAT_0010190c + 0x10) = (char)(uVar1 >> 8);
-    uVar2 = *(ushort *)((char *)DAT_0010190c + 0xf) & 0xf03f | (goal_target & 0x3f) << 6;
-    *(char *)((char *)DAT_0010190c + 0xf) = (char)uVar2;
-    *(char *)((char *)DAT_0010190c + 0x10) = (char)(uVar2 >> 8);
-    uVar2 = *(ushort *)((char *)DAT_0010190c + 0xd) & 0xff0f;
-    *(byte *)((char *)DAT_0010190c + 0xd) = (byte)uVar2 | attitude << 4;
-    *(char *)((char *)DAT_0010190c + 0xe) = (char)(uVar2 >> 8);
-    *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) | 0x20;
-    *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xbf;
+  if ((((uint)goal != DAT_0010190c->npc_target_tile_x) || ((goal_target & 0xff) != DAT_0010190c->npc_target_tile_y)) || (attitude != ((DAT_0010190c->status_word >> 4) & 0xf))) {
+    DAT_0010190c->npc_target_tile_x = goal;
+    DAT_0010190c->npc_target_tile_y = goal_target;
+    DAT_0010190c->status_word = (DAT_0010190c->status_word & 0xff0f) | ((attitude & 0xf) << 4);
+    DAT_0010190c->heading_flags = DAT_0010190c->heading_flags | 0x20;
+    DAT_0010190c->heading_flags = DAT_0010190c->heading_flags & 0xbf;
   }
 }
 
@@ -4163,8 +4116,10 @@ void npc_idle_behavior_tick()
   int uw_ord2005_rem_23 = 0; int uw_ord2005_rem_24 = 0; int uw_ord2005_rem_25 = 0; int uw_ord2005_rem_26 = 0; int uw_ord2005_rem_27 = 0; int uw_ord2005_rem_28 = 0; int uw_ord2005_rem_29 = 0; int uw_ord2005_rem_30 = 0; int uw_ord2005_rem_31 = 0; int uw_ord2005_rem_32 = 0; int uw_ord2005_rem_33 = 0; int uw_ord2005_rem_34 = 0; int uw_ord2005_rem_35 = 0; int uw_ord2005_rem_36 = 0; int uw_ord2005_rem_37 = 0; int uw_ord2005_rem_38 = 0; int uw_ord2005_rem_39 = 0;
   if (getenv("UW_DEBUG_NPC_STATEMACHINE"))
     fprintf(stderr, "[npc-f124] ENTER obj=%p state=0x%x frame_nibble(0xc)=0x%x DAT_00101734=%d\n",
-            (void *)DAT_0010190c, (unsigned)(*(byte *)((char *)DAT_0010190c + 0x15) & 0x3f),
-            (unsigned)(*(byte *)((char *)DAT_0010190c + 0xc) & 0xf0) >> 4, (int)DAT_00101734);
+            (void *)DAT_0010190c,
+            (unsigned)(DAT_0010190c->animation_flags & 0x3f),
+            (unsigned)(DAT_0010190c->npc_animation_frame << 4) >> 4,
+            (int)DAT_00101734);
   ushort uVar1;
   byte *pbVar2;
   undefined4 uVar3;
@@ -4192,16 +4147,16 @@ void npc_idle_behavior_tick()
   uint uVar8;
   char *iVar9;
   
-  if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) != 0) {
-    DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (*(byte *)((char *)DAT_0010190c + 0x16) & 0xf));
-    *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0x7f;
+  if ((DAT_0010190c->animation_flags & 0x80) != 0) {
+    DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (DAT_0010190c->npc_path_slot));
+    DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 0x7f;
   }
   pbVar2 = (byte *)tilemap_lookup(DAT_00101918,DAT_001013f8);
   if (DAT_00101734 == 0) {
-    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xf9 | 1;
+    DAT_0010190c->attack_pitch = DAT_0010190c->attack_pitch & 0xf9 | 1;
     return;
   }
-  if ((*(byte *)((char *)DAT_0010190c + 0xe) & 0xc0) == 0) {
+  if (DAT_0010190c->npc_attitude == 0) {
     uVar3 = ce_rand();
     uw_ord2005_rem_23 = ((int)(uVar3)) % (2);
     if (uw_ord2005_rem_23 != 0) {
@@ -4209,14 +4164,14 @@ void npc_idle_behavior_tick()
       return;
     }
   }
-  if ((*(byte *)(DAT_00101404 + 10) & 0x80) != 0) {
+  if ((DAT_00101404->movement_flags & 0x80) != 0) {
     if (DAT_0010140c < 0xf) {
       if (DAT_0010140c < (byte)((*pbVar2 >> 4) + 2)) {
         uVar3 = ce_rand();
         iVar9 = (char *)DAT_0010190c;
-        bVar5 = *(byte *)((char *)DAT_0010190c + 0x14);
+        bVar5 = DAT_0010190c->attack_pitch;
         uw_ord2005_rem_24 = ((int)(uVar3)) % (3);
-        *(byte *)(iVar9 + 0x14) = ~bVar5 & 7 ^ (char)((uw_ord2005_rem_24 & 0xff) << 3) + 0x87U;
+        ((uw_mobile_object_t *)iVar9)->attack_pitch = ~bVar5 & 7 ^ (char)((uw_ord2005_rem_24 & 0xff) << 3) + 0x87U;
         goto LAB_0002f314;
       }
       uVar3 = ce_rand();
@@ -4228,120 +4183,115 @@ void npc_idle_behavior_tick()
       uw_ord2005_rem_26 = ((int)(uVar3)) % (3);
       cVar4 = uw_ord2005_rem_26;
     }
-    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 7 ^ (cVar4 + '\x0e') * '\b';
+    DAT_0010190c->attack_pitch = DAT_0010190c->attack_pitch & 7 ^ (cVar4 + '\x0e') * '\b';
   }
 LAB_0002f314:
   /* HACK: whole-function fix, same ushort-vs-byte pointer-scaling bug as the rest of this NPC-AI
      cluster this session (see [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is `ushort
      *`... */
-  if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x3f) == 0x20) {
+  if ((DAT_0010190c->animation_flags & 0x3f) == 0x20) {
     uVar3 = ce_rand();
     uw_ord2005_rem_27 = ((int)(uVar3)) % (0x10);
-    if (((uw_ord2005_rem_27 & 0xff) < (*(byte *)(DAT_00101404 + 0x1f) & 0xf)) &&
-       ((*(byte *)((char *)DAT_0010190c + 0xc) & 0xf0) == 0x30)) {
+    if (((uw_ord2005_rem_27 & 0xff) < (DAT_00101404->missile_wander_flags & 0xf)) &&
+        (DAT_0010190c->npc_animation_frame == 3)) {
 LAB_0002f384:
-      bVar5 = *(byte *)((char *)DAT_0010190c + 0x15) & 0xec | 0x2c;
+      bVar5 = DAT_0010190c->animation_flags & 0xec | 0x2c;
       goto LAB_0002f390;
     }
   }
   else {
     uVar3 = ce_rand();
     uw_ord2005_rem_28 = ((int)(uVar3)) % (0x10);
-    if (((uw_ord2005_rem_28 & 0xff) <= (*(byte *)(DAT_00101404 + 0x1f) & 0xf)) ||
-       ((*(byte *)((char *)DAT_0010190c + 0xc) & 0xf0) != 0x30)) goto LAB_0002f384;
-    bVar5 = *(byte *)((char *)DAT_0010190c + 0x15) & 0xe0 | 0x20;
+    if (((uw_ord2005_rem_28 & 0xff) <= (DAT_00101404->missile_wander_flags & 0xf)) ||
+        (DAT_0010190c->npc_animation_frame != 3)) goto LAB_0002f384;
+    bVar5 = DAT_0010190c->animation_flags & 0xe0 | 0x20;
 LAB_0002f390:
-    *(byte *)((char *)DAT_0010190c + 0x15) = bVar5;
+    DAT_0010190c->animation_flags = bVar5;
   }
-  if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x3f) == 0x2c) {
+  if ((DAT_0010190c->animation_flags & 0x3f) == 0x2c) {
     if ((DAT_00101924 != 0) && (DAT_00101430 == 0)) {
       uVar3 = ce_rand();
       uw_ord2005_rem_29 = ((int)(uVar3)) % (2);
       iVar9 = (char *)DAT_0010190c;
-      uw_ord2005_rem_30 = ((int)((uint)*(byte *)((char *)DAT_0010190c + 9) + uw_ord2005_rem_29 * 0x80 + 0xc0)) % (0x100);
-      *(byte *)(iVar9 + 9) = (byte)uw_ord2005_rem_30;
-      uVar7 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uw_ord2005_rem_30 & 0xe0) << 2;
-      *(char *)((char *)DAT_0010190c + 2) = (char)uVar7;
-      *(char *)((char *)DAT_0010190c + 3) = (char)(uVar7 >> 8);
-      *(byte *)((char *)DAT_0010190c + 0x18) =
-           ((byte)uw_ord2005_rem_30 ^ *(byte *)((char *)DAT_0010190c + 0x18)) & 0x1f ^
-           *(byte *)((char *)DAT_0010190c + 0x18);
-      *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
+      uw_ord2005_rem_30 = ((int)((uint) DAT_0010190c->full_heading + uw_ord2005_rem_29 * 0x80 + 0xc0)) % (0x100);
+      ((uw_mobile_object_t *)iVar9)->full_heading = (byte)uw_ord2005_rem_30;
+      DAT_0010190c->hdr.heading = (uw_ord2005_rem_30 >> 5) & 7;
+      uVar7 = DAT_0010190c->hdr.position_word;
+      DAT_0010190c->heading_flags =
+        ((byte)uw_ord2005_rem_30 ^ DAT_0010190c->heading_flags) & 0x1f ^
+         DAT_0010190c->heading_flags;
+      DAT_0010190c->motion_flags = DAT_0010190c->motion_flags & 0x80;
       return;
     }
     uVar3 = ce_rand();
-    bVar5 = *(byte *)(DAT_00101404 + 0x1f);
+    bVar5 = DAT_00101404->missile_wander_flags;
     uw_ord2005_rem_31 = ((int)(uVar3)) % (0x40);
     if ((uw_ord2005_rem_31 & 0xff) < (bVar5 & 0xf) + 8) {
       uVar3 = ce_rand();
       iVar9 = (char *)DAT_0010190c;
-      bVar5 = *(byte *)((char *)DAT_0010190c + 9);
+      bVar5 = DAT_0010190c->full_heading;
       uw_ord2005_rem_32 = ((int)(uVar3)) % (0x40);
       uw_ord2005_rem_33 = ((int)(uw_ord2005_rem_32 + (uint)bVar5 + 0xe0)) % (0x100);
       uVar7 = uw_ord2005_rem_33 & 0xff;
     }
     else {
-      uVar7 = (uint)*(byte *)((char *)DAT_0010190c + 9);
+      uVar7 = (uint) DAT_0010190c->full_heading;
       iVar9 = (char *)DAT_0010190c;
     }
     if (DAT_00101430 == 0) {
       uVar7 = adjust_heading_away_from_player(uVar7,10);
       iVar9 = (char *)DAT_0010190c;
     }
-    *(byte *)(iVar9 + 9) = (byte)uVar7;
-    uVar8 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar7 & 0xe0) << 2;
-    *(char *)((char *)DAT_0010190c + 2) = (char)uVar8;
-    *(char *)((char *)DAT_0010190c + 3) = (char)(uVar8 >> 8);
-    bVar5 = *(byte *)((char *)DAT_0010190c + 0x18);
+    ((uw_mobile_object_t *)iVar9)->full_heading = (byte)uVar7;
+    DAT_0010190c->hdr.heading = (uVar7 >> 5) & 7;
+    uVar8 = DAT_0010190c->hdr.position_word;
+    bVar5 = DAT_0010190c->heading_flags;
     bVar6 = bVar5 ^ (byte)uVar7;
 LAB_0002f6cc:
-    *(byte *)((char *)DAT_0010190c + 0x18) = bVar6 & 0x1f ^ bVar5;
+    DAT_0010190c->heading_flags = bVar6 & 0x1f ^ bVar5;
   }
   else {
     uVar3 = ce_rand();
     uw_ord2005_rem_34 = ((int)(uVar3)) % (0x80);
-    if ((uw_ord2005_rem_34 & 0xff) < (*(byte *)(DAT_00101404 + 0x1f) & 0xf)) {
+    if ((uw_ord2005_rem_34 & 0xff) < (DAT_00101404->missile_wander_flags & 0xf)) {
       uVar3 = ce_rand();
       iVar9 = (char *)DAT_0010190c;
-      bVar5 = *(byte *)((char *)DAT_0010190c + 9);
+      bVar5 = DAT_0010190c->full_heading;
       uw_ord2005_rem_35 = ((int)(uVar3)) % (0x40);
       uw_ord2005_rem_36 = ((int)(uw_ord2005_rem_35 + (uint)bVar5 + 0xe0)) % (0x100);
-      *(byte *)(iVar9 + 9) = (byte)uw_ord2005_rem_36;
-      uVar7 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uw_ord2005_rem_36 & 0xe0) << 2;
-      *(char *)((char *)DAT_0010190c + 2) = (char)uVar7;
-      *(char *)((char *)DAT_0010190c + 3) = (char)(uVar7 >> 8);
-      bVar5 = *(byte *)((char *)DAT_0010190c + 0x18);
+      ((uw_mobile_object_t *)iVar9)->full_heading = (byte)uw_ord2005_rem_36;
+      DAT_0010190c->hdr.heading = (uw_ord2005_rem_36 >> 5) & 7;
+      uVar7 = DAT_0010190c->hdr.position_word;
+      bVar5 = DAT_0010190c->heading_flags;
       bVar6 = (byte)uw_ord2005_rem_36 ^ bVar5;
       goto LAB_0002f6cc;
     }
   }
-  bVar5 = *(byte *)((char *)DAT_0010190c + 0x15);
+  bVar5 = DAT_0010190c->animation_flags;
   if ((bVar5 & 0x3f) == 0x20) {
-    *(byte *)((char *)DAT_0010190c + 0x15) = bVar5 | 0x40;
-    *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
-    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfe | 6;
+    DAT_0010190c->animation_flags = bVar5 | 0x40;
+    DAT_0010190c->motion_flags = DAT_0010190c->motion_flags & 0x80;
+    DAT_0010190c->attack_pitch = DAT_0010190c->attack_pitch & 0xfe | 6;
     uVar3 = ce_rand();
     uw_ord2005_rem_37 = ((int)(uVar3)) % (2);
     iVar9 = (char *)DAT_0010190c;
     if (uw_ord2005_rem_37 == 0) goto LAB_0002f810;
-    uVar1 = *(ushort *)((char *)DAT_0010190c + 0xb);
+    uVar1 = DAT_0010190c->goal_word;
     uw_ord2005_rem_38 = ((int)((uVar1 >> 0xc) + 1)) % (4);
     uVar7 = uw_ord2005_rem_38;
   }
   else {
-    *(byte *)((char *)DAT_0010190c + 0x15) = bVar5 & 0xbf;
-    *(byte *)((char *)DAT_0010190c + 0x13) =
-         (*(byte *)((char *)DAT_0010190c + 0x13) ^ *(byte *)(DAT_00101404 + 0xb)) & 0x7f ^
-         *(byte *)((char *)DAT_0010190c + 0x13);
-    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
+    DAT_0010190c->animation_flags = bVar5 & 0xbf;
+    DAT_0010190c->motion_flags =
+      (DAT_0010190c->motion_flags ^ DAT_00101404->magic_power) & 0x7f ^
+       DAT_0010190c->motion_flags;
+    DAT_0010190c->attack_pitch = DAT_0010190c->attack_pitch & 0xfc | 4;
     iVar9 = (char *)DAT_0010190c;
-    uVar1 = *(ushort *)((char *)DAT_0010190c + 0xb);
+    uVar1 = DAT_0010190c->goal_word;
     uw_ord2005_rem_39 = ((int)((uVar1 >> 0xc) + 1)) % (4);
     uVar7 = uw_ord2005_rem_39;
   }
-  *(char *)(iVar9 + 0xb) = (char)(uVar1 & 0xfff);
-  *(byte *)((char *)DAT_0010190c + 0xc) = (byte)((uVar1 & 0xfff) >> 8) | (byte)(((uVar7 & 0xf) << 0xc) >> 8)
-  ;
+  DAT_0010190c->npc_animation_frame = uVar7 & 0xf;
 LAB_0002f810:
   npc_react_to_nearby_player();
   return;
@@ -4364,14 +4314,14 @@ void npc_wander_return_home_tick()
     /* HACK: same ushort-vs-byte pointer-scaling bug as the rest of this NPC-AI cluster this session
        (see [[ushort-byte-scaling-bug-npc-cluster]]) -- bare `DAT_0010190c + 0xe`/`+ 0xb` scaled to
        byte 0x1c/0x16 (the latter being this object's real tile-position field) instead of the... */
-    if (((*(byte *)((char *)DAT_0010190c + 0xe) & 0xc0) == 0) &&
-       ((*(byte *)((char *)DAT_0010190c + 0xb) & 0xf) != 4)) {
+    if ((DAT_0010190c->npc_attitude == 0) &&
+        ((DAT_0010190c->npc_goal) != 4)) {
       npc_set_goal(4,1);
       return;
     }
     iVar2 = ((int)DAT_0010143c - (int)DAT_00101918) * 0x1000000 >> 0x18;
     iVar3 = ((int)DAT_0010173c - (int)DAT_001013f8) * 0x1000000 >> 0x18;
-    uVar1 = (uint)(*(byte *)(DAT_00101404 + 0x1c) >> 4);
+    uVar1 = (uint)(DAT_00101404->morale_flags >> 4);
     if (getenv("UW_DEBUG_NPC_MOVE"))
       fprintf(stderr, "[npc-move] obj=%p target=(%d,%d) cur=(%d,%d) dx=%d dy=%d thresh=%u distsq=%d %s\n",
               (void *)DAT_0010190c, (int)DAT_0010143c, (int)DAT_0010173c,
@@ -4420,44 +4370,43 @@ void npc_notice_and_idle_tick()
     /* uw-formats.txt (4.3.3, "Mobile object extra info"): offset 0xd is a 16-bit field -- bits 0-3
        npc_level, bit 13 npc_talkedto, bits 14-15 npc_attitude. Byte 0xe is that field's high byte,
        so its own bits 6-7 (mask 0xc0) ARE npc_attitude, and bit 5 (mask 0x20) is npc_talkedto. */
-    ushort _de = *(ushort *)((char *)DAT_0010190c + 0xd);
+    ushort _de = DAT_0010190c->status_word;
     fprintf(stderr, "[npc-attitude] obj=%p npc_attitude=%d npc_talkedto=%d npc_level=%d npc_goal=%d\n",
             (void *)DAT_0010190c, (_de >> 14) & 3, (_de >> 13) & 1, _de & 0xf,
-            (int)(*(ushort *)((char *)DAT_0010190c + 0xb) & 0xf));
+            (int)(DAT_0010190c->npc_goal));
   }
-  if ((*(byte *)((char *)DAT_0010190c + 0xe) & 0xc0) == 0) {
-    uVar6 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xf01f;
-    *(byte *)((char *)DAT_0010190c + 0xb) = (byte)uVar6 | 0x10;
-    *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar6 >> 8);
+  if (DAT_0010190c->npc_attitude == 0) {
+    uVar6 = DAT_0010190c->goal_word & 0xf01f;
+    DAT_0010190c->npc_gtarg = 1;
     refresh_npc_target_delta();
-    if ((*(byte *)((char *)DAT_0010190c + 0x19) & 1) != 0) {
+    if ((DAT_0010190c->npc_ai_flags & 1) != 0) {
 LAB_0002fe88:
       npc_set_goal(5,1);
       return;
     }
-    if ((*(byte *)((char *)DAT_0010190c + 0x19) & 2) != 0) {
+    if ((DAT_0010190c->npc_ai_flags & 2) != 0) {
       uVar4 = ce_rand();
-      bVar1 = *(byte *)(DAT_00101404 + 0x1f);
+      bVar1 = DAT_00101404->missile_wander_flags;
       uw_ord2005_rem_41 = ((int)(uVar4)) % (0x10);
       if ((int)(uint)(bVar1 >> 4) < uw_ord2005_rem_41) {
-        *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) & 0xfd;
+        DAT_0010190c->npc_ai_flags = DAT_0010190c->npc_ai_flags & 0xfd;
       }
       else {
         check_npc_target_alignment(0);
       }
     }
     uVar4 = ce_rand();
-    bVar1 = *(byte *)(DAT_00101404 + 0x1f);
+    bVar1 = DAT_00101404->missile_wander_flags;
     uw_ord2005_rem_42 = ((int)(uVar4)) % (0x10);
     if (uw_ord2005_rem_42 < (int)(uint)(bVar1 >> 4)) {
       cVar3 = detect_npc_wander_proximity(local_17,&local_18);
       if (cVar3 == '\0') {
-        *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) | 1;
+        DAT_0010190c->npc_ai_flags = DAT_0010190c->npc_ai_flags | 1;
         npc_set_walk_target(local_17[0],local_18,DAT_00101420);
         goto LAB_0002fe88;
       }
       if ((cVar3 != '\x01') && (cVar3 == '\x02')) {
-        *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) | 2;
+        DAT_0010190c->npc_ai_flags = DAT_0010190c->npc_ai_flags | 2;
         uVar4 = ce_rand();
         uw_ord2005_rem_43 = ((int)(uVar4)) % (2);
         if (uw_ord2005_rem_43 == 0) {
@@ -4470,10 +4419,10 @@ LAB_0002fe88:
   /* HACK: same ushort-vs-byte pointer-scaling bug as the two other fixes in this NPC-AI cluster
      this session (see [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is `ushort *`, so
      bare `DAT_0010190c + 0xb` scales to byte offset 0x16... */
-  uVar5 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xf;
+  uVar5 = DAT_0010190c->npc_goal;
   if (getenv("UW_DEBUG_NPC_WANDER"))
     fprintf(stderr, "[npc-fcec-dispatch] obj=%p uVar5=%d\n", (void *)DAT_0010190c, (int)uVar5);
-  if ((*(ushort *)((char *)DAT_0010190c + 0xb) & 0xf) != 0) {
+  if ((DAT_0010190c->npc_goal) != 0) {
     if (uVar5 == 2) {
       npc_idle_behavior_tick();
       return;
@@ -4483,9 +4432,9 @@ LAB_0002fe88:
       return;
     }
   }
-  *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfe | 6;
-  *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
-  *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xe0 | 0x20;
+  DAT_0010190c->attack_pitch = DAT_0010190c->attack_pitch & 0xfe | 6;
+  DAT_0010190c->motion_flags = DAT_0010190c->motion_flags & 0x80;
+  DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 0xe0 | 0x20;
   uVar4 = ce_rand();
   uw_ord2005_rem_44 = ((int)(uVar4)) % (2);
   iVar2 = (char *)DAT_0010190c;
@@ -4493,12 +4442,10 @@ LAB_0002fe88:
     /* HACK: this is the real frame-cycle step (advance this idle critter's animation frame,
        wrapping 0..3 -- see uVar5>>0xc, the upper nibble of raw byte 0xc, matching
        resolve_critter_sprite_tier's own "frame" param computed the same way in emit_tile_objects). */
-    uVar5 = *(ushort *)((char *)DAT_0010190c + 0xb);
-    uw_ord2005_rem_45 = ((int)((uVar5 >> 0xc) + 1)) % (4);
+    uVar5 = DAT_0010190c->goal_word;
+    uw_ord2005_rem_45 = ((int)(DAT_0010190c->npc_animation_frame + 1)) % (4);
     uVar6 = uVar5 & 0xfff;
-    *(char *)(iVar2 + 0xb) = (char)uVar6;
-    *(byte *)((char *)DAT_0010190c + 0xc) =
-         (byte)(uVar6 >> 8) | (byte)(((uw_ord2005_rem_45 & 0xf) << 0xc) >> 8);
+    DAT_0010190c->npc_animation_frame = uw_ord2005_rem_45 & 0xf;
   }
   return;
 }
@@ -4533,24 +4480,22 @@ void npc_wander_return_home_exact_tick()
   uint uVar5;
   
   if (DAT_00101734 != 0) {
-    if (((*(byte *)((char *)DAT_0010190c + 0xe) & 0xc0) == 0) &&
-       ((*(byte *)((char *)DAT_0010190c + 0xb) & 0xf) != 4)) {
+    if ((DAT_0010190c->npc_attitude == 0) &&
+        ((DAT_0010190c->npc_goal) != 4)) {
       npc_set_goal(4,1);
     }
     else if ((DAT_0010143c == DAT_00101918) && (DAT_0010173c == DAT_001013f8)) {
-      *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfe | 6;
-      *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
-      *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xe0 | 0x20;
+      DAT_0010190c->attack_pitch = DAT_0010190c->attack_pitch & 0xfe | 6;
+      DAT_0010190c->motion_flags = DAT_0010190c->motion_flags & 0x80;
+      DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 0xe0 | 0x20;
       uVar3 = ce_rand();
       uw_ord2005_rem_84 = ((int)(uVar3)) % (2);
       iVar2 = (char *)DAT_0010190c;
       if (uw_ord2005_rem_84 != 0) {
-        uVar1 = *(ushort *)((char *)DAT_0010190c + 0xb);
-        uw_ord2005_rem_85 = ((int)((uVar1 >> 0xc) + 1)) % (4);
+        uVar1 = DAT_0010190c->goal_word;
+        uw_ord2005_rem_85 = ((int)(DAT_0010190c->npc_animation_frame + 1)) % (4);
         uVar5 = uVar1 & 0xfff;
-        *(char *)(iVar2 + 0xb) = (char)uVar5;
-        *(byte *)((char *)DAT_0010190c + 0xc) =
-             (byte)(uVar5 >> 8) | (byte)(((uw_ord2005_rem_85 & 0xf) << 0xc) >> 8);
+        DAT_0010190c->npc_animation_frame = uw_ord2005_rem_85 & 0xf;
       }
     }
     else {
@@ -4560,69 +4505,20 @@ void npc_wander_return_home_exact_tick()
   }
   return;
 }
-
-
-
-// WARNING: Removing unreachable block (ram,0x0003223c)
-// WARNING: Removing unreachable block (ram,0x00032258)
-// WARNING: Removing unreachable block (ram,0x00032278)
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* HACK: whole-function fix, same ushort-vs-byte pointer-scaling bug as the rest of this NPC-AI
-   cluster this session (see [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is `ushort
-   *`... */
-
-
-
-
-
-
-
-
-
-
-
-
-/* HACK: whole-function fix, same ushort-vs-byte pointer-scaling bug as the rest of this NPC-AI
-   cluster this session (see [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is `ushort *`,
-   so every bare `DAT_0010190c + N` here was scaling N by 2. */
-// was FUN_000343d8
 void npc_set_goal(byte goal, uint goal_target)
 {
-  undefined2 uVar1;
-  byte bVar2;
-  uint uVar3;
-  
-  if ((*(byte *)((char *)DAT_0010190c + 0xb) & 0xf) == 4) {
-    uVar1 = *(undefined2 *)((char *)DAT_0010190c + 0xd);
-    bVar2 = (byte)uVar1;
-    *(byte *)((char *)DAT_0010190c + 0xd) = (bVar2 ^ *(byte *)((char *)DAT_0010190c + 0xb)) & 0xf ^ bVar2;
-    *(char *)((char *)DAT_0010190c + 0xe) = (char)((ushort)uVar1 >> 8);
+  if (DAT_0010190c->npc_goal == 4) {
+    DAT_0010190c->npc_level = DAT_0010190c->npc_goal;
   }
-  uVar3 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xfff0;
-  *(byte *)((char *)DAT_0010190c + 0xb) = goal & 0xf | (byte)uVar3;
-  *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar3 >> 8);
-  uVar3 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xf00f | (goal_target & 0xff) << 4;
-  *(char *)((char *)DAT_0010190c + 0xb) = (char)uVar3;
-  *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar3 >> 8);
+  DAT_0010190c->npc_goal = goal;
+  DAT_0010190c->npc_gtarg = goal_target;
 }
 
 
 
 // was FUN_000344a4 -- npc_set_goal's sibling: fallback when a combat-engage goal's guard fails
-// (player not detected / no path). Sets goal to 2 (idle) when npc_level's low nibble is 0, else
-// XORs goal with a level-derived value and sets flag 0x10
+// (player not detected / no path). With level zero, sets idle goal 2 and target 0.
+// Otherwise copies npc_level into the goal, targets slot 1, and clears npc_level.
 void npc_clear_special_goal()
 
 {
@@ -4630,25 +4526,20 @@ void npc_clear_special_goal()
   byte bVar2;
   uint uVar3;
   
-  if ((*(byte *)((char *)DAT_0010190c + 0xd) & 0xf) == 0) {
-    uVar3 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xfff2;
-    *(byte *)((char *)DAT_0010190c + 0xb) = (byte)uVar3 | 2;
-    *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar3 >> 8);
-    uVar3 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xf00f;
-    *(char *)((char *)DAT_0010190c + 0xb) = (char)uVar3;
-    *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar3 >> 8);
+  if ((DAT_0010190c->npc_level) == 0) {
+    uVar3 = DAT_0010190c->goal_word & 0xfff2;
+    DAT_0010190c->npc_goal = 2;
+    DAT_0010190c->npc_gtarg = 0x0;
+    uVar3 = DAT_0010190c->goal_word;
   }
   else {
-    uVar1 = *(undefined2 *)((char *)DAT_0010190c + 0xb);
+    uVar1 = DAT_0010190c->goal_word;
     bVar2 = (byte)uVar1;
-    *(byte *)((char *)DAT_0010190c + 0xb) = (bVar2 ^ *(byte *)((char *)DAT_0010190c + 0xd)) & 0xf ^ bVar2;
-    *(char *)((char *)DAT_0010190c + 0xc) = (char)((ushort)uVar1 >> 8);
-    uVar3 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xf01f;
-    *(byte *)((char *)DAT_0010190c + 0xb) = (byte)uVar3 | 0x10;
-    *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar3 >> 8);
-    uVar3 = *(ushort *)((char *)DAT_0010190c + 0xd) & 0xfff0;
-    *(char *)((char *)DAT_0010190c + 0xd) = (char)uVar3;
-    *(char *)((char *)DAT_0010190c + 0xe) = (char)(uVar3 >> 8);
+    DAT_0010190c->npc_goal = DAT_0010190c->npc_level;
+    uVar3 = DAT_0010190c->goal_word & 0xf01f;
+    DAT_0010190c->npc_gtarg = 1;
+    DAT_0010190c->npc_level = 0x0;
+    uVar3 = DAT_0010190c->status_word;
   }
   return;
 }
@@ -4784,8 +4675,8 @@ int tile_pair_los_blocked(byte tile_a_x, byte tile_a_y, byte tile_b_x, byte tile
     while (((uVar2 & 0xffc0) != 0 && (uVar11 == 0))) {
       puVar9 = (ushort *)resolve_object_link(puVar10);
       iVar13 = (*puVar9 & 0x1ff) * 0xd;
-      if (((&DAT_00202c93)[iVar13] & 2) != 0) {
-        uVar11 = (int)(((byte)puVar9[1] & 0x7f) + (uint)(byte)(&DAT_00202c90)[iVar13]) >> 3;
+      if ((g_object_type_props[iVar13 / 0xd].flags & 2) != 0) {
+        uVar11 = (int)(((byte)puVar9[1] & 0x7f) + (uint)(byte) g_object_type_props[iVar13 / 0xd].height) >> 3;
       }
       puVar10 = puVar9 + 2;
       uVar2 = puVar9[2];
@@ -4868,9 +4759,9 @@ LAB_0002c220:
     uVar19 = (uint)*puVar10;
     iVar13 = (uVar19 & 0x1ff) * 0xd;
     if (((uVar19 & 0x1c0) != 0x140) || (((*puVar10 & 0x30) != 0 || (7 < (uVar19 & 0xf))))) {
-      if (((&DAT_00202c93)[iVar13] & 2) != 0) {
-        local_50 = (byte)((int)(((byte)puVar10[1] & 0x7f) + (uint)(byte)(&DAT_00202c90)[iVar13]) >>
-                         3);
+      if ((g_object_type_props[iVar13 / 0xd].flags & 2) != 0) {
+        local_50 = (byte)((int)(((byte)puVar10[1] & 0x7f) + (uint)(byte) g_object_type_props[iVar13 / 0xd].height) >>
+                          3);
       }
       goto switchD_0002c458_default;
     }
@@ -5094,8 +4985,8 @@ LAB_0002c8cc:
       return 0;
     }
   }
-  if (((*(byte *)(DAT_00101404 + 10) & 0x20) != 0) &&
-     (bVar3 = *out_b, *out_b = bVar3 + 1, (byte)(bVar3 + 1) < DAT_00101450)) {
+  if (((DAT_00101404->movement_flags & 0x20) != 0) &&
+      (bVar3 = *out_b, *out_b = bVar3 + 1, (byte)(bVar3 + 1) < DAT_00101450)) {
     DAT_00101440 = 1;
     return 1;
   }
@@ -5116,83 +5007,84 @@ void build_object_placement_snapshot(ushort *object, byte *snapshot)
   bool bVar8;
   
   bVar8 = true;
-  iVar5 = (*object & 0x1ff) * 0xd;
+  iVar5 = (((uw_object_hdr_t *)object)->object_id) * 0xd;
   uVar2 = encode_object_slot_index(object);
   snapshot[0x23] = (byte)uVar2;
   snapshot[0x24] = (byte)((ushort)uVar2 >> 8);
-  uVar1 = *(ushort *)(&DAT_00202c91 + iVar5);
+  uVar1 = g_object_type_props[iVar5 / 0xd].size_weight;
   snapshot[0x18] = (byte)(uVar1 >> 4);
   snapshot[0x19] = (byte)(uVar1 >> 0xc);
-  snapshot[0x1a] = (byte)(&DAT_00202c97)[iVar5] >> 4 & 1;
+  snapshot[0x1a] = (byte) g_object_type_props[iVar5 / 0xd].quality_flags >> 4 & 1;
   snapshot[0x1b] = 0;
   snapshot[0x1c] = 0;
   snapshot[0x1d] = 0;
-  snapshot[0x16] = (byte)(*(ushort *)(&DAT_00202c97 + iVar5) >> 5) & 0xf;
-  bVar6 = (&DAT_00202c99)[iVar5];
+  snapshot[0x16] = (byte)(g_object_type_props[iVar5 / 0xd].quality_owner_flags >> 5) & 0xf;
+  bVar6 = g_object_type_props[iVar5 / 0xd].scale_flags;
   snapshot[0x20] = 0;
   snapshot[0x1f] = bVar6;
-  uVar1 = object[1];
+  uVar1 = ((uw_object_hdr_t *)object)->position_word;
   snapshot[0x27] = 0;
   snapshot[0x21] = 0;
   snapshot[0x22] = (byte)((((int)(short)uVar1 & 0xffffff80U) << 6) >> 8);
-  snapshot[0x25] = (&DAT_00202c91)[iVar5] & 7;
-  snapshot[0x26] = (&DAT_00202c90)[iVar5];
-  *snapshot = *(byte *)((char *)object + 3) >> 5;
+  snapshot[0x25] = g_object_type_props[iVar5 / 0xd].collision_radius;
+  snapshot[0x26] = g_object_type_props[iVar5 / 0xd].height;
+  *snapshot = ((uw_object_hdr_t *)object)->xpos;
   snapshot[1] = 0;
-  snapshot[2] = (byte)((*(byte *)((char *)object + 3) & 0x1c) >> 2);
+  snapshot[2] = (byte)(((uw_object_hdr_t *)object)->ypos);
   snapshot[3] = 0;
-  snapshot[4] = (byte)object[1] & 0x7f;
+  snapshot[4] = ((uw_object_hdr_t *)object)->zpos;
   snapshot[5] = 0;
   if ((char *)object < DAT_002046c4) {
-    iVar7 = (int)*(short *)snapshot + ((object[0xb] & 0xfc00) >> 7);
+    iVar7 = (int)*(short *)snapshot + ((((uw_mobile_object_t *)object)->tile_x << 3));
     *snapshot = (byte)iVar7;
     snapshot[1] = (byte)((uint)iVar7 >> 8);
-    iVar7 = (int)CONCAT11(snapshot[3],snapshot[2]) + ((object[0xb] & 0x3f0) >> 1);
+    iVar7 = (int)CONCAT11(snapshot[3],snapshot[2]) + ((((uw_mobile_object_t *)object)->tile_y << 3));
     snapshot[2] = (byte)iVar7;
     snapshot[3] = (byte)((uint)iVar7 >> 8);
-    bVar6 = *(byte *)((char *)object + 9);
+    bVar6 = ((uw_mobile_object_t *)object)->full_heading;
     snapshot[0x21] = 0;
     snapshot[0x22] = bVar6;
-    snapshot[0x28] = (byte)(1 << ((byte)((byte)object[5] >> 4) & 7));
-    iVar7 = ((byte)((byte)object[10] >> 3) - 0x10) * 0x40;
+    snapshot[0x28] = (byte)(1 << (((uw_mobile_object_t *)object)->movement_mode));
+    iVar7 = ((byte)(((uw_mobile_object_t *)object)->pitch) - 0x10) * 0x40;
     snapshot[10] = (byte)iVar7;
     snapshot[0xb] = (byte)((uint)iVar7 >> 8);
-    iVar7 = (uint)(*(byte *)((char *)object + 0x13) >> 7) * -4;
+    iVar7 = (uint)(((uw_mobile_object_t *)object)->gravity_flag) * -4;
     snapshot[0x10] = (byte)iVar7;
     snapshot[0x11] = (byte)((uint)iVar7 >> 8);
-    snapshot[0x1e] = (byte)object[4];
-    bVar8 = (*object & 0x1c0) == 0x40;
+    snapshot[0x1e] = ((uw_mobile_object_t *)object)->hit_points;
+    bVar8 = (((uw_object_hdr_t *)object)->type_flags & 0x1c0) == 0x40;
     if (!bVar8) {
-      uVar2 = *(undefined2 *)((char *)object + 0xb);
+      uVar2 = ((uw_projectile_object_t *)object)->precise_x;
       *snapshot = (byte)uVar2;
       snapshot[1] = (byte)((ushort)uVar2 >> 8);
-      uVar2 = *(undefined2 *)((char *)object + 0xd);
+      uVar2 = ((uw_projectile_object_t *)object)->precise_y;
       snapshot[2] = (byte)uVar2;
       snapshot[3] = (byte)((ushort)uVar2 >> 8);
-      uVar2 = *(undefined2 *)((char *)object + 0xf);
+      uVar2 = ((uw_projectile_object_t *)object)->precise_z;
       snapshot[4] = (byte)uVar2;
       snapshot[5] = (byte)((ushort)uVar2 >> 8);
     }
-    uVar4 = *(byte *)((char *)object + 0x13) & 0x7f;
+    uVar4 = ((uw_mobile_object_t *)object)->speed;
     snapshot[0x14] = (byte)uVar4;
     snapshot[0x15] = 0;
     if (getenv("UW_DEBUG_NPC_SPEED"))
       fprintf(stderr, "[npc-speed] obj=%p byte13&0x7f=%d class0x40=%d\n", (void *)object,
-              (int)uVar4, (int)((*object & 0x1c0) == 0x40));
-    if ((((*object & 0x1c0) == 0x40) ||
-        (*(short *)(snapshot + 0x10) != 0 || *(short *)(snapshot + 10) != 0)) ||
-       (((&DAT_00202c93)[iVar5] & 8) != 0)) {
+              (int)uVar4,
+              (int)((((uw_object_hdr_t *)object)->type_flags & 0x1c0) == 0x40));
+    if ((((((uw_object_hdr_t *)object)->type_flags & 0x1c0) == 0x40) ||
+         (*(short *)(snapshot + 0x10) != 0 || *(short *)(snapshot + 10) != 0)) ||
+        ((g_object_type_props[iVar5 / 0xd].flags & 8) != 0)) {
       snapshot[0x14] = (byte)(uVar4 * 0x2f);
       snapshot[0x15] = (byte)(uVar4 * 0x2f >> 8);
       if (getenv("UW_DEBUG_NPC_SPEED"))
         fprintf(stderr, "[npc-speed] obj=%p -> final speed=%d\n", (void *)object, (int)(short)(uVar4 * 0x2f));
-      if ((*object & 0x1c0) == 0x40) {
+      if ((((uw_object_hdr_t *)object)->type_flags & 0x1c0) == 0x40) {
         snapshot[0x27] = 8;
       }
     }
     else {
       if ((*(int *)(snapshot + 0x1a) + 1) * 2 < (int)(short)uVar4) {
-        iVar5 = (*(byte *)((char *)object + 0x13) & 0x7f) *
+        iVar5 = (((uw_mobile_object_t *)object)->speed) *
                 ((short)*(int *)(snapshot + 0x1a) * 4 + 0x29);
         snapshot[0x14] = (byte)iVar5;
         bVar6 = (byte)((uint)iVar5 >> 8);
@@ -5211,7 +5103,7 @@ void build_object_placement_snapshot(ushort *object, byte *snapshot)
     snapshot[0x11] = 0;
     snapshot[0x14] = 0;
     snapshot[0x15] = 0;
-    snapshot[0x1e] = (byte)object[2] & 0x3f;
+    snapshot[0x1e] = ((uw_object_hdr_t *)object)->quality;
     iVar5 = (int)CONCAT11(snapshot[1],*snapshot) + DAT_0010144c * 8;
     *snapshot = (byte)iVar5;
     snapshot[1] = (byte)((uint)iVar5 >> 8);

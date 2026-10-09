@@ -5,8 +5,9 @@ undefined1 DAT_0023c3dc, DAT_0023c3d8, DAT_0010142c;
 char DAT_00101740_backing[448];
 undefined4 DAT_00101440;
 byte DAT_00101450, DAT_00101730;
-char *DAT_00101404;
-undefined1 DAT_00202c90_backing[8192], DAT_000878d0_backing[256];
+uw_monster_type_props_t *DAT_00101404;
+undefined1 DAT_000878d0_backing[256];
+uw_object_type_props_t g_object_type_props[512];
 undefined2 DAT_0023ae40_backing[16];
 
 void spell_effects_fixture_reset(void)
@@ -26,7 +27,7 @@ int dispatch_special_action(uint type, uint parameter, void *actor, void *contex
     fx.dispatched_actor=(uintptr_t)actor; fx.dispatched_context=(intptr_t)context;
     return 1;
 }
-int encode_object_slot_index(void *object)
+int encode_object_slot_index(const uw_object_hdr_t *object)
 {
     if (object == fx.effect) return 2;
     TEST_ASSERT_EQUAL_PTR(g_player_object, object);
@@ -53,9 +54,9 @@ int roll_dice_sum(int count, short sides)
 { fx.dice_count=count; fx.dice_sides=sides; return count*sides; }
 void * tilemap_lookup(short x, short y)
 { return x == fx.los_x && y == fx.los_y ? fx.los_tile : fx.tile; }
-void * resolve_object_link(void *link)
+uw_object_hdr_t *resolve_object_link(ushort *link)
 { return link == fx.tile+2 ? fx.target : NULL; }
-void * get_object_record_by_slot_index(short slot)
+uw_object_hdr_t *get_object_record_by_slot_index(short slot)
 { TEST_ASSERT_EQUAL_INT(1, slot); return g_player_object; }
 int apply_typed_damage_to_object(ushort *target, ushort *attacker, int x, short y, byte damage, byte type)
 {
@@ -78,16 +79,17 @@ uint scheduler_add_entry(uint slot, int type, byte delay, byte x, byte y)
     (void)delay; TEST_ASSERT_EQUAL_INT(32, x); TEST_ASSERT_EQUAL_INT(2, y);
     return 0;
 }
-void free_object_slot(void *object)
+void free_object_slot(uw_object_hdr_t *object)
 { (void)object; TEST_FAIL_MESSAGE("Unexpected allocation failure"); }
-void object_list_insert_head(void *head, void *object)
+void object_list_insert_head(ushort *head, uw_object_hdr_t *object)
 {
     TEST_ASSERT_EQUAL_PTR(fx.tile+2, head); TEST_ASSERT_EQUAL_PTR(fx.effect, object);
     fx.links++;
 }
 void spawn_effect_debris_burst(void *object, uint x, int y)
 { TEST_ASSERT_EQUAL_PTR(fx.effect, object); (void)x; (void)y; }
-ushort * find_object_in_chain(void *head, int a, int b, int c, short d)
+uw_object_hdr_t *find_object_in_chain(ushort **head, int a, int b, int c,
+				      short d)
 { (void)head; (void)a; (void)b; (void)c; (void)d; return fx.target+3; }
 uint resolve_skill_gated_unlock_or_use(void *actor, void *target, void *link, ushort mode)
 {
@@ -102,7 +104,7 @@ int spawn_scheduled_effect_object(ushort *object, int group, int variant, byte a
     TEST_ASSERT_EQUAL_INT(7, group); fx.variant=variant; fx.effects++;
     (void)a; (void)b; TEST_ASSERT_EQUAL_INT(32, x); TEST_ASSERT_EQUAL_INT(2, y); return 1;
 }
-void npc_set_goal_for_object(void *object, int goal, int mode)
+void npc_set_goal_for_object(uw_mobile_object_t *object, int goal, int mode)
 {
     TEST_ASSERT_EQUAL_PTR(fx.target, object); fx.goal_mode=mode;
     fx.goal=goal; fx.goal_changes++;

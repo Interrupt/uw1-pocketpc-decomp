@@ -29,7 +29,7 @@ extern undefined1 DAT_0010142c;
 #define DAT_000853b1 DAT_000853b0_backing[1]
 extern undefined4 DAT_00101440;
 extern byte DAT_00101450, DAT_00101730;
-extern char *DAT_00101404;
+extern uw_monster_type_props_t *DAT_00101404;
 #define DAT_000853cc DAT_000853cc_backing[0]
 #define DAT_000853c4 DAT_000853c0_backing[4]
 #endif

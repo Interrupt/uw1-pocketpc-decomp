@@ -16,7 +16,7 @@ extern undefined1 DAT_00085c88_backing[128];
 
 void scroll_container_grid_up();
 void scroll_container_grid_down();
-int discard_container_contents(ushort *container, int remove_all);
+int discard_container_contents(uw_object_hdr_t *container, int remove_all);
 void release_container_reference(char *container_link);
 void free_open_container_chain();
 void close_backpack_container();
@@ -28,10 +28,10 @@ int auto_place_in_container(void *object, short slot);
 void sum_container_weight(ushort *link_field, short *total_weight);
 void encode_equipped_item_index(ushort *item_link, ushort *out_index);
 void decode_equipped_item_index(ushort *saved_index, ushort *out_link);
-int place_rune_in_bag(short *rune_object);
-void *get_equipped_item_at_slot(short slot);
+int place_rune_in_bag(uw_object_hdr_t *rune_object);
+uw_object_hdr_t *get_equipped_item_at_slot(short slot);
 void reset_equipment_and_container_state();
 int empty_container_into_world(void *container, short clear_flag);
-void try_empty_container(ushort *container, int owned_by_player);
+void try_empty_container(uw_object_hdr_t *container, int owned_by_player);
 
 #endif

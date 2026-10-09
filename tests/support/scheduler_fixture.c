@@ -2,17 +2,17 @@
 #include "scheduler_fixture.h"
 
 /* Local service declarations; game function bodies link these mocks. */
-void *resolve_object_link(void *link);
+uw_object_hdr_t *resolve_object_link(ushort *link_);
 void *tilemap_lookup(short x, short y);
-void free_object_slot(void *object);
+void free_object_slot(uw_object_hdr_t *object);
 void set_pending_update_flags(ushort flags);
 long ce_rand(void);
-int encode_object_slot_index(void *object);
+int encode_object_slot_index(const uw_object_hdr_t *object);
 int check_object_placement_clearance(short catalog_type, short ignore_slot, short position_x, short position_y, short height, int check_mode, byte step_limit);
 void adjust_door_close_animation_delay(ushort *object);
 int play_positional_sound_effect(uint sound_id, short world_x, short world_y, uint volume_bias);
 int scheduler_advance_effect(short entry_slot, int elapsed);
-void *get_object_record_by_slot_index(short slot);
+uw_object_hdr_t *get_object_record_by_slot_index(short slot);
 void build_object_placement_snapshot(ushort *object, byte *snapshot);
 int build_collision_height_field_for_object(ushort *object);
 int apply_placement_collision_sweep(void *snapshot, void *sweep_flags);
@@ -28,12 +28,13 @@ byte get_current_music_track(void);
 void set_pending_music_track(byte track);
 uint read_realtime_clock_units(void);
 int resolve_npc_melee_attack(void *npc, short tile_x, byte tile_y, short offset_x, short offset_y);
-void *spawn_new_object(uint type, int mobile);
-void object_list_insert_head(void *head, void *object);
-ushort *settle_dropped_object(void *object, short x, short y, int mode);
+uw_object_hdr_t *spawn_new_object(uint type, int mobile);
+void object_list_insert_head(ushort *head, uw_object_hdr_t *object);
+uw_object_hdr_t *settle_dropped_object(void *object, short x, short y,
+				       int mode);
 int drop_object_near_target(void *actor, void *object, short mode, uint flags);
 
-undefined1 DAT_00250730_backing[128];
+uw_animation_type_props_t g_animation_type_props[16];
 
 char *g_scheduler_table;
 
@@ -61,13 +62,15 @@ ushort corpse[4];
 
 int corpses_spawned, corpses_placed, corpse_type;
 
-ushort *DAT_0010190c;
+uw_mobile_object_t *DAT_0010190c;
 
-char *DAT_00101404, *DAT_00101438;
+uw_monster_type_props_t *DAT_00101404;
+char *DAT_00101438;
 
 void *DAT_0010172c;
 
-undefined1 DAT_001007d0_backing[3072], DAT_00202c90_backing[8192];
+uw_monster_type_props_t g_monster_type_props[64];
+uw_object_type_props_t g_object_type_props[512];
 
 undefined2 DAT_002048c0_backing[64];
 
@@ -77,7 +80,7 @@ undefined1 DAT_00204980_backing[32];
 
 undefined2 DAT_00204990_backing[16], DAT_002049b0_backing[16];
 
-undefined1 DAT_002027d0_backing[48];
+uw_ranged_type_props_t g_ranged_type_props[16];
 
 
 
@@ -101,7 +104,7 @@ undefined4 DAT_00101560, DAT_00101914, DAT_00101944;
 
 int DAT_00101430;
 
-void *resolve_object_link(void *link_)
+uw_object_hdr_t *resolve_object_link(ushort *link_)
 { ushort *link = (ushort *)link_;
     unsigned slot = *link >> 6;
     if (slot == 3) return corpse;
@@ -115,7 +118,7 @@ void *tilemap_lookup(short x, short y)
     return tiles[y - 8 + 1];
 }
 
-void free_object_slot(void *object)
+void free_object_slot(uw_object_hdr_t *object)
 {
     int slot = object == objects[1] ? 1 : 2;
     TEST_ASSERT_EQUAL_PTR(objects[slot], object);
@@ -126,7 +129,7 @@ void set_pending_update_flags(ushort flags) { (void)flags; }
 
 long ce_rand(void) { return 15; }
 
-int encode_object_slot_index(void *object)
+int encode_object_slot_index(const uw_object_hdr_t *object)
 {
     if (object == objects[1]) return 1;
     if (object == objects[2]) return 2;
@@ -142,7 +145,7 @@ int play_positional_sound_effect(uint sound_id, short world_x, short world_y, ui
 
 int scheduler_advance_effect(short entry_slot, int elapsed) { (void)entry_slot; (void)elapsed; TEST_FAIL_MESSAGE("Unexpected directional effect"); return 0; }
 
-void *get_object_record_by_slot_index(short slot) { TEST_ASSERT_EQUAL_INT(1, slot); return objects[1]; }
+uw_object_hdr_t *get_object_record_by_slot_index(short slot) { TEST_ASSERT_EQUAL_INT(1, slot); return objects[1]; }
 
 void build_object_placement_snapshot(ushort *object, byte *snapshot) { (void)object; (void)snapshot;}
 
@@ -174,7 +177,7 @@ uint read_realtime_clock_units(void) { return 0; }
 
 int resolve_npc_melee_attack(void *npc, short tile_x, byte tile_y, short offset_x, short offset_y) { (void)npc; (void)tile_x; (void)tile_y; (void)offset_x; (void)offset_y; TEST_FAIL_MESSAGE("Unexpected NPC attack"); return 0; }
 
-void *spawn_new_object(uint type, int mobile)
+uw_object_hdr_t *spawn_new_object(uint type, int mobile)
 {
     TEST_ASSERT_EQUAL_INT(0, mobile);
     corpses_spawned++;
@@ -183,7 +186,7 @@ void *spawn_new_object(uint type, int mobile)
     return corpse;
 }
 
-void object_list_insert_head(void *head, void *object)
+void object_list_insert_head(ushort *head, uw_object_hdr_t *object)
 {
     TEST_ASSERT_EQUAL_PTR(tiles[2] + 2, head);
     TEST_ASSERT_EQUAL_PTR(corpse, object);
@@ -191,7 +194,8 @@ void object_list_insert_head(void *head, void *object)
     *(ushort *)head = 3 << 6;
 }
 
-ushort *settle_dropped_object(void *object, short x, short y, int mode)
+uw_object_hdr_t *settle_dropped_object(void *object, short x, short y,
+                                       int mode)
 {
     TEST_ASSERT_EQUAL_PTR(corpse, object);
     TEST_ASSERT_EQUAL_INT(12, x);
@@ -211,15 +215,16 @@ void scheduler_fixture_reset(void)
     memset(freed, 0, sizeof freed);
     memset(corpse, 0, sizeof corpse);
     corpses_spawned = corpses_placed = corpse_type = 0;
-    memset(DAT_00250730_backing, 0, sizeof DAT_00250730_backing);
+    memset(((byte *)g_animation_type_props), 0, sizeof g_animation_type_props);
     g_scheduler_table = queue;
     g_scheduler_count = 0;
     DAT_0023b804 = 0;
     DAT_002508fc = 0;
     /* Armor/weapon tables precede monster records; effects occupy the tail. */
-    uw_test_read_data("DATA/OBJECTS.DAT", DAT_001007d0_backing,
+    uw_test_read_data("DATA/OBJECTS.DAT", ((byte *)g_monster_type_props),
                       0xc00, 2 + 0x80 + 0x30 + 0x80, SEEK_SET);
-    uw_test_read_data("DATA/OBJECTS.DAT", DAT_00250730_backing, 64, -64, SEEK_END);
+    uw_test_read_data("DATA/OBJECTS.DAT", ((byte *)g_animation_type_props),
+                      64, -64, SEEK_END);
 }
 
 void scheduler_fixture_dispose(void) {}

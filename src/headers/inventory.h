@@ -68,6 +68,7 @@ void *save_record_slot_from_index(short slot_index);
 void deserialize_inventory_link_chain(byte *link_field, void *saved_link);
 void handle_inventory_panel_click(short slot);
 void redraw_inventory_widget(int widget_id);
+void redraw_lit_light_source_widgets();
 void redraw_inventory_widget_range(int first_widget, short last_widget);
 int hit_test_inventory_widget(short x, short y);
 

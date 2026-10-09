@@ -8,7 +8,7 @@ void uw_test_create_character(char *record, char *attributes, ushort *object)
     memset(object, 0, 0x1b);
     DAT_00086df8 = record;
     DAT_0023be74 = attributes;
-    g_player_object = object;
+    g_player_object = (uw_mobile_object_t *)object;
     object[0] = 0x7f;
     attributes[4] = 40;
     uw_test_creating_character = true;

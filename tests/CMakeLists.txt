@@ -57,6 +57,14 @@ function(add_supported_game_unit_test name)
   add_test(NAME ${name} COMMAND test_${name})
 endfunction()
 
+add_game_test_library(uw_test_babl_objects
+  src/babl.c:babl_builtin_x_obj_pos
+  src/babl.c:babl_builtin_count_inv
+  src/babl.c:babl_builtin_check_inv_quality
+  src/babl.c:babl_builtin_set_inv_quality
+  src/babl.c:babl_builtin_find_barter_total)
+add_supported_game_unit_test(babl_objects uw_test_babl_objects)
+
 # Keep service functions in separate archive members so suite-specific mocks
 # override only their own boundary without pulling unrelated definitions.
 add_game_test_library(uw_test_memory src/ordinal_stubs.c:ce_memset)
@@ -170,6 +178,9 @@ set(UW_COMBAT_TEST_FUNCTIONS
 add_fixture_game_unit_test(combat ${UW_COMBAT_TEST_FUNCTIONS})
 # Reuse the combat fixture with real NPC attack, skill and dice calculations.
 add_game_test_library(uw_test_npc_combat ${UW_COMBAT_TEST_FUNCTIONS}
+  src/resources.c:load_armor_variant_tables
+  src/resources.c:load_light_food_effect_tables
+  src/objects.c:load_class7_variant_effect_table
   src/combat.c:resolve_npc_melee_attack src/combat.c:resolve_weapon_hit_skill_check
   src/player.c:roll_skill_check src/math.c:roll_dice_sum src/math.c:rand_below)
 target_sources(uw_test_npc_combat PRIVATE support/combat_fixture.c)
@@ -267,7 +278,7 @@ add_fixture_game_unit_test(inventory
   src/item_use.c:complete_use_item_on_player
   src/game.c:handle_game_view_click
   src/containers.c:open_backpack_container src/containers.c:refresh_container_view
-  src/containers.c:sum_container_weight)
+  src/containers.c:sum_container_weight src/inventory.c:redraw_lit_light_source_widgets)
 
 add_fixture_game_unit_test(geometry
   src/3d.c:@DAT_000bc038_backing
@@ -967,3 +978,142 @@ target_compile_definitions(uw_test_sleep PRIVATE UW_TEST_FULL_REST)
 foreach(suite new_game traps visibility_walk)
   target_compile_options(uw_test_${suite} PRIVATE -fno-common)
 endforeach()
+
+# Independent packing checks before object-pointer/field migrations.
+add_supported_game_unit_test(object_layout)
+find_program(UW_SPATCH_EXECUTABLE spatch)
+if(UW_SPATCH_EXECUTABLE)
+  add_test(NAME object_semantic_patches
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_object_semantic_patches.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME named_struct_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_named_struct_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME partial_field_reads
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_partial_field_reads.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME named_struct_writes
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_named_struct_writes.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME packed_struct_stores
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_packed_struct_stores.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME packed_field_copies
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_packed_field_copies.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME npc_spawn_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_npc_spawn_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME npc_goal_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_npc_goal_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME player_position_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_player_position_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME player_reset_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_player_reset_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME position_sync_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_position_sync_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME shared_mobile_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_shared_mobile_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME mobile_consumer_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_mobile_consumer_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME npc_interaction_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_npc_interaction_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME projectile_spawn_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_projectile_spawn_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME projectile_lifecycle_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_projectile_lifecycle_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME void_object_headers
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_void_object_headers.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME npc_death_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_npc_death_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME inventory_record_words
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_inventory_record_words.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME trap_pair_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_trap_pair_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME trap_consumer_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_trap_consumer_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME debris_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_debris_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME scheduled_spawn_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_scheduled_spawn_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME item_scatter_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_item_scatter_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME stack_split_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_stack_split_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  find_program(UW_CLANG_EXECUTABLE clang)
+  if(UW_CLANG_EXECUTABLE)
+    add_test(NAME current_object_aliases
+      COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_current_object_aliases.py"
+        "${UW_SPATCH_EXECUTABLE}" "${UW_CLANG_EXECUTABLE}")
+  endif()
+endif()
+add_game_test_library(uw_test_object_weight src/objects.c:calculate_object_weight)
+add_supported_game_unit_test(object_weight uw_test_object_weight)
+add_game_test_library(uw_test_object_core
+  src/objects.c:spawn_new_object src/objects.c:resolve_object_link
+  src/objects.c:find_object_in_chain src/objects.c:find_object_by_encoded_slot_in_chain
+  src/objects.c:object_list_insert_head src/objects.c:object_list_append_tail
+  src/objects.c:object_list_unlink src/containers.c:sum_container_weight
+  src/item_use.c:objects_can_stack)
+add_supported_game_unit_test(object_core uw_test_object_core uw_test_division)
+add_game_test_library(uw_test_npc_state src/ai.c:npc_set_goal src/ai.c:npc_set_walk_target
+  src/combat.c:npc_combat_disengage_tick src/combat.c:npc_combat_position_tick)
+add_supported_game_unit_test(npc_state uw_test_npc_state)
+
+# A cold save restore must work before any level archive seeds the free lists.
+add_game_test_library(uw_test_save_inventory
+  src/level.c:reset_level_object_arena
+  src/objects.c:alloc_object_slot src/objects.c:encode_object_slot_index
+  src/objects.c:resolve_object_link
+  src/player.c:restore_player_save_record src/player.c:build_player_save_record
+  src/inventory.c:deserialize_inventory_link_chain
+  src/inventory.c:serialize_inventory_link_chain
+  src/inventory.c:alloc_save_record_slot src/inventory.c:save_record_slot_from_index
+  src/containers.c:encode_equipped_item_index src/containers.c:decode_equipped_item_index)
+target_compile_options(uw_test_save_inventory PRIVATE
+  -include "${CMAKE_CURRENT_SOURCE_DIR}/save_inventory_test_globals.h")
+add_supported_game_unit_test(save_inventory uw_test_save_inventory uw_test_division)

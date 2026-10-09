@@ -9,7 +9,7 @@
 extern short DAT_00201c74;
 extern char * DAT_0023be74;
 extern undefined1 DAT_0023bf0c;
-extern ushort * g_player_object;
+extern uw_mobile_object_t *g_player_object;
 /* Globals defined in uw.c but also used by functions that now live in
    player.c (reset_player_derived_state) -- extern'd here so both
    translation units see the same storage. */

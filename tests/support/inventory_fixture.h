@@ -20,7 +20,8 @@ extern short last_action_mode;
 extern short click_state[16];
 extern short *DAT_00085a6c;
 extern undefined2 g_cursor_mode, g_cursor_holding_state;
-extern ushort *g_player_object, *g_interact_target;
+extern uw_mobile_object_t *g_player_object;
+extern ushort *g_interact_target;
 extern char *g_selected_object, *DAT_00202098, *DAT_002020b0;
 extern short DAT_000858c4, DAT_002020ac;
 extern code *DAT_002020b8;
@@ -38,4 +39,5 @@ void load_key_from_level_one_sack(void);
 void inventory_fixture_reset(void);
 void inventory_fixture_dispose(void);
 extern int container_grid_redraws, container_arrow_redraws;
+extern int lit_widget_redraws[0x16];
 #endif

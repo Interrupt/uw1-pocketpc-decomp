@@ -13,7 +13,7 @@ extern unsigned char DAT_00084eff_backing[12];
    units see the same storage. */
 extern byte DAT_001013f8;
 extern char * DAT_00101400;
-extern char * DAT_00101404;
+extern uw_monster_type_props_t *DAT_00101404;
 extern char DAT_00101408;
 extern byte DAT_0010140c;
 extern char DAT_00101410;
@@ -26,7 +26,7 @@ extern undefined4 DAT_00101734_backing[1];
 #define DAT_00101734 DAT_00101734_backing[0]
 extern char DAT_0010173c;
 extern ushort DAT_00101900;
-extern ushort * DAT_0010190c;
+extern uw_mobile_object_t *DAT_0010190c;
 extern byte DAT_00101918;
 extern undefined4 DAT_00101924;
 extern byte DAT_001005fc;

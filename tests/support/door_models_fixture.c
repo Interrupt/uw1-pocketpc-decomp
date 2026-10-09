@@ -47,7 +47,7 @@ void door_models_reset(void)
 {
     memset(&player, 0, sizeof player);
     memset(door, 0, sizeof door);
-    g_player_object = (ushort *)&player;
+    g_player_object = (uw_mobile_object_t *)(ushort *)&player;
     DAT_00086df8 = character;
     g_tune_last_catalog = -1;
     /* DAT_000d9930_arr/DAT_000d9ed8_arr are 361-entry (0..360 degrees)
