@@ -20,6 +20,7 @@ void clear_last_attacker_record(void);
 int load_automap_reveal_from_archive(byte *handle, int level);
 byte close_level_archive(void *handle);
 void set_player_tile_position(uint tile_x, uint tile_y, int flag);
+void debug_print_player_position(const char *label);
 void save_or_restore_level_special_state(short restore, short slot);
 void pop_cursor_icon(ushort state);
 int cursor_show_idle_tick(void);
@@ -205,6 +206,11 @@ void set_player_tile_position(uint x, uint y, int flag)
     TEST_ASSERT_EQUAL_UINT32(2, y);
     DAT_00202080 = y * 64 + x;
     spawn_calls++;
+}
+
+void debug_print_player_position(const char *label)
+{
+    TEST_ASSERT_EQUAL_STRING("chargen-spawn", label);
 }
 
 

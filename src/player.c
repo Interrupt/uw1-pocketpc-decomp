@@ -280,6 +280,18 @@ void set_player_tile_position(uint tile_x, uint tile_y, int flag)
   object_list_insert_head(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
 }
 
+/* Debug-only helper (--debug): print both player-position representations side by side
+   -- the fine, continuous DAT_00204880/2 (used by the camera and by demo_set_player_pos) vs. the
+   coarser tile-position bytes packed into g_player_object's own record. */
+void debug_print_player_position(const char *label)
+{
+  if (g_opts.debug)
+    fprintf(stderr, "[playerpos:%s] fine=(%d,%d)=world(%g,%g) obj_bytes tile=(%d,%d)\n",
+            label, (int)DAT_00204880, (int)DAT_00204882,
+            (double)DAT_00204880 / 256.0, (double)DAT_00204882 / 256.0,
+            (int)((byte) g_player_object->tile_word_high >> 2),
+            (int)(g_player_object->npc_yhome));
+}
 
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
@@ -1579,10 +1591,10 @@ void sync_camera_from_player()
     iVar4 = ordint_divmod(0xb4, (int)sVar8).quot;
     DAT_000db44c = iVar4 + DAT_0023bf40;
   }
-  /* Always-on (no env var) position/heading debug print, for correlating a live playtester's exact
-     standing spot/facing with what the decompile is doing -- e.g. pinning down the wall-decal
-     depth/ parallax issue. */
-  if (!g_opts.quiet_posdebug) {
+  /* Position/heading debug print (--debug), for correlating a live playtester's exact standing
+     spot/facing with what the decompile is doing -- e.g. pinning down the wall-decal depth/
+     parallax issue. */
+  if (g_opts.debug) {
     static int _last_x = -1, _last_y = -1, _last_z = -1, _last_yaw = -1, _last_pitch = -1;
     int _x = (unsigned short)DAT_00204880;
     int _y = (unsigned short)DAT_00204882;
