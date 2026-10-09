@@ -983,10 +983,7 @@ LAB_000730fc:
   }
   else {
     if (sound_id < 7) {
-      /* DOS audio mode plays every effect the table has (see below). */
-      if (!platform_dos_audio_enabled()) {
-        return 0xff;
-      }
+      /* No longer rejected -- see the note at the second escape below. */
       uVar3 = 8;
       goto LAB_00073108;
     }
@@ -994,23 +991,30 @@ LAB_000730fc:
       if (sound_id == 0x10) goto LAB_000730fc;
       if (sound_id != 0x15) {
         if (sound_id != 0x16) {
-          /* BUG FIX (DOS audio mode, confirmed live): this id-whitelist is
-           * authentic WinCE behavior and stays the default -- only ids
-           * {3,4,7,8,0x10,0x15,0x16} ever pass, which is why footsteps
-           * (0/2, movement.c) and doors (0xb/0x14, doors.c) are silent in
-           * the shipped port. The reason is the port's own asset set: it
-           * only ever had WAVE resources for the handful of ids this list
-           * admits.
+          /* BUG FIX (confirmed live, both audio paths): the original
+           * whitelist here passed only ids {3,4,7,8,0x10,0x15,0x16} and
+           * returned 0xff for the rest, which is why footsteps (1/2,
+           * movement.c) and doors (0xb/0x14, doors.c) were silent.
            *
-           * The DOS game has no such limitation -- SOUNDS.DAT defines all
-           * 24 effect ids and UW.AD carries a timbre for each -- so in DOS
-           * mode the rejection is skipped and the effect plays. The group
-           * value substituted here is this function's own default; it only
-           * ever reaches g_sound_channel_group, which nothing reads back
-           * (see that array's declaration comment). */
-          if (!platform_dos_audio_enabled()) {
-            return 0xff;
-          }
+           * It is not a filter that matches either platform's assets. The
+           * port's own WAVE resources cover effect ids 1-12, 16-18 and 20,
+           * so ELEVEN ids it ships sounds for were blocked here (1, 2, 5,
+           * 6, 9, 10, 11, 12, 17, 18, 20) -- while two ids the list does
+           * admit, 0x15 and 0x16, have no resource at all. That mismatch
+           * fits those resources having come from Ultima Underworld 2
+           * rather than this game. The DOS side has no limitation either:
+           * SOUNDS.DAT defines all 24 ids and UW.AD carries a timbre for
+           * each.
+           *
+           * So every id is now dispatched and the backend decides. An id
+           * with no asset costs nothing: platform_sfx_play bounds-checks
+           * the resource range and warns once per missing resource, and
+           * platform_dosmidi_play_effect does the same for ids outside
+           * SOUNDS.DAT -- both stay silent rather than failing.
+           *
+           * The group value substituted here is this function's own
+           * default; it only ever reaches g_sound_channel_group, which
+           * nothing reads back (see that array's declaration comment). */
           uVar3 = 8;
           goto LAB_00073108;
         }
