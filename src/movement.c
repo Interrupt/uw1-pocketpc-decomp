@@ -306,7 +306,7 @@ void reticle_object_pick(int mode)
           /* get_object_record_by_slot_index returns NULL for an empty slot (id bits clear).
              Ghidra dropped the guard; with forward movement now working this
              loop runs (via sweep_collision_flags) and hit the NULL deref. */
-          if (puVar2 != (ushort *)0x0 && ((&DAT_00202c97)[(*puVar2 & 0x1ff) * 0xd] & 1) != 0) {
+          if (puVar2 != (ushort *)0x0 && (g_object_type_props[(((uw_object_hdr_t *)puVar2)->object_id)].quality_flags & 1) != 0) {
             if (iVar4 < (char)DAT_002049de) {
               if ((bVar7) &&
                  (bVar1 = (&DAT_00202c38)[iVar6], (short)_DAT_0008699b <= (short)(ushort)bVar1)) {
@@ -388,8 +388,8 @@ LAB_00058db4:
       DAT_00086998 = -1;
     }
     else {
-      DAT_00086999 = (undefined1)((int)*psVar3 & 0x1ffU);
-      DAT_0008699a = (undefined1)(((int)*psVar3 & 0x1ffU) >> 8);
+      DAT_00086999 = (undefined1)((int)((uw_object_hdr_t *)psVar3)->type_flags_signed & 0x1ffU);
+      DAT_0008699a = (undefined1)(((int)((uw_object_hdr_t *)psVar3)->type_flags_signed & 0x1ffU) >> 8);
     }
   }
 }
@@ -919,7 +919,7 @@ void sweep_land_on_surface()
   /* The decompile uses a short-pointer view of the movement record.
      Keep word indexing and raw byte offsets distinct (ARM 0x59d20..0x5a33c). */
   puVar7 = (ushort *)get_object_record_by_slot_index((int)DAT_002049d2);
-  uVar2 = *(ushort *)(&DAT_00202c91 + (*puVar7 & 0x1ff) * 0xd);
+  uVar2 = g_object_type_props[(((uw_object_hdr_t *)puVar7)->object_id)].size_weight;
   iVar12 = (int)_DAT_000869a1;
   if (iVar12 < 5) {
     sVar4 = 0;
@@ -1040,7 +1040,7 @@ void sweep_land_on_surface()
   if (DAT_00086998 == -1) {
     if ((int)((uint)DAT_002049d0 + (uint)DAT_002049d8) < (int)*(short *)((char *)g_sweep_foot_pos + 4)) {
       puVar7 = (ushort *)get_object_record_by_slot_index((int)*(short *)((char *)DAT_00204874 + 0x23));
-      if ((*puVar7 & 0x1c0) != 0x40) goto LAB_0005a238;
+      if ((((uw_object_hdr_t *)puVar7)->object_id & 0x1c0) != 0x40) goto LAB_0005a238;
       if ((DAT_002049d6 & 0x10) == 0) {
         if ((DAT_002049d6 & 0x20) == 0) goto LAB_0005a2d0;
         uVar3 = 4;
@@ -1056,9 +1056,9 @@ void sweep_land_on_surface()
   }
   else {
     psVar9 = (short *)get_object_record_by_slot_index(*(ushort *)(&DAT_00202c3a + DAT_00086998 * 6) >> 6);
-    if ((((&DAT_00202c93)[((int)*psVar9 & 0x1ffU) * 0xd] & 2) != 0) ||
-       (puVar7 = (ushort *)get_object_record_by_slot_index((int)*(short *)((char *)DAT_00204874 + 0x23)),
-       (*puVar7 & 0x1c0) == 0x40)) {
+    if (((g_object_type_props[((int)*psVar9 & 0x1ffU)].flags & 2) != 0) ||
+        (puVar7 = (ushort *)get_object_record_by_slot_index((int)*(short *)((char *)DAT_00204874 + 0x23)),
+         (((uw_object_hdr_t *)puVar7)->object_id & 0x1c0) == 0x40)) {
 LAB_0005a2d0:
       *(undefined1 *)(DAT_00204874 + 0x28) = 1;
       goto LAB_0005a33c;
@@ -1647,8 +1647,8 @@ void apply_movement_tick(int elapsed)
   char cVar3;
   short sVar4;
 
-  DAT_002048a5 = (&DAT_00202c91)[(*g_player_object & 0x1ff) * 0xd] & 7;
-  DAT_002048a6 = (&DAT_00202c90)[(*g_player_object & 0x1ff) * 0xd];
+  DAT_002048a5 = g_object_type_props[(g_player_object->hdr.object_id)].collision_radius;
+  DAT_002048a6 = g_object_type_props[(g_player_object->hdr.object_id)].height;
   DAT_0023be9e = 0;
   DAT_0023be9c = 0;
   DAT_0023be9a = 0;
@@ -1744,7 +1744,7 @@ int collision_response_default(ushort *object)
     if (DAT_002048d0 == 0) {
       DAT_002048d0 = -4;
     }
-    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xf9 | 1;
+    DAT_0010190c->attack_pitch = DAT_0010190c->attack_pitch & 0xf9 | 1;
     DAT_00101924 = 1;
     uVar4 = 0;
     puVar2 = &DAT_00101734;
@@ -1758,14 +1758,14 @@ LAB_0002bb2c:
       DAT_00101734 = 0;
       spawn_scheduled_effect_object(DAT_0010190c,6,3,0,0,(short)(char)((ushort)DAT_002048c0 >> 8),
                    (short)(char)((ushort)_DAT_002048c2 >> 8));
-      *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xcc | 0xc;
-      uVar5 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xfff;
-      *(char *)((char *)DAT_0010190c + 0xb) = (char)uVar5;
-      *(byte *)((char *)DAT_0010190c + 0xc) = (byte)(uVar5 >> 8) | 0x30;
-      *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xf9 | 1;
+      DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 0xcc | 0xc;
+      uVar5 = DAT_0010190c->goal_word & 0xfff;
+      DAT_0010190c->goal_word_low = (byte)(char)uVar5;
+      DAT_0010190c->goal_word_high = (byte)(uVar5 >> 8) | 0x30;
+      DAT_0010190c->attack_pitch = DAT_0010190c->attack_pitch & 0xf9 | 1;
       return 1;
     }
-    if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) == 0) {
+    if ((DAT_0010190c->animation_flags & 0x80) == 0) {
       DAT_00101924 = 1;
       DAT_002048c6 = 0;
       DAT_002048c8 = 0;
@@ -1774,7 +1774,7 @@ LAB_0002bb2c:
   }
   if ((((uVar1 & 0x800) != 0) && ((DAT_00101414 & 0x800) == 0)) ||
      (((uVar1 & 0x20) != 0 && ((DAT_00101414 & 0x20) == 0)))) {
-    if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) == 0) {
+    if ((DAT_0010190c->animation_flags & 0x80) == 0) {
       DAT_00101924 = 1;
       DAT_002048c6 = 0;
       DAT_002048c8 = 0;
@@ -1953,7 +1953,7 @@ void *find_nearby_door_in_candidates(byte *out_dx, byte *out_dy)
   if (DAT_002049dd != 0) {
     do {
       puVar2 = (ushort *)resolve_object_link(&DAT_00202c3a + (iVar6 + DAT_002049de) * 6);
-      uVar1 = *puVar2;
+      uVar1 = ((uw_object_hdr_t *)puVar2)->type_flags;
       uVar3 = (uint)(byte)(&DAT_00202c3c)[(iVar6 + DAT_002049de) * 6] +
               ((int)DAT_002049c8 >> 3 & 0xffU) & 0x3f;
       *out_dx = (char)uVar3;
@@ -2252,7 +2252,7 @@ uint sweep_collision_flags()
             iVar4, iVar6, iVar5, (int)bVar7, (int)bVar8, (unsigned)local_3c,
             (int)DAT_00086990, (int)DAT_00086996);
   if (iVar4 == iVar6) {
-    if (((iVar5 != -1) && (((&DAT_00202c93)[_DAT_00086999 * 0xd] & 2) == 2)) && (bVar7)) {
+    if (((iVar5 != -1) && ((g_object_type_props[_DAT_00086999].flags & 2) == 2)) && (bVar7)) {
       local_3c = local_3c & 0xfffb | 0x80;
     }
   }
@@ -2286,7 +2286,7 @@ LAB_0005a970:
           if (iVar6 < 0x80) {
             if ((iVar5 != -1) || (iVar6 <= CONCAT11(DAT_000869a0,DAT_0008699f))) {
               if ((((local_3c & 0x400) != 0) || (iVar5 == -1)) ||
-                 ((((&DAT_00202c93)[_DAT_00086999 * 0xd] & 2) != 0 && (bVar7)))) {
+                 (((g_object_type_props[_DAT_00086999].flags & 2) != 0 && (bVar7)))) {
                 DAT_00204870 = 1;
                 // PHYSICS: floor collision -- step resolved: snap the foot Z onto
                 // this tile's floor in a single tick (no gravity for small steps)
@@ -2316,10 +2316,10 @@ LAB_0005a970:
       }
     }
     else if ((bVar7) &&
-            ((((&DAT_00202c93)[_DAT_00086999 * 0xd] & 2) == 2 &&
-             (uVar3 = (int)(iVar4 - (uint)(byte)(&DAT_00202c38)[iVar5 * 6]) >> 0x1f,
-             (int)((iVar4 - (uint)(byte)(&DAT_00202c38)[iVar5 * 6] ^ uVar3) - uVar3) <=
-             (int)(uint)*(byte *)(DAT_00204874 + 0x27))))) {
+            (((g_object_type_props[_DAT_00086999].flags & 2) == 2 &&
+              (uVar3 = (int)(iVar4 - (uint)(byte)(&DAT_00202c38)[iVar5 * 6]) >> 0x1f,
+               (int)((iVar4 - (uint)(byte)(&DAT_00202c38)[iVar5 * 6] ^ uVar3) - uVar3) <=
+               (int)(uint)*(byte *)(DAT_00204874 + 0x27))))) {
       local_3c = local_3c | 0x80;
       goto LAB_0005a970;
     }

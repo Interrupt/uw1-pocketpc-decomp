@@ -106,7 +106,7 @@ void open_door_object(void *door_ptr)
 
 
 
-// was FUN_0007c814 NOTE: for the item_id==0x1cf special-object branch inside
+// was FUN_0007c814 NOTE: for the object_id==0x1cf special-object branch inside
 // close_door_object/open_door_object, this dispatch is provably always a no-op: closed(<8) routes
 // to close_door_object, whose 0x1cf branch only proceeds when quality is ALREADY >=8...
 void toggle_door_object(char *actor, void *door_ptr)
@@ -135,7 +135,7 @@ int spawn_scheduled_door_texture_object()
   undefined4 slot_index;
   ushort *tile;
   int clearance;
-  undefined1 *door_texture;
+  uw_object_hdr_t *door_texture;
   uint object_word;
   undefined2 object_word_low16;
   undefined1 object_word_high_byte;
@@ -160,18 +160,14 @@ int spawn_scheduled_door_texture_object()
                                                  object_word_low16, 0, 0);
     object_word_high_byte = (undefined1)((ushort)object_word_low16 >> 8);
     if (clearance != 0) {
-      door_texture = (undefined1 *)spawn_new_object(0x1ca, 0);
-      tile_word = *(ushort *)(door_texture + 2);
+      door_texture = spawn_new_object(0x1ca, 0);
+      tile_word = door_texture->position_word;
       object_word = (tile_word ^ object_word) & 0x7f ^ (uint)tile_word;
-      door_texture[2] = (char)object_word;
-      door_texture[3] = (char)(tile_word >> 8);
+      door_texture->zpos = object_word & 0x7f;
       position_high_bits = (byte)(((target_x & 7) << 0xd) >> 8);
-      door_texture[2] = (char)(object_word & 0x1fff);
-      door_texture[3] = (byte)((object_word & 0x1fff) >> 8) | position_high_bits;
-      door_texture[2] = (char)(object_word & 0x3ff);
-      door_texture[3] = (byte)((object_word & 0x3ff) >> 8) | position_high_bits | (byte)(((target_y & 7) << 10) >> 8);
-      *door_texture = *door_texture;
-      door_texture[1] = door_texture[1] | 0x20;
+      door_texture->xpos = target_x & 7;
+      door_texture->ypos = target_y & 7;
+      door_texture->doordir = 0x1;
       slot_index = encode_object_slot_index(door_texture);
       tile_type = scheduler_add_entry(slot_index, 0xffffffff, 0, (short)target_x >> 3 & 0xff,
                                       CONCAT11(object_word_high_byte, (char)((short)target_y >> 3)));
@@ -223,18 +219,18 @@ void apply_special_object_use_effect()
 
   if (level_matches != 0) {
     if (*(byte *)(DAT_0023be74 + 4) < 9) {
-      *(byte *)((char *)g_player_object + 8) = *(byte *)(DAT_0023be74 + 4);
+      g_player_object->npc_hp = *(byte *)(DAT_0023be74 + 4);
     }
     else {
       hunger_roll = rand_below(3);
-      *(char *)((char *)g_player_object + 8) = (-2 - hunger_roll) + *(char *)(DAT_0023be74 + 4);
+      g_player_object->npc_hp = (byte)((-2 - hunger_roll) + *(char *)(DAT_0023be74 + 4));
     }
     *(undefined1 *)(DAT_00086df8 + 0x37) = *(undefined1 *)(DAT_00086df8 + 0x38);
     if (8 < *(byte *)(DAT_00086df8 + 0x38)) {
       *(byte *)(DAT_00086df8 + 0x37) =
            (-2 - (*(byte *)(DAT_00086df8 + 0x38) >> 3)) + *(char *)(DAT_00086df8 + 0x37);
     }
-    *(byte *)((char *)g_player_object + 0x15) = *(byte *)((char *)g_player_object + 0x15) & 0xec | 0x2c;
+    g_player_object->animation_flags = g_player_object->animation_flags & 0xec | 0x2c;
     masked_flags = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
     *(char *)(DAT_00086df8 + 0x5f) = (char)masked_flags;
     *(char *)(DAT_00086df8 + 0x60) = (char)(masked_flags >> 8);
@@ -279,8 +275,8 @@ void schedule_door_open_animation(ushort *door)
             (unsigned)original_word, (unsigned)updated_word, (int)(((byte)original_word ^ quality_low_byte) & 0x3f ^ quality_low_byte), (int)animation_type, (int)slot_index, (void *)door,
             (unsigned)*(ushort *)((char *)door + 0x16), (int)(*(ushort *)((char *)door + 0x16) >> 10),
             (int)((*(ushort *)((char *)door + 0x16) & 0x3f0) >> 4), (int)(short)DAT_002020a0, (int)(short)DAT_002020a4,
-            (int)(*(ushort *)((char *)g_player_object + 0x16) >> 10),
-            (int)((*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4));
+            (int)(g_player_object->npc_xhome),
+            (int)(g_player_object->npc_yhome));
   scheduler_add_entry(slot_index, animation_type, 0, (undefined1)DAT_002020a0, (char)DAT_002020a4);
 }
 

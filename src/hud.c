@@ -957,6 +957,11 @@ void main_loop_hud_flush()
     if (_force && DAT_00201b64 == 0 && DAT_00201c90 == 0 &&
         (DAT_00201c84 & 1) == 0) {
       _did_force_redraw = 1;
+      if (dungeon_palette_cycle_tick()) {
+        /* The 3D view re-rasterises below; HUD pixels already in the framebuffer do not, so redraw
+           the inventory icons that use the cycled fire colours (lit torches). */
+        redraw_lit_light_source_widgets();
+      }
       /* Rebuild AND re-rasterise the 3D dungeon view every main-loop iteration. */
       render_dungeon_frame_timed();
       /* UW_DEBUG_PICK_VIEW: run a pick-mode render pass to fill the pick
@@ -3302,7 +3307,7 @@ void flush_sprite_list_compositor()
             *(char *)((char *)puVar6 + 1) = (char)(uVar1 >> 8);
             if (CONCAT13(*(undefined1 *)((char *)puVar6 + 0x13),
                          CONCAT12((char)puVar6[9],
-                                  CONCAT11(*(undefined1 *)((char *)puVar6 + 0x11),(char)puVar6[8]))) !=
+                                  (ushort)puVar6[8])) !=
                 0) {
               /* Ghidra dropped the arg here (relying on register carryover from the
                  CONCAT-reconstructed nonzero check just above) -- same class of bug fixed
@@ -3346,24 +3351,24 @@ void flush_sprite_list_compositor()
               if (getenv("UW_DIAG_SPRLIST"))
                 fprintf(stderr, "[sprlist] slot=%u id=0x%x x=%d y=%d w=%d h=%d path=%s\n",
                         (unsigned)*puVar7, (unsigned)(short)puVar4[7],
-                        (int)(short)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
-                        (int)(short)CONCAT11(*(undefined1 *)((char *)puVar4 + 5),(char)puVar4[2]),
+                        (int)(short)(ushort)puVar4[1],
+                        (int)(short)(ushort)puVar4[2],
                         (int)(ushort)puVar4[3], (int)(ushort)puVar4[4],
                         puVar4[5] == 0 ? "draw_sprite_by_id" : "sprite_list_flush_blit_raw");
               if (puVar4[5] == 0) {
                 g_blit_transparent_mode = 1;
                 if ((uVar1 & DAT_00087648) == 0) {
                   draw_sprite_by_id((int)(short)puVar4[7],
-                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
-                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 5),(char)puVar4[2]),
-                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 9),(char)puVar4[4]),
+                               (int)(ushort)puVar4[1],
+                               (int)(ushort)puVar4[2],
+                               (int)(ushort)puVar4[4],
                                puVar4[3]);
                 }
                 else {
                   draw_sprite_by_id((int)(short)puVar4[7],
-                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
-                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 5),(char)puVar4[2]),
-                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 9),(char)puVar4[4]),
+                               (int)(ushort)puVar4[1],
+                               (int)(ushort)puVar4[2],
+                               (int)(ushort)puVar4[4],
                                puVar4[3]);
                 }
               }
@@ -3371,18 +3376,18 @@ void flush_sprite_list_compositor()
                 g_blit_transparent_mode = 1;
                 if ((uVar1 & DAT_00087648) == 0) {
                   sprite_list_flush_blit_raw((int)(short)puVar4[7],
-                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
-                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 5),(char)puVar4[2]),
+                               (int)(ushort)puVar4[1],
+                               (int)(ushort)puVar4[2],
                                (int)(short)puVar4[4],
-                               CONCAT11(*(undefined1 *)((char *)puVar4 + 7),(char)puVar4[3]),puVar4[5])
+                               (ushort)puVar4[3],puVar4[5])
                   ;
                 }
                 else {
                   sprite_list_flush_blit_raw((int)(short)puVar4[7],
-                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
-                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 5),(char)puVar4[2]),
+                               (int)(ushort)puVar4[1],
+                               (int)(ushort)puVar4[2],
                                (int)(short)puVar4[4],
-                               CONCAT11(*(undefined1 *)((char *)puVar4 + 7),(char)puVar4[3]),puVar4[5])
+                               (ushort)puVar4[3],puVar4[5])
                   ;
                 }
               }
@@ -4082,7 +4087,7 @@ void show_flask_value_tooltip()
         pcVar4 = pcVar4 + 1;
       } while (cVar1 != '\0');
       if (*DAT_00085a6c < 0x1e) {
-        itoa_radix(*(undefined1 *)((char *)g_player_object + 8),auStack_94,10);
+        itoa_radix(g_player_object->npc_hp,auStack_94,10);
         itoa_radix(*(undefined1 *)(DAT_0023be74 + 4),auStack_a4,10);
         if ((*(byte *)(DAT_00086df8 + 0x5f) & 0x3c) != 0) {
           sVar2 = ordint_divmod(3,(*(byte *)(DAT_00086df8 + 0x5f) >> 2 & 0xf) - 1).quot;

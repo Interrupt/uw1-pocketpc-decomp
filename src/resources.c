@@ -53,10 +53,8 @@ static char s_doors_00085a64[] = "doors";
 /* Sizing-audit pass: door-type slot table, explicit loop bound
    `while(iVar3<6)` (load_door_frames). HARD. Down from 8192. */
  undefined1 DAT_0023b840_backing[8];
-/* Sizing-audit pass: `read_file_handle(param_1,&DAT_00202750,0x80)`
-   -- exactly 128 bytes, matching its own nibble*4-stride indexing.
-   HARD exact. Down from 256. */
-undefined1 DAT_00202750_backing[128];
+/* UW1 OBJECTS.DAT wearable rows are loaded unchanged (32 * 4 bytes). */
+uw_armor_type_props_t g_armor_type_props[32];
 static undefined4 *DAT_0023c3fc;  /* grtile registry: 0x11-byte records, first dword = identity key */
 static undefined4 *DAT_0023c404;
 /* Sizing pass: the "grows unboundedly" claim below was wrong from the moment it was written, not
@@ -1874,16 +1872,19 @@ uint load_gr_resource_entries(char *path, int first_entry, short count, gr_alloc
 // was FUN_00041e40
 void load_armor_variant_tables(int file_handle)
 {
-  read_file_handle(file_handle,&DAT_00202800,0x80);
-  read_file_handle(file_handle,&DAT_002027d0,0x30);
-  read_file_handle(file_handle,&DAT_00202750,0x80);
+  read_file_handle(file_handle, g_melee_type_props, sizeof g_melee_type_props);
+  read_file_handle(file_handle, g_ranged_type_props,
+                   sizeof g_ranged_type_props);
+  read_file_handle(file_handle, g_armor_type_props, sizeof g_armor_type_props);
   if (getenv("UW_DEBUG_ARMOR_TABLES")) {
     int _i;
     for (_i = 0; _i < 32; _i++)
       fprintf(stderr, "[armor] DAT_00202750[%d] (family%d nibble%d): %02x %02x %02x %02x\n",
               _i, _i < 16 ? 2 : 3, _i < 16 ? _i : _i - 16,
-              (unsigned char)(&DAT_00202750)[_i*4], (unsigned char)(&DAT_00202750)[_i*4+1],
-              (unsigned char)(&DAT_00202750)[_i*4+2], (unsigned char)(&DAT_00202750)[_i*4+3]);
+              (unsigned char) g_armor_type_props[_i].protection,
+              (unsigned char) g_armor_type_props[_i].durability,
+              (unsigned char) g_armor_type_props[_i]._unknown02,
+              (unsigned char) g_armor_type_props[_i].equipment_slot);
   }
 }
 
@@ -2009,8 +2010,9 @@ byte *uw_load_critter_page_cached(int param_1, int param_2) {
 // was FUN_0004a02c
 void load_light_food_effect_tables(int file_handle)
 {
-  read_file_handle(file_handle,&g_carry_weight_limit_table,0x30);
-  read_file_handle(file_handle,&g_light_radius_table,0x20);
+  read_file_handle(file_handle, g_container_type_props,
+                   sizeof g_container_type_props);
+  read_file_handle(file_handle, g_light_type_props, sizeof g_light_type_props);
   read_file_handle(file_handle,&g_food_effect_table,0x10);
 }
 

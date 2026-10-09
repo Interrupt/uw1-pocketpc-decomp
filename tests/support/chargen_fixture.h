@@ -8,7 +8,7 @@ extern char attributes[16];
 extern ushort player_object[16];
 extern char *DAT_00086df8;
 extern char *DAT_0023be74;
-extern ushort *g_player_object;
+extern uw_mobile_object_t *g_player_object;
 extern short DAT_00201b68;
 extern undefined1 DAT_000fb860_backing[32];
 extern undefined1 DAT_000fb8f0_backing[1680];

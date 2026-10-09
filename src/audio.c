@@ -654,11 +654,11 @@ LAB_00072f24:
   else {
     iVar10 = (sound_id & 0xff) * 5;
     uVar9 = (int)world_x -
-            ((int)(((*(ushort *)((char *)g_player_object + 0x16) >> 7 & 0x1f8) +
-                   (uint)(*(byte *)((char *)g_player_object + 3) >> 5)) * 0x10000) >> 0x10);
+            ((int)(((g_player_object->tile_word >> 7 & 0x1f8) +
+                    (uint)(g_player_object->hdr.xpos)) * 0x10000) >> 0x10);
     uVar8 = (int)world_y -
-            ((int)(((*(ushort *)((char *)g_player_object + 0x16) >> 1 & 0x1f8) +
-                   ((*(byte *)((char *)g_player_object + 3) & 0x1c) >> 2)) * 0x10000) >> 0x10);
+            ((int)(((g_player_object->tile_word >> 1 & 0x1f8) +
+                    (g_player_object->hdr.ypos)) * 0x10000) >> 0x10);
     uVar3 = integer_sqrt(uVar8 * uVar8 + uVar9 * uVar9);
     uVar3 = uVar3 & 0xffff;
     if (uVar3 == 0) {
@@ -684,8 +684,9 @@ LAB_00072f24:
       else {
         sVar2 = ordint_divmod(uVar3,uVar9 * 0x80).quot;
       }
-      heading_to_sine_cosine(((0x40 - (*(byte *)((char *)g_player_object + 0x18) & 0x1f)) * 4 -
-                   ((int)*(short *)((char *)g_player_object + 2) & 0x380U)) * 0x40,&local_28,&local_26);
+      heading_to_sine_cosine(((0x40 - (g_player_object->npc_heading)) * 4 -
+                              ((int) g_player_object->hdr.position_word_signed & 0x380U)) * 0x40,
+                             &local_28,&local_26);
       iVar5 = (int)local_28;
       iVar6 = (int)local_26;
       local_28 = (short)(char)((ushort)local_28 >> 8);
@@ -1203,10 +1204,10 @@ void play_musical_instrument(short instrument)
     }
   }
   if ((((instrument == 1) && (DAT_00201b68 == 3)) &&
-      (uVar4 = (*(ushort *)((char *)g_player_object + 0x16) >> 10) - 0x18, uVar7 = (int)uVar4 >> 0x1f,
-      (int)((uVar4 ^ uVar7) - uVar7) < 3)) &&
-     ((uVar4 = (*(ushort *)((char *)g_player_object + 0x16) >> 4 & 0x3f) - 0x2d, uVar7 = (int)uVar4 >> 0x1f,
-      (int)((uVar4 ^ uVar7) - uVar7) < 3 && (iVar6 = check_secret_tune_match(local_2c), iVar6 != 0)))) {
+      (uVar4 = (g_player_object->npc_xhome) - 0x18, uVar7 = (int)uVar4 >> 0x1f,
+       (int)((uVar4 ^ uVar7) - uVar7) < 3)) &&
+      ((uVar4 = (g_player_object->npc_yhome) - 0x2d, uVar7 = (int)uVar4 >> 0x1f,
+        (int)((uVar4 ^ uVar7) - uVar7) < 3 && (iVar6 = check_secret_tune_match(local_2c), iVar6 != 0)))) {
     return;
   }
   print_scroll_message_by_id(0xfb);

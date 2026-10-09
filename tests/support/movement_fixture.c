@@ -29,7 +29,7 @@ short *g_sweep_foot_pos = (short *)DAT_002049c8_backing;
 byte *DAT_00202c6c = DAT_002049c8_backing;
 unsigned char DAT_00086998_backing[16];
 undefined1 DAT_00202c70_backing[64];
-undefined1 DAT_00202c90_backing[8192];
+uw_object_type_props_t g_object_type_props[512];
 undefined1 DAT_00202c38_backing[1536];
 int DAT_00204870;
 undefined4 DAT_00204878;
@@ -39,8 +39,8 @@ undefined2 DAT_00201c78;
 undefined4 DAT_000858a0;
 char *DAT_002029cc;
 uint read_realtime_clock_units(void) { return 0; }
-void object_list_unlink(void *link_field, void *object) { (void)link_field; (void)object; TEST_FAIL_MESSAGE("Unexpected tile change"); }
-void object_list_insert_head(void *link_field, void *object) { (void)link_field; (void)object; TEST_FAIL_MESSAGE("Unexpected tile change"); }
+void object_list_unlink(ushort *link_field, uw_object_hdr_t *object) { (void)link_field; (void)object; TEST_FAIL_MESSAGE("Unexpected tile change"); }
+void object_list_insert_head(ushort *link_field, uw_object_hdr_t *object) { (void)link_field; (void)object; TEST_FAIL_MESSAGE("Unexpected tile change"); }
 void set_locomotion_state(ushort state, int flags) { (void)state; (void)flags; }
 int roll_skill_check(int skill, int difficulty) { (void)skill; (void)difficulty; TEST_FAIL_MESSAGE("Unexpected fall damage"); return 0; }
 int apply_typed_damage_to_object(ushort *target, ushort *attacker, int tile_x, short tile_y, byte damage, byte damage_type) { (void)target; (void)attacker; (void)tile_x; (void)tile_y; (void)damage; (void)damage_type; TEST_FAIL_MESSAGE("Unexpected damage"); return 0; }
@@ -106,7 +106,7 @@ byte DAT_002046dc;
 int DAT_002046e8;
 ushort DAT_002020a0, DAT_002020a4;
 
-void *get_object_record_by_slot_index(short slot)
+uw_object_hdr_t *get_object_record_by_slot_index(short slot)
 {
     if (slot == 1) return movement_fixture.player;
     if (slot == 300) return movement_fixture.door;
@@ -114,7 +114,7 @@ void *get_object_record_by_slot_index(short slot)
 }
 char *DAT_002046c4 = (char *)movement_fixture.object_arena + 0x5b00;
 short DAT_0010144c, DAT_00101454;
-int encode_object_slot_index(void *object)
+int encode_object_slot_index(const uw_object_hdr_t *object)
 {
     TEST_ASSERT_EQUAL_PTR(movement_fixture.door, object);
     movement_fixture.door_contacts++;
@@ -221,7 +221,7 @@ void movement_fixture_reset(void)
     uw_test_create_character(movement_fixture.character, movement_fixture.attributes,
                              movement_fixture.player);
     memset(DAT_00202c38_backing, 0, sizeof(DAT_00202c38_backing));
-    uw_test_load_object_properties(DAT_00202c90_backing, sizeof DAT_00202c90_backing);
+    uw_test_load_object_properties(((byte *)g_object_type_props), sizeof g_object_type_props);
     movement_fixture.door[0] = 0x140;
     movement_fixture.door[1] = (4 << 13) | (4 << 10); /* centered on the tile */
     DAT_002049d2 = 1;

@@ -5,10 +5,12 @@ void tearDown(void) { npc_ai_fixture_dispose(); }
 
 static void test_loaded_perception_and_health_fields_share_monster_table(void)
 {
-    TEST_ASSERT_EQUAL_PTR(DAT_001007d0_backing + 4, &g_monster_max_stats_table);
-    TEST_ASSERT_EQUAL_PTR(DAT_001007d0_backing + 0x1d, &DAT_001007ed);
-    TEST_ASSERT_EQUAL_UINT8(DAT_001007d0_backing[8 * 0x30 + 0x1d],
-        (&DAT_001007ed)[8 * 0x30]);
+    TEST_ASSERT_EQUAL_PTR(((byte *)g_monster_type_props) + 4,
+                          &g_monster_type_props[0].max_hp);
+    TEST_ASSERT_EQUAL_PTR(((byte *)g_monster_type_props) + 0x1d,
+                          &g_monster_type_props[0].detection_ranges);
+    TEST_ASSERT_EQUAL_UINT8(g_monster_type_props[8].detection_ranges,
+                            ((byte *)g_monster_type_props)[8 * 0x30 + 0x1d]);
 }
 static void test_hostile_npc_notices_nearby_player_and_chases(void)
 {
@@ -47,7 +49,8 @@ static void test_repeated_walking_preserves_npc_position_and_ai_pointers(void)
         TEST_ASSERT_EQUAL_UINT16((10 << 10) | (10 << 4), npc[0xb]);
         TEST_ASSERT_EQUAL_UINT8(5, npc_bytes()[0xb] & 0xf);
         TEST_ASSERT_EQUAL_UINT8(0x2c, npc_bytes()[0x15] & 0x3f);
-        TEST_ASSERT_EQUAL_UINT8((byte)DAT_00101404[0xc], npc_bytes()[0x13] & 0x7f);
+        TEST_ASSERT_EQUAL_UINT8((byte)*(char *)&DAT_00101404->movement_speed,
+                                npc_bytes()[0x13] & 0x7f);
     }
     TEST_ASSERT_GREATER_THAN_INT(0, chase_steps);
 }

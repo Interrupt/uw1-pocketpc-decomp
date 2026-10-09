@@ -3,9 +3,10 @@
 static char character[256], attributes[256];
 static ushort player[16];
 char *DAT_00086df8, *DAT_0023be74;
-ushort *g_player_object;
+uw_mobile_object_t *g_player_object;
 short DAT_00201b68;
-undefined1 DAT_001007d0_backing[3072], DAT_00202c90_backing[8192];
+uw_monster_type_props_t g_monster_type_props[64];
+uw_object_type_props_t g_object_type_props[512];
 byte DAT_0010195c;
 ushort *DAT_00101958;
 undefined2 DAT_002020a0, DAT_002020a4;
@@ -35,14 +36,14 @@ void noise_fixture_reset(void)
     uw_test_create_character(character, attributes, player);
     memset(noise_npc, 0, sizeof noise_npc);
     memset(noise_source, 0, sizeof noise_source);
-    memset(DAT_001007d0_backing, 0, sizeof DAT_001007d0_backing);
-    memset(DAT_00202c90_backing, 0, sizeof DAT_00202c90_backing);
+    memset(((byte *)g_monster_type_props), 0, sizeof g_monster_type_props);
+    memset(((byte *)g_object_type_props), 0, sizeof g_object_type_props);
     noise_npc[0] = 0x41;
     noise_source[0] = 0x80;
     DAT_00101958 = noise_source;
     DAT_0010195c = 5;
-    DAT_001007d0_backing[0x30 + 9] = 5; /* matching noise class */
-    DAT_001007d0_backing[0x30 + 0x1e] = 4 << 4; /* four-tile range */
+    ((byte *)g_monster_type_props)[0x30 + 9] = 5; /* matching noise class */
+    ((byte *)g_monster_type_props)[0x30 + 0x1e] = 4 << 4; /* four-tile range */
     DAT_002020a0 = 20;
     DAT_002020a4 = 20;
     noise_set_reaction_count(3);

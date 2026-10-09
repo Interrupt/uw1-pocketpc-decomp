@@ -32,6 +32,57 @@ Two different problems currently hide behind identical-looking
 **Don't try to structify #2.** The first job of touching any new
 `_backing` global is deciding which bucket it's in — see Step 0.
 
+## Current migration: structs-attempt-two (2026-10-07)
+
+This branch uses Coccinelle patches in `tools/coccinelle/`, with UW1-only
+reference selection and independent layout tests. The historical status below
+is retained as prior research; it does not describe the current code.
+
+* `g_player_object` is now `uw_mobile_object_t *`; player reads and byte writes
+  have begun conversion. Temporary word/byte casts and untyped caller APIs
+  remain and must not be treated as completion.
+* COMOBJ storage is now `uw_object_type_props_t g_object_type_props[512]`,
+  loaded through struct fields. Most scalar lookups use properties; the
+  historical class-relative aliases and diagnostic/fixture byte views still
+  need their final sweep. Ownership was
+  incorrectly named `is_container`; its native offset-8 bit 7 is now
+  `can_have_owner`. The 11-byte UW1 disk format expands to 13 native bytes.
+* Mobile heading/hunger padding is now explicit; the old struct placed hunger
+  at bit 5 of offset 0x18. NPC target X/Y are six-bit fields at 0x0f, and swing
+  charge occupies bits 12-15; the old tentative seven-bit height was incorrect.
+* A separate `uw_projectile_object_t` documents the alternate mobile-slot
+  layout. The non-NPC physics tick now uses it; the other users still require
+  conversion.
+* Eleven object allocation/lookup/relocation APIs return header pointers.
+  Chain searches and list insertion, append, unlink and recursive deletion
+  now use typed object receivers and named common-header fields. Link cursors
+  remain packed word pointers. Many other caller locals and API parameters
+  still use raw pointers; incompatible-pointer diagnostics expose those sites.
+* `object_core` exercises actual creation, both object arena strides, nested
+  search and list mutation against independent byte/link expectations.
+  It also runs actual nested weight traversal and stack eligibility checks.
+* Container disposal, rune insertion and stack inspection APIs are typed.
+  A function-scoped sweep exposes remaining audited header-word accesses as
+  named packed words. Locals and parameters throughout the remaining APIs
+  still require conversion; header casts alone are not the requested end state.
+* The current mobile-slot pointer is typed, with many physical byte fields
+  and NPC-only goal/status/target reads converted through Coccinelle. Context
+  setters and goal/target writers use mobile struct pointers/fields. Temporary
+  word casts still remain. `npc_state` compares actual setter results with
+  independent packed byte expectations, including unchanged target flags.
+* UW1 monster properties now use 64 packed `uw_monster_type_props_t` rows,
+  with typed current NPC template pointers. Fixed field aliases and most
+  template offsets are replaced by properties; attacks, armor, trading and
+  spell selection have dedicated Coccinelle rules. Loader tests compare all
+  3072 bytes with OBJECTS.DAT. Other class-property tables, player/despawn
+  template pointers and remaining dynamic byte accesses still need conversion.
+* `object_layout` exhaustively checks packed field reads, writes and neighbour
+  preservation. `object_semantic_patches` checks patch coverage, unrelated
+  buffers and idempotence when spatch is installed.
+
+See `tools/coccinelle/README.md` for the full remaining scope and source links.
+Do not close the full migration based on the COMOBJ/player subset alone.
+
 ## Status (updated 2026-09-29, code-cleanup-first-pass branch)
 
 Note: uw.c is now being split into src/*.c topic files in parallel
@@ -41,8 +92,8 @@ the time you read this; grep for the symbol name, not a line number.
 
 | Record | Base(s) | Stride | State |
 |---|---|---|---|
-| `uw_object_hdr_t` | `DAT_002046c4` | 8B | Type defined, bit-verified. Only the `heading` field is converted project-wide; `item_id`/`zpos`/`ypos`/`xpos`/`quality`/`next`/`owner`/`link` still raw at their ~300+ call sites. |
-| `uw_mobile_object_t` | `DAT_002046b8` | 27B (0x1b) | Header inherited from above. The 19-byte NPC-extra block has real field names for `npc_yhome`/`npc_xhome`/`npc_heading` only (wiki-sourced, only those 3 cross-checked against real code); `npc_hp`/`npc_goal`/`npc_gtarg`/`npc_level`/`npc_talkedto`/`npc_attitude`/`npc_height`/`npc_hunger`/`npc_whoami` are typed but **unverified against this binary** — confirm each before trusting it for a write. |
+| `uw_object_hdr_t` | `DAT_002046c4` | 8B | Type defined, bit-verified. Only the `heading` field is converted project-wide; `object_id`/`zpos`/`ypos`/`xpos`/`quality`/`next`/`owner`/`link` still raw at their ~300+ call sites. |
+| `uw_mobile_object_t` | `DAT_002046b8` | 27B (0x1b) | Header inherited from above. The 19-byte NPC-extra block has real field names for `npc_yhome`/`npc_xhome`/`npc_heading` only (wiki-sourced, only those 3 cross-checked against real code); `npc_hp`/`npc_goal`/`npc_gtarg`/`npc_level`/`npc_talkedto`/`npc_attitude`/`npc_height`/`npc_ai_flags_low7`/`npc_whoami` are typed but **unverified against this binary** — confirm each before trusting it for a write. |
 | `uw_tile_t` | `DAT_002029cc` | 4B | Type defined, bit-verified. `wall_tex`, `tile_type`, and `floor_height` now converted project-wide (all known call sites, in src/tmap.c after the cleanup split). `floor_tex` converted at the one call site found this pass (src/tmap.c, the automap-reveal-adjacent read) but **not verified exhaustive** -- a fresh grep for the raw `>> 2 & 0xf`-on-byte-1 pattern hasn't been re-run against the other topic files yet. `door_bit`/`no_magic`/`unk_light`/`obj_head` still fully raw -- `obj_head`'s ~70 call sites all go through the generic `object_list_insert_head`/`object_list_unlink` functions, which also operate on `uw_object_hdr_t.next` (offset 6) via the same byte-offset parameter, so converting it means giving those two functions a real dual-purpose signature first, not just a mechanical find/replace; scoped out of this pass for that reason. |
 | `uw_current_view_t` | `DAT_00086e6c_backing` (single instance, not an array) | 0x2e (46)B of a 64B backing allocation | **Done.** `view_x`/`view_elevation`/`view_y`/`view_facing`/`view_shake_x`/`view_shake_y` (sizeof + offsetof verified against a throwaway harness) converted at all ~90 confirmed direct-dereference call sites across uw.c and 5 src/*.c files. A handful of `iVar = DAT_00086e6c;`-then-offset base-pointer-capture sites (src/tmap.c, uw.c's own update_current_view_from_subject) were deliberately left as raw offset math rather than risk misreading how the captured local is reused later in each function. Two bytes ranges (0x0c-0x0d, 0x10-0x11) and the leading/trailing spans (0x00-0x09, 0x14-0x27) have no confirmed call site and are left as honest `_unkNN` gaps. |
 | `g_grtile_registry` (was `DAT_0024e090`) | n/a (flat pointer array, not a multi-field record) | 8B/slot, 65536 slots | **Done.** Retyped from a raw byte buffer with manual `&DAT_0024e090 + slot*8` pointer-cast arithmetic at every access site to a real `void *g_grtile_registry[65536]` array. All 3 writers (`uw_register_gr_entry`, the two grtile-alloc paths in what's now uw.c ~22740/22775) and all 4 readers (`FUN_000408fc`, one high-id fallback branch, and both blit paths in src/bitmap.c) converted; zero raw `DAT_0024e090` access sites remain (`grep -n "DAT_0024e090" uw.c uw.h src/*.c` returns only historical prose explaining the old name). Not really a "record" (single homogeneous pointer field, not multiple named fields) so no struct/bitfield verification step was needed -- this was a mechanical retype, closer to the earlier undersized-global sweep than the object/tile/view struct work above, but listed here since struct-recovery-plan.md's own candidate catalog named it. |
@@ -191,12 +242,12 @@ them.
    `tile_type`/`floor_height`/`floor_tex`/`door_bit` reads at
    `tilemap_lookup`'s ~70 call sites. Good second session because the
    methodology is now proven and this is pure repetition of it.
-2. **Finish `uw_object_hdr_t`'s remaining fields** (`item_id`, `zpos`/
+2. **Finish `uw_object_hdr_t`'s remaining fields** (`object_id`, `zpos`/
    `ypos`/`xpos`, `quality`/`next`, `owner`/`link`) across the ~300
    remaining call sites, `g_player_object` first (single global, easy
    to find every site) then the generic object-pointer parameters.
    This is the biggest single chunk of remaining work in the codebase
-   — budget several sessions, batched by field (all `item_id` reads,
+   — budget several sessions, batched by field (all `object_id` reads,
    then all position reads, etc.), not by function.
 3. **comobj.dat property record** (0xd bytes) — next-highest leverage
    after the two in-progress types: well-documented, touches gameplay-
