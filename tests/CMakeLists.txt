@@ -233,6 +233,7 @@ add_fixture_game_unit_test(illustration_render
   src/graphics.c:expand_pals_bytes
   src/graphics.c:convert_palette_bgrx_to_rgb
   src/graphics.c:build_rgb565_palette
+  src/graphics.c:get_palette_brightness_bits
   src/graphics.c:bitmap_blit_to_framebuffer
   src/graphics.c:fade_in src/graphics.c:fade_out
   src/hud.c:flush_dirty_rect_to_display src/hud.c:dirty_rect_union
@@ -794,6 +795,7 @@ add_game_test_library(uw_test_transitions
   src/graphics.c:expand_pals_bytes
   src/graphics.c:convert_palette_bgrx_to_rgb
   src/graphics.c:build_rgb565_palette
+  src/graphics.c:get_palette_brightness_bits
   src/graphics.c:bitmap_blit_to_framebuffer
   src/graphics.c:fade_in
   src/graphics.c:fade_out
