@@ -32,16 +32,4 @@ int uw_resolve_win_path(const char *win_path, char *out, unsigned int out_sz);
  * 0 on a real failure. Backs the CreateDirectory-shaped coredll ordinal. */
 int uw_ensure_directory(const char *win_path);
 
-/* Point the read-only port-asset fallback at `dir`: when UW_DATA_DIR has no
- * such file and this directory does, reads get this one's copy. That is what
- * lets the game run against an original DOS install, which has no DATA3D/*.E
- * models at all (DOS compiled them into UW.EXE) and none of the port-added
- * screens -- see g_port_data_dir's comment in file_io.c for the full list and
- * for why only reads consult it.
- *
- * Call once at startup, before any file access; UW_PORT_DATA_DIR in the
- * environment overrides whatever is passed here. Harmless to leave unset --
- * every read then resolves against UW_DATA_DIR alone, exactly as before. */
-void uw_set_port_data_dir(const char *dir);
-
 #endif
