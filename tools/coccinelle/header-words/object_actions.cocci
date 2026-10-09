@@ -1170,12 +1170,6 @@ R F(...) {
 |
 - *(ushort *)puVar8
 + ((uw_object_hdr_t *)puVar8)->type_flags
-|
-- puVar8[0]
-+ ((uw_object_hdr_t *)puVar8)->type_flags
-|
-- *puVar8
-+ ((uw_object_hdr_t *)puVar8)->type_flags
 )
 ...>
 }
@@ -1192,9 +1186,6 @@ R F(...) {
 + ((uw_object_hdr_t *)puVar8)->position_word
 |
 - ((ushort *)puVar8)[1]
-+ ((uw_object_hdr_t *)puVar8)->position_word
-|
-- puVar8[1]
 + ((uw_object_hdr_t *)puVar8)->position_word
 )
 ...>
@@ -1213,9 +1204,6 @@ R F(...) {
 |
 - ((ushort *)puVar8)[2]
 + ((uw_object_hdr_t *)puVar8)->chain_word
-|
-- puVar8[2]
-+ ((uw_object_hdr_t *)puVar8)->chain_word
 )
 ...>
 }
@@ -1232,9 +1220,6 @@ R F(...) {
 + ((uw_object_hdr_t *)puVar8)->link_word
 |
 - ((ushort *)puVar8)[3]
-+ ((uw_object_hdr_t *)puVar8)->link_word
-|
-- puVar8[3]
 + ((uw_object_hdr_t *)puVar8)->link_word
 )
 ...>

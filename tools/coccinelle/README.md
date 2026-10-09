@@ -911,3 +911,31 @@ observations are compared. Other dispatcher branches' pure named reads follow
 the already verified common-header layout and are also covered by existing
 trap/layout tests; this oracle does not claim exhaustive dispatcher coverage.
 `--reference` accepts the original `traps.c`; `--asan` enables AddressSanitizer.
+
+`generate_debris_rules.py` / `debris-fields.cocci` convert
+`spawn_effect_debris_burst`'s template and allocation to typed common-header
+pointers, copy its four header words directly, and name the object ID and
+x/y/z writes. All three callers pass live objects; the stationary allocator
+returns separate whole slots, so the word copies do not encounter partial
+source/destination overlap. The template's `void *` input is independently
+audited here: the generic pointer-role audit conservatively lists its local
+alias for review rather than inferring the caller contract.
+
+The complete original function must match, including random calls, coordinate
+retry loops, scalar captures, list callbacks, and scheduling failures. Added
+callbacks, volatile captures, changed arithmetic, and escaping/observed
+locals reject the rule. Full type/position captures and the computations of
+`uVar9`/`uVar10` remain intentional packed operations: they retain the original
+scalar values and sampling times while named fields describe the writes.
+The function and its existing comments stay in place.
+
+`test_debris_fields.py` checks the checked-in rule, exact conversion,
+idempotence, scope/capture/callback guards, and 786,432 executions of the real
+original/current function bodies. The oracle sweeps every 16-bit template
+pattern, uses an unaligned packed template, exercises random retries,
+callback mutations and scheduler failures at each possible burst position,
+and compares every record/guard/template/tile byte plus callback events and
+arguments. Run with `--reference PATH` to verify against a saved original
+source, and `--asan` for the same oracle under AddressSanitizer.
+The worklist now has 233 byte views (14 fewer); four direct word copies and
+retained snapshots account for the increase in packed-word entries.
