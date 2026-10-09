@@ -1466,7 +1466,7 @@ LAB_0003c940:
                 uVar10, uVar5, (int)DAT_00204884, (int)DAT_00202c30,
                 (((uVar10 == 0) && (uVar5 == 0)) || (((int)DAT_00204884 >> 3) + -8 <= (int)DAT_00202c30)));
       if (((uVar10 == 0) && (uVar5 == 0)) || (((int)DAT_00204884 >> 3) + -8 <= (int)DAT_00202c30)) {
-        uVar1 = *(undefined2 *)((char *)g_player_object + 2);
+        uVar1 = g_player_object->hdr.position_word;
         bVar2 = (byte)uVar1;
         g_player_object->hdr.position_word_low = (bVar2 ^ (byte)DAT_00202c30) & 0x7f ^ bVar2;
         g_player_object->hdr.position_word_high = (byte)(char)((ushort)uVar1 >> 8);

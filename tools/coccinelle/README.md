@@ -707,3 +707,31 @@ word temporary. It tests the converted access sequences; the game unit tests
 provide the surrounding function coverage. Optional `--asan` enables address
 sanitization, and `--reference-dir` checks exact conversion of saved pre-change
 source functions against their current bodies.
+
+### Shared mobile consumers and locally proved NPC storage
+
+The shared-mobile recipes also cover combat durability/health, collision
+animation bytes, player-position access and picking diagnostics. These use
+only fields common to NPC and projectile records. The `emit_tile_features`
+height recipe names `precise_z` only after the existing non-NPC and mobile
+arena gates, retaining its signed `short` interpretation. A typed player
+receiver uses `g_player_object->hdr` directly.
+
+`generate_mobile_consumer_rules.py` emits three narrower NPC conversions:
+`detect_npc_wander_proximity` retains its saved current-NPC pointer when
+clearing AI bit 0; `apply_melee_damage` tests status bit 10 through
+`status_word_high` within its NPC armor branch; and `npc_ai_default_tick`
+names the goal low-byte store only with the adjacent current-NPC capture and
+snapshot sequence. The last function also uses `npc_rec` for other record
+roles, so a function-wide NPC extension map would be unsafe. The original
+snapshots, low/high store sequence and global receiver reads remain intact.
+AI bit 0, status bit 10 and animation bits retain their masks because their
+individual property meanings have not been verified.
+
+`test_mobile_consumer_fields.py` checks 1,310,720 packed-byte cases before and
+after the generated rules, with independent expected bytes for health,
+animation, player height and NPC goal updates. It checks signed projectile
+height, the saved word results, scope exclusions and idempotence, with
+optional `--asan`. These are access-sequence regressions; the game unit tests
+cover the surrounding consumers. Source audit counts remain a conservative
+work list, not a completion certificate.

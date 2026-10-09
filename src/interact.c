@@ -891,8 +891,10 @@ ushort *pick_object_under_cursor(int mode)
               (unsigned)(((uw_object_hdr_t *)puVar3)->item_id),
               (int)(g_object_type_props[(((uw_object_hdr_t *)puVar3)->item_id)].owner_flags & 0x20),
               (int)object_ptr_in_arena((char *)puVar3),
-              (unsigned)*(byte *)((char *)puVar3 + 10), (unsigned)*(byte *)((char *)puVar3 + 0x13),
-              (unsigned)*(byte *)((char *)puVar3 + 0x14), (unsigned)*(byte *)((char *)puVar3 + 0x15),
+              (unsigned)((uw_mobile_object_t *)puVar3)->movement_flags,
+              (unsigned)((uw_mobile_object_t *)puVar3)->motion_flags,
+              (unsigned)((uw_mobile_object_t *)puVar3)->attack_pitch,
+              (unsigned)((uw_mobile_object_t *)puVar3)->animation_flags,
               (int)(((uw_object_hdr_t *)puVar3)->invisible != 0));
     if (((g_object_type_props[(((uw_object_hdr_t *)puVar3)->item_id)].owner_flags & 0x20) != 0) &&
         (iVar2 = object_ptr_in_arena(puVar3), iVar2 == 0)) {

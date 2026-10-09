@@ -72,3 +72,18 @@ R F(...) {
 )
 ...>
 }
+
+@emit_tile_features_puVar5_precise_z@
+type R;
+identifier F =~ "^\(emit_tile_features\)$";
+typedef byte, undefined1, undefined2, ushort, uw_mobile_object_t, uw_projectile_object_t;
+
+@@
+R F(...) {
+<...
+(
+- *(short *)((char *)puVar5 + 0xf)
++ (short)((uw_projectile_object_t *)puVar5)->precise_z
+)
+...>
+}

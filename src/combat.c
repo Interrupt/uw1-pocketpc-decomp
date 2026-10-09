@@ -1161,7 +1161,7 @@ void apply_melee_damage(byte hit_type)
       DAT_00100624 = uVar8 & 4;
       uVar4 = (ushort)(byte) g_monster_type_props[iVar11 / 0x30].armor[0];
     }
-    if ((sVar2 != 1) && ((puVar6[7] & 4) != 0)) {
+    if ((sVar2 != 1) && ((((uw_mobile_object_t *)puVar6)->status_word_high & 4) != 0)) {
       uVar4 = ordint_divmod(3,(short)uVar4 * 5).quot;
     }
     if ((int)(uVar9 * 0x10000) >> 0x10 < (int)(short)uVar4) {
@@ -1205,7 +1205,7 @@ void apply_melee_damage(byte hit_type)
           }
           else {
             sVar3 = ordint_divmod(g_monster_type_props[(uVar1 & 0x3f)].max_hp,
-                                  (uint)(byte)puVar6[4] * 3).quot;
+                                  (uint)((uw_mobile_object_t *)puVar6)->hit_points * 3).quot;
             iVar11 = (int)sVar3;
           }
           if (2 < (short)iVar11) {
@@ -2146,12 +2146,12 @@ bool apply_object_durability_damage(ushort *object, ushort *attacker, short dama
       ((uw_object_hdr_t *)object)->chain_word_high = (byte)(char)(uVar2 >> 8);
     }
     else {
-      iVar5 = (uint)(byte)object[4] - iVar5;
+      iVar5 = (uint)((uw_mobile_object_t *)object)->hit_points - iVar5;
       iVar1 = iVar5 * 0x10000 >> 0x10;
       if (iVar1 < 1) {
         iVar5 = 0;
       }
-      *(char *)(object + 4) = (char)iVar5;
+      ((uw_mobile_object_t *)object)->hit_points = (byte)(char)iVar5;
     }
     bVar3 = iVar1 < 1;
     if (((bVar3) && (iVar4 == 0)) && (-1 < (short)tile_x)) {
@@ -2486,10 +2486,10 @@ int resolve_collision_candidate_interaction(short candidate_index, int mover_slo
     uVar8 = *puVar5 & 0x1ff;
     bVar9 = g_object_type_props[(short)uVar8].quality_flags & 1;
     if ((0xff < (short)mover_slot) || (0x3fff < (puVar11[iVar1 * 3 + 1] & 0xffc0))) goto LAB_000548b8;
-    if (((uVar2 & 0x1c0) != 0x40) && ((*(byte *)((char *)puVar4 + 0x15) & 0x80) != 0)) {
+    if (((uVar2 & 0x1c0) != 0x40) && ((((uw_mobile_object_t *)puVar4)->animation_flags & 0x80) != 0)) {
       return 2;
     }
-    *(byte *)((char *)puVar4 + 0x15) = *(byte *)((char *)puVar4 + 0x15) | 0x80;
+    ((uw_mobile_object_t *)puVar4)->animation_flags = ((uw_mobile_object_t *)puVar4)->animation_flags | 0x80;
   }
   uVar3 = (ushort)DAT_002046d8;
 LAB_000548b8:

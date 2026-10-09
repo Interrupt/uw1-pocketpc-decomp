@@ -2764,7 +2764,7 @@ LAB_000323ac:
     }
     else {
       uVar6 = 1;
-      *(byte *)((char *)puVar7 + 0x19) = *(byte *)((char *)puVar7 + 0x19) & 0xfe;
+      ((uw_mobile_object_t *)puVar7)->npc_ai_flags = ((uw_mobile_object_t *)puVar7)->npc_ai_flags & 0xfe;
     }
   }
   return uVar6;
@@ -3083,7 +3083,7 @@ LAB_00033e9c:
     uVar2 = DAT_0010190c->goal_word;
     uw_ord2005_rem_96 = ((int)((uVar2 >> 0xc) + 1)) % (4);
     uVar11 = uVar2 & 0xfff;
-    *(char *)(npc_rec + 0xb) = (char)uVar11;
+    ((uw_mobile_object_t *)npc_rec)->goal_word_low = (byte)(char)uVar11;
     DAT_0010190c->goal_word_high =
       (byte)(uVar11 >> 8) | (byte)(((uw_ord2005_rem_96 & 0xf) << 0xc) >> 8);
     DAT_0010190c->animation_flags = DAT_0010190c->animation_flags | 0x40;

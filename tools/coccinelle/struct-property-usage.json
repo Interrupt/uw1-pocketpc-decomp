@@ -1,9 +1,9 @@
 {
   "scope": "Named packed views and existing audited object-pointer roles in src/*.c; unrecorded aliases and other structures still require independent auditing.",
   "counts": {
-    "byte_view": 372,
-    "packed_word": 397,
-    "raw_audited_object_access": 24,
+    "byte_view": 374,
+    "packed_word": 398,
+    "raw_audited_object_access": 7,
     "signed_word_view": 9
   },
   "records": [
@@ -684,24 +684,6 @@
     },
     {
       "source": "src/ai.c",
-      "function": "detect_npc_wander_proximity",
-      "line": 2767,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar7",
-      "code": "*(byte *)((char *)puVar7 + 0x19) = *(byte *)((char *)puVar7 + 0x19) & 0xfe;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "detect_npc_wander_proximity",
-      "line": 2767,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar7",
-      "code": "*(byte *)((char *)puVar7 + 0x19) = *(byte *)((char *)puVar7 + 0x19) & 0xfe;"
-    },
-    {
-      "source": "src/ai.c",
       "function": "compute_vertical_aim_offset",
       "line": 2787,
       "category": "byte_view",
@@ -785,10 +767,10 @@
       "source": "src/ai.c",
       "function": "npc_ai_default_tick",
       "line": 3086,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "npc_rec",
-      "code": "*(char *)(npc_rec + 0xb) = (char)uVar11;"
+      "category": "byte_view",
+      "member": "goal_word",
+      "pointer": null,
+      "code": "((uw_mobile_object_t *)npc_rec)->goal_word_low = (byte)(char)uVar11;"
     },
     {
       "source": "src/ai.c",
@@ -1808,15 +1790,6 @@
       "code": "if (((((uw_object_hdr_t *)_o)->position_word >> 7) + DAT_0023b4a0 * -2 & 3) == 0) {"
     },
     {
-      "source": "src/collision.c",
-      "function": "collision_height_envelope",
-      "line": 408,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar7",
-      "code": "((*(byte *)((char *)puVar7 + 0x15) & 0x80) == 0)) &&"
-    },
-    {
       "source": "src/combat.c",
       "function": "npc_combat_approach_tick",
       "line": 118,
@@ -2369,19 +2342,10 @@
       "source": "src/combat.c",
       "function": "apply_melee_damage",
       "line": 1164,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "if ((sVar2 != 1) && ((puVar6[7] & 4) != 0)) {"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "apply_melee_damage",
-      "line": 1208,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "(uint)(byte)puVar6[4] * 3).quot;"
+      "category": "byte_view",
+      "member": "status_word",
+      "pointer": null,
+      "code": "if ((sVar2 != 1) && ((((uw_mobile_object_t *)puVar6)->status_word_high & 4) != 0)) {"
     },
     {
       "source": "src/combat.c",
@@ -2556,24 +2520,6 @@
     },
     {
       "source": "src/combat.c",
-      "function": "apply_object_durability_damage",
-      "line": 2149,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "object",
-      "code": "iVar5 = (uint)(byte)object[4] - iVar5;"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "apply_object_durability_damage",
-      "line": 2154,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "object",
-      "code": "*(char *)(object + 4) = (char)iVar5;"
-    },
-    {
-      "source": "src/combat.c",
       "function": "damage_equipped_item_in_slot",
       "line": 2229,
       "category": "byte_view",
@@ -2616,33 +2562,6 @@
       "member": "type_flags",
       "pointer": null,
       "code": "uVar2 = ((uw_object_hdr_t *)puVar4)->type_flags;"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "resolve_collision_candidate_interaction",
-      "line": 2489,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar4",
-      "code": "if (((uVar2 & 0x1c0) != 0x40) && ((*(byte *)((char *)puVar4 + 0x15) & 0x80) != 0)) {"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "resolve_collision_candidate_interaction",
-      "line": 2492,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar4",
-      "code": "*(byte *)((char *)puVar4 + 0x15) = *(byte *)((char *)puVar4 + 0x15) | 0x80;"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "resolve_collision_candidate_interaction",
-      "line": 2492,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar4",
-      "code": "*(byte *)((char *)puVar4 + 0x15) = *(byte *)((char *)puVar4 + 0x15) | 0x80;"
     },
     {
       "source": "src/containers.c",
@@ -3242,10 +3161,10 @@
       "source": "src/input.c",
       "function": "begin_directional_move",
       "line": 1469,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "g_player_object",
-      "code": "uVar1 = *(undefined2 *)((char *)g_player_object + 2);"
+      "category": "packed_word",
+      "member": "position_word",
+      "pointer": null,
+      "code": "uVar1 = g_player_object->hdr.position_word;"
     },
     {
       "source": "src/input.c",
@@ -3336,42 +3255,6 @@
       "member": "position_word",
       "pointer": null,
       "code": "uVar5 = g_player_object->hdr.position_word;"
-    },
-    {
-      "source": "src/interact.c",
-      "function": "pick_object_under_cursor",
-      "line": 894,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar3",
-      "code": "(unsigned)*(byte *)((char *)puVar3 + 10), (unsigned)*(byte *)((char *)puVar3 + 0x13),"
-    },
-    {
-      "source": "src/interact.c",
-      "function": "pick_object_under_cursor",
-      "line": 894,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar3",
-      "code": "(unsigned)*(byte *)((char *)puVar3 + 10), (unsigned)*(byte *)((char *)puVar3 + 0x13),"
-    },
-    {
-      "source": "src/interact.c",
-      "function": "pick_object_under_cursor",
-      "line": 895,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar3",
-      "code": "(unsigned)*(byte *)((char *)puVar3 + 0x14), (unsigned)*(byte *)((char *)puVar3 + 0x15),"
-    },
-    {
-      "source": "src/interact.c",
-      "function": "pick_object_under_cursor",
-      "line": 895,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar3",
-      "code": "(unsigned)*(byte *)((char *)puVar3 + 0x14), (unsigned)*(byte *)((char *)puVar3 + 0x15),"
     },
     {
       "source": "src/inventory.c",
@@ -6297,15 +6180,6 @@
       "member": "type_flags",
       "pointer": null,
       "code": "elapsed, (unsigned)((uw_object_hdr_t *)puVar2)->type_flags,"
-    },
-    {
-      "source": "src/tmap.c",
-      "function": "emit_tile_features",
-      "line": 1824,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar5",
-      "code": "DAT_0023b91c = *(short *)((char *)puVar5 + 0xf);"
     },
     {
       "source": "src/tmap.c",

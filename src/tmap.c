@@ -1821,7 +1821,7 @@ void emit_tile_features(ushort *tile)
             DAT_0023b91c = (((uw_object_hdr_t *)puVar5)->zpos) << 3;
           }
           else {
-            DAT_0023b91c = *(short *)((char *)puVar5 + 0xf);
+            DAT_0023b91c = (short)((uw_projectile_object_t *)puVar5)->precise_z;
           }
           if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)puVar5)->item_id) == 0x80)
             fprintf(stderr, "[throw-scrz] sack DAT_0023b91c=%d cam_ref(DAT_00086e6c+0xe)=%d in_arena=%d\n",

@@ -31,11 +31,18 @@ CONTEXTS = {
                          ('spawn_random_variant_object_at_tile', 'iVar4', 'char *', 'shared')],
     'objects.c': [('settle_dropped_object', 'puVar9', 'ushort *', 'shared'),
                   ('reallocate_object_to_arena', 'puVar2', 'ushort *', 'shared')],
-    'collision.c': [('build_collision_height_field_for_object', 'object', 'ushort *', 'tile')],
+    'collision.c': [('build_collision_height_field_for_object', 'object', 'ushort *', 'tile'),
+                    ('collision_height_envelope', 'puVar7', 'ushort *', 'shared')],
+    'combat.c': [('apply_melee_damage', 'puVar6', 'ushort *', 'shared'),
+                 ('apply_object_durability_damage', 'object', 'ushort *', 'shared'),
+                 ('resolve_collision_candidate_interaction', 'puVar4', 'ushort *', 'shared')],
+    'input.c': [('begin_directional_move', 'g_player_object', 'uw_mobile_object_t *', 'shared')],
+    'interact.c': [('pick_object_under_cursor', 'puVar3', 'ushort *', 'shared')],
     'game.c': [('set_custom_view_target', 'iVar1', 'void *', 'tile')],
     'automap.c': [('automap_reveal_byte', 'pp', 'ushort *', 'tile')],
     'demomode.c': [('demomode_pump', 'pl', 'unsigned short *', 'tile')],
-    'tmap.c': [('process_visible_tile_cell', '_dpp', 'ushort *', 'tile')],
+    'tmap.c': [('process_visible_tile_cell', '_dpp', 'ushort *', 'tile'),
+               ('emit_tile_features', 'puVar5', 'ushort *', 'tile')],
     'traps.c': [('apply_poison_or_damage_trap_effect', 'iVar2', 'void *', 'tile')],
 }
 
@@ -52,6 +59,10 @@ def access_rules(entries):
         parts.append(header_fields(dict(functions=[dict(function=function, roles=[dict(name=pointer, type=typ)])])))
         parts[-1] = parts[-1].replace('@field_', f'@site_{index}_field_')
         parts.append(storage(pointer, HEADER, scope, raw_type=typ).replace('@w_', f'@site_{index}_header_w_'))
+        if typ == 'uw_mobile_object_t *':
+            parts.append(rule(function, pointer, 'typed_header_receiver',
+                              [f'((uw_object_hdr_t *){pointer})->M'],
+                              f'{pointer}->hdr.M').replace('@@\n', 'identifier M;\n@@\n'))
         byte_arithmetic = typ in ['char *', 'byte *', 'void *', 'unsigned char *']
         word_arithmetic = typ in ['ushort *', 'unsigned short *', 'short *']
         for off, field in FIELDS.items():
@@ -97,6 +108,10 @@ def precise_rules():
                       '((uw_projectile_object_t *)object)->source_slot').replace('ushort, uw_mobile_object_t;', 'ushort, uw_mobile_object_t, uw_projectile_object_t;'))
     parts.append(rule('reallocate_object_to_arena', 'puVar2', 'debug_precise_z', ['*(short *)((char *)puVar2 + 0xf)'],
                       '(short)((uw_projectile_object_t *)puVar2)->precise_z').replace('ushort, uw_mobile_object_t;', 'ushort, uw_mobile_object_t, uw_projectile_object_t;'))
+    # emit_tile_features reaches this read only for an arena mobile whose
+    # item class is not NPC (0x40); its coordinate is a signed world height.
+    parts.append(rule('emit_tile_features', 'puVar5', 'precise_z', ['*(short *)((char *)puVar5 + 0xf)'],
+                      '(short)((uw_projectile_object_t *)puVar5)->precise_z').replace('ushort, uw_mobile_object_t;', 'ushort, uw_mobile_object_t, uw_projectile_object_t;'))
     return '\n'.join(parts)
 
 
