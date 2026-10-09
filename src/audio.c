@@ -677,7 +677,16 @@ LAB_00072f24:
       if (iVar6 < 0) {
         uVar7 = 0;
       }
-      if (0x30 < uVar3) goto LAB_00072f24;
+      /* Out of earshot. Traced because this gate applies ONLY to the
+       * positional entry point -- play_sound_effect_with_pan has no
+       * distance check at all -- so it is the one thing that can silence
+       * landing and door sounds while footsteps keep working. uVar3 is the
+       * distance from the player in the same units as the x/y passed in. */
+      if (0x30 < uVar3) {
+        DEBUG(INFO, "[audio] positional effect %u dropped: distance %u exceeds the 0x30 range "
+                    "(at %d,%d)\n", sound_id & 0xff, uVar3, (int)world_x, (int)world_y);
+        goto LAB_00072f24;
+      }
       if (7 < uVar3) {
         iVar5 = ordint_divmod(0x28,(0x30 - uVar3) * (int)(short)((uint)iVar5 >> 0x10)).quot;
         iVar5 = iVar5 << 0x10;

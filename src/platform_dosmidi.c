@@ -296,18 +296,27 @@ void platform_dosmidi_stop(void)
 
 void platform_dosmidi_play_effect(int id)
 {
-  if (!g.live || id < 0 || id >= g.sounds.count) {
+  if (!g.live) {
+    return;
+  }
+  /* Every way this can decline is traced: the effect path has several
+   * silent exits and, with 24 ids and four voices, "nothing happened" is
+   * otherwise impossible to tell apart from "it played quietly". */
+  if (id < 0 || id >= g.sounds.count) {
+    DEBUG(INFO, "[audio] dos effect %d: outside SOUNDS.DAT's 0..%d (the playable "
+                "instrument's ids 40-59 land here; the table does not cover them)\n",
+          id, g.sounds.count - 1);
     return;
   }
   uw_sound_effect e;
   if (!uw_sound_effect_at(&g.sounds, id, &e)) {
+    DEBUG(WARN, "[audio] dos effect %d: no record\n", id);
     return;
   }
   /* Bank 1 is the sound-effects bank: its timbres are the time-variant
    * effects, not plain instruments (see the header). */
   if (!timbre_ready(1, e.program)) {
-    DEBUG(WARN, "[audio] DOS audio: effect %d wants bank 1 patch %u, which UW.AD lacks\n",
-          id, e.program);
+    DEBUG(WARN, "[audio] dos effect %d: UW.AD has no bank 1 patch %u\n", id, e.program);
     return;
   }
 
@@ -328,13 +337,19 @@ void platform_dosmidi_play_effect(int id)
     if (!g.sfx[i].channel) { slot = i; break; }
   }
   if (slot < 0) {
-    return; /* every effect voice busy -- the original drops it too */
+    DEBUG(INFO, "[audio] dos effect %d dropped: all four effect voices busy "
+                "(ids %d/%d/%d/%d still sounding)\n",
+          id, g.sfx[0].id, g.sfx[1].id, g.sfx[2].id, g.sfx[3].id);
+    return; /* the original drops it too -- sound_effect_start returns 0xff */
   }
 
   int ch = uw_ail_lock_channel(&g.ail);
   if (ch <= 0) {
+    DEBUG(INFO, "[audio] dos effect %d dropped: no channel free to lock\n", id);
     return;
   }
+  DEBUG(INFO, "[audio] dos effect %d: bank1 prog %u note %u vel %u for %.2fs on channel %d\n",
+        id, e.program, e.note, e.velocity, e.duration / 256.0, ch);
 
   /* The sequence the DOS engine sends, in its order: the bank, the program,
    * all controllers off, full volume and expression, centre pan, note on. */
