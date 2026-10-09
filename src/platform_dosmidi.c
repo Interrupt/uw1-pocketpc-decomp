@@ -12,6 +12,7 @@
 #include "headers/platform_dosmidi.h"
 #include "headers/debug.h"
 #include "headers/audio.h"
+#include "headers/file_io.h"
 #include "uw_ail.h"
 #include "uw_adlib.h"
 #include "uw_opl.h"
@@ -143,11 +144,27 @@ int platform_dosmidi_init(int out_rate)
     goto fail;
   }
 
-  snprintf(path, sizeof(path), "%s/SOUND/SOUNDS.DAT", root);
-  if (!uw_sounds_open(&g.sounds, path)) {
-    DEBUG(WARN, "[audio] DOS audio: cannot read the effect table %s -- falling back\n", path);
+  /* The effect table comes from the port's own game data, not the DOS
+   * install: data/SOUND/SOUNDS.DAT is byte-identical to the DOS original
+   * (verified), because the Pocket PC build carried the table all along and
+   * never used it -- its effects were WAVE resources instead. So prefer
+   * that copy and keep the DOS directory only as a fallback, which narrows
+   * what a DOS install is actually needed for to the XMI scores and the
+   * UW.AD timbres. */
+  int have_sounds = 0;
+  if (uw_resolve_win_path("\\SOUND\\SOUNDS.DAT", path, sizeof(path))) {
+    have_sounds = uw_sounds_open(&g.sounds, path);
+  }
+  if (!have_sounds) {
+    snprintf(path, sizeof(path), "%s/SOUND/SOUNDS.DAT", root);
+    have_sounds = uw_sounds_open(&g.sounds, path);
+  }
+  if (!have_sounds) {
+    DEBUG(WARN, "[audio] DOS audio: no readable SOUNDS.DAT in the game data or "
+                "%s/SOUND -- falling back\n", root);
     goto fail;
   }
+  DEBUG(INFO, "[audio] DOS audio: effect table from %s\n", path);
 
   uw_opl_reset(&g.opl);
   if (!uw_adlib_init(&g.adlib, g.adlib_file.data, g.adlib_file.size, chip_write, NULL)) {

@@ -184,6 +184,20 @@ static void test_music_volume_is_clamped_to_a_percentage(void)
     TEST_ASSERT_FALSE(platform_dos_audio_enabled());
 }
 
+/* The effect table comes from the port's own game data, so a DOS directory
+   that has no SOUNDS.DAT is no longer a reason to decline. Here neither is
+   present -- no UW_DATA_DIR to resolve against and an empty DOS dir -- so
+   it still declines; the point of the test is that it does so cleanly
+   rather than reading a stale path. */
+static void test_missing_effect_table_everywhere_declines_cleanly(void)
+{
+    unsetenv("UW_DATA_DIR");
+    setenv("UW_AUDIO_MODE", "dos", 1);
+    setenv("UW_DOS_DATA_DIR", "/tmp", 1);
+    TEST_ASSERT_EQUAL_INT(0, platform_dosmidi_init(44100));
+    TEST_ASSERT_FALSE(platform_dos_audio_enabled());
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -201,5 +215,6 @@ int main(void)
     RUN_TEST(test_play_effect_is_safe_when_dos_mode_is_off);
     RUN_TEST(test_stop_effect_is_safe_when_dos_mode_is_off);
     RUN_TEST(test_music_volume_is_clamped_to_a_percentage);
+    RUN_TEST(test_missing_effect_table_everywhere_declines_cleanly);
     return UNITY_END();
 }
