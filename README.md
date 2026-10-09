@@ -193,7 +193,8 @@ gitignored, not checked in, since it's copyrighted game data.
 
 `UW_DATA_DIR` is the one and only data directory, and it can point either at
 the extracted Pocket PC assets or straight at a DOS Ultima Underworld 1
-directory. Supply one or the other, not both; the port works out which it
+directory. `./run.sh` and `./debug.sh` use the repo's own `data/` only when
+`UW_DATA_DIR` is unset, so `UW_DATA_DIR=/path/to/UW ./run.sh` works. Supply one or the other, not both; the port works out which it
 has been given and adapts:
 
 - `DATA/CHRGEN.DAT` uses 18-byte records on DOS instead of the port's 20,
