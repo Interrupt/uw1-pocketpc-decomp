@@ -138,6 +138,10 @@ typedef struct {
 typedef struct {
   int count;
   int idx[DOS_MAX_FACE_VERTS];
+  /* Keep this face's first vertex first when reversing its winding, instead
+     of letting it become the last. See emit_face_order below for why only
+     some faces want that. */
+  int keep_first;
 } dos_face;
 
 typedef struct {
@@ -293,7 +297,7 @@ static const dos_vert *vert_get(const dos_model *m, int n)
   return &m->verts[n];
 }
 
-static void face_add(dos_model *m, const int *idx, int n)
+static void face_add(dos_model *m, const int *idx, int n, int keep_first)
 {
   if (n < 3 || m->face_count >= DOS_MAX_FACES) {
     /* Under three vertices is not a polygon; the port's parser warns about
@@ -307,6 +311,7 @@ static void face_add(dos_model *m, const int *idx, int n)
   }
   dos_face *f = &m->faces[m->face_count++];
   f->count = n;
+  f->keep_first = keep_first;
   for (int i = 0; i < n; i++) {
     f->idx[i] = idx[i];
   }
@@ -438,7 +443,7 @@ static void walk(dos_model *m, unsigned int at, int depth)
       }
       int idx[DOS_MAX_VERTS];
       for (int i = 0; i < n; i++) idx[i] = vertno(p + 2 + (unsigned)i * 2);
-      face_add(m, idx, n);
+      face_add(m, idx, n, 0);
       at = p + 2 + (unsigned)n * 2;
       break;
     }
@@ -447,7 +452,7 @@ static void walk(dos_model *m, unsigned int at, int depth)
       if (!in_range(p, 6)) { m->truncated = 1; return; }
       int idx[4];
       for (int i = 0; i < 4; i++) idx[i] = g_exe[p + 2 + i];
-      face_add(m, idx, 4);
+      face_add(m, idx, 4, 1);
       at = p + 6;
       break;
     }
@@ -460,7 +465,7 @@ static void walk(dos_model *m, unsigned int at, int depth)
       }
       int idx[DOS_MAX_VERTS];
       for (int i = 0; i < n; i++) idx[i] = vertno(p + 4 + (unsigned)i * 6);
-      face_add(m, idx, n);
+      face_add(m, idx, n, 0);
       at = p + 4 + (unsigned)n * 6;
       break;
     }
@@ -474,7 +479,7 @@ static void walk(dos_model *m, unsigned int at, int depth)
       }
       int idx[DOS_MAX_VERTS];
       for (int i = 0; i < n; i++) idx[i] = vertno(p + 2 + (unsigned)i * 6);
-      face_add(m, idx, n);
+      face_add(m, idx, n, 1);
       at = p + 2 + (unsigned)n * 6;
       break;
     }
@@ -599,6 +604,43 @@ static void emit(char *out, unsigned int out_sz, unsigned int *pos, const char *
   *pos += (unsigned int)n;
 }
 
+/* The emitted winding, which is where the DOS data and the port's .E art
+   disagree. Every DOS face is wound opposite to the .E files, so each one is
+   reversed -- without that, every DOS model renders inside out (confirmed
+   live).
+
+   Reversing a quad flips its facing AND moves a different corner to the front
+   of the list, and for a textured face the front of the list is the texture
+   origin, so a plain reversal rotates the texture. Which faces care is
+   readable straight out of the DOS data:
+
+     0x00ce carries explicit per-vertex texture coordinates, and for the 64x64
+     texture map they put (u,v) = (0,0) on the face's FIRST vertex -- which is
+     the very vertex the port's own TMAP64X64.E puts first. 0x00a0 is the same
+     construct without the coordinates (the 16x16 texture map, used by the
+     levers and switches). Both therefore keep their first vertex first and
+     reverse only the rest: same flipped winding, same texture origin, and the
+     result is byte-identical to the port's .E file.
+
+     0x00a8's coordinates say the opposite: on both door faces the first
+     vertex carries (1, 0.188), not the origin. There is nothing to preserve,
+     so those take the plain reversal -- which is also what the doors and the
+     gravestone were observed to render correctly with. */
+static int emit_face_order(const dos_face *face, const int *mapped, int n, int *out)
+{
+  if (face->keep_first) {
+    out[0] = mapped[0];
+    for (int k = 1; k < n; k++) {
+      out[k] = mapped[n - k];
+    }
+  } else {
+    for (int k = 0; k < n; k++) {
+      out[k] = mapped[n - 1 - k];
+    }
+  }
+  return n;
+}
+
 int uw_dos_model_script(int dos_index, char *out, unsigned int out_sz)
 {
   if (!out || out_sz < 64 || dos_index < 0 || dos_index > 31) {
@@ -692,9 +734,11 @@ int uw_dos_model_script(int dos_index, char *out, unsigned int out_sz)
     if (n < 3) {
       continue;
     }
+    int order[DOS_MAX_FACE_VERTS];
+    n = emit_face_order(face, mapped, n, order);
     emit(out, out_sz, &pos, "0,N,%d,FF04,(", parts);
     for (int k = 0; k < n; k++) {
-      emit(out, out_sz, &pos, "%s%d", k ? "," : "", mapped[k]);
+      emit(out, out_sz, &pos, "%s%d", k ? "," : "", order[k]);
     }
     emit(out, out_sz, &pos, ");\n");
     parts++;
