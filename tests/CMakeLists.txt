@@ -1073,3 +1073,17 @@ add_supported_game_unit_test(object_core uw_test_object_core uw_test_division)
 add_game_test_library(uw_test_npc_state src/ai.c:npc_set_goal src/ai.c:npc_set_walk_target
   src/combat.c:npc_combat_disengage_tick src/combat.c:npc_combat_position_tick)
 add_supported_game_unit_test(npc_state uw_test_npc_state)
+
+# A cold save restore must work before any level archive seeds the free lists.
+add_game_test_library(uw_test_save_inventory
+  src/level.c:reset_level_object_arena
+  src/objects.c:alloc_object_slot src/objects.c:encode_object_slot_index
+  src/objects.c:resolve_object_link
+  src/player.c:restore_player_save_record src/player.c:build_player_save_record
+  src/inventory.c:deserialize_inventory_link_chain
+  src/inventory.c:serialize_inventory_link_chain
+  src/inventory.c:alloc_save_record_slot src/inventory.c:save_record_slot_from_index
+  src/containers.c:encode_equipped_item_index src/containers.c:decode_equipped_item_index)
+target_compile_options(uw_test_save_inventory PRIVATE
+  -include "${CMAKE_CURRENT_SOURCE_DIR}/save_inventory_test_globals.h")
+add_supported_game_unit_test(save_inventory uw_test_save_inventory uw_test_division)

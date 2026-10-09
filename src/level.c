@@ -190,7 +190,7 @@ int load_level_object_table(byte *archive_handle, int level_number)
 // was FUN_00052960
 void reset_level_object_arena()
 {
-  char *free_list_cursor;
+  ushort *free_list_cursor;
   char *tile_record = DAT_002029cc;
   int index = 0;
 
@@ -202,7 +202,7 @@ void reset_level_object_arena()
   } while (index < 0x1000);
   DAT_002046b8 = DAT_002029cc + 0x4000;
   DAT_002046c4 = DAT_002029cc + 0x5b00;
-  free_list_cursor = (DAT_002029cc + 0x7300);
+  free_list_cursor = (ushort *)(DAT_002029cc + 0x7300);
   DAT_002046a8 = DAT_002029cc + 0x74fa;
   DAT_002046bc = DAT_002029cc + 0x74fc;
   DAT_0020469c = DAT_002029cc + 0x7afa;
@@ -214,10 +214,12 @@ void reset_level_object_arena()
   g_scheduler_table = DAT_002029cc + 0x7c08 + 0x3a;
   index = 2;
   DAT_002046a0 = DAT_0020469c;
-  DAT_002046a4 = free_list_cursor;
+  DAT_002046a4 = (char *)free_list_cursor;
   DAT_002046ac = DAT_002046a8;
+  /* Both allocator free lists contain 16-bit slot IDs. A byte cursor
+     left the stationary list uninitialized until a level archive loaded. */
   do {
-    *free_list_cursor = (short)index;
+    *free_list_cursor = (ushort)index;
     index = (index + 1) * 0x10000 >> 0x10;
     free_list_cursor = free_list_cursor + 1;
   } while (index < 0x400);
