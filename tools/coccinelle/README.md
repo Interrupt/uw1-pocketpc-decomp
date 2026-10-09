@@ -762,3 +762,33 @@ neighboring bytes, scope and idempotence. `--asan` sanitizes both harnesses;
 pre-change helpers and verifies exact source conversion of every changed
 function. Unrelated packed goal snapshots and shared-label stores remain for
 separate review.
+
+### Player movement and teleport coordinates
+
+`generate_player_position_rules.py` generates `player-position-fields.cocci`
+for `commit_player_move`, `begin_directional_move` and
+`set_player_tile_position`. It names shared tile coordinates, header fine
+coordinates/height/heading, fine heading and clock-driven animation frame.
+Masked scalar snapshots retain their original values. When a temporary held
+the complete newly assembled word, the recipe assigns the property and then
+captures that complete word in the same temporary. Callback boundaries and
+current-player reads stay in place.
+
+Teleport's `0xefff` mask followed by high-byte `0x0c` sets the entire three-bit
+y coordinate to 3: it clears bit 12 and forces bits 10/11. Its corresponding
+x formula selects 3. The chain reset clears the whole word, preserving the
+old `next << 6` snapshot; the original intermediate assignment made quality
+zero before its low-byte read, so both quality and next finish zero.
+
+`test_player_position_fields.py` extracts the real movement commit. Independent
+byte expectations cover 2,097,152 cases with tile relinking, signed heights,
+turn interpolation, clock frames, landing paths and callback-selected player
+records. Optional `--reference-dir` compares saved original movement event
+hashes and exact source conversion of all three functions. A further 524,288
+teleport field cases check fixed coordinates, chain clearing, preserved
+snapshots, scope and idempotence. `--asan` sanitizes both harnesses.
+
+The unusual cross-word byte stores in `reset_player_object_record` are not
+ordinary property updates: they copy between different header words after
+zeroing the record. They remain for a separate original-code review, rather
+than being inferred as normal coordinate writes from their destinations.

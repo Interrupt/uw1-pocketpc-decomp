@@ -1443,24 +1443,17 @@ LAB_0003c940:
         object_list_insert_head(DAT_002029cc + iVar7 * 4 + 2,g_player_object);
         uVar6 = DAT_00204880 & 0x3f00;
         uVar5 = g_player_object->tile_word & 0x3ff;
-        g_player_object->tile_word_low = (byte)(char)uVar5;
-        g_player_object->tile_word_high =
-          (byte)(uVar5 >> 8) | (byte)((uint)(((int)(short)uVar6 >> 8) << 10) >> 8);
-        uVar5 = g_player_object->tile_word & 0xfc0f |
-                ((int)(short)(DAT_00204882 & 0x3f00) >> 8) << 4;
-        g_player_object->tile_word = (ushort)uVar5;
+        g_player_object->tile_x = (uVar6 >> 8) & 0x3f;
+        g_player_object->tile_y = ((ushort)DAT_00204882 >> 8) & 0x3f;
+        uVar5 = g_player_object->tile_word;
         uVar5 = local_40;
       }
       uVar6 = DAT_00204880 & 0xe0;
       uVar3 = g_player_object->hdr.position_word & 0x1fff;
-      g_player_object->hdr.position_word_low = (byte)(char)uVar3;
-      g_player_object->hdr.position_word_high =
-        (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar6 >> 5) << 0xd) >> 8);
+      g_player_object->hdr.xpos = (uVar6 >> 5) & 7;
       uVar6 = DAT_00204882 & 0xe0;
       uVar3 = g_player_object->hdr.position_word & 0xe3ff;
-      g_player_object->hdr.position_word_low = (byte)(char)uVar3;
-      g_player_object->hdr.position_word_high =
-        (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar6 >> 5) << 10) >> 8);
+      g_player_object->hdr.ypos = (uVar6 >> 5) & 7;
       if (getenv("UW_DEBUG_STEPHEIGHT"))
         fprintf(stderr, "[stepsnap] uVar10=%u uVar5=%u cur_z=%d DAT_00202c30=%d snap=%d\n",
                 uVar10, uVar5, (int)DAT_00204884, (int)DAT_00202c30,
@@ -1468,8 +1461,7 @@ LAB_0003c940:
       if (((uVar10 == 0) && (uVar5 == 0)) || (((int)DAT_00204884 >> 3) + -8 <= (int)DAT_00202c30)) {
         uVar1 = g_player_object->hdr.position_word;
         bVar2 = (byte)uVar1;
-        g_player_object->hdr.position_word_low = (bVar2 ^ (byte)DAT_00202c30) & 0x7f ^ bVar2;
-        g_player_object->hdr.position_word_high = (byte)(char)((ushort)uVar1 >> 8);
+        g_player_object->hdr.zpos = (byte)DAT_00202c30 & 0x7f;
         DAT_00204884 = DAT_00202c30 << 3;
       }
       else if (g_fall_accel == 0 && uVar5 == 0) {
@@ -1478,8 +1470,7 @@ LAB_0003c940:
       set_locomotion_state((int)DAT_00202c68,0);
       uVar10 = read_realtime_clock_units();
       uVar5 = g_player_object->goal_word & 0xfff;
-      g_player_object->goal_word_low = (byte)(char)uVar5;
-      g_player_object->goal_word_high = (byte)(uVar5 >> 8) | (byte)(((uVar10 & 0xc0) << 6) >> 8);
+      g_player_object->npc_animation_frame = (uVar10 >> 6) & 3;
       saved_scratch = DAT_00202c6c;
       DAT_00202c6c = (byte *)&local_3c;
       local_32 = 1;
@@ -1535,11 +1526,9 @@ LAB_0003c920:
       else {
         DAT_00201c70 = (DAT_00201c70 & 0xe000) + (ushort)(0 < direction) * 0x2000;
       }
-      uVar10 = g_player_object->hdr.position_word & 0xfc7f | ((int)(short)DAT_00201c70 >> 0xd & 7U) << 7;
-      g_player_object->hdr.position_word = (ushort)uVar10;
-      g_player_object->heading_flags =
-        ((byte)(DAT_00201c70 >> 8) ^ g_player_object->heading_flags) & 0x1f ^
-         g_player_object->heading_flags;
+      g_player_object->hdr.heading = ((ushort)DAT_00201c70 >> 13) & 7;
+      uVar10 = g_player_object->hdr.position_word;
+      g_player_object->fine_heading = ((ushort)DAT_00201c70 >> 8) & 0x1f;
       saved_scratch = DAT_00202c6c;
     }
     DAT_00202c6c = saved_scratch;

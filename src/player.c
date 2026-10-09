@@ -242,25 +242,18 @@ void set_player_tile_position(uint tile_x, uint tile_y, int flag)
     DAT_00204884 = DAT_00204884 + 0x20;
   }
   uVar3 = g_player_object->hdr.position_word & 0xff80;
-  g_player_object->hdr.position_word_low =
-    (byte)uVar3 | (byte)((int)(((int)DAT_00204884 & 0x3f8U) << 0x10) >> 0x13);
-  g_player_object->hdr.position_word_high = (byte)(char)(uVar3 >> 8);
+  g_player_object->hdr.zpos = ((ushort)DAT_00204884 >> 3) & 0x7f;
   uVar3 = g_player_object->tile_word & 0x3ff;
-  g_player_object->tile_word_low = (byte)(char)uVar3;
-  g_player_object->tile_word_high = (byte)(uVar3 >> 8) | (byte)(((tile_x & 0x3f) << 10) >> 8);
-  g_player_object->npc_yhome = tile_y & 0x3f;
+  g_player_object->tile_x = tile_x & 0x3f;
+  g_player_object->tile_y = tile_y & 0x3f;
   uVar3 = g_player_object->tile_word;
   uVar3 = g_player_object->hdr.position_word & 0x1fff;
-  g_player_object->hdr.position_word_low = (byte)(char)uVar3;
-  g_player_object->hdr.position_word_high = (byte)(uVar3 >> 8) | 0x60;
+  g_player_object->hdr.xpos = 3;
   uVar3 = g_player_object->hdr.position_word & 0xefff;
-  g_player_object->hdr.position_word_low = (byte)(char)uVar3;
-  g_player_object->hdr.position_word_high = (byte)(uVar3 >> 8) | 0xc;
+  g_player_object->hdr.ypos = 3;
   g_player_object->animation_flags = g_player_object->animation_flags & 0xec | 0x2c;
   uVar3 = g_player_object->hdr.next << 6;
-  g_player_object->hdr.chain_word = (ushort)uVar3;
-  g_player_object->hdr.chain_word_low = g_player_object->hdr.quality;
-  g_player_object->hdr.chain_word_high = 0;
+  g_player_object->hdr.chain_word = 0;
   DAT_00202c6c = local_3c;
   uVar1 = encode_object_slot_index(g_player_object);
   DAT_00202c6c[10] = (char)uVar1;
@@ -329,31 +322,21 @@ void commit_player_move()
     object_list_insert_head(DAT_002029cc + iVar7 * 4 + 2,g_player_object);
     uVar5 = DAT_00204880 & 0x3f00;
     uVar3 = g_player_object->tile_word & 0x3ff;
-    g_player_object->tile_word_low = (byte)(char)uVar3;
-    g_player_object->tile_word_high =
-      (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar5 >> 8) << 10) >> 8);
-    uVar3 = g_player_object->tile_word & 0xfc0f |
-            ((int)(short)(DAT_00204882 & 0x3f00) >> 8) << 4;
-    g_player_object->tile_word = (ushort)uVar3;
+    g_player_object->tile_x = (uVar5 >> 8) & 0x3f;
+    g_player_object->tile_y = ((ushort)DAT_00204882 >> 8) & 0x3f;
+    uVar3 = g_player_object->tile_word;
   }
   uVar5 = DAT_00204880 & 0xe0;
   uVar3 = g_player_object->hdr.position_word & 0x1fff;
-  g_player_object->hdr.position_word_low = (byte)(char)uVar3;
-  g_player_object->hdr.position_word_high =
-    (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar5 >> 5) << 0xd) >> 8);
+  g_player_object->hdr.xpos = (uVar5 >> 5) & 7;
   uVar5 = DAT_00204882 & 0xe0;
   uVar3 = g_player_object->hdr.position_word & 0xe3ff;
-  g_player_object->hdr.position_word_low = (byte)(char)uVar3;
-  g_player_object->hdr.position_word_high =
-    (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar5 >> 5) << 10) >> 8);
+  g_player_object->hdr.ypos = (uVar5 >> 5) & 7;
   uVar3 = g_player_object->hdr.position_word & 0xff80;
-  g_player_object->hdr.position_word_low =
-    (byte)uVar3 | (byte)((int)(((int)DAT_00204884 & 0x3f8U) << 0x10) >> 0x13);
-  g_player_object->hdr.position_word_high = (byte)(char)(uVar3 >> 8);
+  g_player_object->hdr.zpos = ((ushort)DAT_00204884 >> 3) & 0x7f;
   uVar3 = read_realtime_clock_units();
   uVar4 = g_player_object->goal_word & 0xfff;
-  g_player_object->goal_word_low = (byte)(char)uVar4;
-  g_player_object->goal_word_high = (byte)(uVar4 >> 8) | (byte)(((uVar3 & 0xc0) << 6) >> 8);
+  g_player_object->npc_animation_frame = (uVar3 >> 6) & 3;
   /* ARM 0x3d668..0x3d694 compares two signed 16-bit headings. */
   if ((_DAT_002048a9 != 0) && (_DAT_002048a1 == (short)DAT_00201c78)) {
     g_jump_ascent_timer = 0;
@@ -371,11 +354,9 @@ void commit_player_move()
     }
   }
   DAT_00201c70 = uVar5;
-  uVar3 = g_player_object->hdr.position_word & 0xfc7f | ((int)(short)DAT_00201c70 >> 0xd & 7U) << 7;
-  g_player_object->hdr.position_word = (ushort)uVar3;
-  g_player_object->heading_flags =
-    ((byte)(DAT_00201c70 >> 8) ^ g_player_object->heading_flags) & 0x1f ^
-     g_player_object->heading_flags;
+  g_player_object->hdr.heading = ((ushort)DAT_00201c70 >> 13) & 7;
+  uVar3 = g_player_object->hdr.position_word;
+  g_player_object->fine_heading = ((ushort)DAT_00201c70 >> 8) & 0x1f;
   if (_DAT_002048a9 != 0) {
     if (DAT_00204896 != '\0') {
       uVar3 = (uint)(_DAT_002048a9 >> 8);
