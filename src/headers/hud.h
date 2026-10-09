@@ -64,6 +64,7 @@ extern undefined1 DAT_00202988_backing[6];
 
 void dirty_rect_union(int left, int bottom, int right, int top);
 void dirty_rect_set(int left, int bottom, int right, int top);
+void uw_debug_blit_pick_buffer();
 void uw_debug_dump_critter_sheet_once();
 void uw_debug_dump_sprite_frames_once();
 int uw_always_show_cursor();

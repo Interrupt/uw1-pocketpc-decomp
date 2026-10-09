@@ -206,7 +206,48 @@ void populate_debug_panel(void)
   dbgui_field_toggle("3d_objects", &g_uw_3d_objects_enabled);
   dbgui_field_toggle("npc_tick", &g_npc_tick_enabled);
   dbgui_field_toggle("pick_diag", &g_uw_debug_pick_diag);
+  dbgui_field_toggle("pick_view", &g_opts.debug_pick_view);
   dbgui_end();
+}
+
+/* Debug view (--debug-pick-view): paint the per-pixel object-pick buffer DAT_0023cca0 over the 3D
+   viewport instead of the rendered dungeon, so the pick/stencil coverage is directly visible. Call
+   *after* a pick-mode render pass (render_dungeon_view_frame) has populated the buffer. */
+void uw_debug_blit_pick_buffer(void)
+{
+  /* 16 distinct colours for object slot ids; deliberately excludes the
+     crosshair yellow (0xFFE0) and the out-of-range magenta (0xF81F). */
+  static const unsigned short obj_pal[16] = {
+    0xF800, 0x07E0, 0x001F, 0x07FF, 0xFC00, 0xFD20, 0x8400, 0x0410,
+    0x001A, 0x8010, 0xAFE5, 0x05FF, 0xF7B0, 0x7BEF, 0xFAE0, 0x39C7,
+  };
+  unsigned short *fb = (unsigned short *)g_uw_framebuffer;
+  int x, y;
+  if (fb == 0 || DAT_0023cca0 == 0) return;
+  for (y = 19; y < 150; y++) {
+    const unsigned char *row = (const unsigned char *)DAT_0023cca0 + y * 0x140;
+    unsigned short *frow = fb + y * 0x140;
+    for (x = 52; x < 276; x++) {
+      unsigned int v = row[x];
+      unsigned short c;
+      if (v == 0)                 c = 0x0008;                 /* near-black blue */
+      else if (v >= 0xc0 && v < 0xfb) {
+        unsigned int g = ((v - 0xbf) * 5) & 0x3f;             /* 0..0x3f grey ramp */
+        c = (unsigned short)(((g >> 1) << 11) | (g << 5) | (g >> 1));
+      }
+      else if (v < 0xc0)          c = obj_pal[v & 0xf];
+      else                        c = 0xF81F;                 /* magenta: out of range */
+      frow[x] = c;
+    }
+  }
+  /* cursor crosshair */
+  { int cx = (int)g_mouse_x, cy = (int)g_mouse_y, i;
+    for (i = -4; i <= 4; i++) {
+      int px = cx + i, py = cy + i;
+      if (cy >= 0 && cy < 240 && cx + i >= 0 && cx + i < 320) fb[cy * 0x140 + px] = 0xFFE0;
+      if (cx >= 0 && cx < 320 && cy + i >= 0 && cy + i < 240) fb[py * 0x140 + cx] = 0xFFE0;
+    }
+  }
 }
 
 /* Debug tool (--dump-sprite-frames / --dump-sprite-ids): dump individual sprites to standalone

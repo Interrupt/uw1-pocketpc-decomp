@@ -16,6 +16,9 @@ void dbgui_object_inspector_pick(void);
    dbgui_object_inspector_pick above) for the current frame; call once, right before dbgui_draw(). */
 void populate_debug_panel(void);
 
+/* Debug view (--debug-pick-view): paint the per-pixel object-pick buffer over the 3D viewport
+   instead of the rendered dungeon. */
+void uw_debug_blit_pick_buffer(void);
 /* Debug tool (--dump-critter-sheet): systematically drive decode_critter_sprite_page across every
    (tier, direction, frame) combination for one or more critter type indices. */
 void uw_debug_dump_critter_sheet_once(void);

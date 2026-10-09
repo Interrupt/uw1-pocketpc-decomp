@@ -925,6 +925,10 @@ void main_loop_hud_flush()
       }
       /* Rebuild AND re-rasterise the 3D dungeon view every main-loop iteration. */
       render_dungeon_frame_timed();
+      /* --debug-pick-view: run a pick-mode render pass to fill the pick
+         buffer, then paint it over the viewport (see
+         uw_debug_blit_pick_buffer). */
+      if (g_opts.debug_pick_view) { render_dungeon_view_frame(); uw_debug_blit_pick_buffer(); }
     }
   }
   if (DAT_00201c84 != 0) {

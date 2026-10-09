@@ -14,6 +14,7 @@ X(STR, demo_file, NULL, "Play back this demo script (see the demo_*.txt files)."
 X(BOOL, demo_keep_running, 0, "Keep the game running after the demo script ends.")
 X(BOOL, diag_sprlist, 0, "Diagnostics: sprlist.")
 X(BOOL, diag_text, 0, "Diagnostics: text.")
+X(BOOL, debug_pick_view, 0, "Paint the per-pixel object-pick buffer over the 3D viewport (also a toggle in the debug panel).")
 X(BOOL, disable_3d_geometry, 0, "Disable 3d geometry.")
 X(BOOL, disable_3d_objects, 0, "Disable 3d objects.")
 X(BOOL, disable_pick_rerender, 0, "Disable pick rerender.")
