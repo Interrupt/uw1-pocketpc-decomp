@@ -815,3 +815,30 @@ check 262,144 varied input records/slots, all surrounding guard bytes, pointer
 identity and the single clear call. It also checks the complete-function
 conversion, idempotence and all preservation guards. `--asan` enables address
 sanitization; `--reference PATH` checks conversion of saved source.
+
+## Inventory and held-item save-record words
+
+`generate_inventory_record_rules.py` emits `inventory-record-words.cocci` for
+`serialize_inventory_link_chain`, `deserialize_inventory_link_chain`,
+`build_player_save_record`, and `restore_player_save_record`. These audited
+copies transfer the eight-byte common header between the level arena and a
+separate save buffer. Adjacent low/high byte stores become direct copies of
+`type_flags`, `position_word`, `chain_word`, and `link_word`; unknown and
+reserved bits are preserved. The player save's tile-chain clear uses `next`,
+and held-item quantity tests use `is_quant`. The copy order, record allocation,
+recursive traversal, equipment remapping, and live scalar values stay intact.
+
+Apply the patch to `src/inventory.c` and `src/player.c` with `--all-includes
+--include-headers-for-types -I . -I src --in-place`. The conversion test checks
+exact source conversion and idempotence, excludes other functions, and rejects
+merging pairs across callbacks. It executes the real before/after functions
+through the cold-arena save fixture over 65,536 header-word values, comparing
+all arena and save-buffer bytes, nested containers, equipped objects, quantity
+stacks, and both quantity and container cursor items. `--reference-dir` accepts
+saved original `inventory.c`/`player.c` files; `--asan` enables AddressSanitizer.
+
+The remaining encoded-link masks in these helpers act on standalone link words
+or save-index/equipment tables, whose storage is not an object header. Full
+packed-word copies are intentional: replacing them with selected properties
+would drop other header bits. The 27-byte player copy includes unnamed extension
+bytes and remains a complete record copy rather than guessed NPC properties.

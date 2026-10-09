@@ -222,14 +222,10 @@ void serialize_inventory_link_chain(byte *link_chain, byte *out_link)
   puVar1 = (undefined1 *)resolve_object_link(link_chain);
   while (puVar1 != (undefined1 *)0x0) {
     puVar2 = (undefined1 *)alloc_save_record_slot();
-    *puVar2 = ((uw_object_hdr_t *)puVar1)->type_flags_low;
-    puVar2[1] = ((uw_object_hdr_t *)puVar1)->type_flags_high;
-    puVar2[2] = ((uw_object_hdr_t *)puVar1)->position_word_low;
-    puVar2[3] = ((uw_object_hdr_t *)puVar1)->position_word_high;
-    puVar2[4] = ((uw_object_hdr_t *)puVar1)->chain_word_low;
-    puVar2[5] = ((uw_object_hdr_t *)puVar1)->chain_word_high;
-    puVar2[6] = ((uw_object_hdr_t *)puVar1)->link_word_low;
-    puVar2[7] = ((uw_object_hdr_t *)puVar1)->link_word_high;
+    ((uw_object_hdr_t *)puVar2)->type_flags = ((uw_object_hdr_t *)puVar1)->type_flags;
+    ((uw_object_hdr_t *)puVar2)->position_word = ((uw_object_hdr_t *)puVar1)->position_word;
+    ((uw_object_hdr_t *)puVar2)->chain_word = ((uw_object_hdr_t *)puVar1)->chain_word;
+    ((uw_object_hdr_t *)puVar2)->link_word = ((uw_object_hdr_t *)puVar1)->link_word;
     uVar3 = (uint)g_save_record_count;
     *out_link = *out_link & 0x3f | (byte)((uVar3 & 0x3ff) << 6);
     out_link[1] = (byte)((uVar3 << 0x16) >> 0x18);
@@ -256,14 +252,10 @@ void deserialize_inventory_link_chain(byte *link_field, void *saved_link_ptr)
   
   while (puVar3 = (undefined1 *)save_record_slot_from_index(*saved_link >> 6), puVar3 != (undefined1 *)0x0) {
     puVar1 = (undefined1 *)alloc_object_slot(0);
-    ((uw_object_hdr_t *)puVar1)->type_flags_low = *puVar3;
-    ((uw_object_hdr_t *)puVar1)->type_flags_high = puVar3[1];
-    ((uw_object_hdr_t *)puVar1)->position_word_low = puVar3[2];
-    ((uw_object_hdr_t *)puVar1)->position_word_high = puVar3[3];
-    ((uw_object_hdr_t *)puVar1)->chain_word_low = puVar3[4];
-    ((uw_object_hdr_t *)puVar1)->chain_word_high = puVar3[5];
-    ((uw_object_hdr_t *)puVar1)->link_word_low = puVar3[6];
-    ((uw_object_hdr_t *)puVar1)->link_word_high = puVar3[7];
+    ((uw_object_hdr_t *)puVar1)->type_flags = ((uw_object_hdr_t *)puVar3)->type_flags;
+    ((uw_object_hdr_t *)puVar1)->position_word = ((uw_object_hdr_t *)puVar3)->position_word;
+    ((uw_object_hdr_t *)puVar1)->chain_word = ((uw_object_hdr_t *)puVar3)->chain_word;
+    ((uw_object_hdr_t *)puVar1)->link_word = ((uw_object_hdr_t *)puVar3)->link_word;
     uVar2 = encode_object_slot_index(puVar1);
     *link_field = *link_field & 0x3f | (byte)((uVar2 & 0x3ff) << 6);
     link_field[1] = (byte)((uVar2 << 0x16) >> 0x18);

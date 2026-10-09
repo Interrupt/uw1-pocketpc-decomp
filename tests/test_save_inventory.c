@@ -15,7 +15,7 @@ undefined2 g_cursor_holding_state;
 char *g_selected_object;
 undefined1 DAT_0023bca8_backing[256];
 char *DAT_00086df8 = (char *)DAT_0023bca8_backing;
-static int mobile_allocations;
+static int mobile_allocations, cursor_frees;
 
 void active_mobile_list_add(byte slot)
 {
@@ -28,7 +28,10 @@ void reset_equipment_and_container_state(void)
 { memset(g_backpack_slot_table, 0, 0x3a); }
 void close_backpack_container(void) {}
 void free_linked_object_recursive(ushort *link)
-{ TEST_FAIL_MESSAGE("No cursor item should need freeing"); }
+{
+    TEST_ASSERT_EQUAL_PTR(g_selected_object, resolve_object_link(link));
+    cursor_frees++;
+}
 void *ce_memmove(void *dest, void *source, unsigned int size)
 { return memmove(dest, source, size); }
 
@@ -39,7 +42,7 @@ void setUp(void)
     g_player_object = (uw_mobile_object_t *)(storage.bytes + 0x4000 + 27);
     g_cursor_holding_state = 0;
     g_selected_object = NULL;
-    mobile_allocations = 0;
+    mobile_allocations = cursor_frees = 0;
 }
 void tearDown(void) {}
 
@@ -125,10 +128,53 @@ static void test_cold_restore_preserves_nested_inventory_and_equipment_through_s
     check_restored_inventory();
 }
 
+static void test_all_header_word_values_survive_inventory_and_cursor_copies(void)
+{
+    uint64_t hash = 1;
+    for (unsigned value = 0; value < 65536; ++value) {
+        byte record[0x400], snapshot[0x400];
+        setUp();
+        make_saved_inventory(record);
+        memset(snapshot, 0xa5, sizeof snapshot);
+        for (unsigned slot = 1; slot <= 3; ++slot) {
+            uw_object_hdr_t *header = (uw_object_hdr_t *)(record + 0x5b + slot * 8);
+            header->type_flags |= (value & 0x7e00);
+            header->position_word = value;
+            header->quality = value & 63;
+            header->owner = (value >> 6) & 63;
+        }
+        uw_object_hdr_t *held = (uw_object_hdr_t *)(record + 0x1b);
+        held->type_flags = value;
+        held->position_word = value ^ 0xa55a;
+        held->chain_word = value & 63;
+        held->link_word = (value & 63) | ((value & 0x8000) ? 7 : 3) << 6;
+        reset_level_object_arena();
+        g_cursor_holding_state = 1;
+        g_save_record_count = 4;
+        restore_player_save_record(record);
+        check_restored_inventory();
+        uw_object_hdr_t *cursor = (uw_object_hdr_t *)g_selected_object;
+        TEST_ASSERT_EQUAL_HEX16(held->type_flags, cursor->type_flags);
+        TEST_ASSERT_EQUAL_HEX16(held->position_word, cursor->position_word);
+        TEST_ASSERT_EQUAL_INT(held->quality, cursor->quality);
+        TEST_ASSERT_EQUAL_INT(held->owner, cursor->owner);
+        if (held->is_quant) TEST_ASSERT_EQUAL_INT(7, cursor->link);
+        else TEST_ASSERT_EQUAL_HEX16(0x106, resolve_object_link(&cursor->link_word)->object_id);
+        build_player_save_record(snapshot);
+        TEST_ASSERT_EQUAL_INT(1, cursor_frees);
+        TEST_ASSERT_EQUAL_HEX16(held->type_flags, ((uw_object_hdr_t *)(snapshot + 0x1b))->type_flags);
+        TEST_ASSERT_EQUAL_HEX16(held->position_word, ((uw_object_hdr_t *)(snapshot + 0x1b))->position_word);
+        for (unsigned j = 0; j < sizeof snapshot; ++j) hash = hash * 31 + snapshot[j];
+        for (unsigned j = 0; j < sizeof storage.bytes; ++j) hash = hash * 31 + storage.bytes[j];
+    }
+    printf("65536 inventory/cursor copy cases: %llu\n", (unsigned long long)hash);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
     RUN_TEST(test_fresh_arena_allocates_every_free_slot_in_the_correct_region);
     RUN_TEST(test_cold_restore_preserves_nested_inventory_and_equipment_through_snapshot);
+    RUN_TEST(test_all_header_word_values_survive_inventory_and_cursor_copies);
     return UNITY_END();
 }

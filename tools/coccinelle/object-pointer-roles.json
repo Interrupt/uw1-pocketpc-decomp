@@ -483,7 +483,9 @@
               "current_mobile_alias": false
             }
           ],
-          "requires_review": []
+          "requires_review": [
+            "puVar2"
+          ]
         },
         {
           "function": "deserialize_inventory_link_chain",
@@ -496,7 +498,9 @@
               "current_mobile_alias": false
             }
           ],
-          "requires_review": []
+          "requires_review": [
+            "puVar3"
+          ]
         },
         {
           "function": "handle_inventory_panel_click",
@@ -914,6 +918,28 @@
     {
       "source": "src/player.c",
       "functions": [
+        {
+          "function": "build_player_save_record",
+          "roles": [
+            {
+              "name": "out_record",
+              "type": "byte *",
+              "parameter": true,
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": [
+            "puVar4"
+          ]
+        },
+        {
+          "function": "restore_player_save_record",
+          "roles": [],
+          "requires_review": [
+            "puVar2"
+          ]
+        },
         {
           "function": "refresh_player_equipment_effects",
           "roles": [

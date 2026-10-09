@@ -1,5 +1,88 @@
 @word_0_0@
 type R;
+identifier F =~ "^\(build_player_save_record\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)out_record + 0)
++ ((uw_object_hdr_t *)out_record)->type_flags
+|
+- ((ushort *)out_record)[0]
++ ((uw_object_hdr_t *)out_record)->type_flags
+|
+- *(ushort *)out_record
++ ((uw_object_hdr_t *)out_record)->type_flags
+|
+- *(ushort *)(out_record + 0)
++ ((uw_object_hdr_t *)out_record)->type_flags
+)
+...>
+}
+
+@word_0_1@
+type R;
+identifier F =~ "^\(build_player_save_record\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)out_record + 2)
++ ((uw_object_hdr_t *)out_record)->position_word
+|
+- ((ushort *)out_record)[1]
++ ((uw_object_hdr_t *)out_record)->position_word
+|
+- *(ushort *)(out_record + 2)
++ ((uw_object_hdr_t *)out_record)->position_word
+)
+...>
+}
+
+@word_0_2@
+type R;
+identifier F =~ "^\(build_player_save_record\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)out_record + 4)
++ ((uw_object_hdr_t *)out_record)->chain_word
+|
+- ((ushort *)out_record)[2]
++ ((uw_object_hdr_t *)out_record)->chain_word
+|
+- *(ushort *)(out_record + 4)
++ ((uw_object_hdr_t *)out_record)->chain_word
+)
+...>
+}
+
+@word_0_3@
+type R;
+identifier F =~ "^\(build_player_save_record\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)out_record + 6)
++ ((uw_object_hdr_t *)out_record)->link_word
+|
+- ((ushort *)out_record)[3]
++ ((uw_object_hdr_t *)out_record)->link_word
+|
+- *(ushort *)(out_record + 6)
++ ((uw_object_hdr_t *)out_record)->link_word
+)
+...>
+}
+
+@word_1_0@
+type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, uw_object_hdr_t;
 @@
@@ -24,7 +107,7 @@ R F(...) {
 ...>
 }
 
-@word_0_1@
+@word_1_1@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, uw_object_hdr_t;
@@ -44,7 +127,7 @@ R F(...) {
 ...>
 }
 
-@word_0_2@
+@word_1_2@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, uw_object_hdr_t;
@@ -64,7 +147,7 @@ R F(...) {
 ...>
 }
 
-@word_0_3@
+@word_1_3@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, uw_object_hdr_t;
@@ -84,7 +167,7 @@ R F(...) {
 ...>
 }
 
-@word_1_0@
+@word_2_0@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, uw_object_hdr_t;
@@ -110,7 +193,7 @@ R F(...) {
 ...>
 }
 
-@word_1_1@
+@word_2_1@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, uw_object_hdr_t;
@@ -130,7 +213,7 @@ R F(...) {
 ...>
 }
 
-@word_1_2@
+@word_2_2@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, uw_object_hdr_t;
@@ -150,7 +233,7 @@ R F(...) {
 ...>
 }
 
-@word_1_3@
+@word_2_3@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, uw_object_hdr_t;
@@ -170,7 +253,7 @@ R F(...) {
 ...>
 }
 
-@word_2_0@
+@word_3_0@
 type R;
 identifier F =~ "^\(handle_game_victory_sequence\)$";
 typedef ushort, uw_object_hdr_t;
@@ -190,7 +273,7 @@ R F(...) {
 ...>
 }
 
-@word_2_1@
+@word_3_1@
 type R;
 identifier F =~ "^\(handle_game_victory_sequence\)$";
 typedef ushort, uw_object_hdr_t;
@@ -207,7 +290,7 @@ R F(...) {
 ...>
 }
 
-@word_2_2@
+@word_3_2@
 type R;
 identifier F =~ "^\(handle_game_victory_sequence\)$";
 typedef ushort, uw_object_hdr_t;
@@ -224,7 +307,7 @@ R F(...) {
 ...>
 }
 
-@word_2_3@
+@word_3_3@
 type R;
 identifier F =~ "^\(handle_game_victory_sequence\)$";
 typedef ushort, uw_object_hdr_t;
@@ -241,7 +324,7 @@ R F(...) {
 ...>
 }
 
-@word_3_0@
+@word_4_0@
 type R;
 identifier F =~ "^\(handle_starvation_penalty\)$";
 typedef ushort, uw_object_hdr_t;
@@ -264,7 +347,7 @@ R F(...) {
 ...>
 }
 
-@word_3_1@
+@word_4_1@
 type R;
 identifier F =~ "^\(handle_starvation_penalty\)$";
 typedef ushort, uw_object_hdr_t;
@@ -284,7 +367,7 @@ R F(...) {
 ...>
 }
 
-@word_3_2@
+@word_4_2@
 type R;
 identifier F =~ "^\(handle_starvation_penalty\)$";
 typedef ushort, uw_object_hdr_t;
@@ -304,7 +387,7 @@ R F(...) {
 ...>
 }
 
-@word_3_3@
+@word_4_3@
 type R;
 identifier F =~ "^\(handle_starvation_penalty\)$";
 typedef ushort, uw_object_hdr_t;
@@ -324,7 +407,7 @@ R F(...) {
 ...>
 }
 
-@word_4_0@
+@word_5_0@
 type R;
 identifier F =~ "^\(decay_equipped_light_sources\)$";
 typedef ushort, uw_object_hdr_t;
@@ -350,7 +433,7 @@ R F(...) {
 ...>
 }
 
-@word_4_1@
+@word_5_1@
 type R;
 identifier F =~ "^\(decay_equipped_light_sources\)$";
 typedef ushort, uw_object_hdr_t;
@@ -370,7 +453,7 @@ R F(...) {
 ...>
 }
 
-@word_4_2@
+@word_5_2@
 type R;
 identifier F =~ "^\(decay_equipped_light_sources\)$";
 typedef ushort, uw_object_hdr_t;
@@ -390,7 +473,7 @@ R F(...) {
 ...>
 }
 
-@word_4_3@
+@word_5_3@
 type R;
 identifier F =~ "^\(decay_equipped_light_sources\)$";
 typedef ushort, uw_object_hdr_t;

@@ -497,8 +497,7 @@ void build_player_save_record(byte *out_record)
     iVar6 = iVar5;
     puVar7 = puVar7 + 1;
   } while (iVar5 != 0 && bVar1);
-  out_record[4] = out_record[4] & 0x3f;
-  out_record[5] = 0;
+  ((uw_object_hdr_t *)out_record)->next = 0;
   g_save_equip_table_ptr = out_record + 0x23;
   g_save_record_base_ptr = out_record + 0x5b;
   g_save_record_count = 0;
@@ -516,15 +515,11 @@ void build_player_save_record(byte *out_record)
   serialize_inventory_link_chain((char *)g_player_object + 6,out_record + 6);
   puVar4 = (undefined1 *)g_selected_object;
   if (g_cursor_holding_state == 1) {
-    out_record[0x1b] = *g_selected_object;
-    out_record[0x1c] = puVar4[1];
-    out_record[0x1d] = puVar4[2];
-    out_record[0x1e] = puVar4[3];
-    out_record[0x1f] = puVar4[4];
-    out_record[0x20] = puVar4[5];
-    out_record[0x21] = puVar4[6];
-    out_record[0x22] = puVar4[7];
-    if ((g_selected_object[1] & 0x80) == 0) {
+    ((uw_object_hdr_t *)(out_record + 0x1b))->type_flags = ((uw_object_hdr_t *)puVar4)->type_flags;
+    ((uw_object_hdr_t *)(out_record + 0x1b))->position_word = ((uw_object_hdr_t *)puVar4)->position_word;
+    ((uw_object_hdr_t *)(out_record + 0x1b))->chain_word = ((uw_object_hdr_t *)puVar4)->chain_word;
+    ((uw_object_hdr_t *)(out_record + 0x1b))->link_word = ((uw_object_hdr_t *)puVar4)->link_word;
+    if (((uw_object_hdr_t *)g_selected_object)->is_quant == 0) {
       serialize_inventory_link_chain(g_selected_object + 6,out_record + 0x21);
     }
     sVar3 = encode_object_slot_index(g_selected_object);
@@ -615,15 +610,11 @@ void restore_player_save_record(byte *record)
   if (g_cursor_holding_state == 1) {
     puVar2 = (undefined1 *)alloc_object_slot(0);
     g_selected_object = (char *)puVar2;
-    *puVar2 = record[0x1b];
-    puVar2[1] = record[0x1c];
-    puVar2[2] = record[0x1d];
-    puVar2[3] = record[0x1e];
-    puVar2[4] = record[0x1f];
-    puVar2[5] = record[0x20];
-    puVar2[6] = record[0x21];
-    puVar2[7] = record[0x22];
-    if ((record[0x1c] & 0x80) == 0) {
+    ((uw_object_hdr_t *)puVar2)->type_flags = ((uw_object_hdr_t *)(record + 0x1b))->type_flags;
+    ((uw_object_hdr_t *)puVar2)->position_word = ((uw_object_hdr_t *)(record + 0x1b))->position_word;
+    ((uw_object_hdr_t *)puVar2)->chain_word = ((uw_object_hdr_t *)(record + 0x1b))->chain_word;
+    ((uw_object_hdr_t *)puVar2)->link_word = ((uw_object_hdr_t *)(record + 0x1b))->link_word;
+    if (((uw_object_hdr_t *)(record + 0x1b))->is_quant == 0) {
       deserialize_inventory_link_chain(g_selected_object + 6,record + 0x21);
     }
   }
