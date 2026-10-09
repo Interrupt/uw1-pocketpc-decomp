@@ -92,89 +92,6 @@ typedef ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(ushort *)((char *)puVar4 + 0)
-+ ((uw_object_hdr_t *)puVar4)->type_flags
-|
-- ((ushort *)puVar4)[0]
-+ ((uw_object_hdr_t *)puVar4)->type_flags
-|
-- *(ushort *)puVar4
-+ ((uw_object_hdr_t *)puVar4)->type_flags
-|
-- *(ushort *)(puVar4 + 0)
-+ ((uw_object_hdr_t *)puVar4)->type_flags
-)
-...>
-}
-
-@word_1_1@
-type R;
-identifier F =~ "^\(emit_tile_features\)$";
-typedef ushort, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)puVar4 + 2)
-+ ((uw_object_hdr_t *)puVar4)->position_word
-|
-- ((ushort *)puVar4)[1]
-+ ((uw_object_hdr_t *)puVar4)->position_word
-|
-- *(ushort *)(puVar4 + 2)
-+ ((uw_object_hdr_t *)puVar4)->position_word
-)
-...>
-}
-
-@word_1_2@
-type R;
-identifier F =~ "^\(emit_tile_features\)$";
-typedef ushort, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)puVar4 + 4)
-+ ((uw_object_hdr_t *)puVar4)->chain_word
-|
-- ((ushort *)puVar4)[2]
-+ ((uw_object_hdr_t *)puVar4)->chain_word
-|
-- *(ushort *)(puVar4 + 4)
-+ ((uw_object_hdr_t *)puVar4)->chain_word
-)
-...>
-}
-
-@word_1_3@
-type R;
-identifier F =~ "^\(emit_tile_features\)$";
-typedef ushort, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)puVar4 + 6)
-+ ((uw_object_hdr_t *)puVar4)->link_word
-|
-- ((ushort *)puVar4)[3]
-+ ((uw_object_hdr_t *)puVar4)->link_word
-|
-- *(ushort *)(puVar4 + 6)
-+ ((uw_object_hdr_t *)puVar4)->link_word
-)
-...>
-}
-
-@word_2_0@
-type R;
-identifier F =~ "^\(emit_tile_features\)$";
-typedef ushort, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
 - *(ushort *)((char *)puVar5 + 0)
 + ((uw_object_hdr_t *)puVar5)->type_flags
 |
@@ -193,7 +110,7 @@ R F(...) {
 ...>
 }
 
-@word_2_1@
+@word_1_1@
 type R;
 identifier F =~ "^\(emit_tile_features\)$";
 typedef ushort, uw_object_hdr_t;
@@ -213,7 +130,7 @@ R F(...) {
 ...>
 }
 
-@word_2_2@
+@word_1_2@
 type R;
 identifier F =~ "^\(emit_tile_features\)$";
 typedef ushort, uw_object_hdr_t;
@@ -233,7 +150,7 @@ R F(...) {
 ...>
 }
 
-@word_2_3@
+@word_1_3@
 type R;
 identifier F =~ "^\(emit_tile_features\)$";
 typedef ushort, uw_object_hdr_t;
@@ -249,6 +166,89 @@ R F(...) {
 |
 - puVar5[3]
 + ((uw_object_hdr_t *)puVar5)->link_word
+)
+...>
+}
+
+@word_2_0@
+type R;
+identifier F =~ "^\(emit_tile_features\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar4 + 0)
++ ((uw_object_hdr_t *)puVar4)->type_flags
+|
+- ((ushort *)puVar4)[0]
++ ((uw_object_hdr_t *)puVar4)->type_flags
+|
+- *(ushort *)puVar4
++ ((uw_object_hdr_t *)puVar4)->type_flags
+|
+- *(ushort *)(puVar4 + 0)
++ ((uw_object_hdr_t *)puVar4)->type_flags
+)
+...>
+}
+
+@word_2_1@
+type R;
+identifier F =~ "^\(emit_tile_features\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar4 + 2)
++ ((uw_object_hdr_t *)puVar4)->position_word
+|
+- ((ushort *)puVar4)[1]
++ ((uw_object_hdr_t *)puVar4)->position_word
+|
+- *(ushort *)(puVar4 + 2)
++ ((uw_object_hdr_t *)puVar4)->position_word
+)
+...>
+}
+
+@word_2_2@
+type R;
+identifier F =~ "^\(emit_tile_features\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar4 + 4)
++ ((uw_object_hdr_t *)puVar4)->chain_word
+|
+- ((ushort *)puVar4)[2]
++ ((uw_object_hdr_t *)puVar4)->chain_word
+|
+- *(ushort *)(puVar4 + 4)
++ ((uw_object_hdr_t *)puVar4)->chain_word
+)
+...>
+}
+
+@word_2_3@
+type R;
+identifier F =~ "^\(emit_tile_features\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar4 + 6)
++ ((uw_object_hdr_t *)puVar4)->link_word
+|
+- ((ushort *)puVar4)[3]
++ ((uw_object_hdr_t *)puVar4)->link_word
+|
+- *(ushort *)(puVar4 + 6)
++ ((uw_object_hdr_t *)puVar4)->link_word
 )
 ...>
 }

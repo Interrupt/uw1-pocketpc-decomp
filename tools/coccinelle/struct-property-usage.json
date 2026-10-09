@@ -1,9 +1,9 @@
 {
   "scope": "Named packed views and existing audited object-pointer roles in src/*.c; unrecorded aliases and other structures still require independent auditing.",
   "counts": {
-    "byte_view": 413,
-    "packed_word": 388,
-    "raw_audited_object_access": 203,
+    "byte_view": 394,
+    "packed_word": 387,
+    "raw_audited_object_access": 173,
     "signed_word_view": 9
   },
   "records": [
@@ -6031,191 +6031,47 @@
     {
       "source": "src/objects.c",
       "function": "spawn_object_near_player",
-      "line": 98,
-      "category": "byte_view",
-      "member": "chain_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->chain_word_low = ((uw_object_hdr_t *)puVar6)->quality;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
       "line": 99,
-      "category": "byte_view",
-      "member": "chain_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->chain_word_high = 0;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 100,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
-      "code": "uVar7 = ((uw_object_hdr_t *)puVar6)->type_flags | 0x8000;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 101,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar6)->type_flags;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 101,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar6)->type_flags;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 102,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->type_flags_high = (byte)(char)(uVar7 >> 8);"
+      "code": "uVar7 = puVar6->hdr.type_flags | 0x8000;"
     },
     {
       "source": "src/objects.c",
       "function": "spawn_object_near_player",
       "line": 103,
-      "category": "byte_view",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->link_word_low = ((uw_object_hdr_t *)puVar6)->owner | 0x40;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 104,
-      "category": "byte_view",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->link_word_high = 0;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 106,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->type_flags = (ushort)uVar7;"
+      "code": "uVar7 = puVar6->hdr.type_flags;"
     },
     {
       "source": "src/objects.c",
       "function": "spawn_object_near_player",
       "line": 118,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "(unsigned)puVar6[0xb], (int)(puVar6[0xb] >> 10), (int)((puVar6[0xb] & 0x3f0) >> 4));"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 118,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "(unsigned)puVar6[0xb], (int)(puVar6[0xb] >> 10), (int)((puVar6[0xb] & 0x3f0) >> 4));"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 118,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "(unsigned)puVar6[0xb], (int)(puVar6[0xb] >> 10), (int)((puVar6[0xb] & 0x3f0) >> 4));"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 119,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
-      "code": "uVar7 = ((uw_object_hdr_t *)puVar6)->position_word & 0xfc7f | ((int)(short)(DAT_00202a54 & 0xe0) >> 5) << 7;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 120,
-      "category": "packed_word",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->position_word = (ushort)uVar7;"
+      "code": "uVar7 = puVar6->hdr.position_word;"
     },
     {
       "source": "src/objects.c",
       "function": "spawn_object_near_player",
       "line": 121,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "*(byte *)(puVar6 + 0xc) = ((byte)DAT_00202a54 ^ (byte)puVar6[0xc]) & 0x1f ^ (byte)puVar6[0xc];"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 121,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "*(byte *)(puVar6 + 0xc) = ((byte)DAT_00202a54 ^ (byte)puVar6[0xc]) & 0x1f ^ (byte)puVar6[0xc];"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 121,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "*(byte *)(puVar6 + 0xc) = ((byte)DAT_00202a54 ^ (byte)puVar6[0xc]) & 0x1f ^ (byte)puVar6[0xc];"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 122,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "*(char *)((char *)puVar6 + 9) = (char)DAT_00202a54;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 123,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
-      "code": "uVar9 = ((uw_object_hdr_t *)puVar6)->type_flags;"
+      "code": "uVar9 = puVar6->hdr.type_flags;"
     },
     {
       "source": "src/objects.c",
       "function": "spawn_object_near_player",
       "line": 124,
-      "category": "byte_view",
-      "member": "type_flags",
+      "category": "packed_word",
+      "member": "position_word",
       "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->type_flags_low = (byte)(char)(uVar9 & 0xdfff);"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 125,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->type_flags_high = (byte)(char)((uVar9 & 0xdfff) >> 8);"
+      "code": "uVar7 = puVar6->hdr.position_word;"
     },
     {
       "source": "src/objects.c",
@@ -6224,354 +6080,48 @@
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
-      "code": "uVar7 = (uint)((uw_object_hdr_t *)puVar6)->position_word;"
+      "code": "uVar7 = puVar6->hdr.position_word;"
     },
     {
       "source": "src/objects.c",
       "function": "spawn_object_near_player",
-      "line": 128,
+      "line": 130,
       "category": "byte_view",
       "member": "position_word",
       "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->position_word_low = (byte)(char)uVar7;"
+      "code": "bVar2 = puVar6->hdr.position_word_high;"
     },
     {
       "source": "src/objects.c",
       "function": "spawn_object_near_player",
-      "line": 129,
+      "line": 135,
       "category": "byte_view",
       "member": "position_word",
       "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->position_word_high = ((uw_object_hdr_t *)puVar6)->position_word_high;"
+      "code": "bVar3 = puVar6->hdr.position_word_low;"
     },
     {
       "source": "src/objects.c",
       "function": "spawn_object_near_player",
-      "line": 129,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->position_word_high = ((uw_object_hdr_t *)puVar6)->position_word_high;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 132,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->position_word_low = bVar1;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 134,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->position_word_high = bVar2;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 136,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->position_word_low = bVar1;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 137,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->position_word_high = bVar2;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 142,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->position_word_low = bVar3;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 143,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->position_word_high = bVar2;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 145,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->position_word_low ="
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 149,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->position_word_high = bVar2;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 159,
+      "line": 147,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
-      "code": "(unsigned)((uw_object_hdr_t *)puVar6)->type_flags,"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 161,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "(unsigned)puVar6[0xb],"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 165,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "iVar8 = (((uw_object_hdr_t *)puVar6)->xpos << 5) + ((puVar6[0xb] & 0xfc00) >> 2) + 0xf;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 166,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "*(char *)((char *)puVar6 + 0xb) = (char)iVar8;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 167,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "*(char *)(puVar6 + 6) = (char)((uint)iVar8 >> 8);"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 168,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "iVar8 = (((uw_object_hdr_t *)puVar6)->ypos << 2) * 8 + (puVar6[0xb] & 0x3f0) * 0x10 + 0xf;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 169,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "*(char *)((char *)puVar6 + 0xd) = (char)iVar8;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 170,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "*(char *)(puVar6 + 7) = (char)((uint)iVar8 >> 8);"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 172,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "*(char *)((char *)puVar6 + 0xf) = (char)iVar8;"
+      "code": "(unsigned) puVar6->hdr.type_flags,"
     },
     {
       "source": "src/objects.c",
       "function": "spawn_object_near_player",
       "line": 173,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "*(char *)(puVar6 + 8) = (char)((uint)iVar8 >> 8);"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 177,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "*(char *)(puVar6 + 9) = (char)sVar5;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 178,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "*(byte *)((char *)puVar6 + 0x15) = *(byte *)((char *)puVar6 + 0x15) & 0x7f;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 178,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "*(byte *)((char *)puVar6 + 0x15) = *(byte *)((char *)puVar6 + 0x15) & 0x7f;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 182,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "(unsigned)puVar6[0xb], (int)(puVar6[0xb] >> 10), (int)((puVar6[0xb] & 0x3f0) >> 4));"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 182,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "(unsigned)puVar6[0xb], (int)(puVar6[0xb] >> 10), (int)((puVar6[0xb] & 0x3f0) >> 4));"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 182,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "(unsigned)puVar6[0xb], (int)(puVar6[0xb] >> 10), (int)((puVar6[0xb] & 0x3f0) >> 4));"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 183,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "*(byte *)(puVar6 + 10) = (char)DAT_00202a3c * '\\b' + 0x87U & 0xf9 | 1;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 184,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "*(byte *)((char *)puVar6 + 0x13) ="
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 185,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "((byte)DAT_00202a48 ^ *(byte *)((char *)puVar6 + 0x13)) & 0x7f ^ *(byte *)((char *)puVar6 + 0x13)"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 185,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "((byte)DAT_00202a48 ^ *(byte *)((char *)puVar6 + 0x13)) & 0x7f ^ *(byte *)((char *)puVar6 + 0x13)"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 188,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
-      "code": "uVar9 = ((uw_object_hdr_t *)puVar6)->link_word;"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 189,
-      "category": "byte_view",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->link_word_low = (byte)(char)(uVar9 & 0xffc0);"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 190,
-      "category": "byte_view",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->link_word_high = (byte)(char)((uVar9 & 0xffc0) >> 8);"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 195,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "pbTile = (char *)tilemap_lookup(puVar6[0xb] >> 10,(puVar6[0xb] & 0x3f0) >> 4);"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 195,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "pbTile = (char *)tilemap_lookup(puVar6[0xb] >> 10,(puVar6[0xb] & 0x3f0) >> 4);"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 197,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "(unsigned)(((uw_object_hdr_t *)puVar6)->item_id), puVar6[0xb] >> 10,"
-    },
-    {
-      "source": "src/objects.c",
-      "function": "spawn_object_near_player",
-      "line": 198,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "puVar6",
-      "code": "(puVar6[0xb] & 0x3f0) >> 4);"
+      "code": "uVar9 = puVar6->hdr.link_word;"
     },
     {
       "source": "src/objects.c",
       "function": "object_list_append_tail",
-      "line": 306,
+      "line": 290,
       "category": "packed_word",
       "member": "chain_word",
       "pointer": null,
@@ -6580,7 +6130,7 @@
     {
       "source": "src/objects.c",
       "function": "object_list_unlink",
-      "line": 344,
+      "line": 328,
       "category": "packed_word",
       "member": "chain_word",
       "pointer": null,
@@ -6589,7 +6139,7 @@
     {
       "source": "src/objects.c",
       "function": "object_list_unlink",
-      "line": 346,
+      "line": 330,
       "category": "packed_word",
       "member": "chain_word",
       "pointer": null,
@@ -6598,7 +6148,7 @@
     {
       "source": "src/objects.c",
       "function": "free_linked_object_recursive",
-      "line": 368,
+      "line": 352,
       "category": "packed_word",
       "member": "chain_word",
       "pointer": null,
@@ -6607,7 +6157,7 @@
     {
       "source": "src/objects.c",
       "function": "free_linked_object_recursive",
-      "line": 372,
+      "line": 356,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -6616,7 +6166,7 @@
     {
       "source": "src/objects.c",
       "function": "unlink_and_free_object",
-      "line": 395,
+      "line": 379,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -6625,7 +6175,7 @@
     {
       "source": "src/objects.c",
       "function": "spawn_new_object",
-      "line": 458,
+      "line": 442,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -6634,7 +6184,7 @@
     {
       "source": "src/objects.c",
       "function": "spawn_new_object",
-      "line": 459,
+      "line": 443,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -6643,7 +6193,7 @@
     {
       "source": "src/objects.c",
       "function": "spawn_new_object",
-      "line": 460,
+      "line": 444,
       "category": "packed_word",
       "member": "chain_word",
       "pointer": null,
@@ -6652,7 +6202,7 @@
     {
       "source": "src/objects.c",
       "function": "spawn_new_object",
-      "line": 463,
+      "line": 447,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -6661,7 +6211,7 @@
     {
       "source": "src/objects.c",
       "function": "spawn_new_object",
-      "line": 468,
+      "line": 452,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -6670,7 +6220,7 @@
     {
       "source": "src/objects.c",
       "function": "clear_object_temp_flag_callback",
-      "line": 853,
+      "line": 837,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -6679,7 +6229,7 @@
     {
       "source": "src/objects.c",
       "function": "clear_object_temp_flag_callback",
-      "line": 854,
+      "line": 838,
       "category": "byte_view",
       "member": "position_word",
       "pointer": null,
@@ -6688,7 +6238,7 @@
     {
       "source": "src/objects.c",
       "function": "clear_object_temp_flag_callback",
-      "line": 855,
+      "line": 839,
       "category": "byte_view",
       "member": "position_word",
       "pointer": null,
@@ -6697,7 +6247,7 @@
     {
       "source": "src/objects.c",
       "function": "calculate_object_weight",
-      "line": 934,
+      "line": 918,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -6706,7 +6256,7 @@
     {
       "source": "src/objects.c",
       "function": "despawn_objects_outside_radius",
-      "line": 1173,
+      "line": 1157,
       "category": "packed_word",
       "member": "tile_word",
       "pointer": null,
@@ -6715,7 +6265,7 @@
     {
       "source": "src/objects.c",
       "function": "despawn_objects_outside_radius",
-      "line": 1190,
+      "line": 1174,
       "category": "packed_word",
       "member": "chain_word",
       "pointer": null,
@@ -6724,7 +6274,7 @@
     {
       "source": "src/objects.c",
       "function": "find_object_by_encoded_slot_in_chain",
-      "line": 1303,
+      "line": 1287,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -6733,7 +6283,7 @@
     {
       "source": "src/objects.c",
       "function": "find_object_by_encoded_slot_in_chain",
-      "line": 1306,
+      "line": 1290,
       "category": "packed_word",
       "member": "chain_word",
       "pointer": null,
@@ -6742,7 +6292,7 @@
     {
       "source": "src/objects.c",
       "function": "find_object_in_chain",
-      "line": 1381,
+      "line": 1365,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -6751,7 +6301,7 @@
     {
       "source": "src/objects.c",
       "function": "find_object_in_chain",
-      "line": 1383,
+      "line": 1367,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -6760,7 +6310,7 @@
     {
       "source": "src/objects.c",
       "function": "find_object_in_chain",
-      "line": 1387,
+      "line": 1371,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -6769,7 +6319,7 @@
     {
       "source": "src/objects.c",
       "function": "find_object_in_chain",
-      "line": 1393,
+      "line": 1377,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -6778,7 +6328,7 @@
     {
       "source": "src/objects.c",
       "function": "find_object_in_chain",
-      "line": 1399,
+      "line": 1383,
       "category": "packed_word",
       "member": "chain_word",
       "pointer": null,
@@ -6787,7 +6337,7 @@
     {
       "source": "src/objects.c",
       "function": "settle_dropped_object",
-      "line": 1583,
+      "line": 1567,
       "category": "signed_word_view",
       "member": "type_flags",
       "pointer": null,
@@ -6796,7 +6346,7 @@
     {
       "source": "src/objects.c",
       "function": "settle_dropped_object",
-      "line": 1648,
+      "line": 1632,
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "puVar9",
@@ -6805,7 +6355,7 @@
     {
       "source": "src/objects.c",
       "function": "settle_dropped_object",
-      "line": 1648,
+      "line": 1632,
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "puVar9",
@@ -6814,7 +6364,7 @@
     {
       "source": "src/objects.c",
       "function": "settle_dropped_object",
-      "line": 1651,
+      "line": 1635,
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "puVar9",
@@ -6823,7 +6373,7 @@
     {
       "source": "src/objects.c",
       "function": "settle_dropped_object",
-      "line": 1651,
+      "line": 1635,
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "puVar9",
@@ -6832,7 +6382,7 @@
     {
       "source": "src/objects.c",
       "function": "settle_dropped_object",
-      "line": 1657,
+      "line": 1641,
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "puVar9",
@@ -6841,7 +6391,7 @@
     {
       "source": "src/objects.c",
       "function": "settle_dropped_object",
-      "line": 1658,
+      "line": 1642,
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "puVar9",
@@ -6850,7 +6400,7 @@
     {
       "source": "src/objects.c",
       "function": "settle_dropped_object",
-      "line": 1658,
+      "line": 1642,
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "puVar9",
@@ -6859,7 +6409,7 @@
     {
       "source": "src/objects.c",
       "function": "settle_dropped_object",
-      "line": 1660,
+      "line": 1644,
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "puVar9",
@@ -6868,7 +6418,7 @@
     {
       "source": "src/objects.c",
       "function": "settle_dropped_object",
-      "line": 1660,
+      "line": 1644,
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "puVar9",
@@ -6877,7 +6427,7 @@
     {
       "source": "src/objects.c",
       "function": "class6_variant_effect_table_lookup",
-      "line": 1694,
+      "line": 1678,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -6886,7 +6436,7 @@
     {
       "source": "src/objects.c",
       "function": "class0_variant_effect_table_lookup",
-      "line": 1738,
+      "line": 1722,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -6895,7 +6445,7 @@
     {
       "source": "src/objects.c",
       "function": "class2_variant_effect_table_lookup",
-      "line": 1765,
+      "line": 1749,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -6904,7 +6454,7 @@
     {
       "source": "src/objects.c",
       "function": "compute_object_placement_fields",
-      "line": 1829,
+      "line": 1813,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -6913,7 +6463,7 @@
     {
       "source": "src/objects.c",
       "function": "reallocate_object_to_arena",
-      "line": 1889,
+      "line": 1873,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -6922,7 +6472,7 @@
     {
       "source": "src/objects.c",
       "function": "reallocate_object_to_arena",
-      "line": 1889,
+      "line": 1873,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -6931,7 +6481,7 @@
     {
       "source": "src/objects.c",
       "function": "reallocate_object_to_arena",
-      "line": 1890,
+      "line": 1874,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -6940,7 +6490,7 @@
     {
       "source": "src/objects.c",
       "function": "reallocate_object_to_arena",
-      "line": 1890,
+      "line": 1874,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -6949,7 +6499,7 @@
     {
       "source": "src/objects.c",
       "function": "reallocate_object_to_arena",
-      "line": 1891,
+      "line": 1875,
       "category": "packed_word",
       "member": "chain_word",
       "pointer": null,
@@ -6958,7 +6508,7 @@
     {
       "source": "src/objects.c",
       "function": "reallocate_object_to_arena",
-      "line": 1891,
+      "line": 1875,
       "category": "packed_word",
       "member": "chain_word",
       "pointer": null,
@@ -6967,7 +6517,7 @@
     {
       "source": "src/objects.c",
       "function": "reallocate_object_to_arena",
-      "line": 1892,
+      "line": 1876,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -6976,7 +6526,7 @@
     {
       "source": "src/objects.c",
       "function": "reallocate_object_to_arena",
-      "line": 1892,
+      "line": 1876,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -6985,7 +6535,7 @@
     {
       "source": "src/objects.c",
       "function": "reallocate_object_to_arena",
-      "line": 1894,
+      "line": 1878,
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "puVar2",
@@ -6994,7 +6544,7 @@
     {
       "source": "src/objects.c",
       "function": "reallocate_object_to_arena",
-      "line": 1896,
+      "line": 1880,
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "puVar2",
@@ -7003,7 +6553,7 @@
     {
       "source": "src/objects.c",
       "function": "reallocate_object_to_arena",
-      "line": 1905,
+      "line": 1889,
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "puVar2",

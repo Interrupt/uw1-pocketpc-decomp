@@ -6887,23 +6887,14 @@ typedef ushort, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(ushort *)((char *)scratch_bytes + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)scratch_bytes)->item_id
+- *(ushort *)((char *)npc + 0x0) & 0x1ff
++ ((uw_object_hdr_t *)npc)->item_id
 |
-- ((ushort *)scratch_bytes)[0] & 0x1ff
-+ ((uw_object_hdr_t *)scratch_bytes)->item_id
+- ((ushort *)npc)[0] & 0x1ff
++ ((uw_object_hdr_t *)npc)->item_id
 |
-- *(ushort *)scratch_bytes & 0x1ff
-+ ((uw_object_hdr_t *)scratch_bytes)->item_id
-|
-- *(ushort *)(scratch_bytes + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)scratch_bytes)->item_id
-|
-- CONCAT11(scratch_bytes[1], *scratch_bytes) & 0x1ff
-+ ((uw_object_hdr_t *)scratch_bytes)->item_id
-|
-- CONCAT11(scratch_bytes[1], scratch_bytes[0]) & 0x1ff
-+ ((uw_object_hdr_t *)scratch_bytes)->item_id
+- *(ushort *)npc & 0x1ff
++ ((uw_object_hdr_t *)npc)->item_id
 )
 ...>
 }
@@ -6916,47 +6907,29 @@ typedef ushort, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- (*(ushort *)((char *)scratch_bytes + 0x0) >> 9) & 0x7
-+ ((uw_object_hdr_t *)scratch_bytes)->flags_res
+- (*(ushort *)((char *)npc + 0x0) >> 9) & 0x7
++ ((uw_object_hdr_t *)npc)->flags_res
 |
-- (*(ushort *)((char *)scratch_bytes + 0x0) & 0xe00) >> 9
-+ ((uw_object_hdr_t *)scratch_bytes)->flags_res
+- (*(ushort *)((char *)npc + 0x0) & 0xe00) >> 9
++ ((uw_object_hdr_t *)npc)->flags_res
 |
-- (((ushort *)scratch_bytes)[0] >> 9) & 0x7
-+ ((uw_object_hdr_t *)scratch_bytes)->flags_res
+- (((ushort *)npc)[0] >> 9) & 0x7
++ ((uw_object_hdr_t *)npc)->flags_res
 |
-- (((ushort *)scratch_bytes)[0] & 0xe00) >> 9
-+ ((uw_object_hdr_t *)scratch_bytes)->flags_res
+- (((ushort *)npc)[0] & 0xe00) >> 9
++ ((uw_object_hdr_t *)npc)->flags_res
 |
-- (*(ushort *)scratch_bytes >> 9) & 0x7
-+ ((uw_object_hdr_t *)scratch_bytes)->flags_res
+- (*(ushort *)npc >> 9) & 0x7
++ ((uw_object_hdr_t *)npc)->flags_res
 |
-- (*(ushort *)scratch_bytes & 0xe00) >> 9
-+ ((uw_object_hdr_t *)scratch_bytes)->flags_res
+- (*(ushort *)npc & 0xe00) >> 9
++ ((uw_object_hdr_t *)npc)->flags_res
 |
-- (*(ushort *)(scratch_bytes + 0x0) >> 9) & 0x7
-+ ((uw_object_hdr_t *)scratch_bytes)->flags_res
+- (*(byte *)((char *)npc + 0x1) >> 1) & 0x7
++ ((uw_object_hdr_t *)npc)->flags_res
 |
-- (*(ushort *)(scratch_bytes + 0x0) & 0xe00) >> 9
-+ ((uw_object_hdr_t *)scratch_bytes)->flags_res
-|
-- (CONCAT11(scratch_bytes[1], *scratch_bytes) >> 9) & 0x7
-+ ((uw_object_hdr_t *)scratch_bytes)->flags_res
-|
-- (CONCAT11(scratch_bytes[1], *scratch_bytes) & 0xe00) >> 9
-+ ((uw_object_hdr_t *)scratch_bytes)->flags_res
-|
-- (CONCAT11(scratch_bytes[1], scratch_bytes[0]) >> 9) & 0x7
-+ ((uw_object_hdr_t *)scratch_bytes)->flags_res
-|
-- (CONCAT11(scratch_bytes[1], scratch_bytes[0]) & 0xe00) >> 9
-+ ((uw_object_hdr_t *)scratch_bytes)->flags_res
-|
-- (*(byte *)((char *)scratch_bytes + 0x1) >> 1) & 0x7
-+ ((uw_object_hdr_t *)scratch_bytes)->flags_res
-|
-- (*(byte *)((char *)scratch_bytes + 0x1) & 0xe) >> 1
-+ ((uw_object_hdr_t *)scratch_bytes)->flags_res
+- (*(byte *)((char *)npc + 0x1) & 0xe) >> 1
++ ((uw_object_hdr_t *)npc)->flags_res
 )
 ...>
 }
@@ -6969,47 +6942,29 @@ typedef ushort, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- (*(ushort *)((char *)scratch_bytes + 0x0) >> 12) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->enchanted
+- (*(ushort *)((char *)npc + 0x0) >> 12) & 0x1
++ ((uw_object_hdr_t *)npc)->enchanted
 |
-- (*(ushort *)((char *)scratch_bytes + 0x0) & 0x1000) >> 12
-+ ((uw_object_hdr_t *)scratch_bytes)->enchanted
+- (*(ushort *)((char *)npc + 0x0) & 0x1000) >> 12
++ ((uw_object_hdr_t *)npc)->enchanted
 |
-- (((ushort *)scratch_bytes)[0] >> 12) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->enchanted
+- (((ushort *)npc)[0] >> 12) & 0x1
++ ((uw_object_hdr_t *)npc)->enchanted
 |
-- (((ushort *)scratch_bytes)[0] & 0x1000) >> 12
-+ ((uw_object_hdr_t *)scratch_bytes)->enchanted
+- (((ushort *)npc)[0] & 0x1000) >> 12
++ ((uw_object_hdr_t *)npc)->enchanted
 |
-- (*(ushort *)scratch_bytes >> 12) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->enchanted
+- (*(ushort *)npc >> 12) & 0x1
++ ((uw_object_hdr_t *)npc)->enchanted
 |
-- (*(ushort *)scratch_bytes & 0x1000) >> 12
-+ ((uw_object_hdr_t *)scratch_bytes)->enchanted
+- (*(ushort *)npc & 0x1000) >> 12
++ ((uw_object_hdr_t *)npc)->enchanted
 |
-- (*(ushort *)(scratch_bytes + 0x0) >> 12) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->enchanted
+- (*(byte *)((char *)npc + 0x1) >> 4) & 0x1
++ ((uw_object_hdr_t *)npc)->enchanted
 |
-- (*(ushort *)(scratch_bytes + 0x0) & 0x1000) >> 12
-+ ((uw_object_hdr_t *)scratch_bytes)->enchanted
-|
-- (CONCAT11(scratch_bytes[1], *scratch_bytes) >> 12) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->enchanted
-|
-- (CONCAT11(scratch_bytes[1], *scratch_bytes) & 0x1000) >> 12
-+ ((uw_object_hdr_t *)scratch_bytes)->enchanted
-|
-- (CONCAT11(scratch_bytes[1], scratch_bytes[0]) >> 12) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->enchanted
-|
-- (CONCAT11(scratch_bytes[1], scratch_bytes[0]) & 0x1000) >> 12
-+ ((uw_object_hdr_t *)scratch_bytes)->enchanted
-|
-- (*(byte *)((char *)scratch_bytes + 0x1) >> 4) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->enchanted
-|
-- (*(byte *)((char *)scratch_bytes + 0x1) & 0x10) >> 4
-+ ((uw_object_hdr_t *)scratch_bytes)->enchanted
+- (*(byte *)((char *)npc + 0x1) & 0x10) >> 4
++ ((uw_object_hdr_t *)npc)->enchanted
 )
 ...>
 }
@@ -7022,47 +6977,29 @@ typedef ushort, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- (*(ushort *)((char *)scratch_bytes + 0x0) >> 13) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->doordir
+- (*(ushort *)((char *)npc + 0x0) >> 13) & 0x1
++ ((uw_object_hdr_t *)npc)->doordir
 |
-- (*(ushort *)((char *)scratch_bytes + 0x0) & 0x2000) >> 13
-+ ((uw_object_hdr_t *)scratch_bytes)->doordir
+- (*(ushort *)((char *)npc + 0x0) & 0x2000) >> 13
++ ((uw_object_hdr_t *)npc)->doordir
 |
-- (((ushort *)scratch_bytes)[0] >> 13) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->doordir
+- (((ushort *)npc)[0] >> 13) & 0x1
++ ((uw_object_hdr_t *)npc)->doordir
 |
-- (((ushort *)scratch_bytes)[0] & 0x2000) >> 13
-+ ((uw_object_hdr_t *)scratch_bytes)->doordir
+- (((ushort *)npc)[0] & 0x2000) >> 13
++ ((uw_object_hdr_t *)npc)->doordir
 |
-- (*(ushort *)scratch_bytes >> 13) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->doordir
+- (*(ushort *)npc >> 13) & 0x1
++ ((uw_object_hdr_t *)npc)->doordir
 |
-- (*(ushort *)scratch_bytes & 0x2000) >> 13
-+ ((uw_object_hdr_t *)scratch_bytes)->doordir
+- (*(ushort *)npc & 0x2000) >> 13
++ ((uw_object_hdr_t *)npc)->doordir
 |
-- (*(ushort *)(scratch_bytes + 0x0) >> 13) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->doordir
+- (*(byte *)((char *)npc + 0x1) >> 5) & 0x1
++ ((uw_object_hdr_t *)npc)->doordir
 |
-- (*(ushort *)(scratch_bytes + 0x0) & 0x2000) >> 13
-+ ((uw_object_hdr_t *)scratch_bytes)->doordir
-|
-- (CONCAT11(scratch_bytes[1], *scratch_bytes) >> 13) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->doordir
-|
-- (CONCAT11(scratch_bytes[1], *scratch_bytes) & 0x2000) >> 13
-+ ((uw_object_hdr_t *)scratch_bytes)->doordir
-|
-- (CONCAT11(scratch_bytes[1], scratch_bytes[0]) >> 13) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->doordir
-|
-- (CONCAT11(scratch_bytes[1], scratch_bytes[0]) & 0x2000) >> 13
-+ ((uw_object_hdr_t *)scratch_bytes)->doordir
-|
-- (*(byte *)((char *)scratch_bytes + 0x1) >> 5) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->doordir
-|
-- (*(byte *)((char *)scratch_bytes + 0x1) & 0x20) >> 5
-+ ((uw_object_hdr_t *)scratch_bytes)->doordir
+- (*(byte *)((char *)npc + 0x1) & 0x20) >> 5
++ ((uw_object_hdr_t *)npc)->doordir
 )
 ...>
 }
@@ -7075,47 +7012,29 @@ typedef ushort, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- (*(ushort *)((char *)scratch_bytes + 0x0) >> 14) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->invisible
+- (*(ushort *)((char *)npc + 0x0) >> 14) & 0x1
++ ((uw_object_hdr_t *)npc)->invisible
 |
-- (*(ushort *)((char *)scratch_bytes + 0x0) & 0x4000) >> 14
-+ ((uw_object_hdr_t *)scratch_bytes)->invisible
+- (*(ushort *)((char *)npc + 0x0) & 0x4000) >> 14
++ ((uw_object_hdr_t *)npc)->invisible
 |
-- (((ushort *)scratch_bytes)[0] >> 14) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->invisible
+- (((ushort *)npc)[0] >> 14) & 0x1
++ ((uw_object_hdr_t *)npc)->invisible
 |
-- (((ushort *)scratch_bytes)[0] & 0x4000) >> 14
-+ ((uw_object_hdr_t *)scratch_bytes)->invisible
+- (((ushort *)npc)[0] & 0x4000) >> 14
++ ((uw_object_hdr_t *)npc)->invisible
 |
-- (*(ushort *)scratch_bytes >> 14) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->invisible
+- (*(ushort *)npc >> 14) & 0x1
++ ((uw_object_hdr_t *)npc)->invisible
 |
-- (*(ushort *)scratch_bytes & 0x4000) >> 14
-+ ((uw_object_hdr_t *)scratch_bytes)->invisible
+- (*(ushort *)npc & 0x4000) >> 14
++ ((uw_object_hdr_t *)npc)->invisible
 |
-- (*(ushort *)(scratch_bytes + 0x0) >> 14) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->invisible
+- (*(byte *)((char *)npc + 0x1) >> 6) & 0x1
++ ((uw_object_hdr_t *)npc)->invisible
 |
-- (*(ushort *)(scratch_bytes + 0x0) & 0x4000) >> 14
-+ ((uw_object_hdr_t *)scratch_bytes)->invisible
-|
-- (CONCAT11(scratch_bytes[1], *scratch_bytes) >> 14) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->invisible
-|
-- (CONCAT11(scratch_bytes[1], *scratch_bytes) & 0x4000) >> 14
-+ ((uw_object_hdr_t *)scratch_bytes)->invisible
-|
-- (CONCAT11(scratch_bytes[1], scratch_bytes[0]) >> 14) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->invisible
-|
-- (CONCAT11(scratch_bytes[1], scratch_bytes[0]) & 0x4000) >> 14
-+ ((uw_object_hdr_t *)scratch_bytes)->invisible
-|
-- (*(byte *)((char *)scratch_bytes + 0x1) >> 6) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->invisible
-|
-- (*(byte *)((char *)scratch_bytes + 0x1) & 0x40) >> 6
-+ ((uw_object_hdr_t *)scratch_bytes)->invisible
+- (*(byte *)((char *)npc + 0x1) & 0x40) >> 6
++ ((uw_object_hdr_t *)npc)->invisible
 )
 ...>
 }
@@ -7128,47 +7047,29 @@ typedef ushort, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- (*(ushort *)((char *)scratch_bytes + 0x0) >> 15) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->is_quant
+- (*(ushort *)((char *)npc + 0x0) >> 15) & 0x1
++ ((uw_object_hdr_t *)npc)->is_quant
 |
-- (*(ushort *)((char *)scratch_bytes + 0x0) & 0x8000) >> 15
-+ ((uw_object_hdr_t *)scratch_bytes)->is_quant
+- (*(ushort *)((char *)npc + 0x0) & 0x8000) >> 15
++ ((uw_object_hdr_t *)npc)->is_quant
 |
-- (((ushort *)scratch_bytes)[0] >> 15) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->is_quant
+- (((ushort *)npc)[0] >> 15) & 0x1
++ ((uw_object_hdr_t *)npc)->is_quant
 |
-- (((ushort *)scratch_bytes)[0] & 0x8000) >> 15
-+ ((uw_object_hdr_t *)scratch_bytes)->is_quant
+- (((ushort *)npc)[0] & 0x8000) >> 15
++ ((uw_object_hdr_t *)npc)->is_quant
 |
-- (*(ushort *)scratch_bytes >> 15) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->is_quant
+- (*(ushort *)npc >> 15) & 0x1
++ ((uw_object_hdr_t *)npc)->is_quant
 |
-- (*(ushort *)scratch_bytes & 0x8000) >> 15
-+ ((uw_object_hdr_t *)scratch_bytes)->is_quant
+- (*(ushort *)npc & 0x8000) >> 15
++ ((uw_object_hdr_t *)npc)->is_quant
 |
-- (*(ushort *)(scratch_bytes + 0x0) >> 15) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->is_quant
+- (*(byte *)((char *)npc + 0x1) >> 7) & 0x1
++ ((uw_object_hdr_t *)npc)->is_quant
 |
-- (*(ushort *)(scratch_bytes + 0x0) & 0x8000) >> 15
-+ ((uw_object_hdr_t *)scratch_bytes)->is_quant
-|
-- (CONCAT11(scratch_bytes[1], *scratch_bytes) >> 15) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->is_quant
-|
-- (CONCAT11(scratch_bytes[1], *scratch_bytes) & 0x8000) >> 15
-+ ((uw_object_hdr_t *)scratch_bytes)->is_quant
-|
-- (CONCAT11(scratch_bytes[1], scratch_bytes[0]) >> 15) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->is_quant
-|
-- (CONCAT11(scratch_bytes[1], scratch_bytes[0]) & 0x8000) >> 15
-+ ((uw_object_hdr_t *)scratch_bytes)->is_quant
-|
-- (*(byte *)((char *)scratch_bytes + 0x1) >> 7) & 0x1
-+ ((uw_object_hdr_t *)scratch_bytes)->is_quant
-|
-- (*(byte *)((char *)scratch_bytes + 0x1) & 0x80) >> 7
-+ ((uw_object_hdr_t *)scratch_bytes)->is_quant
+- (*(byte *)((char *)npc + 0x1) & 0x80) >> 7
++ ((uw_object_hdr_t *)npc)->is_quant
 )
 ...>
 }
@@ -7181,20 +7082,14 @@ typedef ushort, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(ushort *)((char *)scratch_bytes + 0x2) & 0x7f
-+ ((uw_object_hdr_t *)scratch_bytes)->zpos
+- *(ushort *)((char *)npc + 0x2) & 0x7f
++ ((uw_object_hdr_t *)npc)->zpos
 |
-- ((ushort *)scratch_bytes)[1] & 0x7f
-+ ((uw_object_hdr_t *)scratch_bytes)->zpos
+- ((ushort *)npc)[1] & 0x7f
++ ((uw_object_hdr_t *)npc)->zpos
 |
-- *(ushort *)(scratch_bytes + 0x2) & 0x7f
-+ ((uw_object_hdr_t *)scratch_bytes)->zpos
-|
-- *(byte *)((char *)scratch_bytes + 0x2) & 0x7f
-+ ((uw_object_hdr_t *)scratch_bytes)->zpos
-|
-- scratch_bytes[2] & 0x7f
-+ ((uw_object_hdr_t *)scratch_bytes)->zpos
+- *(byte *)((char *)npc + 0x2) & 0x7f
++ ((uw_object_hdr_t *)npc)->zpos
 )
 ...>
 }
@@ -7207,23 +7102,17 @@ typedef ushort, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- (*(ushort *)((char *)scratch_bytes + 0x2) >> 7) & 0x7
-+ ((uw_object_hdr_t *)scratch_bytes)->heading
+- (*(ushort *)((char *)npc + 0x2) >> 7) & 0x7
++ ((uw_object_hdr_t *)npc)->heading
 |
-- (*(ushort *)((char *)scratch_bytes + 0x2) & 0x380) >> 7
-+ ((uw_object_hdr_t *)scratch_bytes)->heading
+- (*(ushort *)((char *)npc + 0x2) & 0x380) >> 7
++ ((uw_object_hdr_t *)npc)->heading
 |
-- (((ushort *)scratch_bytes)[1] >> 7) & 0x7
-+ ((uw_object_hdr_t *)scratch_bytes)->heading
+- (((ushort *)npc)[1] >> 7) & 0x7
++ ((uw_object_hdr_t *)npc)->heading
 |
-- (((ushort *)scratch_bytes)[1] & 0x380) >> 7
-+ ((uw_object_hdr_t *)scratch_bytes)->heading
-|
-- (*(ushort *)(scratch_bytes + 0x2) >> 7) & 0x7
-+ ((uw_object_hdr_t *)scratch_bytes)->heading
-|
-- (*(ushort *)(scratch_bytes + 0x2) & 0x380) >> 7
-+ ((uw_object_hdr_t *)scratch_bytes)->heading
+- (((ushort *)npc)[1] & 0x380) >> 7
++ ((uw_object_hdr_t *)npc)->heading
 )
 ...>
 }
@@ -7236,29 +7125,23 @@ typedef ushort, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- (*(ushort *)((char *)scratch_bytes + 0x2) >> 10) & 0x7
-+ ((uw_object_hdr_t *)scratch_bytes)->ypos
+- (*(ushort *)((char *)npc + 0x2) >> 10) & 0x7
++ ((uw_object_hdr_t *)npc)->ypos
 |
-- (*(ushort *)((char *)scratch_bytes + 0x2) & 0x1c00) >> 10
-+ ((uw_object_hdr_t *)scratch_bytes)->ypos
+- (*(ushort *)((char *)npc + 0x2) & 0x1c00) >> 10
++ ((uw_object_hdr_t *)npc)->ypos
 |
-- (((ushort *)scratch_bytes)[1] >> 10) & 0x7
-+ ((uw_object_hdr_t *)scratch_bytes)->ypos
+- (((ushort *)npc)[1] >> 10) & 0x7
++ ((uw_object_hdr_t *)npc)->ypos
 |
-- (((ushort *)scratch_bytes)[1] & 0x1c00) >> 10
-+ ((uw_object_hdr_t *)scratch_bytes)->ypos
+- (((ushort *)npc)[1] & 0x1c00) >> 10
++ ((uw_object_hdr_t *)npc)->ypos
 |
-- (*(ushort *)(scratch_bytes + 0x2) >> 10) & 0x7
-+ ((uw_object_hdr_t *)scratch_bytes)->ypos
+- (*(byte *)((char *)npc + 0x3) >> 2) & 0x7
++ ((uw_object_hdr_t *)npc)->ypos
 |
-- (*(ushort *)(scratch_bytes + 0x2) & 0x1c00) >> 10
-+ ((uw_object_hdr_t *)scratch_bytes)->ypos
-|
-- (*(byte *)((char *)scratch_bytes + 0x3) >> 2) & 0x7
-+ ((uw_object_hdr_t *)scratch_bytes)->ypos
-|
-- (*(byte *)((char *)scratch_bytes + 0x3) & 0x1c) >> 2
-+ ((uw_object_hdr_t *)scratch_bytes)->ypos
+- (*(byte *)((char *)npc + 0x3) & 0x1c) >> 2
++ ((uw_object_hdr_t *)npc)->ypos
 )
 ...>
 }
@@ -7271,29 +7154,23 @@ typedef ushort, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- (*(ushort *)((char *)scratch_bytes + 0x2) >> 13) & 0x7
-+ ((uw_object_hdr_t *)scratch_bytes)->xpos
+- (*(ushort *)((char *)npc + 0x2) >> 13) & 0x7
++ ((uw_object_hdr_t *)npc)->xpos
 |
-- (*(ushort *)((char *)scratch_bytes + 0x2) & 0xe000) >> 13
-+ ((uw_object_hdr_t *)scratch_bytes)->xpos
+- (*(ushort *)((char *)npc + 0x2) & 0xe000) >> 13
++ ((uw_object_hdr_t *)npc)->xpos
 |
-- (((ushort *)scratch_bytes)[1] >> 13) & 0x7
-+ ((uw_object_hdr_t *)scratch_bytes)->xpos
+- (((ushort *)npc)[1] >> 13) & 0x7
++ ((uw_object_hdr_t *)npc)->xpos
 |
-- (((ushort *)scratch_bytes)[1] & 0xe000) >> 13
-+ ((uw_object_hdr_t *)scratch_bytes)->xpos
+- (((ushort *)npc)[1] & 0xe000) >> 13
++ ((uw_object_hdr_t *)npc)->xpos
 |
-- (*(ushort *)(scratch_bytes + 0x2) >> 13) & 0x7
-+ ((uw_object_hdr_t *)scratch_bytes)->xpos
+- (*(byte *)((char *)npc + 0x3) >> 5) & 0x7
++ ((uw_object_hdr_t *)npc)->xpos
 |
-- (*(ushort *)(scratch_bytes + 0x2) & 0xe000) >> 13
-+ ((uw_object_hdr_t *)scratch_bytes)->xpos
-|
-- (*(byte *)((char *)scratch_bytes + 0x3) >> 5) & 0x7
-+ ((uw_object_hdr_t *)scratch_bytes)->xpos
-|
-- (*(byte *)((char *)scratch_bytes + 0x3) & 0xe0) >> 5
-+ ((uw_object_hdr_t *)scratch_bytes)->xpos
+- (*(byte *)((char *)npc + 0x3) & 0xe0) >> 5
++ ((uw_object_hdr_t *)npc)->xpos
 )
 ...>
 }
@@ -7306,20 +7183,14 @@ typedef ushort, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(ushort *)((char *)scratch_bytes + 0x4) & 0x3f
-+ ((uw_object_hdr_t *)scratch_bytes)->quality
+- *(ushort *)((char *)npc + 0x4) & 0x3f
++ ((uw_object_hdr_t *)npc)->quality
 |
-- ((ushort *)scratch_bytes)[2] & 0x3f
-+ ((uw_object_hdr_t *)scratch_bytes)->quality
+- ((ushort *)npc)[2] & 0x3f
++ ((uw_object_hdr_t *)npc)->quality
 |
-- *(ushort *)(scratch_bytes + 0x4) & 0x3f
-+ ((uw_object_hdr_t *)scratch_bytes)->quality
-|
-- *(byte *)((char *)scratch_bytes + 0x4) & 0x3f
-+ ((uw_object_hdr_t *)scratch_bytes)->quality
-|
-- scratch_bytes[4] & 0x3f
-+ ((uw_object_hdr_t *)scratch_bytes)->quality
+- *(byte *)((char *)npc + 0x4) & 0x3f
++ ((uw_object_hdr_t *)npc)->quality
 )
 ...>
 }
@@ -7332,23 +7203,17 @@ typedef ushort, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- (*(ushort *)((char *)scratch_bytes + 0x4) >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)scratch_bytes)->next
+- (*(ushort *)((char *)npc + 0x4) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)npc)->next
 |
-- (*(ushort *)((char *)scratch_bytes + 0x4) & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)scratch_bytes)->next
+- (*(ushort *)((char *)npc + 0x4) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)npc)->next
 |
-- (((ushort *)scratch_bytes)[2] >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)scratch_bytes)->next
+- (((ushort *)npc)[2] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)npc)->next
 |
-- (((ushort *)scratch_bytes)[2] & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)scratch_bytes)->next
-|
-- (*(ushort *)(scratch_bytes + 0x4) >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)scratch_bytes)->next
-|
-- (*(ushort *)(scratch_bytes + 0x4) & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)scratch_bytes)->next
+- (((ushort *)npc)[2] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)npc)->next
 )
 ...>
 }
@@ -7361,20 +7226,14 @@ typedef ushort, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(ushort *)((char *)scratch_bytes + 0x6) & 0x3f
-+ ((uw_object_hdr_t *)scratch_bytes)->owner
+- *(ushort *)((char *)npc + 0x6) & 0x3f
++ ((uw_object_hdr_t *)npc)->owner
 |
-- ((ushort *)scratch_bytes)[3] & 0x3f
-+ ((uw_object_hdr_t *)scratch_bytes)->owner
+- ((ushort *)npc)[3] & 0x3f
++ ((uw_object_hdr_t *)npc)->owner
 |
-- *(ushort *)(scratch_bytes + 0x6) & 0x3f
-+ ((uw_object_hdr_t *)scratch_bytes)->owner
-|
-- *(byte *)((char *)scratch_bytes + 0x6) & 0x3f
-+ ((uw_object_hdr_t *)scratch_bytes)->owner
-|
-- scratch_bytes[6] & 0x3f
-+ ((uw_object_hdr_t *)scratch_bytes)->owner
+- *(byte *)((char *)npc + 0x6) & 0x3f
++ ((uw_object_hdr_t *)npc)->owner
 )
 ...>
 }
@@ -7387,23 +7246,17 @@ typedef ushort, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- (*(ushort *)((char *)scratch_bytes + 0x6) >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)scratch_bytes)->link
+- (*(ushort *)((char *)npc + 0x6) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)npc)->link
 |
-- (*(ushort *)((char *)scratch_bytes + 0x6) & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)scratch_bytes)->link
+- (*(ushort *)((char *)npc + 0x6) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)npc)->link
 |
-- (((ushort *)scratch_bytes)[3] >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)scratch_bytes)->link
+- (((ushort *)npc)[3] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)npc)->link
 |
-- (((ushort *)scratch_bytes)[3] & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)scratch_bytes)->link
-|
-- (*(ushort *)(scratch_bytes + 0x6) >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)scratch_bytes)->link
-|
-- (*(ushort *)(scratch_bytes + 0x6) & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)scratch_bytes)->link
+- (((ushort *)npc)[3] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)npc)->link
 )
 ...>
 }

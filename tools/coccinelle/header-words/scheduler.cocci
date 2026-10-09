@@ -246,92 +246,6 @@ typedef ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(ushort *)((char *)source_object + 0)
-+ ((uw_object_hdr_t *)source_object)->type_flags
-|
-- ((ushort *)source_object)[0]
-+ ((uw_object_hdr_t *)source_object)->type_flags
-|
-- *(ushort *)source_object
-+ ((uw_object_hdr_t *)source_object)->type_flags
-|
-- source_object[0]
-+ ((uw_object_hdr_t *)source_object)->type_flags
-|
-- *source_object
-+ ((uw_object_hdr_t *)source_object)->type_flags
-)
-...>
-}
-
-@word_3_1@
-type R;
-identifier F =~ "^\(spawn_scheduled_effect_object\)$";
-typedef ushort, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)source_object + 2)
-+ ((uw_object_hdr_t *)source_object)->position_word
-|
-- ((ushort *)source_object)[1]
-+ ((uw_object_hdr_t *)source_object)->position_word
-|
-- source_object[1]
-+ ((uw_object_hdr_t *)source_object)->position_word
-)
-...>
-}
-
-@word_3_2@
-type R;
-identifier F =~ "^\(spawn_scheduled_effect_object\)$";
-typedef ushort, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)source_object + 4)
-+ ((uw_object_hdr_t *)source_object)->chain_word
-|
-- ((ushort *)source_object)[2]
-+ ((uw_object_hdr_t *)source_object)->chain_word
-|
-- source_object[2]
-+ ((uw_object_hdr_t *)source_object)->chain_word
-)
-...>
-}
-
-@word_3_3@
-type R;
-identifier F =~ "^\(spawn_scheduled_effect_object\)$";
-typedef ushort, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)source_object + 6)
-+ ((uw_object_hdr_t *)source_object)->link_word
-|
-- ((ushort *)source_object)[3]
-+ ((uw_object_hdr_t *)source_object)->link_word
-|
-- source_object[3]
-+ ((uw_object_hdr_t *)source_object)->link_word
-)
-...>
-}
-
-@word_4_0@
-type R;
-identifier F =~ "^\(spawn_scheduled_effect_object\)$";
-typedef ushort, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
 - *(ushort *)((char *)iVar5 + 0)
 + ((uw_object_hdr_t *)iVar5)->type_flags
 |
@@ -347,7 +261,7 @@ R F(...) {
 ...>
 }
 
-@word_4_1@
+@word_3_1@
 type R;
 identifier F =~ "^\(spawn_scheduled_effect_object\)$";
 typedef ushort, uw_object_hdr_t;
@@ -367,7 +281,7 @@ R F(...) {
 ...>
 }
 
-@word_4_2@
+@word_3_2@
 type R;
 identifier F =~ "^\(spawn_scheduled_effect_object\)$";
 typedef ushort, uw_object_hdr_t;
@@ -387,7 +301,7 @@ R F(...) {
 ...>
 }
 
-@word_4_3@
+@word_3_3@
 type R;
 identifier F =~ "^\(spawn_scheduled_effect_object\)$";
 typedef ushort, uw_object_hdr_t;
@@ -403,6 +317,92 @@ R F(...) {
 |
 - *(ushort *)(iVar5 + 6)
 + ((uw_object_hdr_t *)iVar5)->link_word
+)
+...>
+}
+
+@word_4_0@
+type R;
+identifier F =~ "^\(spawn_scheduled_effect_object\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)source_object + 0)
++ ((uw_object_hdr_t *)source_object)->type_flags
+|
+- ((ushort *)source_object)[0]
++ ((uw_object_hdr_t *)source_object)->type_flags
+|
+- *(ushort *)source_object
++ ((uw_object_hdr_t *)source_object)->type_flags
+|
+- source_object[0]
++ ((uw_object_hdr_t *)source_object)->type_flags
+|
+- *source_object
++ ((uw_object_hdr_t *)source_object)->type_flags
+)
+...>
+}
+
+@word_4_1@
+type R;
+identifier F =~ "^\(spawn_scheduled_effect_object\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)source_object + 2)
++ ((uw_object_hdr_t *)source_object)->position_word
+|
+- ((ushort *)source_object)[1]
++ ((uw_object_hdr_t *)source_object)->position_word
+|
+- source_object[1]
++ ((uw_object_hdr_t *)source_object)->position_word
+)
+...>
+}
+
+@word_4_2@
+type R;
+identifier F =~ "^\(spawn_scheduled_effect_object\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)source_object + 4)
++ ((uw_object_hdr_t *)source_object)->chain_word
+|
+- ((ushort *)source_object)[2]
++ ((uw_object_hdr_t *)source_object)->chain_word
+|
+- source_object[2]
++ ((uw_object_hdr_t *)source_object)->chain_word
+)
+...>
+}
+
+@word_4_3@
+type R;
+identifier F =~ "^\(spawn_scheduled_effect_object\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)source_object + 6)
++ ((uw_object_hdr_t *)source_object)->link_word
+|
+- ((ushort *)source_object)[3]
++ ((uw_object_hdr_t *)source_object)->link_word
+|
+- source_object[3]
++ ((uw_object_hdr_t *)source_object)->link_word
 )
 ...>
 }

@@ -248,6 +248,7 @@ static void test_uw1_projectile_fields(void)
     TEST_ASSERT_EQUAL_UINT(13, offsetof(uw_projectile_object_t, precise_y));
     TEST_ASSERT_EQUAL_UINT(15, offsetof(uw_projectile_object_t, precise_z));
     TEST_ASSERT_EQUAL_UINT(18, offsetof(uw_projectile_object_t, source_slot));
+    TEST_ASSERT_EQUAL_UINT(22, offsetof(uw_projectile_object_t, tile_position));
     TEST_ASSERT_EQUAL_UINT(26, offsetof(uw_projectile_object_t, original_heading));
     VERIFY_FIELD(uw_projectile_object_t,speed,0x13,0,0x7f);
     VERIFY_FIELD(uw_projectile_object_t,gravity_flag,0x13,7,1);

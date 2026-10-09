@@ -150,11 +150,13 @@ with tempfile.TemporaryDirectory() as tmp:
 typedef unsigned short ushort;
 typedef struct header uw_object_hdr_t;
 void sum_container_weight(ushort *root, short *weight) {
-  ushort *puVar2;
+  uw_object_hdr_t *puVar2;
   puVar2 = resolve_object_link(root);
-  int kind = *puVar2;
-  puVar2[1] = 0x6c00;
-  use(puVar2[2], puVar2[3]);
+  int kind = *(ushort *)puVar2;
+  ((ushort *)puVar2)[1] = 0x6c00;
+  use(((ushort *)puVar2)[2], ((ushort *)puVar2)[3]);
+  use(puVar2 + 1);
+  use(puVar2[1]);
 }
 void unrelated(ushort *puVar2) { use(*puVar2, puVar2[3]); }
 ''')
@@ -163,6 +165,8 @@ void unrelated(ushort *puVar2) { use(*puVar2, puVar2[3]); }
     for field in ['type_flags', 'position_word', 'chain_word', 'link_word']:
         assert '->' + field in result, result
     assert 'use(*puVar2, puVar2[3])' in result, result
+    assert 'use(puVar2 + 1)' in result, 'typed object arithmetic must retain record scaling'
+    assert 'use(puVar2[1])' in result, 'typed record indexing must not become a word access'
     transform('header-words/containers.cocci', path)
     assert path.read_text() == result, 'whole-word patches are not idempotent'
 

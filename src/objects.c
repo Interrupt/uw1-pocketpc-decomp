@@ -83,126 +83,110 @@ uw_object_hdr_t *spawn_object_near_player()
   byte bVar3;
   char cVar4;
   short sVar5;
-  ushort *puVar6;
+  uw_projectile_object_t *puVar6;
   uint uVar7;
   int iVar8;
   char *pbTile;
   ushort uVar9;
 
-  puVar6 = (ushort *)alloc_object_slot(1);
-  if (puVar6 == (ushort *)0x0) {
+  puVar6 = (uw_projectile_object_t *)alloc_object_slot(1);
+  if (puVar6 == NULL) {
 LAB_0004b06c:
-    puVar6 = (ushort *)0x0;
+    puVar6 = NULL;
   }
   else {
-    ((uw_object_hdr_t *)puVar6)->chain_word_low = ((uw_object_hdr_t *)puVar6)->quality;
-    ((uw_object_hdr_t *)puVar6)->chain_word_high = 0;
-    uVar7 = ((uw_object_hdr_t *)puVar6)->type_flags | 0x8000;
-    ((uw_object_hdr_t *)puVar6)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar6)->type_flags;
-    ((uw_object_hdr_t *)puVar6)->type_flags_high = (byte)(char)(uVar7 >> 8);
-    ((uw_object_hdr_t *)puVar6)->link_word_low = ((uw_object_hdr_t *)puVar6)->owner | 0x40;
-    ((uw_object_hdr_t *)puVar6)->link_word_high = 0;
-    uVar7 = (uVar7 ^ (int)DAT_00202a38) & 0x1ff ^ uVar7;
-    ((uw_object_hdr_t *)puVar6)->type_flags = (ushort)uVar7;
+    puVar6->hdr.next = 0;
+    uVar7 = puVar6->hdr.type_flags | 0x8000;
+    puVar6->hdr.is_quant = 1;
+    puVar6->hdr.link = 1;
+    puVar6->hdr.item_id = (int)DAT_00202a38 & 0x1ff;
+    uVar7 = puVar6->hdr.type_flags;
     uVar9 = 0;
     if (DAT_00202a54 != 0) {
-      uVar9 = (byte)DAT_00202a44[0xc] & 0x1f;
+      uVar9 = ((uw_projectile_object_t *)DAT_00202a44)->fine_heading;
     }
-    DAT_00202a54 = (DAT_00202a44[1] >> 2 & 0xffe0) + DAT_00202a40 + uVar9 & 0xff;
+    DAT_00202a54 = (((uw_object_hdr_t *)DAT_00202a44)->heading << 5) + DAT_00202a40 + uVar9 & 0xff;
     if (getenv("UW_DEBUG_THROW"))
       fprintf(stderr, "[throw-pos] DAT_00202a4c(tilex_in)=%d DAT_00202a50(tiley_in)=%d\n",
               (int)DAT_00202a4c, (int)DAT_00202a50);
     compute_object_placement_fields(puVar6,(int)DAT_00202a4c,(int)DAT_00202a50);
     if (getenv("UW_DEBUG_THROW"))
-      fprintf(stderr, "[throw-pos] after compute_object_placement_fields: puVar6[0xb]=0x%x tilex_out=%d tiley_out=%d\n",
-              (unsigned)puVar6[0xb], (int)(puVar6[0xb] >> 10), (int)((puVar6[0xb] & 0x3f0) >> 4));
-    uVar7 = ((uw_object_hdr_t *)puVar6)->position_word & 0xfc7f | ((int)(short)(DAT_00202a54 & 0xe0) >> 5) << 7;
-    ((uw_object_hdr_t *)puVar6)->position_word = (ushort)uVar7;
-    *(byte *)(puVar6 + 0xc) = ((byte)DAT_00202a54 ^ (byte)puVar6[0xc]) & 0x1f ^ (byte)puVar6[0xc];
-    *(char *)((char *)puVar6 + 9) = (char)DAT_00202a54;
-    uVar9 = ((uw_object_hdr_t *)puVar6)->type_flags;
-    ((uw_object_hdr_t *)puVar6)->type_flags_low = (byte)(char)(uVar9 & 0xdfff);
-    ((uw_object_hdr_t *)puVar6)->type_flags_high = (byte)(char)((uVar9 & 0xdfff) >> 8);
-    uVar7 = (uint)((uw_object_hdr_t *)puVar6)->position_word;
-    uVar7 = ((byte)DAT_00202a44[1] ^ uVar7) & 0x7f ^ uVar7;
-    ((uw_object_hdr_t *)puVar6)->position_word_low = (byte)(char)uVar7;
-    ((uw_object_hdr_t *)puVar6)->position_word_high = ((uw_object_hdr_t *)puVar6)->position_word_high;
-    uVar7 = (uVar7 ^ DAT_00202a44[1]) & 0x1fff ^ (uint)DAT_00202a44[1];
+      fprintf(stderr, "[throw-pos] after compute_object_placement_fields: tile_position=0x%x tilex_out=%d tiley_out=%d\n",
+              (unsigned) puVar6->tile_position, (int)(puVar6->tile_x),
+              (int)(puVar6->tile_y));
+    puVar6->hdr.heading = (DAT_00202a54 >> 5) & 7;
+    uVar7 = puVar6->hdr.position_word;
+    puVar6->fine_heading = (byte)DAT_00202a54 & 0x1f;
+    puVar6->heading = (byte)(char)DAT_00202a54;
+    uVar9 = puVar6->hdr.type_flags;
+    puVar6->hdr.doordir = 0;
+    puVar6->hdr.zpos = ((uw_object_hdr_t *)DAT_00202a44)->zpos;
+    uVar7 = puVar6->hdr.position_word;
+    puVar6->hdr.xpos = ((uw_object_hdr_t *)DAT_00202a44)->xpos;
+    uVar7 = puVar6->hdr.position_word;
     bVar1 = (byte)uVar7;
-    ((uw_object_hdr_t *)puVar6)->position_word_low = bVar1;
     bVar2 = (byte)(uVar7 >> 8);
-    ((uw_object_hdr_t *)puVar6)->position_word_high = bVar2;
-    bVar2 = (*(byte *)((char *)DAT_00202a44 + 3) ^ bVar2) & 0x1c ^ bVar2;
-    ((uw_object_hdr_t *)puVar6)->position_word_low = bVar1;
-    ((uw_object_hdr_t *)puVar6)->position_word_high = bVar2;
-    if ((byte) g_object_type_props[(*DAT_00202a44 & 0x1ff)].height != 0) {
+    puVar6->hdr.ypos = ((uw_object_hdr_t *)DAT_00202a44)->ypos;
+    bVar2 = puVar6->hdr.position_word_high;
+    if ((byte) g_object_type_props[(((uw_object_hdr_t *)DAT_00202a44)->item_id)].height != 0) {
       cVar4 = ordint_divmod(6,
-                            (uint)(byte) g_object_type_props[(*DAT_00202a44 & 0x1ff)].height * 5).quot;
-      bVar3 = (cVar4 + (char)DAT_00202a3c * '\x02' + (bVar1 & 0x7f) ^ bVar1) & 0x7f ^ bVar1;
-      ((uw_object_hdr_t *)puVar6)->position_word_low = bVar3;
-      ((uw_object_hdr_t *)puVar6)->position_word_high = bVar2;
+                            (uint)(byte) g_object_type_props[(((uw_object_hdr_t *)DAT_00202a44)->item_id)].height * 5).quot;
+      puVar6->hdr.zpos = cVar4 + (char)DAT_00202a3c * '\x02' + (bVar1 & 0x7f);
+      bVar3 = puVar6->hdr.position_word_low;
       if ((DAT_00202a44 == g_player_object) && (0x50 < *(byte *)(DAT_00086df8 + 0xb9))) {
-        ((uw_object_hdr_t *)puVar6)->position_word_low =
-            (((char)DAT_00202a3c * '\x02' - (*(byte *)(DAT_00086df8 + 0xb9) >> 3)) +
-             g_object_type_props[(*DAT_00202a44 & 0x1ff)].height + (bVar1 & 0x7f) ^ bVar3) & 0x7f ^
-           bVar3;
-        ((uw_object_hdr_t *)puVar6)->position_word_high = bVar2;
+        puVar6->hdr.zpos = ((char)DAT_00202a3c * '\x02' - (*(byte *)(DAT_00086df8 + 0xb9) >> 3)) + g_object_type_props[(((uw_object_hdr_t *)DAT_00202a44)->item_id)].height + (bVar1 & 0x7f);
       }
-      iVar8 = check_object_drop_height(puVar6,DAT_00202a44);
+      iVar8 = check_object_drop_height((ushort *)puVar6, DAT_00202a44);
       if (iVar8 == 0) {
-        free_object_slot(puVar6);
+        free_object_slot(&puVar6->hdr);
         goto LAB_0004b06c;
       }
     }
     if (getenv("UW_DEBUG_THROW"))
-      fprintf(stderr, "[throw-spawn] *puVar6=0x%x (&0x1c0=0x%x) puVar6[0xb]_before=0x%x DAT_00202a44_type=0x%x\n",
-              (unsigned)((uw_object_hdr_t *)puVar6)->type_flags,
-              (unsigned)(((uw_object_hdr_t *)puVar6)->item_id & 0x1c0),
-              (unsigned)puVar6[0xb],
-              (unsigned)(*DAT_00202a44 & 0x1ff));
-    if ((((uw_object_hdr_t *)puVar6)->item_id & 0x1c0) != 0x40) {
+      fprintf(stderr, "[throw-spawn] type_flags=0x%x (&0x1c0=0x%x) tile_position_before=0x%x DAT_00202a44_type=0x%x\n",
+              (unsigned) puVar6->hdr.type_flags,
+              (unsigned)(puVar6->hdr.item_id & 0x1c0),
+              (unsigned) puVar6->tile_position,
+              (unsigned)(((uw_object_hdr_t *)DAT_00202a44)->item_id));
+    if ((puVar6->hdr.item_id & 0x1c0) != 0x40) {
       sVar5 = 0;
-      iVar8 = (((uw_object_hdr_t *)puVar6)->xpos << 5) + ((puVar6[0xb] & 0xfc00) >> 2) + 0xf;
-      *(char *)((char *)puVar6 + 0xb) = (char)iVar8;
-      *(char *)(puVar6 + 6) = (char)((uint)iVar8 >> 8);
-      iVar8 = (((uw_object_hdr_t *)puVar6)->ypos << 2) * 8 + (puVar6[0xb] & 0x3f0) * 0x10 + 0xf;
-      *(char *)((char *)puVar6 + 0xd) = (char)iVar8;
-      *(char *)(puVar6 + 7) = (char)((uint)iVar8 >> 8);
-      iVar8 = (((uw_object_hdr_t *)puVar6)->zpos) << 3;
-      *(char *)((char *)puVar6 + 0xf) = (char)iVar8;
-      *(char *)(puVar6 + 8) = (char)((uint)iVar8 >> 8);
-      if (((*DAT_00202a44 & 0x1c0) == 0x40) && (sVar5 = encode_object_slot_index(DAT_00202a44), 0xff < sVar5)) {
+      iVar8 = (puVar6->hdr.xpos << 5) + (puVar6->tile_x << 8) + 0xf;
+      puVar6->precise_x = (ushort)iVar8;
+      iVar8 = (puVar6->hdr.ypos << 2) * 8 + (puVar6->tile_y << 8) + 0xf;
+      puVar6->precise_y = (ushort)iVar8;
+      iVar8 = (puVar6->hdr.zpos) << 3;
+      puVar6->precise_z = (ushort)iVar8;
+      if (((((uw_object_hdr_t *)DAT_00202a44)->item_id & 0x1c0) == 0x40) && (sVar5 = encode_object_slot_index(DAT_00202a44), 0xff < sVar5)) {
         sVar5 = 0;
       }
-      *(char *)(puVar6 + 9) = (char)sVar5;
-      *(byte *)((char *)puVar6 + 0x15) = *(byte *)((char *)puVar6 + 0x15) & 0x7f;
+      puVar6->source_slot = (byte)(char)sVar5;
+      puVar6->animation_flags = puVar6->animation_flags & 0x7f;
     }
     if (getenv("UW_DEBUG_THROW"))
-      fprintf(stderr, "[throw-spawn] puVar6[0xb]_after=0x%x tilex=%d tiley=%d\n",
-              (unsigned)puVar6[0xb], (int)(puVar6[0xb] >> 10), (int)((puVar6[0xb] & 0x3f0) >> 4));
-    *(byte *)(puVar6 + 10) = (char)DAT_00202a3c * '\b' + 0x87U & 0xf9 | 1;
-    *(byte *)((char *)puVar6 + 0x13) =
-         ((byte)DAT_00202a48 ^ *(byte *)((char *)puVar6 + 0x13)) & 0x7f ^ *(byte *)((char *)puVar6 + 0x13)
-    ;
+      fprintf(stderr, "[throw-spawn] tile_position_after=0x%x tilex=%d tiley=%d\n",
+              (unsigned) puVar6->tile_position, (int)(puVar6->tile_x),
+              (int)(puVar6->tile_y));
+    puVar6->pitch_flags = 1;
+    puVar6->pitch = ((char)DAT_00202a3c + 16) & 0x1f;
+    puVar6->speed = (byte)DAT_00202a48 & 0x7f;
     if (g_object_type_props[DAT_00202a38].can_have_owner) {
-      uVar9 = ((uw_object_hdr_t *)puVar6)->link_word;
-      ((uw_object_hdr_t *)puVar6)->link_word_low = (byte)(char)(uVar9 & 0xffc0);
-      ((uw_object_hdr_t *)puVar6)->link_word_high = (byte)(char)((uVar9 & 0xffc0) >> 8);
+      uVar9 = puVar6->hdr.link_word;
+      puVar6->hdr.owner = 0;
     }
     /* Was `iVar8 = tilemap_lookup(...); object_list_insert_head(iVar8 + 2,...)` -- tilemap_lookup
        returns a real 64-bit tile-record pointer, but iVar8 is `int` (used throughout this function
        for genuine small integer scratch math, so not safe to widen wholesale)... */
-    pbTile = (char *)tilemap_lookup(puVar6[0xb] >> 10,(puVar6[0xb] & 0x3f0) >> 4);
+    pbTile = (char *)tilemap_lookup(puVar6->tile_x,puVar6->tile_y);
     DEBUG(INFO, "[throw] object id=0x%03x spawned at tile=(%d,%d)\n",
-          (unsigned)(((uw_object_hdr_t *)puVar6)->item_id), puVar6[0xb] >> 10,
-          (puVar6[0xb] & 0x3f0) >> 4);
-    object_list_insert_head(pbTile + 2,puVar6);
-    play_sound_effect_at_object(10,puVar6,0);
+          (unsigned)(puVar6->hdr.item_id), puVar6->tile_x,
+          puVar6->tile_y);
+    object_list_insert_head(pbTile + 2, &puVar6->hdr);
+    play_sound_effect_at_object(10, (ushort *)puVar6, 0);
     /* The original FUN_0004ad10 returns the mobile object here.
        mobile_object_tick integrates its flight and sync_object_tile_position
        converts it to an immobile item only once its velocity reaches zero. */
   }
-  return puVar6;
+  return (uw_object_hdr_t *)puVar6;
 }
 
 

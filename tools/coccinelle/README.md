@@ -257,9 +257,9 @@ the repair leaves unrelated functions untouched.
 
 No game function is moved to a different source file during this work.
 
-Checkpoint validation: game build, all 52 C unit suites, and all nine conversion
+Checkpoint validation: game build, all 52 C unit suites, and all ten conversion
 tool suites pass. The latest
-AddressSanitizer pass covers 16 consumers: npc_state/npc_combat/npc_ai/creatures/
+AddressSanitizer pass covers 18 consumers: throw/throw_cursor/npc_state/npc_combat/npc_ai/creatures/
 combat/object_layout/object_core/movement/scheduler/spells/chargen/inventory/
 lighting/sleep/teleport/babl_vm. This is a checkpoint for continuing the full
 migration, not a completion claim.
@@ -414,6 +414,39 @@ source and neighboring bytes, mismatched-source and intervening-write
 exclusions, and idempotence. Twenty paired copies across four game sources
 are now whole-word assignments. Mixed-value byte updates remain for a later
 property-write pass.
+
+## Projectile spawn fields
+
+`generate_projectile_spawn_rules.py` emits `projectile-spawn-fields.cocci` for
+`spawn_object_near_player` (ARM `FUN_0004ad10`). Its allocated mobile record
+undergoes projectile physics until landing. The pass uses a typed projectile
+pointer, combines coordinate byte stores into `precise_x/y/z`, and names
+tile coordinates, heading, pitch, speed, source slot and common-header fields.
+The packed `tile_position` view retains the reserved low nibble for diagnostic
+word prints; ordinary coordinate consumers use `tile_x/y`.
+
+Launch-header updates retain the original packed and byte snapshots. The
+height calculations still use `bVar1 & 0x7f` to extract the saved original Z
+coordinate after the live Z field changes; replacing it with the live field
+would change the crouch branch. Remaining whole-word/byte reads cache packed
+values or print diagnostics. The animation high-bit clear has no documented
+property name. Explicit header/word casts remain at existing API boundaries.
+No function moves, and NPC coordinate interpretations are excluded.
+The pointer-role audit and dependent header patches are refreshed against the
+typed declarations. Raw word-index patterns are retained only for word
+pointers or explicit word casts, so record-pointer arithmetic keeps its scale.
+
+Apply with `--all-includes --include-headers-for-types -I . -I src`.
+The scoped recipes disable unnecessary arithmetic isomorphisms, and inserted
+shifts carry explicit parentheses to preserve precedence inside larger sums.
+`projectile_spawn_fields` compares all bytes, neighboring guards, source
+records, live snapshots and side effects for 65,536 inputs in four modes,
+including signed coordinate truncation, unsigned launch controls and failed
+allocation. It verifies scope and idempotence. Add `--asan` after the `spatch`
+argument for direct sanitizer coverage. The actual old and converted spawn
+functions were also compared with the same 262,144-case harness under ASAN,
+covering both template roles, height/drop rejection and source-slot branches;
+the game throw suites exercise flight, bounce and landing.
 
 ## NPC spawn fields
 

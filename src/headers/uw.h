@@ -246,9 +246,14 @@ typedef struct __attribute__((packed)) {
         };
     };
     byte animation_flags;         /* 0x15 */
-    ushort _reserved16_lo : 4;    /* 0x16 */
-    ushort tile_y : 6;
-    ushort tile_x : 6;
+    union {
+        ushort tile_position;    /* 0x16: packed coordinates, including reserved bits */
+        struct __attribute__((packed)) {
+            ushort _reserved16_lo : 4;
+            ushort tile_y : 6;
+            ushort tile_x : 6;
+        };
+    };
     byte fine_heading : 5;        /* 0x18 */
     byte _reserved18_hi : 3;
     byte _reserved19;

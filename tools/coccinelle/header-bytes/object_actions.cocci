@@ -22669,9 +22669,9 @@ identifier V;
 @@
 R F(...) {
 <...
-- *(char *)((char *)scratch_bytes + 0x0) = (char)V;
-- *(char *)((char *)scratch_bytes + 0x1) = (char)(V >> 8);
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags = (ushort)V;
+- *(char *)((char *)npc + 0x0) = (char)V;
+- *(char *)((char *)npc + 0x1) = (char)(V >> 8);
++ ((uw_object_hdr_t *)npc)->type_flags = (ushort)V;
 
 ...>
 }
@@ -22684,9 +22684,9 @@ identifier V;
 @@
 R F(...) {
 <...
-- *(char *)((char *)scratch_bytes + 0x0) = (char)V;
-- *(byte *)((char *)scratch_bytes + 0x1) = (byte)(V >> 8);
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags = (ushort)V;
+- *(char *)((char *)npc + 0x0) = (char)V;
+- *(byte *)((char *)npc + 0x1) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)npc)->type_flags = (ushort)V;
 
 ...>
 }
@@ -22699,9 +22699,9 @@ identifier V;
 @@
 R F(...) {
 <...
-- *(byte *)((char *)scratch_bytes + 0x0) = (byte)V;
-- *(char *)((char *)scratch_bytes + 0x1) = (char)(V >> 8);
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags = (ushort)V;
+- *(byte *)((char *)npc + 0x0) = (byte)V;
+- *(char *)((char *)npc + 0x1) = (char)(V >> 8);
++ ((uw_object_hdr_t *)npc)->type_flags = (ushort)V;
 
 ...>
 }
@@ -22714,9 +22714,9 @@ identifier V;
 @@
 R F(...) {
 <...
-- *(byte *)((char *)scratch_bytes + 0x0) = (byte)V;
-- *(byte *)((char *)scratch_bytes + 0x1) = (byte)(V >> 8);
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags = (ushort)V;
+- *(byte *)((char *)npc + 0x0) = (byte)V;
+- *(byte *)((char *)npc + 0x1) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)npc)->type_flags = (ushort)V;
 
 ...>
 }
@@ -22729,20 +22729,17 @@ typedef ushort, undefined2, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(ushort *)((char *)scratch_bytes + 0x0)
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags
+- *(ushort *)((char *)npc + 0x0)
++ ((uw_object_hdr_t *)npc)->type_flags
 |
-- *(ushort *)((byte *)scratch_bytes + 0x0)
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags
+- *(ushort *)((byte *)npc + 0x0)
++ ((uw_object_hdr_t *)npc)->type_flags
 |
-- ((ushort *)scratch_bytes)[0x0]
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags
+- ((ushort *)npc)[0x0]
++ ((uw_object_hdr_t *)npc)->type_flags
 |
-- *(ushort *)((ushort *)scratch_bytes + 0x0)
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags
-|
-- *(ushort *)(scratch_bytes + 0x0)
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags
+- *(ushort *)((ushort *)npc + 0x0)
++ ((uw_object_hdr_t *)npc)->type_flags
 )
 ...>
 }
@@ -22756,20 +22753,17 @@ typedef ushort, undefined2, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(undefined2 *)((char *)scratch_bytes + 0x0)
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags
+- *(undefined2 *)((char *)npc + 0x0)
++ ((uw_object_hdr_t *)npc)->type_flags
 |
-- *(undefined2 *)((byte *)scratch_bytes + 0x0)
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags
+- *(undefined2 *)((byte *)npc + 0x0)
++ ((uw_object_hdr_t *)npc)->type_flags
 |
-- ((undefined2 *)scratch_bytes)[0x0]
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags
+- ((undefined2 *)npc)[0x0]
++ ((uw_object_hdr_t *)npc)->type_flags
 |
-- *(undefined2 *)((undefined2 *)scratch_bytes + 0x0)
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags
-|
-- *(undefined2 *)(scratch_bytes + 0x0)
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags
+- *(undefined2 *)((undefined2 *)npc + 0x0)
++ ((uw_object_hdr_t *)npc)->type_flags
 )
 ...>
 }
@@ -22783,20 +22777,17 @@ typedef ushort, undefined2, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(short *)((char *)scratch_bytes + 0x0)
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_signed
+- *(short *)((char *)npc + 0x0)
++ ((uw_object_hdr_t *)npc)->type_flags_signed
 |
-- *(short *)((byte *)scratch_bytes + 0x0)
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_signed
+- *(short *)((byte *)npc + 0x0)
++ ((uw_object_hdr_t *)npc)->type_flags_signed
 |
-- ((short *)scratch_bytes)[0x0]
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_signed
+- ((short *)npc)[0x0]
++ ((uw_object_hdr_t *)npc)->type_flags_signed
 |
-- *(short *)((short *)scratch_bytes + 0x0)
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_signed
-|
-- *(short *)(scratch_bytes + 0x0)
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_signed
+- *(short *)((short *)npc + 0x0)
++ ((uw_object_hdr_t *)npc)->type_flags_signed
 )
 ...>
 }
@@ -22810,32 +22801,23 @@ typedef byte, undefined1, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(byte *)((char *)scratch_bytes + 0x0)
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_low
+- *(byte *)((char *)npc + 0x0)
++ ((uw_object_hdr_t *)npc)->type_flags_low
 |
-- *(byte *)((byte *)scratch_bytes + 0x0)
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_low
+- *(byte *)((byte *)npc + 0x0)
++ ((uw_object_hdr_t *)npc)->type_flags_low
 |
-- ((byte *)scratch_bytes)[0x0]
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_low
+- ((byte *)npc)[0x0]
++ ((uw_object_hdr_t *)npc)->type_flags_low
 |
-- *(byte *)((ushort *)scratch_bytes + 0x0)
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_low
+- *(byte *)((ushort *)npc + 0x0)
++ ((uw_object_hdr_t *)npc)->type_flags_low
 |
-- (byte)((ushort *)scratch_bytes)[0x0]
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_low
+- (byte)((ushort *)npc)[0x0]
++ ((uw_object_hdr_t *)npc)->type_flags_low
 |
-- *(byte *)scratch_bytes
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_low
-|
-- *(byte *)(scratch_bytes + 0x0)
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_low
-|
-- scratch_bytes[0x0]
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_low
-|
-- *scratch_bytes
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_low
+- *(byte *)npc
++ ((uw_object_hdr_t *)npc)->type_flags_low
 )
 ...>
 }
@@ -22849,32 +22831,23 @@ typedef byte, undefined1, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(undefined1 *)((char *)scratch_bytes + 0x0)
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_low
+- *(undefined1 *)((char *)npc + 0x0)
++ ((uw_object_hdr_t *)npc)->type_flags_low
 |
-- *(undefined1 *)((byte *)scratch_bytes + 0x0)
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_low
+- *(undefined1 *)((byte *)npc + 0x0)
++ ((uw_object_hdr_t *)npc)->type_flags_low
 |
-- ((undefined1 *)scratch_bytes)[0x0]
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_low
+- ((undefined1 *)npc)[0x0]
++ ((uw_object_hdr_t *)npc)->type_flags_low
 |
-- *(undefined1 *)((ushort *)scratch_bytes + 0x0)
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_low
+- *(undefined1 *)((ushort *)npc + 0x0)
++ ((uw_object_hdr_t *)npc)->type_flags_low
 |
-- (undefined1)((ushort *)scratch_bytes)[0x0]
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_low
+- (undefined1)((ushort *)npc)[0x0]
++ ((uw_object_hdr_t *)npc)->type_flags_low
 |
-- *(undefined1 *)scratch_bytes
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_low
-|
-- *(undefined1 *)(scratch_bytes + 0x0)
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_low
-|
-- scratch_bytes[0x0]
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_low
-|
-- *scratch_bytes
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_low
+- *(undefined1 *)npc
++ ((uw_object_hdr_t *)npc)->type_flags_low
 )
 ...>
 }
@@ -22888,23 +22861,20 @@ typedef byte, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- &*(char *)((char *)scratch_bytes + 0x0)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->type_flags_low
+- &*(char *)((char *)npc + 0x0)
++ (char *)&((uw_object_hdr_t *)npc)->type_flags_low
 |
-- &*(char *)((byte *)scratch_bytes + 0x0)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->type_flags_low
+- &*(char *)((byte *)npc + 0x0)
++ (char *)&((uw_object_hdr_t *)npc)->type_flags_low
 |
-- &((char *)scratch_bytes)[0x0]
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->type_flags_low
+- &((char *)npc)[0x0]
++ (char *)&((uw_object_hdr_t *)npc)->type_flags_low
 |
-- &*(char *)((ushort *)scratch_bytes + 0x0)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->type_flags_low
+- &*(char *)((ushort *)npc + 0x0)
++ (char *)&((uw_object_hdr_t *)npc)->type_flags_low
 |
-- &*(char *)scratch_bytes
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->type_flags_low
-|
-- &*(char *)(scratch_bytes + 0x0)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->type_flags_low
+- &*(char *)npc
++ (char *)&((uw_object_hdr_t *)npc)->type_flags_low
 )
 ...>
 }
@@ -22919,23 +22889,20 @@ expression E;
 R F(...) {
 <...
 (
-- *(char *)((char *)scratch_bytes + 0x0) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_low = (byte)E;
+- *(char *)((char *)npc + 0x0) = E;
++ ((uw_object_hdr_t *)npc)->type_flags_low = (byte)E;
 |
-- *(char *)((byte *)scratch_bytes + 0x0) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_low = (byte)E;
+- *(char *)((byte *)npc + 0x0) = E;
++ ((uw_object_hdr_t *)npc)->type_flags_low = (byte)E;
 |
-- ((char *)scratch_bytes)[0x0] = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_low = (byte)E;
+- ((char *)npc)[0x0] = E;
++ ((uw_object_hdr_t *)npc)->type_flags_low = (byte)E;
 |
-- *(char *)((ushort *)scratch_bytes + 0x0) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_low = (byte)E;
+- *(char *)((ushort *)npc + 0x0) = E;
++ ((uw_object_hdr_t *)npc)->type_flags_low = (byte)E;
 |
-- *(char *)scratch_bytes = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_low = (byte)E;
-|
-- *(char *)(scratch_bytes + 0x0) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_low = (byte)E;
+- *(char *)npc = E;
++ ((uw_object_hdr_t *)npc)->type_flags_low = (byte)E;
 )
 ...>
 }
@@ -22949,26 +22916,23 @@ typedef byte, undefined1, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(char *)((char *)scratch_bytes + 0x0)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->type_flags_low
+- *(char *)((char *)npc + 0x0)
++ (char)((uw_object_hdr_t *)npc)->type_flags_low
 |
-- *(char *)((byte *)scratch_bytes + 0x0)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->type_flags_low
+- *(char *)((byte *)npc + 0x0)
++ (char)((uw_object_hdr_t *)npc)->type_flags_low
 |
-- ((char *)scratch_bytes)[0x0]
-+ (char)((uw_object_hdr_t *)scratch_bytes)->type_flags_low
+- ((char *)npc)[0x0]
++ (char)((uw_object_hdr_t *)npc)->type_flags_low
 |
-- *(char *)((ushort *)scratch_bytes + 0x0)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->type_flags_low
+- *(char *)((ushort *)npc + 0x0)
++ (char)((uw_object_hdr_t *)npc)->type_flags_low
 |
-- (char)((ushort *)scratch_bytes)[0x0]
-+ (char)((uw_object_hdr_t *)scratch_bytes)->type_flags_low
+- (char)((ushort *)npc)[0x0]
++ (char)((uw_object_hdr_t *)npc)->type_flags_low
 |
-- *(char *)scratch_bytes
-+ (char)((uw_object_hdr_t *)scratch_bytes)->type_flags_low
-|
-- *(char *)(scratch_bytes + 0x0)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->type_flags_low
+- *(char *)npc
++ (char)((uw_object_hdr_t *)npc)->type_flags_low
 )
 ...>
 }
@@ -22982,20 +22946,14 @@ typedef byte, undefined1, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(byte *)((char *)scratch_bytes + 0x1)
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_high
+- *(byte *)((char *)npc + 0x1)
++ ((uw_object_hdr_t *)npc)->type_flags_high
 |
-- *(byte *)((byte *)scratch_bytes + 0x1)
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_high
+- *(byte *)((byte *)npc + 0x1)
++ ((uw_object_hdr_t *)npc)->type_flags_high
 |
-- ((byte *)scratch_bytes)[0x1]
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_high
-|
-- *(byte *)(scratch_bytes + 0x1)
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_high
-|
-- scratch_bytes[0x1]
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_high
+- ((byte *)npc)[0x1]
++ ((uw_object_hdr_t *)npc)->type_flags_high
 )
 ...>
 }
@@ -23009,20 +22967,14 @@ typedef byte, undefined1, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(undefined1 *)((char *)scratch_bytes + 0x1)
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_high
+- *(undefined1 *)((char *)npc + 0x1)
++ ((uw_object_hdr_t *)npc)->type_flags_high
 |
-- *(undefined1 *)((byte *)scratch_bytes + 0x1)
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_high
+- *(undefined1 *)((byte *)npc + 0x1)
++ ((uw_object_hdr_t *)npc)->type_flags_high
 |
-- ((undefined1 *)scratch_bytes)[0x1]
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_high
-|
-- *(undefined1 *)(scratch_bytes + 0x1)
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_high
-|
-- scratch_bytes[0x1]
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_high
+- ((undefined1 *)npc)[0x1]
++ ((uw_object_hdr_t *)npc)->type_flags_high
 )
 ...>
 }
@@ -23036,17 +22988,14 @@ typedef byte, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- &*(char *)((char *)scratch_bytes + 0x1)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->type_flags_high
+- &*(char *)((char *)npc + 0x1)
++ (char *)&((uw_object_hdr_t *)npc)->type_flags_high
 |
-- &*(char *)((byte *)scratch_bytes + 0x1)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->type_flags_high
+- &*(char *)((byte *)npc + 0x1)
++ (char *)&((uw_object_hdr_t *)npc)->type_flags_high
 |
-- &((char *)scratch_bytes)[0x1]
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->type_flags_high
-|
-- &*(char *)(scratch_bytes + 0x1)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->type_flags_high
+- &((char *)npc)[0x1]
++ (char *)&((uw_object_hdr_t *)npc)->type_flags_high
 )
 ...>
 }
@@ -23061,17 +23010,14 @@ expression E;
 R F(...) {
 <...
 (
-- *(char *)((char *)scratch_bytes + 0x1) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_high = (byte)E;
+- *(char *)((char *)npc + 0x1) = E;
++ ((uw_object_hdr_t *)npc)->type_flags_high = (byte)E;
 |
-- *(char *)((byte *)scratch_bytes + 0x1) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_high = (byte)E;
+- *(char *)((byte *)npc + 0x1) = E;
++ ((uw_object_hdr_t *)npc)->type_flags_high = (byte)E;
 |
-- ((char *)scratch_bytes)[0x1] = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_high = (byte)E;
-|
-- *(char *)(scratch_bytes + 0x1) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->type_flags_high = (byte)E;
+- ((char *)npc)[0x1] = E;
++ ((uw_object_hdr_t *)npc)->type_flags_high = (byte)E;
 )
 ...>
 }
@@ -23085,17 +23031,14 @@ typedef byte, undefined1, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(char *)((char *)scratch_bytes + 0x1)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->type_flags_high
+- *(char *)((char *)npc + 0x1)
++ (char)((uw_object_hdr_t *)npc)->type_flags_high
 |
-- *(char *)((byte *)scratch_bytes + 0x1)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->type_flags_high
+- *(char *)((byte *)npc + 0x1)
++ (char)((uw_object_hdr_t *)npc)->type_flags_high
 |
-- ((char *)scratch_bytes)[0x1]
-+ (char)((uw_object_hdr_t *)scratch_bytes)->type_flags_high
-|
-- *(char *)(scratch_bytes + 0x1)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->type_flags_high
+- ((char *)npc)[0x1]
++ (char)((uw_object_hdr_t *)npc)->type_flags_high
 )
 ...>
 }
@@ -23109,9 +23052,9 @@ identifier V;
 @@
 R F(...) {
 <...
-- *(char *)((char *)scratch_bytes + 0x2) = (char)V;
-- *(char *)((char *)scratch_bytes + 0x3) = (char)(V >> 8);
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word = (ushort)V;
+- *(char *)((char *)npc + 0x2) = (char)V;
+- *(char *)((char *)npc + 0x3) = (char)(V >> 8);
++ ((uw_object_hdr_t *)npc)->position_word = (ushort)V;
 
 ...>
 }
@@ -23124,9 +23067,9 @@ identifier V;
 @@
 R F(...) {
 <...
-- *(char *)((char *)scratch_bytes + 0x2) = (char)V;
-- *(byte *)((char *)scratch_bytes + 0x3) = (byte)(V >> 8);
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word = (ushort)V;
+- *(char *)((char *)npc + 0x2) = (char)V;
+- *(byte *)((char *)npc + 0x3) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)npc)->position_word = (ushort)V;
 
 ...>
 }
@@ -23139,9 +23082,9 @@ identifier V;
 @@
 R F(...) {
 <...
-- *(byte *)((char *)scratch_bytes + 0x2) = (byte)V;
-- *(char *)((char *)scratch_bytes + 0x3) = (char)(V >> 8);
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word = (ushort)V;
+- *(byte *)((char *)npc + 0x2) = (byte)V;
+- *(char *)((char *)npc + 0x3) = (char)(V >> 8);
++ ((uw_object_hdr_t *)npc)->position_word = (ushort)V;
 
 ...>
 }
@@ -23154,9 +23097,9 @@ identifier V;
 @@
 R F(...) {
 <...
-- *(byte *)((char *)scratch_bytes + 0x2) = (byte)V;
-- *(byte *)((char *)scratch_bytes + 0x3) = (byte)(V >> 8);
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word = (ushort)V;
+- *(byte *)((char *)npc + 0x2) = (byte)V;
+- *(byte *)((char *)npc + 0x3) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)npc)->position_word = (ushort)V;
 
 ...>
 }
@@ -23169,20 +23112,17 @@ typedef ushort, undefined2, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(ushort *)((char *)scratch_bytes + 0x2)
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word
+- *(ushort *)((char *)npc + 0x2)
++ ((uw_object_hdr_t *)npc)->position_word
 |
-- *(ushort *)((byte *)scratch_bytes + 0x2)
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word
+- *(ushort *)((byte *)npc + 0x2)
++ ((uw_object_hdr_t *)npc)->position_word
 |
-- ((ushort *)scratch_bytes)[0x1]
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word
+- ((ushort *)npc)[0x1]
++ ((uw_object_hdr_t *)npc)->position_word
 |
-- *(ushort *)((ushort *)scratch_bytes + 0x1)
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word
-|
-- *(ushort *)(scratch_bytes + 0x2)
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word
+- *(ushort *)((ushort *)npc + 0x1)
++ ((uw_object_hdr_t *)npc)->position_word
 )
 ...>
 }
@@ -23196,20 +23136,17 @@ typedef ushort, undefined2, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(undefined2 *)((char *)scratch_bytes + 0x2)
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word
+- *(undefined2 *)((char *)npc + 0x2)
++ ((uw_object_hdr_t *)npc)->position_word
 |
-- *(undefined2 *)((byte *)scratch_bytes + 0x2)
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word
+- *(undefined2 *)((byte *)npc + 0x2)
++ ((uw_object_hdr_t *)npc)->position_word
 |
-- ((undefined2 *)scratch_bytes)[0x1]
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word
+- ((undefined2 *)npc)[0x1]
++ ((uw_object_hdr_t *)npc)->position_word
 |
-- *(undefined2 *)((undefined2 *)scratch_bytes + 0x1)
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word
-|
-- *(undefined2 *)(scratch_bytes + 0x2)
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word
+- *(undefined2 *)((undefined2 *)npc + 0x1)
++ ((uw_object_hdr_t *)npc)->position_word
 )
 ...>
 }
@@ -23223,20 +23160,17 @@ typedef ushort, undefined2, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(short *)((char *)scratch_bytes + 0x2)
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_signed
+- *(short *)((char *)npc + 0x2)
++ ((uw_object_hdr_t *)npc)->position_word_signed
 |
-- *(short *)((byte *)scratch_bytes + 0x2)
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_signed
+- *(short *)((byte *)npc + 0x2)
++ ((uw_object_hdr_t *)npc)->position_word_signed
 |
-- ((short *)scratch_bytes)[0x1]
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_signed
+- ((short *)npc)[0x1]
++ ((uw_object_hdr_t *)npc)->position_word_signed
 |
-- *(short *)((short *)scratch_bytes + 0x1)
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_signed
-|
-- *(short *)(scratch_bytes + 0x2)
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_signed
+- *(short *)((short *)npc + 0x1)
++ ((uw_object_hdr_t *)npc)->position_word_signed
 )
 ...>
 }
@@ -23250,26 +23184,20 @@ typedef byte, undefined1, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(byte *)((char *)scratch_bytes + 0x2)
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_low
+- *(byte *)((char *)npc + 0x2)
++ ((uw_object_hdr_t *)npc)->position_word_low
 |
-- *(byte *)((byte *)scratch_bytes + 0x2)
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_low
+- *(byte *)((byte *)npc + 0x2)
++ ((uw_object_hdr_t *)npc)->position_word_low
 |
-- ((byte *)scratch_bytes)[0x2]
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_low
+- ((byte *)npc)[0x2]
++ ((uw_object_hdr_t *)npc)->position_word_low
 |
-- *(byte *)((ushort *)scratch_bytes + 0x1)
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_low
+- *(byte *)((ushort *)npc + 0x1)
++ ((uw_object_hdr_t *)npc)->position_word_low
 |
-- (byte)((ushort *)scratch_bytes)[0x1]
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_low
-|
-- *(byte *)(scratch_bytes + 0x2)
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_low
-|
-- scratch_bytes[0x2]
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_low
+- (byte)((ushort *)npc)[0x1]
++ ((uw_object_hdr_t *)npc)->position_word_low
 )
 ...>
 }
@@ -23283,26 +23211,20 @@ typedef byte, undefined1, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(undefined1 *)((char *)scratch_bytes + 0x2)
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_low
+- *(undefined1 *)((char *)npc + 0x2)
++ ((uw_object_hdr_t *)npc)->position_word_low
 |
-- *(undefined1 *)((byte *)scratch_bytes + 0x2)
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_low
+- *(undefined1 *)((byte *)npc + 0x2)
++ ((uw_object_hdr_t *)npc)->position_word_low
 |
-- ((undefined1 *)scratch_bytes)[0x2]
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_low
+- ((undefined1 *)npc)[0x2]
++ ((uw_object_hdr_t *)npc)->position_word_low
 |
-- *(undefined1 *)((ushort *)scratch_bytes + 0x1)
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_low
+- *(undefined1 *)((ushort *)npc + 0x1)
++ ((uw_object_hdr_t *)npc)->position_word_low
 |
-- (undefined1)((ushort *)scratch_bytes)[0x1]
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_low
-|
-- *(undefined1 *)(scratch_bytes + 0x2)
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_low
-|
-- scratch_bytes[0x2]
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_low
+- (undefined1)((ushort *)npc)[0x1]
++ ((uw_object_hdr_t *)npc)->position_word_low
 )
 ...>
 }
@@ -23316,20 +23238,17 @@ typedef byte, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- &*(char *)((char *)scratch_bytes + 0x2)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->position_word_low
+- &*(char *)((char *)npc + 0x2)
++ (char *)&((uw_object_hdr_t *)npc)->position_word_low
 |
-- &*(char *)((byte *)scratch_bytes + 0x2)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->position_word_low
+- &*(char *)((byte *)npc + 0x2)
++ (char *)&((uw_object_hdr_t *)npc)->position_word_low
 |
-- &((char *)scratch_bytes)[0x2]
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->position_word_low
+- &((char *)npc)[0x2]
++ (char *)&((uw_object_hdr_t *)npc)->position_word_low
 |
-- &*(char *)((ushort *)scratch_bytes + 0x1)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->position_word_low
-|
-- &*(char *)(scratch_bytes + 0x2)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->position_word_low
+- &*(char *)((ushort *)npc + 0x1)
++ (char *)&((uw_object_hdr_t *)npc)->position_word_low
 )
 ...>
 }
@@ -23344,20 +23263,17 @@ expression E;
 R F(...) {
 <...
 (
-- *(char *)((char *)scratch_bytes + 0x2) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_low = (byte)E;
+- *(char *)((char *)npc + 0x2) = E;
++ ((uw_object_hdr_t *)npc)->position_word_low = (byte)E;
 |
-- *(char *)((byte *)scratch_bytes + 0x2) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_low = (byte)E;
+- *(char *)((byte *)npc + 0x2) = E;
++ ((uw_object_hdr_t *)npc)->position_word_low = (byte)E;
 |
-- ((char *)scratch_bytes)[0x2] = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_low = (byte)E;
+- ((char *)npc)[0x2] = E;
++ ((uw_object_hdr_t *)npc)->position_word_low = (byte)E;
 |
-- *(char *)((ushort *)scratch_bytes + 0x1) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_low = (byte)E;
-|
-- *(char *)(scratch_bytes + 0x2) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_low = (byte)E;
+- *(char *)((ushort *)npc + 0x1) = E;
++ ((uw_object_hdr_t *)npc)->position_word_low = (byte)E;
 )
 ...>
 }
@@ -23371,23 +23287,20 @@ typedef byte, undefined1, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(char *)((char *)scratch_bytes + 0x2)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->position_word_low
+- *(char *)((char *)npc + 0x2)
++ (char)((uw_object_hdr_t *)npc)->position_word_low
 |
-- *(char *)((byte *)scratch_bytes + 0x2)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->position_word_low
+- *(char *)((byte *)npc + 0x2)
++ (char)((uw_object_hdr_t *)npc)->position_word_low
 |
-- ((char *)scratch_bytes)[0x2]
-+ (char)((uw_object_hdr_t *)scratch_bytes)->position_word_low
+- ((char *)npc)[0x2]
++ (char)((uw_object_hdr_t *)npc)->position_word_low
 |
-- *(char *)((ushort *)scratch_bytes + 0x1)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->position_word_low
+- *(char *)((ushort *)npc + 0x1)
++ (char)((uw_object_hdr_t *)npc)->position_word_low
 |
-- (char)((ushort *)scratch_bytes)[0x1]
-+ (char)((uw_object_hdr_t *)scratch_bytes)->position_word_low
-|
-- *(char *)(scratch_bytes + 0x2)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->position_word_low
+- (char)((ushort *)npc)[0x1]
++ (char)((uw_object_hdr_t *)npc)->position_word_low
 )
 ...>
 }
@@ -23401,20 +23314,14 @@ typedef byte, undefined1, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(byte *)((char *)scratch_bytes + 0x3)
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_high
+- *(byte *)((char *)npc + 0x3)
++ ((uw_object_hdr_t *)npc)->position_word_high
 |
-- *(byte *)((byte *)scratch_bytes + 0x3)
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_high
+- *(byte *)((byte *)npc + 0x3)
++ ((uw_object_hdr_t *)npc)->position_word_high
 |
-- ((byte *)scratch_bytes)[0x3]
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_high
-|
-- *(byte *)(scratch_bytes + 0x3)
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_high
-|
-- scratch_bytes[0x3]
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_high
+- ((byte *)npc)[0x3]
++ ((uw_object_hdr_t *)npc)->position_word_high
 )
 ...>
 }
@@ -23428,20 +23335,14 @@ typedef byte, undefined1, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(undefined1 *)((char *)scratch_bytes + 0x3)
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_high
+- *(undefined1 *)((char *)npc + 0x3)
++ ((uw_object_hdr_t *)npc)->position_word_high
 |
-- *(undefined1 *)((byte *)scratch_bytes + 0x3)
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_high
+- *(undefined1 *)((byte *)npc + 0x3)
++ ((uw_object_hdr_t *)npc)->position_word_high
 |
-- ((undefined1 *)scratch_bytes)[0x3]
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_high
-|
-- *(undefined1 *)(scratch_bytes + 0x3)
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_high
-|
-- scratch_bytes[0x3]
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_high
+- ((undefined1 *)npc)[0x3]
++ ((uw_object_hdr_t *)npc)->position_word_high
 )
 ...>
 }
@@ -23455,17 +23356,14 @@ typedef byte, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- &*(char *)((char *)scratch_bytes + 0x3)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->position_word_high
+- &*(char *)((char *)npc + 0x3)
++ (char *)&((uw_object_hdr_t *)npc)->position_word_high
 |
-- &*(char *)((byte *)scratch_bytes + 0x3)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->position_word_high
+- &*(char *)((byte *)npc + 0x3)
++ (char *)&((uw_object_hdr_t *)npc)->position_word_high
 |
-- &((char *)scratch_bytes)[0x3]
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->position_word_high
-|
-- &*(char *)(scratch_bytes + 0x3)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->position_word_high
+- &((char *)npc)[0x3]
++ (char *)&((uw_object_hdr_t *)npc)->position_word_high
 )
 ...>
 }
@@ -23480,17 +23378,14 @@ expression E;
 R F(...) {
 <...
 (
-- *(char *)((char *)scratch_bytes + 0x3) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_high = (byte)E;
+- *(char *)((char *)npc + 0x3) = E;
++ ((uw_object_hdr_t *)npc)->position_word_high = (byte)E;
 |
-- *(char *)((byte *)scratch_bytes + 0x3) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_high = (byte)E;
+- *(char *)((byte *)npc + 0x3) = E;
++ ((uw_object_hdr_t *)npc)->position_word_high = (byte)E;
 |
-- ((char *)scratch_bytes)[0x3] = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_high = (byte)E;
-|
-- *(char *)(scratch_bytes + 0x3) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->position_word_high = (byte)E;
+- ((char *)npc)[0x3] = E;
++ ((uw_object_hdr_t *)npc)->position_word_high = (byte)E;
 )
 ...>
 }
@@ -23504,17 +23399,14 @@ typedef byte, undefined1, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(char *)((char *)scratch_bytes + 0x3)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->position_word_high
+- *(char *)((char *)npc + 0x3)
++ (char)((uw_object_hdr_t *)npc)->position_word_high
 |
-- *(char *)((byte *)scratch_bytes + 0x3)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->position_word_high
+- *(char *)((byte *)npc + 0x3)
++ (char)((uw_object_hdr_t *)npc)->position_word_high
 |
-- ((char *)scratch_bytes)[0x3]
-+ (char)((uw_object_hdr_t *)scratch_bytes)->position_word_high
-|
-- *(char *)(scratch_bytes + 0x3)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->position_word_high
+- ((char *)npc)[0x3]
++ (char)((uw_object_hdr_t *)npc)->position_word_high
 )
 ...>
 }
@@ -23528,9 +23420,9 @@ identifier V;
 @@
 R F(...) {
 <...
-- *(char *)((char *)scratch_bytes + 0x4) = (char)V;
-- *(char *)((char *)scratch_bytes + 0x5) = (char)(V >> 8);
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word = (ushort)V;
+- *(char *)((char *)npc + 0x4) = (char)V;
+- *(char *)((char *)npc + 0x5) = (char)(V >> 8);
++ ((uw_object_hdr_t *)npc)->chain_word = (ushort)V;
 
 ...>
 }
@@ -23543,9 +23435,9 @@ identifier V;
 @@
 R F(...) {
 <...
-- *(char *)((char *)scratch_bytes + 0x4) = (char)V;
-- *(byte *)((char *)scratch_bytes + 0x5) = (byte)(V >> 8);
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word = (ushort)V;
+- *(char *)((char *)npc + 0x4) = (char)V;
+- *(byte *)((char *)npc + 0x5) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)npc)->chain_word = (ushort)V;
 
 ...>
 }
@@ -23558,9 +23450,9 @@ identifier V;
 @@
 R F(...) {
 <...
-- *(byte *)((char *)scratch_bytes + 0x4) = (byte)V;
-- *(char *)((char *)scratch_bytes + 0x5) = (char)(V >> 8);
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word = (ushort)V;
+- *(byte *)((char *)npc + 0x4) = (byte)V;
+- *(char *)((char *)npc + 0x5) = (char)(V >> 8);
++ ((uw_object_hdr_t *)npc)->chain_word = (ushort)V;
 
 ...>
 }
@@ -23573,9 +23465,9 @@ identifier V;
 @@
 R F(...) {
 <...
-- *(byte *)((char *)scratch_bytes + 0x4) = (byte)V;
-- *(byte *)((char *)scratch_bytes + 0x5) = (byte)(V >> 8);
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word = (ushort)V;
+- *(byte *)((char *)npc + 0x4) = (byte)V;
+- *(byte *)((char *)npc + 0x5) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)npc)->chain_word = (ushort)V;
 
 ...>
 }
@@ -23588,20 +23480,17 @@ typedef ushort, undefined2, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(ushort *)((char *)scratch_bytes + 0x4)
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word
+- *(ushort *)((char *)npc + 0x4)
++ ((uw_object_hdr_t *)npc)->chain_word
 |
-- *(ushort *)((byte *)scratch_bytes + 0x4)
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word
+- *(ushort *)((byte *)npc + 0x4)
++ ((uw_object_hdr_t *)npc)->chain_word
 |
-- ((ushort *)scratch_bytes)[0x2]
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word
+- ((ushort *)npc)[0x2]
++ ((uw_object_hdr_t *)npc)->chain_word
 |
-- *(ushort *)((ushort *)scratch_bytes + 0x2)
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word
-|
-- *(ushort *)(scratch_bytes + 0x4)
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word
+- *(ushort *)((ushort *)npc + 0x2)
++ ((uw_object_hdr_t *)npc)->chain_word
 )
 ...>
 }
@@ -23615,20 +23504,17 @@ typedef ushort, undefined2, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(undefined2 *)((char *)scratch_bytes + 0x4)
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word
+- *(undefined2 *)((char *)npc + 0x4)
++ ((uw_object_hdr_t *)npc)->chain_word
 |
-- *(undefined2 *)((byte *)scratch_bytes + 0x4)
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word
+- *(undefined2 *)((byte *)npc + 0x4)
++ ((uw_object_hdr_t *)npc)->chain_word
 |
-- ((undefined2 *)scratch_bytes)[0x2]
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word
+- ((undefined2 *)npc)[0x2]
++ ((uw_object_hdr_t *)npc)->chain_word
 |
-- *(undefined2 *)((undefined2 *)scratch_bytes + 0x2)
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word
-|
-- *(undefined2 *)(scratch_bytes + 0x4)
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word
+- *(undefined2 *)((undefined2 *)npc + 0x2)
++ ((uw_object_hdr_t *)npc)->chain_word
 )
 ...>
 }
@@ -23642,20 +23528,17 @@ typedef ushort, undefined2, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(short *)((char *)scratch_bytes + 0x4)
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_signed
+- *(short *)((char *)npc + 0x4)
++ ((uw_object_hdr_t *)npc)->chain_word_signed
 |
-- *(short *)((byte *)scratch_bytes + 0x4)
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_signed
+- *(short *)((byte *)npc + 0x4)
++ ((uw_object_hdr_t *)npc)->chain_word_signed
 |
-- ((short *)scratch_bytes)[0x2]
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_signed
+- ((short *)npc)[0x2]
++ ((uw_object_hdr_t *)npc)->chain_word_signed
 |
-- *(short *)((short *)scratch_bytes + 0x2)
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_signed
-|
-- *(short *)(scratch_bytes + 0x4)
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_signed
+- *(short *)((short *)npc + 0x2)
++ ((uw_object_hdr_t *)npc)->chain_word_signed
 )
 ...>
 }
@@ -23669,26 +23552,20 @@ typedef byte, undefined1, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(byte *)((char *)scratch_bytes + 0x4)
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_low
+- *(byte *)((char *)npc + 0x4)
++ ((uw_object_hdr_t *)npc)->chain_word_low
 |
-- *(byte *)((byte *)scratch_bytes + 0x4)
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_low
+- *(byte *)((byte *)npc + 0x4)
++ ((uw_object_hdr_t *)npc)->chain_word_low
 |
-- ((byte *)scratch_bytes)[0x4]
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_low
+- ((byte *)npc)[0x4]
++ ((uw_object_hdr_t *)npc)->chain_word_low
 |
-- *(byte *)((ushort *)scratch_bytes + 0x2)
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_low
+- *(byte *)((ushort *)npc + 0x2)
++ ((uw_object_hdr_t *)npc)->chain_word_low
 |
-- (byte)((ushort *)scratch_bytes)[0x2]
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_low
-|
-- *(byte *)(scratch_bytes + 0x4)
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_low
-|
-- scratch_bytes[0x4]
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_low
+- (byte)((ushort *)npc)[0x2]
++ ((uw_object_hdr_t *)npc)->chain_word_low
 )
 ...>
 }
@@ -23702,26 +23579,20 @@ typedef byte, undefined1, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(undefined1 *)((char *)scratch_bytes + 0x4)
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_low
+- *(undefined1 *)((char *)npc + 0x4)
++ ((uw_object_hdr_t *)npc)->chain_word_low
 |
-- *(undefined1 *)((byte *)scratch_bytes + 0x4)
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_low
+- *(undefined1 *)((byte *)npc + 0x4)
++ ((uw_object_hdr_t *)npc)->chain_word_low
 |
-- ((undefined1 *)scratch_bytes)[0x4]
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_low
+- ((undefined1 *)npc)[0x4]
++ ((uw_object_hdr_t *)npc)->chain_word_low
 |
-- *(undefined1 *)((ushort *)scratch_bytes + 0x2)
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_low
+- *(undefined1 *)((ushort *)npc + 0x2)
++ ((uw_object_hdr_t *)npc)->chain_word_low
 |
-- (undefined1)((ushort *)scratch_bytes)[0x2]
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_low
-|
-- *(undefined1 *)(scratch_bytes + 0x4)
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_low
-|
-- scratch_bytes[0x4]
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_low
+- (undefined1)((ushort *)npc)[0x2]
++ ((uw_object_hdr_t *)npc)->chain_word_low
 )
 ...>
 }
@@ -23735,20 +23606,17 @@ typedef byte, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- &*(char *)((char *)scratch_bytes + 0x4)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->chain_word_low
+- &*(char *)((char *)npc + 0x4)
++ (char *)&((uw_object_hdr_t *)npc)->chain_word_low
 |
-- &*(char *)((byte *)scratch_bytes + 0x4)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->chain_word_low
+- &*(char *)((byte *)npc + 0x4)
++ (char *)&((uw_object_hdr_t *)npc)->chain_word_low
 |
-- &((char *)scratch_bytes)[0x4]
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->chain_word_low
+- &((char *)npc)[0x4]
++ (char *)&((uw_object_hdr_t *)npc)->chain_word_low
 |
-- &*(char *)((ushort *)scratch_bytes + 0x2)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->chain_word_low
-|
-- &*(char *)(scratch_bytes + 0x4)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->chain_word_low
+- &*(char *)((ushort *)npc + 0x2)
++ (char *)&((uw_object_hdr_t *)npc)->chain_word_low
 )
 ...>
 }
@@ -23763,20 +23631,17 @@ expression E;
 R F(...) {
 <...
 (
-- *(char *)((char *)scratch_bytes + 0x4) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_low = (byte)E;
+- *(char *)((char *)npc + 0x4) = E;
++ ((uw_object_hdr_t *)npc)->chain_word_low = (byte)E;
 |
-- *(char *)((byte *)scratch_bytes + 0x4) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_low = (byte)E;
+- *(char *)((byte *)npc + 0x4) = E;
++ ((uw_object_hdr_t *)npc)->chain_word_low = (byte)E;
 |
-- ((char *)scratch_bytes)[0x4] = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_low = (byte)E;
+- ((char *)npc)[0x4] = E;
++ ((uw_object_hdr_t *)npc)->chain_word_low = (byte)E;
 |
-- *(char *)((ushort *)scratch_bytes + 0x2) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_low = (byte)E;
-|
-- *(char *)(scratch_bytes + 0x4) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_low = (byte)E;
+- *(char *)((ushort *)npc + 0x2) = E;
++ ((uw_object_hdr_t *)npc)->chain_word_low = (byte)E;
 )
 ...>
 }
@@ -23790,23 +23655,20 @@ typedef byte, undefined1, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(char *)((char *)scratch_bytes + 0x4)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->chain_word_low
+- *(char *)((char *)npc + 0x4)
++ (char)((uw_object_hdr_t *)npc)->chain_word_low
 |
-- *(char *)((byte *)scratch_bytes + 0x4)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->chain_word_low
+- *(char *)((byte *)npc + 0x4)
++ (char)((uw_object_hdr_t *)npc)->chain_word_low
 |
-- ((char *)scratch_bytes)[0x4]
-+ (char)((uw_object_hdr_t *)scratch_bytes)->chain_word_low
+- ((char *)npc)[0x4]
++ (char)((uw_object_hdr_t *)npc)->chain_word_low
 |
-- *(char *)((ushort *)scratch_bytes + 0x2)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->chain_word_low
+- *(char *)((ushort *)npc + 0x2)
++ (char)((uw_object_hdr_t *)npc)->chain_word_low
 |
-- (char)((ushort *)scratch_bytes)[0x2]
-+ (char)((uw_object_hdr_t *)scratch_bytes)->chain_word_low
-|
-- *(char *)(scratch_bytes + 0x4)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->chain_word_low
+- (char)((ushort *)npc)[0x2]
++ (char)((uw_object_hdr_t *)npc)->chain_word_low
 )
 ...>
 }
@@ -23820,20 +23682,14 @@ typedef byte, undefined1, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(byte *)((char *)scratch_bytes + 0x5)
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_high
+- *(byte *)((char *)npc + 0x5)
++ ((uw_object_hdr_t *)npc)->chain_word_high
 |
-- *(byte *)((byte *)scratch_bytes + 0x5)
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_high
+- *(byte *)((byte *)npc + 0x5)
++ ((uw_object_hdr_t *)npc)->chain_word_high
 |
-- ((byte *)scratch_bytes)[0x5]
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_high
-|
-- *(byte *)(scratch_bytes + 0x5)
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_high
-|
-- scratch_bytes[0x5]
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_high
+- ((byte *)npc)[0x5]
++ ((uw_object_hdr_t *)npc)->chain_word_high
 )
 ...>
 }
@@ -23847,20 +23703,14 @@ typedef byte, undefined1, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(undefined1 *)((char *)scratch_bytes + 0x5)
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_high
+- *(undefined1 *)((char *)npc + 0x5)
++ ((uw_object_hdr_t *)npc)->chain_word_high
 |
-- *(undefined1 *)((byte *)scratch_bytes + 0x5)
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_high
+- *(undefined1 *)((byte *)npc + 0x5)
++ ((uw_object_hdr_t *)npc)->chain_word_high
 |
-- ((undefined1 *)scratch_bytes)[0x5]
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_high
-|
-- *(undefined1 *)(scratch_bytes + 0x5)
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_high
-|
-- scratch_bytes[0x5]
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_high
+- ((undefined1 *)npc)[0x5]
++ ((uw_object_hdr_t *)npc)->chain_word_high
 )
 ...>
 }
@@ -23874,17 +23724,14 @@ typedef byte, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- &*(char *)((char *)scratch_bytes + 0x5)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->chain_word_high
+- &*(char *)((char *)npc + 0x5)
++ (char *)&((uw_object_hdr_t *)npc)->chain_word_high
 |
-- &*(char *)((byte *)scratch_bytes + 0x5)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->chain_word_high
+- &*(char *)((byte *)npc + 0x5)
++ (char *)&((uw_object_hdr_t *)npc)->chain_word_high
 |
-- &((char *)scratch_bytes)[0x5]
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->chain_word_high
-|
-- &*(char *)(scratch_bytes + 0x5)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->chain_word_high
+- &((char *)npc)[0x5]
++ (char *)&((uw_object_hdr_t *)npc)->chain_word_high
 )
 ...>
 }
@@ -23899,17 +23746,14 @@ expression E;
 R F(...) {
 <...
 (
-- *(char *)((char *)scratch_bytes + 0x5) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_high = (byte)E;
+- *(char *)((char *)npc + 0x5) = E;
++ ((uw_object_hdr_t *)npc)->chain_word_high = (byte)E;
 |
-- *(char *)((byte *)scratch_bytes + 0x5) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_high = (byte)E;
+- *(char *)((byte *)npc + 0x5) = E;
++ ((uw_object_hdr_t *)npc)->chain_word_high = (byte)E;
 |
-- ((char *)scratch_bytes)[0x5] = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_high = (byte)E;
-|
-- *(char *)(scratch_bytes + 0x5) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->chain_word_high = (byte)E;
+- ((char *)npc)[0x5] = E;
++ ((uw_object_hdr_t *)npc)->chain_word_high = (byte)E;
 )
 ...>
 }
@@ -23923,17 +23767,14 @@ typedef byte, undefined1, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(char *)((char *)scratch_bytes + 0x5)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->chain_word_high
+- *(char *)((char *)npc + 0x5)
++ (char)((uw_object_hdr_t *)npc)->chain_word_high
 |
-- *(char *)((byte *)scratch_bytes + 0x5)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->chain_word_high
+- *(char *)((byte *)npc + 0x5)
++ (char)((uw_object_hdr_t *)npc)->chain_word_high
 |
-- ((char *)scratch_bytes)[0x5]
-+ (char)((uw_object_hdr_t *)scratch_bytes)->chain_word_high
-|
-- *(char *)(scratch_bytes + 0x5)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->chain_word_high
+- ((char *)npc)[0x5]
++ (char)((uw_object_hdr_t *)npc)->chain_word_high
 )
 ...>
 }
@@ -23947,9 +23788,9 @@ identifier V;
 @@
 R F(...) {
 <...
-- *(char *)((char *)scratch_bytes + 0x6) = (char)V;
-- *(char *)((char *)scratch_bytes + 0x7) = (char)(V >> 8);
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word = (ushort)V;
+- *(char *)((char *)npc + 0x6) = (char)V;
+- *(char *)((char *)npc + 0x7) = (char)(V >> 8);
++ ((uw_object_hdr_t *)npc)->link_word = (ushort)V;
 
 ...>
 }
@@ -23962,9 +23803,9 @@ identifier V;
 @@
 R F(...) {
 <...
-- *(char *)((char *)scratch_bytes + 0x6) = (char)V;
-- *(byte *)((char *)scratch_bytes + 0x7) = (byte)(V >> 8);
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word = (ushort)V;
+- *(char *)((char *)npc + 0x6) = (char)V;
+- *(byte *)((char *)npc + 0x7) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)npc)->link_word = (ushort)V;
 
 ...>
 }
@@ -23977,9 +23818,9 @@ identifier V;
 @@
 R F(...) {
 <...
-- *(byte *)((char *)scratch_bytes + 0x6) = (byte)V;
-- *(char *)((char *)scratch_bytes + 0x7) = (char)(V >> 8);
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word = (ushort)V;
+- *(byte *)((char *)npc + 0x6) = (byte)V;
+- *(char *)((char *)npc + 0x7) = (char)(V >> 8);
++ ((uw_object_hdr_t *)npc)->link_word = (ushort)V;
 
 ...>
 }
@@ -23992,9 +23833,9 @@ identifier V;
 @@
 R F(...) {
 <...
-- *(byte *)((char *)scratch_bytes + 0x6) = (byte)V;
-- *(byte *)((char *)scratch_bytes + 0x7) = (byte)(V >> 8);
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word = (ushort)V;
+- *(byte *)((char *)npc + 0x6) = (byte)V;
+- *(byte *)((char *)npc + 0x7) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)npc)->link_word = (ushort)V;
 
 ...>
 }
@@ -24007,20 +23848,17 @@ typedef ushort, undefined2, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(ushort *)((char *)scratch_bytes + 0x6)
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word
+- *(ushort *)((char *)npc + 0x6)
++ ((uw_object_hdr_t *)npc)->link_word
 |
-- *(ushort *)((byte *)scratch_bytes + 0x6)
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word
+- *(ushort *)((byte *)npc + 0x6)
++ ((uw_object_hdr_t *)npc)->link_word
 |
-- ((ushort *)scratch_bytes)[0x3]
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word
+- ((ushort *)npc)[0x3]
++ ((uw_object_hdr_t *)npc)->link_word
 |
-- *(ushort *)((ushort *)scratch_bytes + 0x3)
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word
-|
-- *(ushort *)(scratch_bytes + 0x6)
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word
+- *(ushort *)((ushort *)npc + 0x3)
++ ((uw_object_hdr_t *)npc)->link_word
 )
 ...>
 }
@@ -24034,20 +23872,17 @@ typedef ushort, undefined2, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(undefined2 *)((char *)scratch_bytes + 0x6)
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word
+- *(undefined2 *)((char *)npc + 0x6)
++ ((uw_object_hdr_t *)npc)->link_word
 |
-- *(undefined2 *)((byte *)scratch_bytes + 0x6)
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word
+- *(undefined2 *)((byte *)npc + 0x6)
++ ((uw_object_hdr_t *)npc)->link_word
 |
-- ((undefined2 *)scratch_bytes)[0x3]
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word
+- ((undefined2 *)npc)[0x3]
++ ((uw_object_hdr_t *)npc)->link_word
 |
-- *(undefined2 *)((undefined2 *)scratch_bytes + 0x3)
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word
-|
-- *(undefined2 *)(scratch_bytes + 0x6)
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word
+- *(undefined2 *)((undefined2 *)npc + 0x3)
++ ((uw_object_hdr_t *)npc)->link_word
 )
 ...>
 }
@@ -24061,20 +23896,17 @@ typedef ushort, undefined2, byte, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(short *)((char *)scratch_bytes + 0x6)
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_signed
+- *(short *)((char *)npc + 0x6)
++ ((uw_object_hdr_t *)npc)->link_word_signed
 |
-- *(short *)((byte *)scratch_bytes + 0x6)
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_signed
+- *(short *)((byte *)npc + 0x6)
++ ((uw_object_hdr_t *)npc)->link_word_signed
 |
-- ((short *)scratch_bytes)[0x3]
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_signed
+- ((short *)npc)[0x3]
++ ((uw_object_hdr_t *)npc)->link_word_signed
 |
-- *(short *)((short *)scratch_bytes + 0x3)
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_signed
-|
-- *(short *)(scratch_bytes + 0x6)
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_signed
+- *(short *)((short *)npc + 0x3)
++ ((uw_object_hdr_t *)npc)->link_word_signed
 )
 ...>
 }
@@ -24088,26 +23920,20 @@ typedef byte, undefined1, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(byte *)((char *)scratch_bytes + 0x6)
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_low
+- *(byte *)((char *)npc + 0x6)
++ ((uw_object_hdr_t *)npc)->link_word_low
 |
-- *(byte *)((byte *)scratch_bytes + 0x6)
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_low
+- *(byte *)((byte *)npc + 0x6)
++ ((uw_object_hdr_t *)npc)->link_word_low
 |
-- ((byte *)scratch_bytes)[0x6]
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_low
+- ((byte *)npc)[0x6]
++ ((uw_object_hdr_t *)npc)->link_word_low
 |
-- *(byte *)((ushort *)scratch_bytes + 0x3)
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_low
+- *(byte *)((ushort *)npc + 0x3)
++ ((uw_object_hdr_t *)npc)->link_word_low
 |
-- (byte)((ushort *)scratch_bytes)[0x3]
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_low
-|
-- *(byte *)(scratch_bytes + 0x6)
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_low
-|
-- scratch_bytes[0x6]
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_low
+- (byte)((ushort *)npc)[0x3]
++ ((uw_object_hdr_t *)npc)->link_word_low
 )
 ...>
 }
@@ -24121,26 +23947,20 @@ typedef byte, undefined1, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(undefined1 *)((char *)scratch_bytes + 0x6)
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_low
+- *(undefined1 *)((char *)npc + 0x6)
++ ((uw_object_hdr_t *)npc)->link_word_low
 |
-- *(undefined1 *)((byte *)scratch_bytes + 0x6)
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_low
+- *(undefined1 *)((byte *)npc + 0x6)
++ ((uw_object_hdr_t *)npc)->link_word_low
 |
-- ((undefined1 *)scratch_bytes)[0x6]
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_low
+- ((undefined1 *)npc)[0x6]
++ ((uw_object_hdr_t *)npc)->link_word_low
 |
-- *(undefined1 *)((ushort *)scratch_bytes + 0x3)
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_low
+- *(undefined1 *)((ushort *)npc + 0x3)
++ ((uw_object_hdr_t *)npc)->link_word_low
 |
-- (undefined1)((ushort *)scratch_bytes)[0x3]
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_low
-|
-- *(undefined1 *)(scratch_bytes + 0x6)
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_low
-|
-- scratch_bytes[0x6]
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_low
+- (undefined1)((ushort *)npc)[0x3]
++ ((uw_object_hdr_t *)npc)->link_word_low
 )
 ...>
 }
@@ -24154,20 +23974,17 @@ typedef byte, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- &*(char *)((char *)scratch_bytes + 0x6)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->link_word_low
+- &*(char *)((char *)npc + 0x6)
++ (char *)&((uw_object_hdr_t *)npc)->link_word_low
 |
-- &*(char *)((byte *)scratch_bytes + 0x6)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->link_word_low
+- &*(char *)((byte *)npc + 0x6)
++ (char *)&((uw_object_hdr_t *)npc)->link_word_low
 |
-- &((char *)scratch_bytes)[0x6]
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->link_word_low
+- &((char *)npc)[0x6]
++ (char *)&((uw_object_hdr_t *)npc)->link_word_low
 |
-- &*(char *)((ushort *)scratch_bytes + 0x3)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->link_word_low
-|
-- &*(char *)(scratch_bytes + 0x6)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->link_word_low
+- &*(char *)((ushort *)npc + 0x3)
++ (char *)&((uw_object_hdr_t *)npc)->link_word_low
 )
 ...>
 }
@@ -24182,20 +23999,17 @@ expression E;
 R F(...) {
 <...
 (
-- *(char *)((char *)scratch_bytes + 0x6) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_low = (byte)E;
+- *(char *)((char *)npc + 0x6) = E;
++ ((uw_object_hdr_t *)npc)->link_word_low = (byte)E;
 |
-- *(char *)((byte *)scratch_bytes + 0x6) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_low = (byte)E;
+- *(char *)((byte *)npc + 0x6) = E;
++ ((uw_object_hdr_t *)npc)->link_word_low = (byte)E;
 |
-- ((char *)scratch_bytes)[0x6] = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_low = (byte)E;
+- ((char *)npc)[0x6] = E;
++ ((uw_object_hdr_t *)npc)->link_word_low = (byte)E;
 |
-- *(char *)((ushort *)scratch_bytes + 0x3) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_low = (byte)E;
-|
-- *(char *)(scratch_bytes + 0x6) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_low = (byte)E;
+- *(char *)((ushort *)npc + 0x3) = E;
++ ((uw_object_hdr_t *)npc)->link_word_low = (byte)E;
 )
 ...>
 }
@@ -24209,23 +24023,20 @@ typedef byte, undefined1, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(char *)((char *)scratch_bytes + 0x6)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->link_word_low
+- *(char *)((char *)npc + 0x6)
++ (char)((uw_object_hdr_t *)npc)->link_word_low
 |
-- *(char *)((byte *)scratch_bytes + 0x6)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->link_word_low
+- *(char *)((byte *)npc + 0x6)
++ (char)((uw_object_hdr_t *)npc)->link_word_low
 |
-- ((char *)scratch_bytes)[0x6]
-+ (char)((uw_object_hdr_t *)scratch_bytes)->link_word_low
+- ((char *)npc)[0x6]
++ (char)((uw_object_hdr_t *)npc)->link_word_low
 |
-- *(char *)((ushort *)scratch_bytes + 0x3)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->link_word_low
+- *(char *)((ushort *)npc + 0x3)
++ (char)((uw_object_hdr_t *)npc)->link_word_low
 |
-- (char)((ushort *)scratch_bytes)[0x3]
-+ (char)((uw_object_hdr_t *)scratch_bytes)->link_word_low
-|
-- *(char *)(scratch_bytes + 0x6)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->link_word_low
+- (char)((ushort *)npc)[0x3]
++ (char)((uw_object_hdr_t *)npc)->link_word_low
 )
 ...>
 }
@@ -24239,20 +24050,14 @@ typedef byte, undefined1, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(byte *)((char *)scratch_bytes + 0x7)
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_high
+- *(byte *)((char *)npc + 0x7)
++ ((uw_object_hdr_t *)npc)->link_word_high
 |
-- *(byte *)((byte *)scratch_bytes + 0x7)
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_high
+- *(byte *)((byte *)npc + 0x7)
++ ((uw_object_hdr_t *)npc)->link_word_high
 |
-- ((byte *)scratch_bytes)[0x7]
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_high
-|
-- *(byte *)(scratch_bytes + 0x7)
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_high
-|
-- scratch_bytes[0x7]
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_high
+- ((byte *)npc)[0x7]
++ ((uw_object_hdr_t *)npc)->link_word_high
 )
 ...>
 }
@@ -24266,20 +24071,14 @@ typedef byte, undefined1, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(undefined1 *)((char *)scratch_bytes + 0x7)
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_high
+- *(undefined1 *)((char *)npc + 0x7)
++ ((uw_object_hdr_t *)npc)->link_word_high
 |
-- *(undefined1 *)((byte *)scratch_bytes + 0x7)
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_high
+- *(undefined1 *)((byte *)npc + 0x7)
++ ((uw_object_hdr_t *)npc)->link_word_high
 |
-- ((undefined1 *)scratch_bytes)[0x7]
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_high
-|
-- *(undefined1 *)(scratch_bytes + 0x7)
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_high
-|
-- scratch_bytes[0x7]
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_high
+- ((undefined1 *)npc)[0x7]
++ ((uw_object_hdr_t *)npc)->link_word_high
 )
 ...>
 }
@@ -24293,17 +24092,14 @@ typedef byte, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- &*(char *)((char *)scratch_bytes + 0x7)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->link_word_high
+- &*(char *)((char *)npc + 0x7)
++ (char *)&((uw_object_hdr_t *)npc)->link_word_high
 |
-- &*(char *)((byte *)scratch_bytes + 0x7)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->link_word_high
+- &*(char *)((byte *)npc + 0x7)
++ (char *)&((uw_object_hdr_t *)npc)->link_word_high
 |
-- &((char *)scratch_bytes)[0x7]
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->link_word_high
-|
-- &*(char *)(scratch_bytes + 0x7)
-+ (char *)&((uw_object_hdr_t *)scratch_bytes)->link_word_high
+- &((char *)npc)[0x7]
++ (char *)&((uw_object_hdr_t *)npc)->link_word_high
 )
 ...>
 }
@@ -24318,17 +24114,14 @@ expression E;
 R F(...) {
 <...
 (
-- *(char *)((char *)scratch_bytes + 0x7) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_high = (byte)E;
+- *(char *)((char *)npc + 0x7) = E;
++ ((uw_object_hdr_t *)npc)->link_word_high = (byte)E;
 |
-- *(char *)((byte *)scratch_bytes + 0x7) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_high = (byte)E;
+- *(char *)((byte *)npc + 0x7) = E;
++ ((uw_object_hdr_t *)npc)->link_word_high = (byte)E;
 |
-- ((char *)scratch_bytes)[0x7] = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_high = (byte)E;
-|
-- *(char *)(scratch_bytes + 0x7) = E;
-+ ((uw_object_hdr_t *)scratch_bytes)->link_word_high = (byte)E;
+- ((char *)npc)[0x7] = E;
++ ((uw_object_hdr_t *)npc)->link_word_high = (byte)E;
 )
 ...>
 }
@@ -24342,17 +24135,14 @@ typedef byte, undefined1, ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(char *)((char *)scratch_bytes + 0x7)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->link_word_high
+- *(char *)((char *)npc + 0x7)
++ (char)((uw_object_hdr_t *)npc)->link_word_high
 |
-- *(char *)((byte *)scratch_bytes + 0x7)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->link_word_high
+- *(char *)((byte *)npc + 0x7)
++ (char)((uw_object_hdr_t *)npc)->link_word_high
 |
-- ((char *)scratch_bytes)[0x7]
-+ (char)((uw_object_hdr_t *)scratch_bytes)->link_word_high
-|
-- *(char *)(scratch_bytes + 0x7)
-+ (char)((uw_object_hdr_t *)scratch_bytes)->link_word_high
+- ((char *)npc)[0x7]
++ (char)((uw_object_hdr_t *)npc)->link_word_high
 )
 ...>
 }

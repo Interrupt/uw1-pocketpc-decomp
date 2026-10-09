@@ -1047,9 +1047,9 @@
           "roles": [
             {
               "name": "puVar6",
-              "type": "ushort *",
+              "type": "uw_projectile_object_t *",
               "parameter": false,
-              "evidence": "UW1 object struct member access",
+              "evidence": "typed UW1 object pointer declaration",
               "current_mobile_alias": false
             }
           ],
@@ -1732,6 +1732,13 @@
             }
           ],
           "requires_review": []
+        },
+        {
+          "function": "handle_monster_death",
+          "roles": [],
+          "requires_review": [
+            "npc"
+          ]
         },
         {
           "function": "npc_set_goal_for_object",
@@ -3131,10 +3138,10 @@
           "function": "init_monster_spawn_defaults",
           "roles": [
             {
-              "name": "scratch_bytes",
-              "type": "byte *",
+              "name": "npc",
+              "type": "uw_mobile_object_t *",
               "parameter": false,
-              "evidence": "UW1 object struct member access",
+              "evidence": "typed UW1 object pointer declaration",
               "current_mobile_alias": false
             }
           ],
