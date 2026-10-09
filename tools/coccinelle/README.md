@@ -1065,3 +1065,23 @@ compared. Use `--reference PATH` with the original `item_use.c` and `--asan`
 for the same oracle under AddressSanitizer. The refreshed worklist contains
 180 byte views (10 fewer), 462 packed-word uses, seven raw audited accesses
 and nine signed-word views; retained snapshots remain intentional.
+
+`generate_durability_rules.py` / `durability-fields.cocci` convert
+`apply_object_durability_damage` to a local common-header pointer and named
+`quality` and `owner` stores. The special object-ID range retains its existing
+five-bit counter inside `owner`; no new semantic property is inferred for
+that slice. The full link/chain captures, signed depletion arithmetic,
+mobile hit-point path and destruction callback remain intact. Named writes
+preserve the adjacent `link` and `next` properties.
+
+The complete original-body rule rejects changed callbacks, volatile or
+escaping captures, altered masks and intervening writes. The regression
+test requires an actual exact conversion, verifies generation/idempotence
+and rejection guards, then compares 1,179,648 executions against the original
+function. Cases cover every 16-bit link/chain pattern, signed damage,
+independent small damage/quality depletion boundaries, ID-range gates,
+damage resistance, arena classification, callback-mutated records and
+destruction callbacks. Header/extension/guard/actor bytes, return values and
+callback events/counts are compared. Use `--reference PATH` with the original
+`combat.c` and `--asan` for AddressSanitizer. The refreshed worklist contains
+176 byte views (four fewer); the full captured words remain intentional.

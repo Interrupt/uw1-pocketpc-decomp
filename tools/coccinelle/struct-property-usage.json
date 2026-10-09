@@ -1,7 +1,7 @@
 {
   "scope": "Named packed views and existing audited object-pointer roles in src/*.c; unrecorded aliases and other structures still require independent auditing.",
   "counts": {
-    "byte_view": 180,
+    "byte_view": 176,
     "packed_word": 462,
     "raw_audited_object_access": 7,
     "signed_word_view": 9
@@ -2282,57 +2282,21 @@
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
-      "code": "uVar2 = ((uw_object_hdr_t *)object)->link_word;"
+      "code": "uVar2 = object_hdr->link_word;"
     },
     {
       "source": "src/combat.c",
       "function": "apply_object_durability_damage",
-      "line": 2134,
-      "category": "byte_view",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)object)->link_word_low = (byte)(uVar2 & 0xffc1) | (byte)((uVar6 & 0x1f) << 1);"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "apply_object_durability_damage",
-      "line": 2135,
-      "category": "byte_view",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)object)->link_word_high = (byte)(char)((uVar2 & 0xffc1) >> 8);"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "apply_object_durability_damage",
-      "line": 2139,
+      "line": 2138,
       "category": "packed_word",
       "member": "chain_word",
       "pointer": null,
-      "code": "uVar2 = ((uw_object_hdr_t *)object)->chain_word;"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "apply_object_durability_damage",
-      "line": 2145,
-      "category": "byte_view",
-      "member": "chain_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)object)->chain_word_low = ((byte)uVar2 ^ (byte)iVar5) & 0x3f ^ (byte)uVar2;"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "apply_object_durability_damage",
-      "line": 2146,
-      "category": "byte_view",
-      "member": "chain_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)object)->chain_word_high = (byte)(char)(uVar2 >> 8);"
+      "code": "uVar2 = object_hdr->chain_word;"
     },
     {
       "source": "src/combat.c",
       "function": "damage_equipped_item_in_slot",
-      "line": 2229,
+      "line": 2227,
       "category": "byte_view",
       "member": "chain_word",
       "pointer": null,
@@ -2341,7 +2305,7 @@
     {
       "source": "src/combat.c",
       "function": "damage_equipped_item_in_slot",
-      "line": 2258,
+      "line": 2256,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -2350,7 +2314,7 @@
     {
       "source": "src/combat.c",
       "function": "damage_equipped_item_in_slot",
-      "line": 2259,
+      "line": 2257,
       "category": "byte_view",
       "member": "type_flags",
       "pointer": null,
@@ -2359,7 +2323,7 @@
     {
       "source": "src/combat.c",
       "function": "damage_equipped_item_in_slot",
-      "line": 2260,
+      "line": 2258,
       "category": "byte_view",
       "member": "type_flags",
       "pointer": null,
@@ -2368,7 +2332,7 @@
     {
       "source": "src/combat.c",
       "function": "resolve_collision_candidate_interaction",
-      "line": 2460,
+      "line": 2458,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
