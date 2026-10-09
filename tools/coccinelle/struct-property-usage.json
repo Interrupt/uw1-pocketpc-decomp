@@ -1,7 +1,7 @@
 {
   "scope": "Named packed views and existing audited object-pointer roles in src/*.c; unrecorded aliases and other structures still require independent auditing.",
   "counts": {
-    "byte_view": 374,
+    "byte_view": 353,
     "packed_word": 398,
     "raw_audited_object_access": 7,
     "signed_word_view": 9
@@ -631,25 +631,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_react_to_nearby_player",
-      "line": 2677,
-      "category": "byte_view",
-      "member": "goal_word",
-      "pointer": null,
-      "code": "DAT_0010190c->goal_word_low = (byte)uVar5 | 0x10;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "npc_react_to_nearby_player",
-      "line": 2678,
-      "category": "byte_view",
-      "member": "goal_word",
-      "pointer": null,
-      "code": "DAT_0010190c->goal_word_high = (byte)(char)(uVar5 >> 8);"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "npc_react_to_nearby_player",
-      "line": 2688,
+      "line": 2687,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -657,26 +639,8 @@
     },
     {
       "source": "src/ai.c",
-      "function": "npc_react_to_nearby_player",
-      "line": 2691,
-      "category": "byte_view",
-      "member": "goal_word",
-      "pointer": null,
-      "code": "DAT_0010190c->goal_word_low = (byte)(char)uVar4;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "npc_react_to_nearby_player",
-      "line": 2692,
-      "category": "byte_view",
-      "member": "goal_word",
-      "pointer": null,
-      "code": "DAT_0010190c->goal_word_high ="
-    },
-    {
-      "source": "src/ai.c",
       "function": "detect_npc_wander_proximity",
-      "line": 2749,
+      "line": 2746,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -685,7 +649,7 @@
     {
       "source": "src/ai.c",
       "function": "compute_vertical_aim_offset",
-      "line": 2787,
+      "line": 2784,
       "category": "byte_view",
       "member": "position_word",
       "pointer": null,
@@ -694,7 +658,7 @@
     {
       "source": "src/ai.c",
       "function": "setup_npc_ai_tick_state",
-      "line": 2845,
+      "line": 2842,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -703,7 +667,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_ai_default_tick",
-      "line": 2908,
+      "line": 2905,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -712,7 +676,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_ai_default_tick",
-      "line": 2949,
+      "line": 2946,
       "category": "packed_word",
       "member": "status_word",
       "pointer": null,
@@ -721,7 +685,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_ai_default_tick",
-      "line": 2968,
+      "line": 2965,
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "npc_rec",
@@ -730,7 +694,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_ai_default_tick",
-      "line": 2970,
+      "line": 2967,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -739,7 +703,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_ai_default_tick",
-      "line": 2972,
+      "line": 2969,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -748,7 +712,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_ai_default_tick",
-      "line": 2979,
+      "line": 2976,
       "category": "packed_word",
       "member": "status_word",
       "pointer": null,
@@ -757,7 +721,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_ai_default_tick",
-      "line": 3083,
+      "line": 3080,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -766,25 +730,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_ai_default_tick",
-      "line": 3086,
-      "category": "byte_view",
-      "member": "goal_word",
-      "pointer": null,
-      "code": "((uw_mobile_object_t *)npc_rec)->goal_word_low = (byte)(char)uVar11;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "npc_ai_default_tick",
-      "line": 3087,
-      "category": "byte_view",
-      "member": "goal_word",
-      "pointer": null,
-      "code": "DAT_0010190c->goal_word_high ="
-    },
-    {
-      "source": "src/ai.c",
-      "function": "npc_ai_default_tick",
-      "line": 3101,
+      "line": 3096,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -793,7 +739,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_ai_default_tick",
-      "line": 3120,
+      "line": 3115,
       "category": "byte_view",
       "member": "position_word",
       "pointer": null,
@@ -802,7 +748,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_ai_default_tick",
-      "line": 3121,
+      "line": 3116,
       "category": "byte_view",
       "member": "position_word",
       "pointer": null,
@@ -811,7 +757,7 @@
     {
       "source": "src/ai.c",
       "function": "initiate_npc_death",
-      "line": 3268,
+      "line": 3263,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -820,7 +766,7 @@
     {
       "source": "src/ai.c",
       "function": "spawn_rest_interrupt_monster_callback",
-      "line": 3614,
+      "line": 3609,
       "category": "packed_word",
       "member": "tile_word",
       "pointer": null,
@@ -829,7 +775,7 @@
     {
       "source": "src/ai.c",
       "function": "spawn_rest_interrupt_monster_callback",
-      "line": 3625,
+      "line": 3620,
       "category": "byte_view",
       "member": "position_word",
       "pointer": null,
@@ -838,7 +784,7 @@
     {
       "source": "src/ai.c",
       "function": "spawn_rest_interrupt_monster_callback",
-      "line": 3639,
+      "line": 3634,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -847,7 +793,7 @@
     {
       "source": "src/ai.c",
       "function": "alert_npc_to_noise_callback",
-      "line": 3788,
+      "line": 3783,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -856,7 +802,7 @@
     {
       "source": "src/ai.c",
       "function": "alert_npc_to_noise_callback",
-      "line": 3816,
+      "line": 3811,
       "category": "packed_word",
       "member": "status_word",
       "pointer": null,
@@ -865,7 +811,7 @@
     {
       "source": "src/ai.c",
       "function": "emit_noise_alert",
-      "line": 3850,
+      "line": 3845,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -874,7 +820,7 @@
     {
       "source": "src/ai.c",
       "function": "resolve_unique_npc_special_behavior",
-      "line": 3881,
+      "line": 3876,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -883,7 +829,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_set_walk_target",
-      "line": 4100,
+      "line": 4095,
       "category": "packed_word",
       "member": "status_word",
       "pointer": null,
@@ -892,7 +838,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_set_walk_target",
-      "line": 4103,
+      "line": 4098,
       "category": "packed_word",
       "member": "status_word",
       "pointer": null,
@@ -901,7 +847,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_set_walk_target",
-      "line": 4103,
+      "line": 4098,
       "category": "packed_word",
       "member": "status_word",
       "pointer": null,
@@ -910,7 +856,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_idle_behavior_tick",
-      "line": 4224,
+      "line": 4219,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -919,7 +865,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_idle_behavior_tick",
-      "line": 4252,
+      "line": 4247,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -928,7 +874,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_idle_behavior_tick",
-      "line": 4269,
+      "line": 4264,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -937,7 +883,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_idle_behavior_tick",
-      "line": 4284,
+      "line": 4279,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -946,34 +892,16 @@
     {
       "source": "src/ai.c",
       "function": "npc_idle_behavior_tick",
-      "line": 4295,
+      "line": 4290,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
       "code": "uVar1 = DAT_0010190c->goal_word;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "npc_idle_behavior_tick",
-      "line": 4299,
-      "category": "byte_view",
-      "member": "goal_word",
-      "pointer": null,
-      "code": "((uw_mobile_object_t *)iVar9)->goal_word_low = (byte)(char)(uVar1 & 0xfff);"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "npc_idle_behavior_tick",
-      "line": 4300,
-      "category": "byte_view",
-      "member": "goal_word",
-      "pointer": null,
-      "code": "DAT_0010190c->goal_word_high = (byte)((uVar1 & 0xfff) >> 8) | (byte)(((uVar7 & 0xf) << 0xc) >> 8)"
     },
     {
       "source": "src/ai.c",
       "function": "npc_notice_and_idle_tick",
-      "line": 4380,
+      "line": 4373,
       "category": "packed_word",
       "member": "status_word",
       "pointer": null,
@@ -982,7 +910,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_notice_and_idle_tick",
-      "line": 4386,
+      "line": 4379,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -991,25 +919,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_notice_and_idle_tick",
-      "line": 4387,
-      "category": "byte_view",
-      "member": "goal_word",
-      "pointer": null,
-      "code": "DAT_0010190c->goal_word_low = (byte)uVar6 | 0x10;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "npc_notice_and_idle_tick",
-      "line": 4388,
-      "category": "byte_view",
-      "member": "goal_word",
-      "pointer": null,
-      "code": "DAT_0010190c->goal_word_high = (byte)(char)(uVar6 >> 8);"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "npc_notice_and_idle_tick",
-      "line": 4453,
+      "line": 4445,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -1017,26 +927,8 @@
     },
     {
       "source": "src/ai.c",
-      "function": "npc_notice_and_idle_tick",
-      "line": 4456,
-      "category": "byte_view",
-      "member": "goal_word",
-      "pointer": null,
-      "code": "((uw_mobile_object_t *)iVar2)->goal_word_low = (byte)(char)uVar6;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "npc_notice_and_idle_tick",
-      "line": 4457,
-      "category": "byte_view",
-      "member": "goal_word",
-      "pointer": null,
-      "code": "DAT_0010190c->goal_word_high ="
-    },
-    {
-      "source": "src/ai.c",
       "function": "npc_wander_return_home_exact_tick",
-      "line": 4505,
+      "line": 4495,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -1044,26 +936,8 @@
     },
     {
       "source": "src/ai.c",
-      "function": "npc_wander_return_home_exact_tick",
-      "line": 4508,
-      "category": "byte_view",
-      "member": "goal_word",
-      "pointer": null,
-      "code": "((uw_mobile_object_t *)iVar2)->goal_word_low = (byte)(char)uVar5;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "npc_wander_return_home_exact_tick",
-      "line": 4509,
-      "category": "byte_view",
-      "member": "goal_word",
-      "pointer": null,
-      "code": "DAT_0010190c->goal_word_high ="
-    },
-    {
-      "source": "src/ai.c",
       "function": "npc_clear_special_goal",
-      "line": 4542,
+      "line": 4530,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -1072,25 +946,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_clear_special_goal",
-      "line": 4543,
-      "category": "byte_view",
-      "member": "goal_word",
-      "pointer": null,
-      "code": "DAT_0010190c->goal_word_low = (byte)uVar3 | 2;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "npc_clear_special_goal",
-      "line": 4544,
-      "category": "byte_view",
-      "member": "goal_word",
-      "pointer": null,
-      "code": "DAT_0010190c->goal_word_high = (byte)(char)(uVar3 >> 8);"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "npc_clear_special_goal",
-      "line": 4546,
+      "line": 4533,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -1099,7 +955,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_clear_special_goal",
-      "line": 4549,
+      "line": 4536,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -1108,34 +964,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_clear_special_goal",
-      "line": 4551,
-      "category": "byte_view",
-      "member": "goal_word",
-      "pointer": null,
-      "code": "DAT_0010190c->goal_word_low = (bVar2 ^ DAT_0010190c->status_word_low) & 0xf ^ bVar2;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "npc_clear_special_goal",
-      "line": 4551,
-      "category": "byte_view",
-      "member": "status_word",
-      "pointer": null,
-      "code": "DAT_0010190c->goal_word_low = (bVar2 ^ DAT_0010190c->status_word_low) & 0xf ^ bVar2;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "npc_clear_special_goal",
-      "line": 4552,
-      "category": "byte_view",
-      "member": "goal_word",
-      "pointer": null,
-      "code": "DAT_0010190c->goal_word_high = (byte)(char)((ushort)uVar1 >> 8);"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "npc_clear_special_goal",
-      "line": 4553,
+      "line": 4539,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -1144,25 +973,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_clear_special_goal",
-      "line": 4554,
-      "category": "byte_view",
-      "member": "goal_word",
-      "pointer": null,
-      "code": "DAT_0010190c->goal_word_low = (byte)uVar3 | 0x10;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "npc_clear_special_goal",
-      "line": 4555,
-      "category": "byte_view",
-      "member": "goal_word",
-      "pointer": null,
-      "code": "DAT_0010190c->goal_word_high = (byte)(char)(uVar3 >> 8);"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "npc_clear_special_goal",
-      "line": 4557,
+      "line": 4542,
       "category": "packed_word",
       "member": "status_word",
       "pointer": null,
@@ -1171,7 +982,7 @@
     {
       "source": "src/ai.c",
       "function": "build_object_placement_snapshot",
-      "line": 5029,
+      "line": 5014,
       "category": "packed_word",
       "member": "size_weight",
       "pointer": null,
@@ -1180,7 +991,7 @@
     {
       "source": "src/ai.c",
       "function": "build_object_placement_snapshot",
-      "line": 5040,
+      "line": 5025,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -1189,7 +1000,7 @@
     {
       "source": "src/ai.c",
       "function": "build_object_placement_snapshot",
-      "line": 5070,
+      "line": 5055,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -1198,7 +1009,7 @@
     {
       "source": "src/ai.c",
       "function": "build_object_placement_snapshot",
-      "line": 5088,
+      "line": 5073,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -1207,7 +1018,7 @@
     {
       "source": "src/ai.c",
       "function": "build_object_placement_snapshot",
-      "line": 5089,
+      "line": 5074,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -1216,7 +1027,7 @@
     {
       "source": "src/ai.c",
       "function": "build_object_placement_snapshot",
-      "line": 5096,
+      "line": 5081,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,

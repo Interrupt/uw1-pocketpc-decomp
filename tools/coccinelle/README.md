@@ -735,3 +735,30 @@ height, the saved word results, scope exclusions and idempotence, with
 optional `--asan`. These are access-sequence regressions; the game unit tests
 cover the surrounding consumers. Source audit counts remain a conservative
 work list, not a completion certificate.
+
+### NPC target, goal and animation updates
+
+`generate_npc_goal_rules.py` generates `npc-goal-fields.cocci`. Its reviewed
+function scopes name complete target-to-player updates, four adjacent
+snapshot/frame cycles, the idle behavior frame store, and both branches of
+`npc_clear_special_goal`. The target mask `0xf01f` plus `0x10` sets the entire
+eight-bit `npc_gtarg` to 1, preserving goal and frame. The low-nibble XOR
+copy in the special-goal fallback copies `npc_level` into `npc_goal`; it does
+not toggle goal bits. Level zero instead selects goal 2 and target 0.
+
+Frame cycles name `npc_animation_frame`, while retaining all original scalar
+snapshots and modulo results. Saved-alias cases are restricted to functions
+where inspection proves the alias and current receiver stay equal between
+the snapshot and stores. No intervening callback or record write occurs in
+those sequences. The target update stays before `refresh_npc_target_delta`,
+and later operations continue reading the current receiver after callbacks.
+
+`test_npc_goal_fields.py` extracts the real reaction and special-goal helpers.
+Independent byte expectations cover 5,242,880 cases, including callback changes
+to the current NPC, all packed goal words, every level, branch gates, and RNG
+paths. A further 262,144 reduced frame cases check returned live snapshots,
+neighboring bytes, scope and idempotence. `--asan` sanitizes both harnesses;
+`--reference PATH` additionally compares callback-event hashes against saved
+pre-change helpers and verifies exact source conversion of every changed
+function. Unrelated packed goal snapshots and shared-label stores remain for
+separate review.

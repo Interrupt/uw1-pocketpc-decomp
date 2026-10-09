@@ -1009,6 +1009,10 @@ if(UW_SPATCH_EXECUTABLE)
     COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_npc_spawn_fields.py"
       "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME npc_goal_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_npc_goal_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
   add_test(NAME position_sync_fields
     COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_position_sync_fields.py"

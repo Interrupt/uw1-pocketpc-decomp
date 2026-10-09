@@ -1840,7 +1840,7 @@
               "name": "iVar2",
               "type": "char *",
               "parameter": false,
-              "evidence": "UW1 object struct member access",
+              "evidence": "object accessor / proven object alias",
               "current_mobile_alias": true
             }
           ],
@@ -1853,7 +1853,7 @@
               "name": "iVar2",
               "type": "char *",
               "parameter": false,
-              "evidence": "UW1 object struct member access",
+              "evidence": "object accessor / proven object alias",
               "current_mobile_alias": true
             }
           ],

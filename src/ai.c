@@ -2674,8 +2674,7 @@ void npc_react_to_nearby_player()
   if (((DAT_0010190c->motion_flags & 0x7f) == 0) || ((*(byte *)(DAT_00086df8 + 0x5f) & 2) != 0))
   {
     uVar5 = DAT_0010190c->goal_word & 0xf01f;
-    DAT_0010190c->goal_word_low = (byte)uVar5 | 0x10;
-    DAT_0010190c->goal_word_high = (byte)(char)(uVar5 >> 8);
+    DAT_0010190c->npc_gtarg = 1;
     refresh_npc_target_delta();
     if ((ushort)(DAT_00101444 * DAT_00101444 + DAT_00101448 * DAT_00101448) < 0x90) {
       uVar5 = compute_movement_heading((int)(char)DAT_00101444,(int)(char)DAT_00101448);
@@ -2686,11 +2685,9 @@ void npc_react_to_nearby_player()
       uw_ord2005_rem_82 = ((int)(uVar3)) % (2);
       if (uw_ord2005_rem_82 != 0) {
         uVar1 = DAT_0010190c->goal_word;
-        uw_ord2005_rem_83 = ((int)((uVar1 >> 0xc) + 1)) % (4);
+        uw_ord2005_rem_83 = ((int)(DAT_0010190c->npc_animation_frame + 1)) % (4);
         uVar4 = uVar1 & 0xfff;
-        DAT_0010190c->goal_word_low = (byte)(char)uVar4;
-        DAT_0010190c->goal_word_high =
-          (byte)(uVar4 >> 8) | (byte)(((uw_ord2005_rem_83 & 0xf) << 0xc) >> 8);
+        DAT_0010190c->npc_animation_frame = uw_ord2005_rem_83 & 0xf;
       }
       DAT_0010190c->hdr.heading = uVar5 & 0x7;
       DAT_0010190c->npc_heading = 0;
@@ -3081,11 +3078,9 @@ LAB_00033e9c:
       DAT_0010190c->attack_pitch & 7 ^ (uw_ord2005_rem_95 + '\x0f') * '\b';
     npc_rec = (char *)DAT_0010190c;
     uVar2 = DAT_0010190c->goal_word;
-    uw_ord2005_rem_96 = ((int)((uVar2 >> 0xc) + 1)) % (4);
+    uw_ord2005_rem_96 = ((int)(DAT_0010190c->npc_animation_frame + 1)) % (4);
     uVar11 = uVar2 & 0xfff;
-    ((uw_mobile_object_t *)npc_rec)->goal_word_low = (byte)(char)uVar11;
-    DAT_0010190c->goal_word_high =
-      (byte)(uVar11 >> 8) | (byte)(((uw_ord2005_rem_96 & 0xf) << 0xc) >> 8);
+    DAT_0010190c->npc_animation_frame = uw_ord2005_rem_96 & 0xf;
     DAT_0010190c->animation_flags = DAT_0010190c->animation_flags | 0x40;
     break;
   case 0xc:
@@ -4296,9 +4291,7 @@ LAB_0002f6cc:
     uw_ord2005_rem_39 = ((int)((uVar1 >> 0xc) + 1)) % (4);
     uVar7 = uw_ord2005_rem_39;
   }
-  ((uw_mobile_object_t *)iVar9)->goal_word_low = (byte)(char)(uVar1 & 0xfff);
-  DAT_0010190c->goal_word_high = (byte)((uVar1 & 0xfff) >> 8) | (byte)(((uVar7 & 0xf) << 0xc) >> 8)
-    ;
+  DAT_0010190c->npc_animation_frame = uVar7 & 0xf;
 LAB_0002f810:
   npc_react_to_nearby_player();
   return;
@@ -4384,8 +4377,7 @@ void npc_notice_and_idle_tick()
   }
   if (DAT_0010190c->npc_attitude == 0) {
     uVar6 = DAT_0010190c->goal_word & 0xf01f;
-    DAT_0010190c->goal_word_low = (byte)uVar6 | 0x10;
-    DAT_0010190c->goal_word_high = (byte)(char)(uVar6 >> 8);
+    DAT_0010190c->npc_gtarg = 1;
     refresh_npc_target_delta();
     if ((DAT_0010190c->npc_ai_flags & 1) != 0) {
 LAB_0002fe88:
@@ -4451,11 +4443,9 @@ LAB_0002fe88:
        wrapping 0..3 -- see uVar5>>0xc, the upper nibble of raw byte 0xc, matching
        resolve_critter_sprite_tier's own "frame" param computed the same way in emit_tile_objects). */
     uVar5 = DAT_0010190c->goal_word;
-    uw_ord2005_rem_45 = ((int)((uVar5 >> 0xc) + 1)) % (4);
+    uw_ord2005_rem_45 = ((int)(DAT_0010190c->npc_animation_frame + 1)) % (4);
     uVar6 = uVar5 & 0xfff;
-    ((uw_mobile_object_t *)iVar2)->goal_word_low = (byte)(char)uVar6;
-    DAT_0010190c->goal_word_high =
-      (byte)(uVar6 >> 8) | (byte)(((uw_ord2005_rem_45 & 0xf) << 0xc) >> 8);
+    DAT_0010190c->npc_animation_frame = uw_ord2005_rem_45 & 0xf;
   }
   return;
 }
@@ -4503,11 +4493,9 @@ void npc_wander_return_home_exact_tick()
       iVar2 = (char *)DAT_0010190c;
       if (uw_ord2005_rem_84 != 0) {
         uVar1 = DAT_0010190c->goal_word;
-        uw_ord2005_rem_85 = ((int)((uVar1 >> 0xc) + 1)) % (4);
+        uw_ord2005_rem_85 = ((int)(DAT_0010190c->npc_animation_frame + 1)) % (4);
         uVar5 = uVar1 & 0xfff;
-        ((uw_mobile_object_t *)iVar2)->goal_word_low = (byte)(char)uVar5;
-        DAT_0010190c->goal_word_high =
-          (byte)(uVar5 >> 8) | (byte)(((uw_ord2005_rem_85 & 0xf) << 0xc) >> 8);
+        DAT_0010190c->npc_animation_frame = uw_ord2005_rem_85 & 0xf;
       }
     }
     else {
@@ -4529,8 +4517,8 @@ void npc_set_goal(byte goal, uint goal_target)
 
 
 // was FUN_000344a4 -- npc_set_goal's sibling: fallback when a combat-engage goal's guard fails
-// (player not detected / no path). Sets goal to 2 (idle) when npc_level's low nibble is 0, else
-// XORs goal with a level-derived value and sets flag 0x10
+// (player not detected / no path). With level zero, sets idle goal 2 and target 0.
+// Otherwise copies npc_level into the goal, targets slot 1, and clears npc_level.
 void npc_clear_special_goal()
 
 {
@@ -4540,19 +4528,16 @@ void npc_clear_special_goal()
   
   if ((DAT_0010190c->npc_level) == 0) {
     uVar3 = DAT_0010190c->goal_word & 0xfff2;
-    DAT_0010190c->goal_word_low = (byte)uVar3 | 2;
-    DAT_0010190c->goal_word_high = (byte)(char)(uVar3 >> 8);
+    DAT_0010190c->npc_goal = 2;
     DAT_0010190c->npc_gtarg = 0x0;
     uVar3 = DAT_0010190c->goal_word;
   }
   else {
     uVar1 = DAT_0010190c->goal_word;
     bVar2 = (byte)uVar1;
-    DAT_0010190c->goal_word_low = (bVar2 ^ DAT_0010190c->status_word_low) & 0xf ^ bVar2;
-    DAT_0010190c->goal_word_high = (byte)(char)((ushort)uVar1 >> 8);
+    DAT_0010190c->npc_goal = DAT_0010190c->npc_level;
     uVar3 = DAT_0010190c->goal_word & 0xf01f;
-    DAT_0010190c->goal_word_low = (byte)uVar3 | 0x10;
-    DAT_0010190c->goal_word_high = (byte)(char)(uVar3 >> 8);
+    DAT_0010190c->npc_gtarg = 1;
     DAT_0010190c->npc_level = 0x0;
     uVar3 = DAT_0010190c->status_word;
   }
