@@ -496,3 +496,6 @@ void poll_input_bindings(void *input_state)
     }
     flush_dirty_rect_to_display(1);
 }
+
+int dungeon_palette_cycle_tick() { return 0; }
+void redraw_lit_light_source_widgets() {}

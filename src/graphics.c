@@ -1091,6 +1091,45 @@ int blit_framebuffer_to_gx_display()
 }
 
 
+// HACK: not in the ARM executable. DOS UW1 animates water and lava by rotating fixed runs of the
+// live palette on a game-clock phase (reference: cimmerianpit/openabyss, src/uw_motion_panel.c
+// palette_cycle): the four 4-colour water groups 0x30/0x34/0x38/0x3c one way, the 5+3 colour fire
+// ramp 0x10/0x15 the other. SHADES.DAT/LIGHT.DAT map those indices onto each other (shaded water
+// stays inside the 0x30-0x3f groups, fire maps to itself), so rotating the palette animates every
+// light level without touching the shade tables. The port re-rasterises the 3D view every main-loop
+// pass, so a rotate + palette rebuild is all that is needed. The DOS clock rate is not known here:
+// one rotation step every UW_PALETTE_CYCLE_MS milliseconds (default 250; 0 disables). Returns 1 when
+// it rotated, so the caller can redraw already-drawn HUD pixels that use the cycled colours.
+int dungeon_palette_cycle_tick()
+{
+  static int interval_units = -1;
+  static uint last_units;
+  uint now;
+
+  if (interval_units < 0) {
+    const char *value = getenv("UW_PALETTE_CYCLE_MS");
+    int ms = value ? atoi(value) : 250;
+    interval_units = ms <= 0 ? 0 : (ms + 3) / 4; /* read_realtime_clock_units() counts 4ms units */
+  }
+  if (interval_units == 0) return 0;
+  now = read_realtime_clock_units();
+  if ((int)(now - last_units) < interval_units) return 0;
+  last_units = now;
+  if (getenv("UW_DEBUG_PALCYCLE"))
+    fprintf(stderr, "[palcycle] dungeon step: 0x30=%02x%02x%02x 0x10=%02x%02x%02x\n",
+            (&DAT_00088d98)[0x90], (&DAT_00088d98)[0x91], (&DAT_00088d98)[0x92],
+            (&DAT_00088d98)[0x30], (&DAT_00088d98)[0x31], (&DAT_00088d98)[0x32]);
+  palette_cycle_range(0x30,4,0);
+  palette_cycle_range(0x34,4,0);
+  palette_cycle_range(0x38,4,0);
+  palette_cycle_range(0x3c,4,0);
+  palette_cycle_range(0x10,5,1);
+  palette_cycle_range(0x15,3,1);
+  reinstall_active_palette(0x100,0,0);
+  return 1;
+}
+
+
 // was FUN_0007e99c -- re-expand DAT_00088d98 into DAT_00088640 and re-install it as
 // g_palette_rgb565 (real light-level/tint args dropped by Ghidra)
 void reinstall_active_palette(int entry_count, int first_entry, int flag)
