@@ -873,3 +873,41 @@ header schema. Full captured type/position/chain words and scalar masks remain
 until a separate liveness-guarded cleanup proves them removable or narrows them
 without changing an observed temporary. Other trap helpers' undocumented NPC
 status bits still require independent semantic evidence.
+
+## Trap dispatcher and quest/marker consumers
+
+`generate_trap_consumer_rules.py` emits `trap-consumer-fields.cocci` for
+`dispatch_trap_type_effect`, `apply_quest_event_numeric_effect`, and
+`remove_trap_chain_marker`. Dispatcher trap inputs are common eight-byte
+headers; switch selectors, quality/owner slices, quantity flags, and link
+presence use named properties. Captured full words keep their exact values.
+The stationary spawn path copies named header words, while the region-one
+path retains the complete 27-byte record copy, including unknown extension
+bytes. Spawned container links and cloned next/content clears use `link`/`next`.
+Placement uses `xpos`, `ypos`, and `zpos` in an exact adjacent capture/call
+block while retaining the complete `uVar4` snapshot. A callback inserted between
+that capture and the placement call prevents this rewrite.
+
+Numeric quest effects read `zpos` and `quality`, and write `zpos` without
+changing heading or sub-tile position. Their accessor index deliberately keeps
+`link & 0x1ff`: the original `0x7fc0` mask selects only nine link bits.
+Marker deletion's four-bit value spans `flags_res` and `enchanted`; its
+cross-property captured-word calculation remains intact. The decrement writes
+those two named slices and preserves every other bit, including zero wrap.
+The whole marker function must match, including capture formulas, calls and
+qualifiers; other edits invalidate conversion. Source comments and function
+placement remain intact. No semantic NPC field is inferred from these headers.
+
+Apply with `--all-includes --include-headers-for-types -I . -I src --in-place`.
+`test_trap_consumer_fields.py` checks exact old-to-current conversion,
+idempotence, scope, callback barriers, and marker capture/escape/volatile
+guards. Its real before/after helpers run 786,432 cases: 524,288 dispatcher
+case-seven spawn scenarios cover all initial words, stationary/mobile copies,
+allocation failures, blocked NPCs, placement failure, and callback-mutated
+clones; 131,072 marker cases cover all four-bit counter states and wraparound;
+131,072 numeric quest cases cover terrain and linked-object paths, signed
+contexts, and the narrower link index. All record/guard bytes and callback
+observations are compared. Other dispatcher branches' pure named reads follow
+the already verified common-header layout and are also covered by existing
+trap/layout tests; this oracle does not claim exhaustive dispatcher coverage.
+`--reference` accepts the original `traps.c`; `--asan` enables AddressSanitizer.

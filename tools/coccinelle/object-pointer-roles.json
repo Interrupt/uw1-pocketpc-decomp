@@ -2179,6 +2179,13 @@
           "function": "dispatch_trap_type_effect",
           "roles": [
             {
+              "name": "trap_record",
+              "type": "ushort *",
+              "parameter": true,
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            },
+            {
               "name": "puVar8",
               "type": "ushort *",
               "parameter": false,
@@ -2228,7 +2235,9 @@
               "current_mobile_alias": false
             }
           ],
-          "requires_review": []
+          "requires_review": [
+            "puVar12"
+          ]
         },
         {
           "function": "create_scripted_trap_pair_at_tile",
@@ -2253,6 +2262,13 @@
         {
           "function": "remove_trap_chain_marker",
           "roles": [
+            {
+              "name": "trap_object",
+              "type": "char *",
+              "parameter": true,
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            },
             {
               "name": "puVar4",
               "type": "ushort *",
@@ -2325,6 +2341,13 @@
         {
           "function": "apply_quest_event_numeric_effect",
           "roles": [
+            {
+              "name": "record",
+              "type": "char *",
+              "parameter": true,
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            },
             {
               "name": "iVar3",
               "type": "void *",
