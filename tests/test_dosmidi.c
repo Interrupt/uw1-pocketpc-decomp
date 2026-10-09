@@ -13,11 +13,23 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* audio.c's own, which this suite does not link. Recorded rather than
+   ignored: platform_dosmidi_init is supposed to publish every effect's
+   base volume through here (the byte the decompile lost), and that only
+   happens when the DOS files are actually present. */
+static int base_volume_calls;
+void audio_set_effect_base_volume(int sound_id, int velocity)
+{
+    (void)sound_id; (void)velocity;
+    base_volume_calls++;
+}
+
 void setUp(void)
 {
     unsetenv("UW_AUDIO_MODE");
     unsetenv("UW_DOS_DATA_DIR");
     platform_dosmidi_shutdown();
+    base_volume_calls = 0;
 }
 
 void tearDown(void)
@@ -70,6 +82,9 @@ static void test_dos_mode_requires_the_dos_audio_files(void)
     setenv("UW_DOS_DATA_DIR", "/tmp", 1);
     TEST_ASSERT_EQUAL_INT(0, platform_dosmidi_init(44100));
     TEST_ASSERT_FALSE(platform_dos_audio_enabled());
+    /* And it must not have published anything either: a failed init leaves
+       audio.c's volume table exactly as the default path expects it. */
+    TEST_ASSERT_EQUAL_INT(0, base_volume_calls);
 }
 
 static void test_xmi_path_maps_track_to_the_adlib_xmi(void)
@@ -140,6 +155,17 @@ static void test_render_produces_nothing_when_no_track_is_loaded(void)
    every other effect is under 1.5, and movement.c stops it explicitly via
    stop_movement_sound_handle. Both of these must be safe to call when DOS
    mode is not live, since the default path reaches them too. */
+/* The widened entry point must stay safe when DOS mode is off, including
+   the -1 "use the table's own" sentinels and out-of-range values. */
+static void test_play_effect_is_safe_when_dos_mode_is_off(void)
+{
+    platform_dosmidi_play_effect(0, -1, -1);
+    platform_dosmidi_play_effect(5, 0x7f, 0x40);
+    platform_dosmidi_play_effect(23, 999, 999);
+    platform_dosmidi_play_effect(-1, 0, 0);
+    TEST_ASSERT_FALSE(platform_dos_audio_enabled());
+}
+
 static void test_stop_effect_is_safe_when_dos_mode_is_off(void)
 {
     platform_dosmidi_stop_effect(0);
@@ -172,6 +198,7 @@ int main(void)
     RUN_TEST(test_xmi_path_rejects_a_too_small_buffer);
     RUN_TEST(test_xmi_path_rejects_a_pathological_path);
     RUN_TEST(test_render_produces_nothing_when_no_track_is_loaded);
+    RUN_TEST(test_play_effect_is_safe_when_dos_mode_is_off);
     RUN_TEST(test_stop_effect_is_safe_when_dos_mode_is_off);
     RUN_TEST(test_music_volume_is_clamped_to_a_percentage);
     return UNITY_END();

@@ -21,6 +21,10 @@ extern int DAT_00087448;
 extern int DAT_00087450;
 extern int DAT_0008744c;
 
+/* Supplies a per-sound-id base volume the decompile never recovered, for
+ * DOS audio mode -- see DAT_0023c2b0_backing's comment in audio.c. */
+void audio_set_effect_base_volume(int sound_id, int velocity);
+
 int reset_dialogue_speech_state();
 void clear_ambient_sound_target_thunk();
 short load_voice_sample_page(char *resource, int page_index, char *header, void *out_buffer);

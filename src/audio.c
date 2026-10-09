@@ -190,6 +190,20 @@ int DAT_0008744c;
 /* Sizing-audit pass: max real index is 0xff*5+4=1279 (confirmed by
    the comment below, an 8-bit id field * 5-byte stride) -- a HARD
    bound. Sized all 4 siblings to 1280; down from 8192. */
+/* BUG FIX (DOS audio mode): these four per-sound-id bytes are a five-byte
+   record per id, and the decompile never recovered their contents -- the
+   backing array is zero-filled. DAT_0023c2b2 is the record's base VOLUME,
+   so with it at zero play_positional_sound_effect/play_sound_effect_with_pan
+   compute `volume_bias + 0` and many call sites pass a bias of 0, which
+   would make the sound silent if the value were ever actually used. In the
+   shipped port it never was (see trigger_sound_sample_note's comment: the
+   volume is computed, forwarded two levels and then provably discarded).
+
+   DOS mode does use it, and the DOS game's equivalent base is SOUNDS.DAT's
+   own per-effect velocity -- real data we have. audio_set_effect_base_volume
+   below lets platform_dosmidi_init fill these in from it, which makes the
+   port's existing attenuation math (the same `vol * (0x30 - dist) / 0x28`
+   the DOS engine uses) produce the right answer instead of zero. */
 static undefined DAT_0023c2b0_backing[1280];
 #define DAT_0023c2b0 DAT_0023c2b0_backing[0]
 /* Same per-sound-effect-id table shape as DAT_0023c2b0 just above (all four indexed by
@@ -603,6 +617,19 @@ void stop_current_audio_handle()
 // allocate_and_play_sound_channel/trigger_sound_sample_note/
 // platform_sfx_play for the first time. No change was needed here
 // beyond the global's own default-value fix.
+/* Fills in one sound id's base volume -- the byte the decompile lost. See
+   DAT_0023c2b0_backing's comment. Bounded by the real backing array. */
+void audio_set_effect_base_volume(int sound_id, int velocity)
+{
+  unsigned index = (unsigned)sound_id * 5 + 2;
+  if (sound_id < 0 || index >= sizeof(DAT_0023c2b0_backing)) {
+    return;
+  }
+  if (velocity < 0) velocity = 0;
+  if (velocity > 0x7f) velocity = 0x7f;
+  ((unsigned char *)DAT_0023c2b0_backing)[index] = (unsigned char)velocity;
+}
+
 int play_positional_sound_effect(uint sound_id, short world_x, short world_y, uint volume_bias)
 {
   short sVar1;
@@ -996,7 +1023,16 @@ LAB_00073108:
   DAT_0023c39c = DAT_0023c39c | bVar1;
   g_sound_channel_state[uVar2] = 2;
   g_sound_channel_group[uVar2] = uVar3;
-  trigger_sound_sample_note(sound_id,note);
+  if (platform_dos_audio_enabled()) {
+    /* Straight to the DOS backend with both the distance-attenuated volume
+     * (`note`) and the stereo pan (`flags`) the callers computed. Not via
+     * trigger_sound_sample_note: the real FUN_00073140 takes one argument,
+     * so that route structurally cannot carry a pan, and it is where the
+     * shipped port's volume was discarded. */
+    platform_dosmidi_play_effect(sound_id, note, (int)flags);
+  } else {
+    trigger_sound_sample_note(sound_id,note);
+  }
   return uVar2;
 }
 

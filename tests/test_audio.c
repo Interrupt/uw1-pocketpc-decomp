@@ -282,12 +282,12 @@ static void test_dos_audio_mode_plays_ids_the_whitelist_rejects(void)
 {
     audio_fixture_set_dos_audio_enabled(1);
     TEST_ASSERT_NOT_EQUAL_UINT(0xff, allocate_and_play_sound_channel(0, 0, 0, 0x40, 0, 0));
-    TEST_ASSERT_EQUAL_INT(1, audio_fixture_sfx_play_call_count());
-    TEST_ASSERT_EQUAL_INT(800, audio_fixture_last_sfx_resource_id());
+    TEST_ASSERT_EQUAL_INT(1, audio_fixture_dos_effect_call_count());
+    TEST_ASSERT_EQUAL_INT(0, audio_fixture_last_dos_effect_id());
 
     TEST_ASSERT_NOT_EQUAL_UINT(0xff, allocate_and_play_sound_channel(0xb, 0, 0, 0x40, 0, 0));
-    TEST_ASSERT_EQUAL_INT(2, audio_fixture_sfx_play_call_count());
-    TEST_ASSERT_EQUAL_INT(800 + 0xb, audio_fixture_last_sfx_resource_id());
+    TEST_ASSERT_EQUAL_INT(2, audio_fixture_dos_effect_call_count());
+    TEST_ASSERT_EQUAL_INT(0xb, audio_fixture_last_dos_effect_id());
 }
 
 /* The whitelisted ids must behave identically either way -- the DOS escape
@@ -296,6 +296,35 @@ static void test_dos_audio_mode_leaves_whitelisted_ids_alone(void)
 {
     audio_fixture_set_dos_audio_enabled(1);
     TEST_ASSERT_NOT_EQUAL_UINT(0xff, allocate_and_play_sound_channel(3, 0, 0, 0x40, 0, 0));
+    TEST_ASSERT_EQUAL_INT(1, audio_fixture_dos_effect_call_count());
+    TEST_ASSERT_EQUAL_INT(3, audio_fixture_last_dos_effect_id());
+}
+
+/* The shipped WinCE chain computes a distance-attenuated volume and a pan
+   and then discards both -- allocate_and_play_sound_channel never reads
+   the pan, and trigger_sound_sample_note (one formal parameter in the real
+   binary) drops the volume. DOS mode must get them, because its effects
+   are notes whose velocity and CC 10 are exactly those values. */
+static void test_dos_audio_mode_forwards_the_volume_and_pan(void)
+{
+    audio_fixture_set_dos_audio_enabled(1);
+    allocate_and_play_sound_channel(3, 0, 0, 0x5a, 0x20, 0);
+    TEST_ASSERT_EQUAL_INT(1, audio_fixture_dos_effect_call_count());
+    TEST_ASSERT_EQUAL_INT(3, audio_fixture_last_dos_effect_id());
+    TEST_ASSERT_EQUAL_INT(0x5a, audio_fixture_last_dos_effect_velocity());
+    TEST_ASSERT_EQUAL_INT(0x20, audio_fixture_last_dos_effect_pan());
+    /* and it must not also go the WAVE route -- that would double-play */
+    TEST_ASSERT_EQUAL_INT(0, audio_fixture_sfx_play_call_count());
+}
+
+/* The default path is unchanged: still the WAVE backend, via
+   trigger_sound_sample_note, with no DOS dispatch at all. */
+static void test_default_path_does_not_reach_the_dos_backend(void)
+{
+    audio_fixture_set_dos_audio_enabled(0);
+    allocate_and_play_sound_channel(3, 0, 0, 0x5a, 0x20, 0);
+    TEST_ASSERT_EQUAL_INT(0, audio_fixture_dos_effect_call_count());
+    TEST_ASSERT_EQUAL_INT(1, audio_fixture_sfx_play_call_count());
     TEST_ASSERT_EQUAL_INT(803, audio_fixture_last_sfx_resource_id());
 }
 
@@ -318,5 +347,7 @@ int main(void)
     RUN_TEST(test_sfx_id_whitelist_still_rejects_other_ids_by_default);
     RUN_TEST(test_dos_audio_mode_plays_ids_the_whitelist_rejects);
     RUN_TEST(test_dos_audio_mode_leaves_whitelisted_ids_alone);
+    RUN_TEST(test_dos_audio_mode_forwards_the_volume_and_pan);
+    RUN_TEST(test_default_path_does_not_reach_the_dos_backend);
     return UNITY_END();
 }

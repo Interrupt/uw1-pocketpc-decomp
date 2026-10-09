@@ -20,5 +20,9 @@ int audio_fixture_last_positional_sfx_pan(void);
 int audio_fixture_last_positional_sfx_volume(void);
 void audio_fixture_set_next_object_record(void *record);
 void audio_fixture_set_dos_audio_enabled(int on);
+int audio_fixture_dos_effect_call_count(void);
+int audio_fixture_last_dos_effect_id(void);
+int audio_fixture_last_dos_effect_velocity(void);
+int audio_fixture_last_dos_effect_pan(void);
 
 #endif

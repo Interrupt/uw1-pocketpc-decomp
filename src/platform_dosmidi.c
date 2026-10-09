@@ -11,6 +11,7 @@
  * vendored code. */
 #include "headers/platform_dosmidi.h"
 #include "headers/debug.h"
+#include "headers/audio.h"
 #include "uw_ail.h"
 #include "uw_adlib.h"
 #include "uw_opl.h"
@@ -166,6 +167,17 @@ int platform_dosmidi_init(int out_rate)
   for (int i = 0; i < (int)(sizeof(g.sfx) / sizeof(g.sfx[0])); i++) {
     g.sfx[i].channel = 0;
   }
+  /* Hand audio.c the per-id base volumes its decompile lost, so
+   * play_positional_sound_effect's existing `vol * (0x30 - dist) / 0x28`
+   * -- the same curve the DOS engine uses -- has a real base to scale
+   * instead of zero. See DAT_0023c2b0_backing's comment there. */
+  for (int id = 0; id < g.sounds.count; id++) {
+    uw_sound_effect e;
+    if (uw_sound_effect_at(&g.sounds, id, &e)) {
+      audio_set_effect_base_volume(id, e.velocity);
+    }
+  }
+
   g.live = 1;
   DEBUG(INFO, "[audio] DOS audio mode ready: OPL2 at %dHz -> %dHz, %d effects, %d timbres\n",
         UW_OPL_RATE, g.out_rate, g.sounds.count, g.timbres.count);
@@ -294,7 +306,7 @@ void platform_dosmidi_stop(void)
   }
 }
 
-void platform_dosmidi_play_effect(int id)
+void platform_dosmidi_play_effect(int id, int velocity, int pan)
 {
   if (!g.live) {
     return;
@@ -313,6 +325,17 @@ void platform_dosmidi_play_effect(int id)
     DEBUG(WARN, "[audio] dos effect %d: no record\n", id);
     return;
   }
+  /* The caller's attenuated volume and pan when it has them, else the
+   * table's own velocity and a centred pan. Zero is a real answer, not a
+   * missing one: the distance curve reaches it at the 0x30 range limit. */
+  if (velocity < 0) velocity = e.velocity;
+  if (velocity > 0x7f) velocity = 0x7f;
+  if (pan < 0 || pan > 0x7f) pan = 0x40;
+  if (velocity == 0) {
+    DEBUG(INFO, "[audio] dos effect %d dropped: attenuated to silence\n", id);
+    return;
+  }
+
   /* Bank 1 is the sound-effects bank: its timbres are the time-variant
    * effects, not plain instruments (see the header). */
   if (!timbre_ready(1, e.program)) {
@@ -348,8 +371,8 @@ void platform_dosmidi_play_effect(int id)
     DEBUG(INFO, "[audio] dos effect %d dropped: no channel free to lock\n", id);
     return;
   }
-  DEBUG(INFO, "[audio] dos effect %d: bank1 prog %u note %u vel %u for %.2fs on channel %d\n",
-        id, e.program, e.note, e.velocity, e.duration / 256.0, ch);
+  DEBUG(INFO, "[audio] dos effect %d: bank1 prog %u note %u vel %d pan %d for %.2fs on channel %d\n",
+        id, e.program, e.note, velocity, pan, e.duration / 256.0, ch);
 
   /* The sequence the DOS engine sends, in its order: the bank, the program,
    * all controllers off, full volume and expression, centre pan, note on. */
@@ -358,8 +381,8 @@ void platform_dosmidi_play_effect(int id)
   uw_ail_send_voice(&g.ail, (uint8_t)(0xaf + ch), 0x79, 0);   /* CC 121: controllers off */
   uw_ail_send_voice(&g.ail, (uint8_t)(0xaf + ch), 7, 0x7f);
   uw_ail_send_voice(&g.ail, (uint8_t)(0xaf + ch), 0x0b, 0x7f);
-  uw_ail_send_voice(&g.ail, (uint8_t)(0xaf + ch), 0x0a, 0x40);
-  uw_ail_send_voice(&g.ail, (uint8_t)(0x8f + ch), e.note, e.velocity);
+  uw_ail_send_voice(&g.ail, (uint8_t)(0xaf + ch), 0x0a, (uint8_t)pan);
+  uw_ail_send_voice(&g.ail, (uint8_t)(0x8f + ch), e.note, (uint8_t)velocity);
 
   /* duration is in 1/256s; the timer runs at UW_AIL_TICK_HZ. */
   int ticks = (int)(((long)e.duration * UW_AIL_TICK_HZ) / 256);

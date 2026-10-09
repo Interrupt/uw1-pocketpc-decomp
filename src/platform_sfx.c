@@ -675,7 +675,7 @@ void platform_sfx_play(int resource_id)
    * which runs on SDL's audio thread. */
   if (platform_dos_audio_enabled()) {
     platform_music_lock();
-    platform_dosmidi_play_effect(resource_id - 800);
+    platform_dosmidi_play_effect(resource_id - 800, -1, -1);
     platform_music_unlock();
     return;
   }

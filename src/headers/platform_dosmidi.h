@@ -65,10 +65,26 @@ void platform_dosmidi_stop(void);
 
 /* Plays sound-effect `id` -- an index into SOUNDS.DAT, i.e.
  * trigger_sound_sample_note's own id before its +800 resource offset.
- * Looks up that record's bank-1 program, note, velocity and duration,
- * locks a channel and plays the note, releasing it when the duration runs
- * out. A no-op when the id has no record. */
-void platform_dosmidi_play_effect(int id);
+ * Looks up that record's bank-1 program, note and duration, locks a
+ * channel and plays the note, releasing it when the duration runs out.
+ * A no-op when the id has no record.
+ *
+ * `velocity` is the caller's distance-attenuated volume (0..0x7f) and
+ * `pan` its stereo placement (0..0x7f, 0x40 centre) -- the values
+ * play_positional_sound_effect and play_sound_effect_with_pan compute and
+ * which the shipped WinCE port discarded. Pass -1 for either to fall back
+ * to SOUNDS.DAT's own velocity and a centred pan. A velocity of 0 is
+ * honoured as silence, matching the original's "out of earshot".
+ *
+ * MEASURED: velocity genuinely scales the output (0x7f/0x3f/0x1f on one
+ * effect peak at 2572/900/588, and 0 is silent). `pan` currently does
+ * NOT, and cannot: the chip behind ADLIB.ADV is an OPL2 (YM3812), which
+ * is mono -- its nine channels are summed to one output, so a real AdLib
+ * could not place a sound either. It is forwarded anyway because the
+ * driver accepts CC 10 and the value is correct; realising it would mean
+ * the SB Pro FM driver (SBPFM.ADV) over a stereo OPL3, which is a
+ * different driver and a different chip than this path emulates. */
+void platform_dosmidi_play_effect(int id, int velocity, int pan);
 
 /* Stops any voice currently sounding effect `id`, releasing its channel.
  *

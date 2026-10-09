@@ -19,8 +19,15 @@
  * a quoted include resolves against the including file's own directory
  * first, so the vendored sources find this one and the headers under
  * src/headers find theirs. */
-#ifndef UW_H
-#define UW_H
+/* NOT the include guard upstream uses. This project has its own
+   src/headers/uw.h whose guard is UW_H, and a translation unit that pulls
+   in both (platform_dosmidi.c includes headers/audio.h as well as the
+   vendored headers) would otherwise see whichever came first suppress the
+   other -- which it did, as "unknown type name 'uw_blob'". The two
+   headers share no declarations, so they coexist happily once the guards
+   differ. */
+#ifndef OPENABYSS_UW_H
+#define OPENABYSS_UW_H
 
 #include <stddef.h>
 #include <stdint.h>

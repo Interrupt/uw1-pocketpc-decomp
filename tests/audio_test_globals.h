@@ -71,3 +71,8 @@ extern undefined1 DAT_001007d0_backing[3072];
    audio_fixture_set_dos_audio_enabled); the real one is in
    platform_dosmidi.c, which this suite does not link. */
 int platform_dos_audio_enabled(void);
+
+/* allocate_and_play_sound_channel hands DOS audio mode the attenuated
+   volume and the pan directly, since trigger_sound_sample_note cannot
+   carry a pan. Recorded by support/audio_fixture.c. */
+void platform_dosmidi_play_effect(int id, int velocity, int pan);
