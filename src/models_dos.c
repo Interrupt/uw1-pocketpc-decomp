@@ -641,6 +641,36 @@ static int emit_face_order(const dos_face *face, const int *mapped, int n, int *
   return n;
 }
 
+/* Per-model X correction, in DOS model units, applied to the emitted vertices.
+ 
+   Every tile-spanning model in UW.EXE is centred at +16 rather than 0: the
+   door frame and the bridge both span -112..144, and so does the 64x64
+   texture map. The port's art kept that for TMAP16X16.E and TMAP64X64.E but
+   re-centred DFRAME.E and FBRIDGE.E to -128..128, and the port's renderer and
+   placement were built against the re-centred pair -- with the raw DOS
+   geometry a door frame sits 16 units off its own door leaf, which does match
+   exactly. So those two are brought onto the port's placement.
+ 
+   Deliberately a short explicit list and not a derived rule. The obvious rule
+   -- "centre the model on the half-extent the 0x0078 ORIGIN opcode states" --
+   is wrong: it would also recentre the door leaf (ORIGIN 64, vertices 0..128,
+   where 0 is the hinge and the port's own comment says to keep it there) and
+   the beam (ORIGIN 8, vertices 0..16), both of which already match their .E
+   file exactly. Seven of the nine models that can be compared need no
+   correction at all, so this is art-matching for two known models rather than
+   a decode fix, and it is listed where it can be seen. */
+static int dos_model_x_offset(int dos_index)
+{
+  switch (dos_index) {
+  case 0x01:   /* door frame */
+  case 0x02:   /* bridge */
+    /* DOS is the port's placement + 16, so correct by -16. */
+    return -16;
+  default:
+    return 0;
+  }
+}
+
 int uw_dos_model_script(int dos_index, char *out, unsigned int out_sz)
 {
   if (!out || out_sz < 64 || dos_index < 0 || dos_index > 31) {
@@ -712,11 +742,12 @@ int uw_dos_model_script(int dos_index, char *out, unsigned int out_sz)
   for (int v = 0; v < DOS_MAX_VERTS; v++) {
     if (remap[v] >= 0) order[remap[v]] = v;
   }
+  const int x_fix = dos_model_x_offset(dos_index);
   for (int i = 0; i < n_points; i++) {
     const dos_vert *p = &m->verts[order[i]];
     /* The file's (x, y, z) is the port's (x, z, y) -- see this file's own
-       block comment for the eight models this was confirmed against. */
-    emit(out, out_sz, &pos, "%d,%d,%d;\n", p->x, p->z, p->y);
+       block comment for the models this was confirmed against. */
+    emit(out, out_sz, &pos, "%d,%d,%d;\n", p->x + x_fix, p->z, p->y);
   }
   emit(out, out_sz, &pos, "}\n\nPARTS {\n");
 
