@@ -608,43 +608,15 @@ void close_panels_before_level_change()
 
 
 
-// was FUN_00066cb4 -- zeroes g_player_object's whole 0x1b-byte record then re-sets it to a fresh
-// blank object header/mobile-record: a default heading/quality pattern, item-id 0x7f (the player's
-// fixed item-id), and clears the container/link/status bitfields.
+// was FUN_00066cb4 -- clears the full mobile record, sets the player's fixed
+// item ID, and restores the original status value. Bits 4-7 in that status
+// value remain unnamed; preserve the complete initial word.
 void reset_player_object_record()
 
 {
-  ushort uVar1;
-
-  ce_memset(g_player_object,0,0x1b);
-  g_player_object->hdr.position_word_high = g_player_object->hdr.owner;
-  g_player_object->hdr.link_word_high = 0;
-  g_player_object->status_word_low = 0xfd;
-  uVar1 = g_player_object->hdr.type_flags;
-  g_player_object->hdr.type_flags = (ushort)(uVar1 & 0x7fff);
-  uVar1 = g_player_object->hdr.type_flags;
-  g_player_object->hdr.type_flags_low = (byte)(char)uVar1;
-  g_player_object->hdr.type_flags_high = (byte)(uVar1 >> 8) | 0x20;
-  uVar1 = g_player_object->hdr.type_flags;
-  g_player_object->hdr.type_flags = (ushort)(uVar1 & 0xbfff);
-  uVar1 = g_player_object->hdr.position_word;
-  g_player_object->hdr.type_flags_high = (byte)(char)(uVar1 & 0xfc7f);
-  g_player_object->hdr.position_word_high = (byte)(char)((uVar1 & 0xfc7f) >> 8);
-  g_player_object->goal_word_high = g_player_object->heading_flags & 0xe0;
-  uVar1 = g_player_object->hdr.chain_word;
-  g_player_object->hdr.position_word_low = (byte)(char)(uVar1 & 0xffc0);
-  g_player_object->hdr.chain_word_high = (byte)(char)((uVar1 & 0xffc0) >> 8);
-  g_player_object->hdr.position_word_low = g_player_object->hdr.quality;
-  g_player_object->hdr.chain_word_high = 0;
-  uVar1 = g_player_object->hdr.link_word;
-  g_player_object->hdr.position_word_high = (byte)(char)(uVar1 & 0xffc0);
-  g_player_object->hdr.link_word_high = (byte)(char)((uVar1 & 0xffc0) >> 8);
-  g_player_object->hdr.position_word_high = g_player_object->hdr.owner;
-  g_player_object->hdr.link_word_high = 0;
-  g_player_object->recent_damage = 0;
-  uVar1 = g_player_object->hdr.type_flags;
-  g_player_object->hdr.type_flags_low = 0x7f;
-  g_player_object->hdr.type_flags_high = (byte)(uVar1 >> 8) & 0xfe;
+  ce_memset(g_player_object, 0, sizeof(*g_player_object));
+  g_player_object->hdr.item_id = 0x7f;
+  g_player_object->status_word = 0x00fd;
   return;
 }
 

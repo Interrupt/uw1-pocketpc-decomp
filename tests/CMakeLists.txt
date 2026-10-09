@@ -1017,6 +1017,10 @@ if(UW_SPATCH_EXECUTABLE)
     COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_player_position_fields.py"
       "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME player_reset_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_player_reset_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
   add_test(NAME position_sync_fields
     COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_position_sync_fields.py"

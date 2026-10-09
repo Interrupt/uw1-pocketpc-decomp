@@ -788,7 +788,30 @@ hashes and exact source conversion of all three functions. A further 524,288
 teleport field cases check fixed coordinates, chain clearing, preserved
 snapshots, scope and idempotence. `--asan` sanitizes both harnesses.
 
-The unusual cross-word byte stores in `reset_player_object_record` are not
-ordinary property updates: they copy between different header words after
-zeroing the record. They remain for a separate original-code review, rather
-than being inferred as normal coordinate writes from their destinations.
+The cross-word byte stores in `reset_player_object_record` required a
+complete-function review; their verified zero-based reduction is described
+below.
+
+### Zero-based player record reset
+
+`generate_player_reset_rules.py` generates `player-reset-fields.cocci`. The
+complete original function body must match, including the full zero clear,
+ordinary scalar temporary, exact stores and return. It cannot fold a partial
+initializer with added callbacks, live/escaping temporary uses, a volatile
+scalar or a different clear size. The recipe disables Coccinelle's optional
+qualifier matching, so the volatile guard is enforced by the generated patch.
+
+`ce_memset` in `ordinal_stubs.c` is the ordinary memory-only wrapper. After
+its full record clear, the original cross-word byte reads are zero. The
+transient door-direction bit is overwritten with zero before the final item
+ID update. The final record is zero except item ID `0x7f` and status word
+`0x00fd`, so the replacement uses those named fields and the schema's size.
+The status initializer intentionally remains a whole-word literal: its bits
+4-7 have no verified property names. No meaning is inferred for those bits.
+
+`test_player_reset_fields.py` compiles the actual reset and the real memory
+wrapper. Independent byte expectations and a saved original initializer
+check 262,144 varied input records/slots, all surrounding guard bytes, pointer
+identity and the single clear call. It also checks the complete-function
+conversion, idempotence and all preservation guards. `--asan` enables address
+sanitization; `--reference PATH` checks conversion of saved source.
