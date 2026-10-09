@@ -248,7 +248,7 @@ typedef struct __attribute__((packed)) {
     union {
         byte npc_ai_flags;        /* 0x19: notice, attack and allegiance flags */
         struct __attribute__((packed)) {
-            byte npc_hunger : 7;  /* legacy format label; live code uses AI flags */
+            byte npc_ai_flags_low7 : 7; /* low seven AI flag bits; individual meanings remain under review */
             byte _pad19 : 1;
         };
     };

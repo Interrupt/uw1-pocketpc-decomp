@@ -228,7 +228,7 @@ static void test_uw1_mobile_fields(void)
     VERIFY_FIELD(uw_mobile_object_t,npc_yhome,0x16,4,0x3f);
     VERIFY_FIELD(uw_mobile_object_t,npc_xhome,0x16,10,0x3f);
     VERIFY_FIELD(uw_mobile_object_t,npc_heading,0x18,0,0x1f);
-    VERIFY_FIELD(uw_mobile_object_t,npc_hunger,0x19,0,0x7f);
+    VERIFY_FIELD(uw_mobile_object_t,npc_ai_flags_low7,0x19,0,0x7f);
 }
 
 static void test_arm_uw1_common_property_fields(void)

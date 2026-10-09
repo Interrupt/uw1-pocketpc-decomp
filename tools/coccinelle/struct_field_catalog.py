@@ -28,7 +28,7 @@ BYTES = {
     'owner_flags': [(7, 1, 'can_have_owner')],
     'description_flags': [(0, 4, 'quality_type'), (4, 1, 'has_look_description')],
     'heading_flags': [(0, 5, 'npc_heading')],
-    # npc_hunger is a legacy format label. The live AI flag semantics are
-    # not yet documented sufficiently to replace npc_ai_flags masks with it.
+    # npc_ai_flags_low7 is only a layout view. Individual AI flag semantics
+    # are not yet documented sufficiently to replace npc_ai_flags masks.
     'pitch_flags': [(3, 5, 'pitch')],
 }

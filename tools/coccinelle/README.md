@@ -410,7 +410,7 @@ packed temporaries, conditional overwrites, wider-mask exclusion, and repeatabil
 ## Documented field reads and remaining-access inventory
 
 `struct_field_catalog.py` lists the documented packed properties already
-present in `uw.h`; reserved fields and the uncertain legacy `npc_hunger` label
+present in `uw.h`; reserved fields and the layout-only `npc_ai_flags_low7` view
 are excluded. `generate_named_field_read_rules.py` generates
 `named-field-reads.cocci` from that catalog. It covers unsigned/signed word
 masks, unsigned/signed byte views, byte casts, and shifted comparisons.
