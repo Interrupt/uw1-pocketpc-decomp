@@ -6,12 +6,36 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools/coccinelle'))
-from generate_npc_spawn_rules import generate, UPDATES
+from generate_npc_spawn_rules import generate, UPDATES, cleanup_dead_snapshots, cleanup_spawn_source
+from generate_mobile_tick_rules import generate as phase_rules
 from generate_current_alias_rules import HEADER, NPC
 from extract_functions import extract
 
 PATCH = ROOT / 'tools/coccinelle/npc-spawn-fields.cocci'
 assert PATCH.read_text() == generate(), 'regenerate npc-spawn-fields.cocci'
+PHASE_PATCH = ROOT / 'tools/coccinelle/mobile-tick-phase.cocci'
+assert PHASE_PATCH.read_text() == phase_rules(), 'regenerate mobile-tick-phase.cocci'
+
+# The cleanup is all-or-nothing: a later use or escaped address must retain
+# every original snapshot, even when individual assignments look redundant.
+dead = '''int init_monster_spawn_defaults()
+{
+  ushort uVar1;
+  uVar1 = npc->goal_word;
+  npc->npc_goal = 8;
+  uVar1 = npc->status_word;
+  /* preserve the explanation */
+  npc->status_word = uVar1 & 0xfdff;
+  return 1;
+}'''
+cleaned = cleanup_dead_snapshots(dead)
+assert 'uVar1' not in cleaned and 'npc->status_word &= 0xfdff;' in cleaned
+assert '/* preserve the explanation */' in cleaned
+assert cleanup_dead_snapshots(cleaned) == cleaned
+for use in ['return uVar1;', 'escape(&uVar1); return 1;', 'consume(uVar1); return 1;']:
+    live = dead.replace('return 1;', use)
+    assert cleanup_dead_snapshots(live) == live
+assert cleanup_dead_snapshots(dead.replace('ushort uVar1;', 'volatile ushort uVar1;')) == dead.replace('ushort uVar1;', 'volatile ushort uVar1;')
 SANITIZER_FLAGS = (['-fsanitize=address', '-fno-omit-frame-pointer']
                    if '--asan' in sys.argv[2:] else [])
 PREAMBLE = '''#include "src/headers/uw.h"
@@ -39,10 +63,11 @@ with tempfile.TemporaryDirectory() as tmp:
         return subprocess.check_output([str(program)], text=True)
     def transform(text):
         path.write_text(text)
-        result = subprocess.run([sys.argv[1], '--sp-file', str(PATCH), str(path),
+        for patch in [PATCH, PHASE_PATCH]:
+            result = subprocess.run([sys.argv[1], '--sp-file', str(patch), str(path),
                                  '--all-includes', '--include-headers-for-types', '-I', str(ROOT),
                                  '-I', str(ROOT / 'src'), '--in-place'], capture_output=True, text=True)
-        assert result.returncode == 0, result.stdout + result.stderr
+            assert result.returncode == 0, result.stdout + result.stderr
         return path.read_text()
     harness = '''
 int main(void) {
@@ -133,6 +158,8 @@ int projectile_spawn(byte *scratch_bytes)
     # initializer; this also catches changes to unknown status/AI flag bits.
     actual = extract((ROOT / 'src/object_actions.c').read_text(), 'init_monster_spawn_defaults')
     assert 'scratch_bytes' not in actual and '_low' not in actual and '_high' not in actual
+    assert 'uVar1' not in actual and 'npc->tick_phase = 0;' in actual
+    assert cleanup_spawn_source((ROOT / 'src/object_actions.c').read_text()) == (ROOT / 'src/object_actions.c').read_text()
     source = PREAMBLE + actual + '''
 int main(void) {
     for (unsigned seed = 0; seed < 65536; ++seed) {
@@ -184,3 +211,50 @@ int main(void) {
     print(execute(source).strip())
     assert transform(source) == source, 'game spawn initializer is not idempotent'
     print('NPC spawn conversions: offsets, signed reads/stores/addresses, live snapshots, exclusions and idempotence passed')
+
+    phases = PREAMBLE + '''uw_mobile_object_t *DAT_0010190c;
+static unsigned phase_read;
+int init_monster_spawn_defaults()
+{
+    uw_mobile_object_t *npc = (uw_mobile_object_t *)g_scratch_object_ptr;
+    npc->movement_flags = npc->movement_flags & 0xf0;
+    return npc->movement_flags;
+}
+void tick_mobile_objects(char elapsed)
+{
+    phase_read = DAT_0010190c->movement_flags & 0xf;
+}
+int npc_ai_tick()
+{
+    return DAT_0010190c->movement_flags & 0xf;
+}
+int unrelated(uw_monster_type_props_t *row)
+{
+    return row->movement_flags & 0xf;
+}
+int main(void) {
+    uw_mobile_object_t obj;
+    DAT_0010190c = &obj;
+    g_scratch_object_ptr = &obj.hdr;
+    for (unsigned n = 0; n < 256; ++n) {
+        memset(&obj, 0x5a, sizeof(obj));
+        obj.movement_flags = n;
+        tick_mobile_objects(0);
+        assert(phase_read == (n & 15));
+        assert(npc_ai_tick() == (n & 15));
+        assert(init_monster_spawn_defaults() == (n & 240));
+        for (unsigned j = 0; j < sizeof(obj); ++j)
+            assert(((byte *)&obj)[j] == (j == 10 ? n & 240 : 0x5a));
+    }
+    puts("Mobile tick phase: 256 byte values; upper bits and neighboring bytes preserved");
+}
+'''
+    before = execute(phases)
+    converted = transform(phases)
+    assert 'npc->tick_phase = 0;' in converted
+    assert 'return DAT_0010190c->tick_phase;' in converted
+    assert 'phase_read = DAT_0010190c->tick_phase;' in converted
+    assert extract(phases, 'unrelated') == extract(converted, 'unrelated')
+    assert execute(converted) == before
+    assert transform(converted) == converted
+    print(before.strip())

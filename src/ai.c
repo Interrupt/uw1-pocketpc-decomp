@@ -921,7 +921,7 @@ void tick_mobile_objects(char elapsed)
     do {
       DAT_0010190c = (uw_mobile_object_t *)((uint)*pbVar2 * 0x1b + DAT_002046b8);
       do {
-        iVar1 = object_tick_is_due(DAT_0010190c->movement_flags & 0xf,
+        iVar1 = object_tick_is_due(DAT_0010190c->tick_phase,
                                    DAT_0010190c->attack_pitch & 7);
         if (iVar1 == 0) goto LAB_00034a98;
         if ((DAT_0010190c->hdr.item_id & 0x1c0) == 0x40) {

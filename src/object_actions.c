@@ -2336,19 +2336,14 @@ int init_monster_spawn_defaults()
 
 {
   int uw_ord2005_rem_11 = 0;
-  ushort uVar1;
   undefined4 uVar2;
   int extraout_r1;
   int iVar3;
   uw_mobile_object_t *npc = (uw_mobile_object_t *)g_scratch_object_ptr;
   
-  uVar1 = npc->tile_word;
   npc->npc_xhome = 32;
-  uVar1 = npc->tile_word;
   npc->npc_yhome = 32;
-  uVar1 = npc->hdr.chain_word;
   npc->hdr.quality = 32;
-  uVar1 = npc->hdr.link_word;
   npc->hdr.owner = 32;
   DAT_001007c8 = &g_monster_type_props[npc->hdr.item_id & 0x3f];
   uVar2 = ce_rand();
@@ -2359,34 +2354,22 @@ int init_monster_spawn_defaults()
   }
   npc->npc_hp = (byte)(iVar3 >> 5);
   npc->full_heading = npc->hdr.heading << 5;
-  uVar1 = npc->goal_word;
   npc->npc_goal = 8;
-  uVar1 = npc->goal_word;
   npc->npc_gtarg = 0;
-  uVar1 = npc->status_word;
   npc->npc_level = 0;
-  uVar1 = npc->target_word;
   npc->npc_target_tile_x = 0;
-  uVar1 = npc->target_word;
   npc->npc_target_tile_y = 0;
-  uVar1 = npc->status_word;
   /* These legacy status bits (4..12) have no documented field names. */
-  npc->status_word = uVar1 & 0xff0f;
-  uVar1 = npc->status_word;
-  npc->status_word = uVar1 & 0xfdff;
-  uVar1 = npc->status_word;
-  npc->status_word = uVar1 & 0xfbff;
-  uVar1 = npc->status_word;
-  npc->status_word = uVar1 & 0xf7ff;
-  uVar1 = npc->status_word;
-  npc->status_word = uVar1 & 0xfeff;
+  npc->status_word &= 0xff0f;
+  npc->status_word &= 0xfdff;
+  npc->status_word &= 0xfbff;
+  npc->status_word &= 0xf7ff;
+  npc->status_word &= 0xfeff;
   npc->heading_flags = npc->heading_flags & 0xdf;
-  uVar1 = npc->target_word;
   npc->npc_swing_charge = 0;
-  npc->movement_flags = npc->movement_flags & 0xf0;
+  npc->tick_phase = 0;
   npc->attack_pitch = npc->attack_pitch & 0xfc | 4;
   npc->animation_flags = npc->animation_flags & 0xe0 | 0x20;
-  uVar1 = npc->goal_word;
   npc->npc_animation_frame = 0;
   npc->attack_pitch = npc->attack_pitch & 7 | 0x80;
   npc->motion_flags = npc->motion_flags & 0x7f;
@@ -2396,7 +2379,6 @@ int init_monster_spawn_defaults()
   npc->animation_flags = npc->animation_flags & 0x7f;
   npc->heading_flags = npc->heading_flags & 0x7f;
   npc->heading_flags = npc->heading_flags & 0xbf;
-  uVar1 = npc->tile_word;
   npc->npc_path_slot = 0;
   npc->animation_flags = npc->animation_flags & 0xbf;
   npc->npc_whoami = 0;
@@ -2406,11 +2388,8 @@ int init_monster_spawn_defaults()
   npc->npc_ai_flags = npc->npc_ai_flags & 0xdf;
   npc->npc_ai_flags = npc->npc_ai_flags & 0xbf;
   npc->npc_ai_flags = npc->npc_ai_flags & 0x7f;
-  uVar1 = npc->status_word;
-  npc->status_word = uVar1 & 0xefff;
-  uVar1 = npc->status_word;
+  npc->status_word &= 0xefff;
   npc->npc_talkedto = 0;
-  uVar1 = npc->status_word;
   npc->npc_attitude = 2;
   npc->movement_flags = npc->movement_flags & 0x7f;
   npc->npc_ai_flags = npc->npc_ai_flags & 0xf3;

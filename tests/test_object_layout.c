@@ -205,6 +205,7 @@ static void test_uw1_header_fields(void)
 
 static void test_uw1_mobile_fields(void)
 {
+    VERIFY_FIELD(uw_mobile_object_t, tick_phase, 10, 0, 0xf);
     VERIFY_FIELD(uw_mobile_object_t,npc_path_slot,22,0,15);
     VERIFY_FIELD(uw_mobile_object_t,npc_goal,0xb,0,0xf);
     VERIFY_FIELD(uw_mobile_object_t,npc_gtarg,0xb,4,0xff);

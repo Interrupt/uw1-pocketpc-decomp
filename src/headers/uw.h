@@ -149,7 +149,13 @@ typedef struct __attribute__((packed)) {
 
     unsigned char  npc_hp;          /* offset 0x08 */
     unsigned char  full_heading;    /* offset 0x09: 256-direction motion heading */
-    unsigned char  movement_flags;  /* offset 0x0a: motion/refresh state */
+    union {
+        byte movement_flags;       /* offset 0x0a: motion/refresh state */
+        struct __attribute__((packed)) {
+            byte tick_phase : 4;   /* modulo-16 schedule; tick_mobile_objects/npc_ai_tick */
+            byte _movement_bits : 4;
+        };
+    };
 
     union {
         ushort goal_word;

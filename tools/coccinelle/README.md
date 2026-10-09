@@ -482,6 +482,26 @@ bytes have names, but the remaining individual flag meanings are undocumented.
 These are specific exceptions, not a claim that the surrounding migration is
 complete.
 
+The spawn initializer's unused `uVar1` snapshots have a separate, guarded
+cleanup: `generate_npc_spawn_rules.py --cleanup-dead-snapshots`. It folds the
+adjacent snapshot/mask/store pairs to `npc->status_word &= mask`, removes
+unused snapshots and the local declaration, then checks that no reference to
+the temporary remains. Any later use, escaped address, unfamiliar assignment
+or volatile access rejects the entire cleanup. The underlying spawn patch
+still preserves live snapshots; the cleanup only operates on this audited
+initializer. Legacy status bits remain explicit masks until their meanings
+are established.
+
+`generate_mobile_tick_rules.py` emits `mobile-tick-phase.cocci`. The low nibble
+at mobile offset 0x0a is now `tick_phase`: `npc_ai_tick` advances it modulo 16
+and `tick_mobile_objects` passes it to the due-time check. Spawn clears this
+property directly, retaining the upper nibble. Rules are scoped to proven
+mobile receivers; the monster-table byte also named `movement_flags` has
+different meanings and is excluded. This field is intentionally absent from
+the unscoped byte-field catalog. `object_layout` checks its packing and writes
+over 65,536 values, and `npc_spawn_fields` checks all phase byte values,
+cleanup exclusions, idempotence and the actual initializer's bytes.
+
 `npc_spawn_fields` checks offset conversions, signed reads/stores/addresses,
 table HP signedness, live snapshots, exclusions and idempotence across all
 65,536 input words. It extracts the actual game initializer and compares all

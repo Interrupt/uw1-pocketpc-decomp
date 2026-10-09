@@ -5,11 +5,47 @@ init_monster_spawn_defaults (ARM FUN_0002a35c). This proves NPC layout for its
 saved scratch pointer, independently of other scratch/projectile consumers.
 """
 from pathlib import Path
+import argparse
+import re
 from generate_current_alias_rules import HEADER, NPC, SCALARS, rule
+from audit_struct_property_usage import FUNCTION as FUNCTION_PATTERN, NONCODE
 
 HERE = Path(__file__).resolve().parent
 FUNCTION = 'init_monster_spawn_defaults'
 POINTER = 'scratch_bytes'
+
+
+def cleanup_dead_snapshots(body, variable='uVar1', receiver='npc'):
+    """Remove a local only when every reference is an audited word snapshot.
+
+    Tentatively fold adjacent read/mask/store pairs, then remove snapshots
+    and the local declaration. Any remaining reference (including taking its
+    address or reading it later) rejects the entire cleanup. The receiver is
+    the initializer's proven nonvolatile mobile record, not an arbitrary view.
+    """
+    if re.search(r'\bvolatile\b', NONCODE.sub('', body)):
+        return body
+    var, ptr = re.escape(variable), re.escape(receiver)
+    members = r'(?:hdr\.(?:type_flags|position_word|chain_word|link_word)|goal_word|status_word|target_word|tile_word)'
+    pair = re.compile(r'(?m)^(?P<indent>[ \t]*)' + var + r' = ' + ptr + r'->(?P<member>' + members + r');\n'
+                      r'(?P<comment>(?:[ \t]*/\*[^\n]*\*/\n)*)[ \t]*' + ptr + r'->(?P=member) = ' + var + r' & (?P<mask>0x[0-9a-f]+);\n')
+    candidate = pair.sub(lambda m: m['comment'] + m['indent'] + receiver + '->' + m['member'] + ' &= ' + m['mask'] + ';\n', body)
+    candidate = re.sub(r'(?m)^[ \t]*' + var + r' = ' + ptr + r'->' + members + r';\n', '', candidate)
+    candidate, declarations = re.subn(r'(?m)^[ \t]*ushort ' + var + r';\n', '', candidate)
+    if declarations != 1 or re.search(r'\b' + var + r'\b', NONCODE.sub('', candidate)):
+        return body
+    return candidate
+
+
+def cleanup_spawn_source(source):
+    code = NONCODE.sub(lambda m: re.sub(r'[^\n]', ' ', m.group()), source)
+    match = next(m for m in FUNCTION_PATTERN.finditer(code) if m.group(1) == FUNCTION)
+    depth, end = 1, match.end()
+    while depth:
+        depth += (code[end] == '{') - (code[end] == '}')
+        end += 1
+    body = source[match.start():end]
+    return source[:match.start()] + cleanup_dead_snapshots(body) + source[end:]
 
 
 UPDATES = [
@@ -115,4 +151,13 @@ int init_monster_spawn_defaults(...) {{
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--cleanup-dead-snapshots', action='store_true')
+    args = parser.parse_args()
     (HERE / 'npc-spawn-fields.cocci').write_text(generate())
+    if args.cleanup_dead_snapshots:
+        path = HERE.parents[1] / 'src/object_actions.c'
+        source = path.read_text()
+        converted = cleanup_spawn_source(source)
+        path.write_text(converted)
+        print('NPC spawn snapshots: ' + ('cleaned' if converted != source else 'unchanged'))
