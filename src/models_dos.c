@@ -142,6 +142,9 @@ typedef struct {
      of letting it become the last. See emit_face_order below for why only
      some faces want that. */
   int keep_first;
+  /* Index into the model's auxiliary palette, from the colour in force when
+     this face was emitted. */
+  int colour;
 } dos_face;
 
 typedef struct {
@@ -152,7 +155,27 @@ typedef struct {
   int face_count;
   int nodes;                          /* budget consumed */
   int truncated;                      /* hit a limit, or an unknown opcode */
+  int cur_colour;                     /* colour in force for the next face */
 } dos_model;
+
+/* Per-emitted-part colour index, by DOS model. -1 = none, which is what the
+   Pocket PC path sees because nothing ever fills it there. */
+static signed char g_face_colour[32][DOS_MAX_FACES];
+static int g_face_colour_ready;
+
+/* A Color operand is a data-segment offset into the model's auxiliary palette;
+   UW1's base is 0x2920 and the entries are two bytes apart. Offsets that
+   resolve outside the model's own palette are rejected by the caller, which is
+   what happens to 0x0014's and 0x00ba's operands -- documented as a vertex
+   pair and a setup pointer respectively, and they decode to 3 and 5 on
+   single-colour models. Only 0x00bc and 0x00d4 are trusted here. */
+static int colour_index(unsigned int raw)
+{
+  if (raw < 0x2920u) {
+    return -1;
+  }
+  return (int)((raw - 0x2920u) >> 1);
+}
 
 /* ---- raw reads ------------------------------------------------------------ */
 
@@ -312,6 +335,7 @@ static void face_add(dos_model *m, const int *idx, int n, int keep_first)
   dos_face *f = &m->faces[m->face_count++];
   f->count = n;
   f->keep_first = keep_first;
+  f->colour = m->cur_colour;
   for (int i = 0; i < n; i++) {
     f->idx[i] = idx[i];
   }
@@ -486,6 +510,7 @@ static void walk(dos_model *m, unsigned int at, int depth)
 
     case 0x00d4: {                      /* per-vertex shading; also names a face */
       if (!in_range(p, 4)) { m->truncated = 1; return; }
+      m->cur_colour = colour_index(rd_u16(p + 2));
       int n = (int)rd_u16(p);
       if (n < 0 || n > DOS_MAX_VERTS || !in_range(p + 4, (unsigned)n * 3)) {
         m->truncated = 1; return;
@@ -547,7 +572,12 @@ static void walk(dos_model *m, unsigned int at, int depth)
       at = p + 6;
       break;
 
-    case 0x00bc:                        /* flat face shade */
+    case 0x00bc:                        /* flat face shade: sets the face colour */
+      if (!in_range(p, 4)) { m->truncated = 1; return; }
+      m->cur_colour = colour_index(rd_u16(p));
+      at = p + 4;
+      break;
+
     case 0x00be:                        /* two shades */
       if (!in_range(p, 4)) { m->truncated = 1; return; }
       at = p + 4;
@@ -752,6 +782,12 @@ int uw_dos_model_script(int dos_index, char *out, unsigned int out_sz)
     DEBUG(ERR, "[models] out of memory decoding DOS model %d\n", dos_index);
     return 0;
   }
+  if (!g_face_colour_ready) {
+    memset(g_face_colour, -1, sizeof g_face_colour);
+    g_face_colour_ready = 1;
+  }
+  memset(g_face_colour[dos_index], -1, sizeof g_face_colour[dos_index]);
+  m->cur_colour = -1;
   walk(m, start + 10, 0);
 
   if (m->face_count == 0 || m->high_vert < 3) {
@@ -835,6 +871,7 @@ int uw_dos_model_script(int dos_index, char *out, unsigned int out_sz)
         emit(out, out_sz, &pos, "%s%d", k ? "," : "", wound[k]);
       }
       emit(out, out_sz, &pos, ");\n");
+      g_face_colour[dos_index][parts] = (signed char)face->colour;
       parts++;
     } else {
       /* Fan from the first vertex, which keeps the winding the whole face had
@@ -843,6 +880,8 @@ int uw_dos_model_script(int dos_index, char *out, unsigned int out_sz)
         if (parts >= DOS_MAX_FACES) { m->truncated = 1; break; }
         emit(out, out_sz, &pos, "0,N,%d,FF04,(%d,%d,%d);\n",
              parts, wound[0], wound[k], wound[k + 1]);
+        /* Each triangle inherits the colour of the face it came from. */
+        g_face_colour[dos_index][parts] = (signed char)face->colour;
         parts++;
       }
     }
@@ -853,6 +892,7 @@ int uw_dos_model_script(int dos_index, char *out, unsigned int out_sz)
   if (!ok) {
     DEBUG(WARN, "[models] DOS model %d did not fit in a %u-byte script buffer\n",
           dos_index, out_sz);
+    memset(g_face_colour[dos_index], -1, sizeof g_face_colour[dos_index]);
     out[0] = '\0';
     free(m);
     return 0;
@@ -861,4 +901,13 @@ int uw_dos_model_script(int dos_index, char *out, unsigned int out_sz)
         dos_index, n_points, parts, m->truncated ? " (decode stopped early)" : "");
   free(m);
   return (int)pos;
+}
+
+int uw_dos_model_face_colour(int dos_index, int part)
+{
+  if (!g_face_colour_ready || dos_index < 0 || dos_index > 31
+      || part < 0 || part >= DOS_MAX_FACES) {
+    return -1;
+  }
+  return g_face_colour[dos_index][part];
 }

@@ -77,6 +77,8 @@ enum {
     SLOT_OFFSET = 2,      /* model 2 is the bridge: gets the -16 x correction */
     SLOT_SIMPLE = 14,     /* absolute vertex run + one quad, no x correction */
     SLOT_NONPLANAR = 15,  /* a quad whose 4th vertex is far off the plane */
+    SLOT_COLOUR = 16,     /* two faces, each with its own FACE_SHADE colour */
+    SLOT_COLOUR_FAN = 17, /* a coloured non-planar quad: triangles inherit it */
     SLOT_EMPTY = 3,       /* radius 0 */
     SLOT_REL1 = 4,        /* one-axis relative vertices */
     SLOT_REL2 = 5,        /* two-axis relative vertices */
@@ -311,6 +313,41 @@ static void build_nonplanar(void)
     emit16(w, sizeof w / sizeof w[0]);
 }
 
+/* 0x00bc (FACE_SHADE) sets the colour for the faces that follow it. Its
+   operand is a data-segment offset: 0x2920 is auxiliary-palette entry 0 and
+   each entry is two bytes on, so 0x2922 is entry 1. */
+static void build_colour(void)
+{
+    model_begin(SLOT_COLOUR, 100);
+    unsigned int w[] = {
+        0x0082, 3, 0, fx(0), fx(0), fx(0), fx(10), fx(0), fx(0), fx(10), fx(0), fx(10),
+        0x00bc, 0x2922, 0,                  /* -> entry 1 */
+        0x007e, 3, vn(0), vn(1), vn(2),
+        0x00bc, 0x2920, 0,                  /* -> entry 0 */
+        0x007e, 3, vn(0), vn(2), vn(1),
+        0x00bc, 0x2936, 0,                  /* -> entry 11: past any palette */
+        0x007e, 3, vn(1), vn(2), vn(0),
+        0x0000
+    };
+    emit16(w, sizeof w / sizeof w[0]);
+}
+
+static void build_colour_fan(void)
+{
+    model_begin(SLOT_COLOUR_FAN, 100);
+    unsigned int w[] = {
+        0x0082, 4, 0,
+        fx(0),   fx(0),  fx(0),
+        fx(100), fx(0),  fx(0),
+        fx(100), fx(0),  fx(100),
+        fx(0),   fx(60), fx(100),
+        0x00bc, 0x2922, 0,                  /* -> entry 1 */
+        0x007e, 4, vn(0), vn(1), vn(2), vn(3),
+        0x0000
+    };
+    emit16(w, sizeof w / sizeof w[0]);
+}
+
 static void setup_once(void)
 {
     if (g_dir[0]) return;
@@ -345,6 +382,8 @@ static void setup_once(void)
     build_zero_radius();
     build_texquad();
     build_nonplanar();
+    build_colour();
+    build_colour_fan();
     /* SLOT_EMPTY keeps its zero-radius default. */
     w8(0, 0);
     g_exe_len = g_next + 16;
@@ -559,6 +598,56 @@ static void test_a_planar_face_stays_one_polygon(void)
                                   "a planar quad is one part, not a fan");
 }
 
+/* The DOS bytecode carries a colour per face; the port otherwise paints a
+   whole model in one colour. */
+static void test_each_face_keeps_its_own_colour(void)
+{
+    TEST_ASSERT_TRUE(script_of(SLOT_COLOUR) > 0);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(1, uw_dos_model_face_colour(SLOT_COLOUR, 0),
+                                  "first face follows FACE_SHADE 0x2922 -> entry 1");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, uw_dos_model_face_colour(SLOT_COLOUR, 1),
+                                  "second face follows FACE_SHADE 0x2920 -> entry 0");
+}
+
+/* The decoder reports the index the data actually says, even when no palette
+   could hold it -- the real bridge model has two such faces (index 11 on a
+   one-colour model). Range-checking is the renderer's job, against the entry
+   count in its own catalog table, which is what keeps an out-of-range index
+   from reading past that record. */
+static void test_an_out_of_range_colour_is_reported_truthfully(void)
+{
+    TEST_ASSERT_TRUE(script_of(SLOT_COLOUR) > 0);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(11, uw_dos_model_face_colour(SLOT_COLOUR, 2),
+        "0x2936 is 11 entries past the palette base and must be reported as 11");
+}
+
+static void test_a_model_with_no_colour_operand_reports_none(void)
+{
+    TEST_ASSERT_TRUE(script_of(SLOT_SIMPLE) > 0);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(-1, uw_dos_model_face_colour(SLOT_SIMPLE, 0),
+        "no colour operand must report -1 so the renderer keeps its own behaviour");
+}
+
+/* A non-planar face is split into triangles, and each piece has to keep the
+   colour of the face it came from. */
+static void test_split_triangles_inherit_the_face_colour(void)
+{
+    TEST_ASSERT_TRUE(script_of(SLOT_COLOUR_FAN) > 0);
+    TEST_ASSERT_EQUAL_INT(2, count_substr(g_script, "0,N,"));
+    TEST_ASSERT_EQUAL_INT(1, uw_dos_model_face_colour(SLOT_COLOUR_FAN, 0));
+    TEST_ASSERT_EQUAL_INT(1, uw_dos_model_face_colour(SLOT_COLOUR_FAN, 1));
+}
+
+static void test_colour_queries_outside_a_decoded_model_report_none(void)
+{
+    TEST_ASSERT_EQUAL_INT(-1, uw_dos_model_face_colour(SLOT_COLOUR, -1));
+    TEST_ASSERT_EQUAL_INT(-1, uw_dos_model_face_colour(SLOT_COLOUR, 999));
+    TEST_ASSERT_EQUAL_INT(-1, uw_dos_model_face_colour(-1, 0));
+    TEST_ASSERT_EQUAL_INT(-1, uw_dos_model_face_colour(32, 0));
+    TEST_ASSERT_EQUAL_INT_MESSAGE(-1, uw_dos_model_face_colour(SLOT_EMPTY, 0),
+                                  "an empty slot has no colours either");
+}
+
 /* Every emitted script has to be something parse_e_model_file will accept:
    the keywords it scans for, in order. */
 static void test_every_script_is_shaped_like_a_dot_e_file(void)
@@ -579,7 +668,7 @@ static void test_every_script_is_shaped_like_a_dot_e_file(void)
         /* No CR anywhere: the in-memory path skips the CRLF stripper. */
         TEST_ASSERT_NULL_MESSAGE(strchr(g_script, '\r'), "scripts must be LF-only");
     }
-    TEST_ASSERT_EQUAL_INT_MESSAGE(12, seen, "every non-empty scenario slot should decode");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(14, seen, "every non-empty scenario slot should decode");
 }
 
 /* A buffer too small to hold the script must be refused, not half-filled. */
@@ -610,6 +699,11 @@ int main(void)
     RUN_TEST(test_a_textured_quad_keeps_its_texture_origin_first);
     RUN_TEST(test_a_non_planar_face_is_split_into_triangles);
     RUN_TEST(test_a_planar_face_stays_one_polygon);
+    RUN_TEST(test_each_face_keeps_its_own_colour);
+    RUN_TEST(test_an_out_of_range_colour_is_reported_truthfully);
+    RUN_TEST(test_a_model_with_no_colour_operand_reports_none);
+    RUN_TEST(test_split_triangles_inherit_the_face_colour);
+    RUN_TEST(test_colour_queries_outside_a_decoded_model_report_none);
     RUN_TEST(test_every_script_is_shaped_like_a_dot_e_file);
     RUN_TEST(test_a_short_buffer_is_refused);
     return UNITY_END();

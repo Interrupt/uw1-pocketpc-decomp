@@ -37,6 +37,22 @@ int uw_dos_models_available(void);
  * load_3d_object_models in models.c. */
 int uw_dos_model_script(int dos_index, char *out, unsigned int out_sz);
 
+/* The auxiliary-palette colour index for one emitted part of a decoded model,
+ * or -1 when there is none -- which is the case for every model until
+ * uw_dos_model_script has decoded it, so the Pocket PC path always gets -1 and
+ * is unaffected.
+ *
+ * The DOS bytecode carries a colour per face (opcode 0x00bc, and 0x00d4's base
+ * colour), as a data-segment offset that resolves to a small index into the
+ * model's own 1-3 entry auxiliary palette -- the table the port already holds
+ * in models.c's DAT_00086c08_backing. The port's renderer otherwise paints a
+ * whole model in one colour, so this is what lets the table, barrel and chair
+ * come out two-tone as the DOS data intends.
+ *
+ * `part` is the index of the part as EMITTED, so triangles split off a
+ * non-planar face each carry their parent face's colour. */
+int uw_dos_model_face_colour(int dos_index, int part);
+
 /* Releases the cached copy of UW.EXE. Call after model loading; a later
  * uw_dos_model_script would simply read it again. */
 void uw_dos_models_release(void);

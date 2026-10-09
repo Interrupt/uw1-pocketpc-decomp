@@ -1127,6 +1127,33 @@ void emit_catalog_object(byte catalog, void *obj_ptr, char heading, short frame_
       cVar9 = (char)(sVar7 >> 0xf);
       *(char *)(_face_rec + 0x4e) = cVar9;
       *(char *)(_face_rec + 0x4f) = cVar9;
+      /* DEVIATION FROM THE ORIGINAL, deliberate and opt-in by data: a
+         per-face colour.
+
+         The original paints a whole built-in model in ONE colour -- entry 1 of
+         its auxiliary palette when it has two, else entry 0 -- for every face.
+         That is faithful, not a decompile artefact: UU.exe's FUN_00061e60
+         assigns its palette pointer once before the face loop and never
+         advances it, so the `else` branch below is the original's behaviour
+         verbatim.
+
+         The DOS bytecode, though, carries a colour per face (opcode 0x00bc),
+         and models_dos.c decodes it to an index into that same palette. Using
+         it makes the table, barrel and chair two-tone as the data intends.
+
+         This CANNOT affect the Pocket PC path, by two independent guards:
+         uw_dos_model_face_colour only ever returns >= 0 for a model
+         models_dos.c actually decoded, and the index must land inside this
+         model's own palette (its entry count is the low 3 bits of the catalog
+         flags, at most 3) -- while the .E files' own colour codes are ff04 and
+         up, i.e. 4 or more, so they could never qualify even if they reached
+         here. */
+      int _dos_colour = uw_dos_model_face_colour((int)catalog_u, row_base / 0x18);
+      if (_dos_colour >= 0 && _dos_colour < (int)(catalog_flags & 7)) {
+        uVar10 = 0;
+        *(char *)(_face_rec + 0x50) = (&DAT_00086c09)[iVar1 + _dos_colour];
+      }
+      else {
       cVar9 = (&DAT_00086c09)[iVar1];
       pbVar23 = &DAT_00086c08 + iVar1;
       pbVar6 = (byte *)0x0;
@@ -1141,6 +1168,7 @@ void emit_catalog_object(byte catalog, void *obj_ptr, char heading, short frame_
       else {
         uVar10 = 0;
         *(char *)(_face_rec + 0x50) = cVar9;
+      }
       }
       *(char *)(_face_rec + 0x51) = (char)uVar10;
       *(char *)(_face_rec + 0x52) = (char)((ushort)uVar10 >> 8);
