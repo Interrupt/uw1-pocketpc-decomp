@@ -842,3 +842,34 @@ or save-index/equipment tables, whose storage is not an object header. Full
 packed-word copies are intentional: replacing them with selected properties
 would drop other header bits. The 27-byte player copy includes unnamed extension
 bytes and remains a complete record copy rather than guessed NPC properties.
+
+## Scripted trap-pair initialization
+
+`generate_trap_pair_rules.py` emits `trap-pair-fields.cocci` for
+`create_scripted_trap_pair_at_tile`. Both region-zero allocations are stationary
+objects with a common header. The exact complete initializer names object IDs, the reserved
+flag slice, enchanted/direction/invisibility/quantity bits, position components,
+quality, next, owner, and link. The first marker faces heading zero; the second
+keeps its existing heading. Both use sub-tile coordinates (3,3). Intermediate
+position stores overwritten before the next callback are folded only when the
+entire function, including every capture and call, matches. Added callbacks,
+changed capture formulas, escaping/live observations, and volatile captures
+prevent conversion. Scalar snapshots and their formulas remain in
+place, including the second object's captured position/heading and type words.
+
+Apply with `--all-includes --include-headers-for-types -I . -I src --in-place`.
+`test_trap_pair_fields.py` checks exact old-to-current conversion, idempotence,
+function scope, and rejection of added callbacks, changed captures, live or
+escaping temporary observations, and volatile captures. The actual
+before/after functions run through 393,216 cases covering all 65,536 initial
+word patterns, code nibbles, signed tile coordinates, unchanged and callback-
+mutated records, both allocation failures, full records, and surrounding guard
+bytes. Callback observations include the complete records at each allocator,
+tile lookup, index encoder, insertion, and free. `--reference` accepts the saved
+original `traps.c`; `--asan` enables AddressSanitizer.
+
+The tile-height byte extraction remains a tilemap operation outside the object
+header schema. Full captured type/position/chain words and scalar masks remain
+until a separate liveness-guarded cleanup proves them removable or narrows them
+without changing an observed temporary. Other trap helpers' undocumented NPC
+status bits still require independent semantic evidence.

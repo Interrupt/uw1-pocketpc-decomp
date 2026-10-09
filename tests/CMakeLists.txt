@@ -1057,6 +1057,10 @@ if(UW_SPATCH_EXECUTABLE)
     COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_inventory_record_words.py"
       "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME trap_pair_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_trap_pair_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
   find_program(UW_CLANG_EXECUTABLE clang)
   if(UW_CLANG_EXECUTABLE)
     add_test(NAME current_object_aliases

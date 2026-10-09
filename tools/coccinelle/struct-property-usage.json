@@ -1,8 +1,8 @@
 {
   "scope": "Named packed views and existing audited object-pointer roles in src/*.c; unrecorded aliases and other structures still require independent auditing.",
   "counts": {
-    "byte_view": 289,
-    "packed_word": 418,
+    "byte_view": 265,
+    "packed_word": 417,
     "raw_audited_object_access": 7,
     "signed_word_view": 9
   },
@@ -6004,16 +6004,7 @@
     {
       "source": "src/traps.c",
       "function": "create_scripted_trap_pair_at_tile",
-      "line": 531,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar4)->type_flags = (ushort)uVar7;"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "create_scripted_trap_pair_at_tile",
-      "line": 532,
+      "line": 534,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -6022,79 +6013,7 @@
     {
       "source": "src/traps.c",
       "function": "create_scripted_trap_pair_at_tile",
-      "line": 534,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar4)->position_word_low = (byte)uVar7 | bVar9;"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "create_scripted_trap_pair_at_tile",
-      "line": 535,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar4)->position_word_high = (byte)(char)(uVar7 >> 8);"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "create_scripted_trap_pair_at_tile",
-      "line": 536,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar4)->position_word_low = bVar9;"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "create_scripted_trap_pair_at_tile",
-      "line": 537,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar4)->position_word_high = 0x6c;"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "create_scripted_trap_pair_at_tile",
-      "line": 539,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar4)->type_flags_low = (byte)(char)uVar7;"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "create_scripted_trap_pair_at_tile",
-      "line": 540,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar4)->type_flags_high = (byte)(uVar7 >> 8) | 0x90;"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "create_scripted_trap_pair_at_tile",
-      "line": 541,
-      "category": "byte_view",
-      "member": "chain_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar4)->chain_word_low = 0;"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "create_scripted_trap_pair_at_tile",
-      "line": 542,
-      "category": "byte_view",
-      "member": "chain_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar4)->chain_word_high = 0;"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "create_scripted_trap_pair_at_tile",
-      "line": 546,
+      "line": 549,
       "category": "packed_word",
       "member": "chain_word",
       "pointer": null,
@@ -6103,43 +6022,7 @@
     {
       "source": "src/traps.c",
       "function": "create_scripted_trap_pair_at_tile",
-      "line": 548,
-      "category": "byte_view",
-      "member": "chain_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar4)->chain_word_low = (bVar9 ^ (byte)tile_x) & 0x3f ^ bVar9;"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "create_scripted_trap_pair_at_tile",
-      "line": 549,
-      "category": "byte_view",
-      "member": "chain_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar4)->chain_word_high = (byte)(char)(uVar2 >> 8);"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "create_scripted_trap_pair_at_tile",
-      "line": 550,
-      "category": "byte_view",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar4)->link_word_low = (bVar3 ^ (byte)tile_y) & 0x3f ^ bVar3;"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "create_scripted_trap_pair_at_tile",
-      "line": 551,
-      "category": "byte_view",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar4)->link_word_high = (byte)(char)((uint)iVar1 >> 8);"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "create_scripted_trap_pair_at_tile",
-      "line": 553,
+      "line": 555,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -6148,25 +6031,7 @@
     {
       "source": "src/traps.c",
       "function": "create_scripted_trap_pair_at_tile",
-      "line": 555,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar5)->type_flags_low = (byte)(char)uVar11;"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "create_scripted_trap_pair_at_tile",
-      "line": 556,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar5)->type_flags_high = (byte)(uVar7 >> 8) | 0x60;"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "create_scripted_trap_pair_at_tile",
-      "line": 558,
+      "line": 561,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -6174,98 +6039,8 @@
     },
     {
       "source": "src/traps.c",
-      "function": "create_scripted_trap_pair_at_tile",
-      "line": 560,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar5)->position_word_low = bVar9 | (byte)uVar10;"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "create_scripted_trap_pair_at_tile",
-      "line": 561,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar5)->position_word_high = (byte)(char)(uVar10 >> 8);"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "create_scripted_trap_pair_at_tile",
-      "line": 563,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar5)->position_word_low = bVar9 | (byte)uVar7;"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "create_scripted_trap_pair_at_tile",
-      "line": 564,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar5)->position_word_high = (byte)(uVar7 >> 8) | 0x6c;"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "create_scripted_trap_pair_at_tile",
-      "line": 565,
-      "category": "byte_view",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar5)->link_word_low = ((uw_object_hdr_t *)puVar5)->owner;"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "create_scripted_trap_pair_at_tile",
-      "line": 566,
-      "category": "byte_view",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar5)->link_word_high = 0;"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "create_scripted_trap_pair_at_tile",
-      "line": 567,
-      "category": "byte_view",
-      "member": "chain_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar5)->chain_word_low = 0x3f;"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "create_scripted_trap_pair_at_tile",
-      "line": 568,
-      "category": "byte_view",
-      "member": "chain_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar5)->chain_word_high = 0;"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "create_scripted_trap_pair_at_tile",
-      "line": 570,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar5)->type_flags_low = (byte)(char)uVar11;"
-    },
-    {
-      "source": "src/traps.c",
-      "function": "create_scripted_trap_pair_at_tile",
-      "line": 571,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar5)->type_flags_high = (byte)(uVar11 >> 8) | 0xe2;"
-    },
-    {
-      "source": "src/traps.c",
       "function": "remove_trap_chain_marker",
-      "line": 597,
+      "line": 599,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -6274,7 +6049,7 @@
     {
       "source": "src/traps.c",
       "function": "remove_trap_chain_marker",
-      "line": 605,
+      "line": 607,
       "category": "byte_view",
       "member": "type_flags",
       "pointer": null,
@@ -6283,7 +6058,7 @@
     {
       "source": "src/traps.c",
       "function": "remove_trap_chain_marker",
-      "line": 606,
+      "line": 608,
       "category": "byte_view",
       "member": "type_flags",
       "pointer": null,
@@ -6292,7 +6067,7 @@
     {
       "source": "src/traps.c",
       "function": "process_nearby_background_traps",
-      "line": 704,
+      "line": 706,
       "category": "byte_view",
       "member": "type_flags",
       "pointer": null,
@@ -6301,7 +6076,7 @@
     {
       "source": "src/traps.c",
       "function": "process_nearby_background_traps",
-      "line": 711,
+      "line": 713,
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "pbVar5",
@@ -6310,7 +6085,7 @@
     {
       "source": "src/traps.c",
       "function": "process_nearby_background_traps",
-      "line": 712,
+      "line": 714,
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "pbVar5",
@@ -6319,7 +6094,7 @@
     {
       "source": "src/traps.c",
       "function": "process_nearby_background_traps",
-      "line": 713,
+      "line": 715,
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "pbVar5",
@@ -6328,7 +6103,7 @@
     {
       "source": "src/traps.c",
       "function": "try_combine_shrine_markers",
-      "line": 1083,
+      "line": 1085,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -6337,7 +6112,7 @@
     {
       "source": "src/traps.c",
       "function": "apply_quest_event_numeric_effect",
-      "line": 1122,
+      "line": 1124,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -6346,7 +6121,7 @@
     {
       "source": "src/traps.c",
       "function": "apply_quest_event_numeric_effect",
-      "line": 1124,
+      "line": 1126,
       "category": "byte_view",
       "member": "position_word",
       "pointer": null,
@@ -6355,7 +6130,7 @@
     {
       "source": "src/traps.c",
       "function": "apply_quest_event_numeric_effect",
-      "line": 1125,
+      "line": 1127,
       "category": "byte_view",
       "member": "position_word",
       "pointer": null,
