@@ -104,9 +104,14 @@ add_fixture_game_unit_test(chargen
   src/player.c:reset_player_derived_state src/player.c:apply_equipped_item_effect
   src/object_actions.c:check_object_carry_weight
   src/player.c:compute_object_weight
+  src/chargen.c:chargen_normalize_record_stride
   src/chargen.c:advance_skill_tree_node
   src/chargen.c:apply_confirmed_skill_picks
   src/chargen.c:reroll_attributes_for_class_race)
+# test_chargen reads the real shipped data/DATA/CHRGEN.DAT to check the
+# record-layout normalization, so the executable needs the path too (the
+# fixture library's own copy of the define is PRIVATE).
+target_compile_definitions(test_chargen PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
 add_fixture_game_unit_test(new_game
   src/game.c:prepare_new_game src/game.c:begin_gameplay
   src/level.c:load_level_object_table src/level.c:load_level
@@ -815,6 +820,7 @@ add_game_test_library(uw_test_transitions
   src/graphics.c:bitmap_blit_to_framebuffer
   src/graphics.c:fade_in
   src/graphics.c:fade_out
+  src/chargen.c:chargen_normalize_record_stride
   src/chargen.c:run_character_generator
   src/level.c:enter_dungeon_view
   src/hud.c:run_pause_menu_modal_loop
