@@ -662,10 +662,11 @@ void raster_textured_span(int row, char *framebuffer, char *gradients, char *lef
      or an empty value disables it. */
   const char *dither_mode = getenv("UW_DITHER");
   bool dither_enabled = !dither_mode || (*dither_mode && strcmp(dither_mode, "0") != 0);
-  /* HACK: UW_FULLBRIGHT=1 skips the ARM distance falloff for texels whose palette index LIGHT.DAT
-     treats as fullbright (lava, fire, magic colours), like the DOS shade table does. Off by default. */
+  /* HACK: skip the ARM distance falloff for texels whose palette index LIGHT.DAT treats as
+     fullbright (lava, fire, magic colours), like the DOS shade table does. On by default; an
+     explicit UW_FULLBRIGHT=0 or empty value disables it. */
   const char *fullbright_mode = getenv("UW_FULLBRIGHT");
-  bool fullbright_enabled = fullbright_mode && *fullbright_mode && strcmp(fullbright_mode, "0") != 0;
+  bool fullbright_enabled = !fullbright_mode || (*fullbright_mode && strcmp(fullbright_mode, "0") != 0);
   char *local_4; /* fb row pointer */
 
   iVar12 = (intptr_t)DAT_0023cca0;
