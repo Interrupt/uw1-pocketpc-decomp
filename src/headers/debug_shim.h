@@ -2,7 +2,7 @@
 #define HEADERS_DEBUG_SHIM_H
 
 /* Declarations for debug_shim.c: the general debug panel's own population/inspector logic
-   (populate_debug_panel and friends) plus the one-shot UW_DEBUG_ and UW_DUMP_ dump tools that used
+   (populate_debug_panel and friends) plus the one-shot --dump-* dump tools that used
    to live inline in hud.c. Split out so hud.c stays focused on real HUD behavior -- none of this is
    reachable from normal gameplay. Pulls in uw.h itself so this header is self-contained. */
 #include "uw.h"

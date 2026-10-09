@@ -2458,7 +2458,6 @@ bool prepare_new_game()
     if (load_level(1) < 1) return false;
 
     set_player_tile_position(0x20, 2, 1);
-    debug_print_player_position("chargen-spawn");
     save_or_restore_level_special_state(1, 0);
     /* Port-only timing: the next dungeon entry pauses after its fade-out. */
     g_new_game_entry_pause_pending = true;

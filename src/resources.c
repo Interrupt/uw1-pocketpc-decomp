@@ -1809,9 +1809,6 @@ uint load_gr_resource_entries(char *path, int first_entry, short count, gr_alloc
           uVar6 = 0;
         }
         else {
-          /* Debug-only hook, not in the original decompile: dumps this
-             entry's raw bytes to a BMP under debug/gr/ when
-             --debug-dump-gr is set. No-op otherwise. */
           if (post_process != (gr_entry_fn *)0x0) {
             uVar3 = (*post_process)(pvVar_buf,iVar4,iVar5);
             uVar6 = uVar6 & uVar3;

@@ -425,7 +425,7 @@ static undefined1 DAT_000d977b_backing[256];
 #define DAT_000d977b DAT_000d977b_backing[0]
 static undefined1 DAT_000d977c_backing[256];
 #define DAT_000d977c DAT_000d977c_backing[0]
-/* Sizing pass: live instrumentation (--debug-model-parse-hwm) across the full 19-script regression
+/* Sizing pass: live instrumentation across the full 19-script regression
    suite (29 real .E model files loaded) showed a real high-water mark of 8 chars for the unbounded
    %[a-z] token this feeds. Sized to 64 bytes for headroom above that. */
 static undefined1 DAT_000d98c8_backing[64];

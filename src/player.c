@@ -282,14 +282,6 @@ void set_player_tile_position(uint tile_x, uint tile_y, int flag)
 
 
 
-/* Debug-only helper (--debug-throw-gated): print both player-position representations side by side
-   -- the fine, continuous DAT_00204880/2 (used by the camera and by demo_set_player_pos) vs. the
-   coarser tile-position bytes packed into g_player_object's own record... */
-void debug_print_player_position(const char *label)
-{
-}
-
-
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
 // was FUN_0003d438 (previously mis-guessed as "update_3d_sound_position" from its trailing sound

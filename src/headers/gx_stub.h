@@ -41,7 +41,7 @@ int GXResume();
    on success, 0 on failure (no window yet, or the write failed). */
 int uw_save_screenshot(const char *path);
 
-/* Debug tool: if --debug-dump-crit is set (and not "0"), dumps every critter/NPC sprite frame
+/* Debug tool: while --dump-critter-sheet is set, dumps every critter/NPC sprite frame
    decode_critter_sprite_page produces to a BMP under
    debug/crit/type<N>/tier<T>/dir<D>_frame<F>.bmp... */
 void uw_debug_dump_critter_sprite(int type, int tier, int direction, int frame,

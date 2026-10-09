@@ -93,11 +93,6 @@ static void uwmod_audio_callback(void *userdata, Uint8 *stream, int len)
     hxcmod_fillbuffer(&g_uwmod_ctx, (msample *)stream, (mssize)(len / 4), NULL);
   }
 
-  /* --debug-audio: dump basic PCM sample statistics from real callback
-   * output, to confirm real (non-silent, non-garbage) music data is
-   * actually being produced -- same ad-hoc getenv()-gated tracing
-   * convention used throughout this codebase (see e.g. 3d.c's
-   * --debug-raster). */
 }
 
 /* Opens the real SDL2 audio device and prepares the HxCModPlayer context.

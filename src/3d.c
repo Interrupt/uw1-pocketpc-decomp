@@ -212,7 +212,7 @@ void vec3_cross(void *a_ptr, void *b_ptr, byte *out)
 
 // was FUN_00014350 -- textured-triangle driver: viewport-culls, sorts the 3 verts by Y, builds 3
 // edges via raster_edge_setup, walks scanlines stepping edges (raster_edge_step) and emitting spans
-// (raster_textured_span) --debug-raster=1...
+// (raster_textured_span).
 /* was undefined4 -- the framebuffer base (g_uw_framebuffer) was undefined4 -- the tile's texture
    pixel data pointer */
 void raster_triangle(int stride, void *buffer, uint *vertices, int surface, int width, int size, char *texture, int *clip)

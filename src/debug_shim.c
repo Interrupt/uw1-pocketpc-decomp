@@ -1,5 +1,5 @@
 /* The general debug panel's own population/inspector logic (populate_debug_panel and friends) plus
-   the one-shot UW_DEBUG_ and UW_DUMP_ dump tools, split out of hud.c once these grew well past the
+   the one-shot --dump-* dump tools, split out of hud.c once these grew well past the
    handful of call sites main_loop_hud_flush needs -- none of this is reachable from normal
    gameplay, so it doesn't belong mixed in with the real HUD logic. */
 #include "headers/debug_shim.h"

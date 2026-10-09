@@ -18,7 +18,6 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
-#include <dlfcn.h> /* --debug-enddraw's dladdr() caller lookup, see GXEndDraw */
 
 #define GX_W 320
 #define GX_H 240
@@ -1163,10 +1162,7 @@ int GXEndDraw(void) {
     int completed_frame = uw_take_completed_frame();
     if (!g_tex) return 0;
     if (!completed_frame && !uw_present_frame_due(uw_gx_time_us())) return 1;
-    /* --debug-enddraw: log every real call to this function (i.e. every
-       actual SDL_RenderPresent, the true screen-present) with its
-       immediate caller's symbol. Early flushes return above without
-       presenting or waiting on another vsync. */
+    /* Early flushes return above without presenting or waiting on another vsync. */
     /* Un-rotate the portrait "hardware" framebuffer back to a natural landscape image for display
        -- see the HW_W/HW_H comment above. landscape(x,y) = portrait((HW_W-1-x), y), i.e. the
        inverse of the clockwise rotation the game's own blit performs. */

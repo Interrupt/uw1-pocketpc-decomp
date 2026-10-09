@@ -29,7 +29,7 @@
 #                            non-ASan build -- see above)
 #   EXTRA_ARGS="--container-autoclose-on-drag-out --light-mode=dos"
 #                            extra command-line options forwarded to the binary for every script
-#   EXTRA_ENV="UW_DEBUG_INV=1"  legacy form of EXTRA_ARGS: extra env vars (space-separated
+#   EXTRA_ENV="UW_LIGHT_MODE=dos"  legacy form of EXTRA_ARGS: extra env vars (space-separated
 #                            KEY=VAL pairs) forwarded to the binary for every script
 #   SDL_VIDEODRIVER=dummy    SDL video/audio drivers for the runs. Default to SDL's
 #   SDL_AUDIODRIVER=dummy    headless "dummy" drivers so the suite never opens a real window,

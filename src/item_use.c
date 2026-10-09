@@ -168,7 +168,7 @@ void attach_picked_up_object_to_cursor(ushort *object)
       g_cursor_holding_state = 1;
       /* User QA report: "dragging and dropping into a paper doll slot does not show the item" --
          confirmed live (also reproduces for an ordinary backpack-grid drop under the same drag
-         pattern, so this isn't slot-specific) via --debug-cursorerase/CURSORSHOW... */
+         pattern, so this isn't slot-specific). */
       if (erase_cursor_icon() != 0) {
         DAT_00204844 = 0;
       }
