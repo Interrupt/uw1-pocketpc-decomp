@@ -1283,7 +1283,7 @@ LAB_00053720:
     DAT_002046b4 = link_field;
     iVar3 = resolve_object_link(link_field);
     while ((sVar2 = encode_object_slot_index(iVar3), iVar4 = iVar3, puVar1 = link_field, sVar2 != (short)slot &&
-            (((((iVar3->is_quant << 7)) != 0 || (iVar3->link == 0)) ||
+            (((iVar3->is_quant != 0 || (iVar3->link == 0)) ||
               (iVar4 = find_object_by_encoded_slot_in_chain(&iVar3->link_word,recurse,slot), puVar1 = DAT_002046b4,
                iVar4 == 0))))) {
       if (iVar3->next == 0) goto LAB_00053720;

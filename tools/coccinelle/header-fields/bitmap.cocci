@@ -1,4 +1,4 @@
-@field_0_item_id@
+@field_0_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(sprite_partition_by_depth\|sprite_partition_step\|sprite_partition_tmap\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -27,7 +27,7 @@ R F(...) {
 ...>
 }
 
-@field_0_flags_res@
+@field_0_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(sprite_partition_by_depth\|sprite_partition_step\|sprite_partition_tmap\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -76,11 +76,17 @@ R F(...) {
 |
 - (*(byte *)((char *)_o + 0x1) & 0xe) >> 1
 + ((uw_object_hdr_t *)_o)->flags_res
+|
+- (*(byte *)(_o + 0x1) >> 1) & 0x7
++ ((uw_object_hdr_t *)_o)->flags_res
+|
+- (*(byte *)(_o + 0x1) & 0xe) >> 1
++ ((uw_object_hdr_t *)_o)->flags_res
 )
 ...>
 }
 
-@field_0_enchanted@
+@field_0_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(sprite_partition_by_depth\|sprite_partition_step\|sprite_partition_tmap\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -129,11 +135,17 @@ R F(...) {
 |
 - (*(byte *)((char *)_o + 0x1) & 0x10) >> 4
 + ((uw_object_hdr_t *)_o)->enchanted
+|
+- (*(byte *)(_o + 0x1) >> 4) & 0x1
++ ((uw_object_hdr_t *)_o)->enchanted
+|
+- (*(byte *)(_o + 0x1) & 0x10) >> 4
++ ((uw_object_hdr_t *)_o)->enchanted
 )
 ...>
 }
 
-@field_0_doordir@
+@field_0_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(sprite_partition_by_depth\|sprite_partition_step\|sprite_partition_tmap\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -182,11 +194,17 @@ R F(...) {
 |
 - (*(byte *)((char *)_o + 0x1) & 0x20) >> 5
 + ((uw_object_hdr_t *)_o)->doordir
+|
+- (*(byte *)(_o + 0x1) >> 5) & 0x1
++ ((uw_object_hdr_t *)_o)->doordir
+|
+- (*(byte *)(_o + 0x1) & 0x20) >> 5
++ ((uw_object_hdr_t *)_o)->doordir
 )
 ...>
 }
 
-@field_0_invisible@
+@field_0_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(sprite_partition_by_depth\|sprite_partition_step\|sprite_partition_tmap\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -235,11 +253,17 @@ R F(...) {
 |
 - (*(byte *)((char *)_o + 0x1) & 0x40) >> 6
 + ((uw_object_hdr_t *)_o)->invisible
+|
+- (*(byte *)(_o + 0x1) >> 6) & 0x1
++ ((uw_object_hdr_t *)_o)->invisible
+|
+- (*(byte *)(_o + 0x1) & 0x40) >> 6
++ ((uw_object_hdr_t *)_o)->invisible
 )
 ...>
 }
 
-@field_0_is_quant@
+@field_0_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(sprite_partition_by_depth\|sprite_partition_step\|sprite_partition_tmap\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -288,11 +312,23 @@ R F(...) {
 |
 - (*(byte *)((char *)_o + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)_o)->is_quant
+|
+- *(byte *)((char *)_o + 0x1) >> 7
++ ((uw_object_hdr_t *)_o)->is_quant
+|
+- (*(byte *)(_o + 0x1) >> 7) & 0x1
++ ((uw_object_hdr_t *)_o)->is_quant
+|
+- (*(byte *)(_o + 0x1) & 0x80) >> 7
++ ((uw_object_hdr_t *)_o)->is_quant
+|
+- *(byte *)(_o + 0x1) >> 7
++ ((uw_object_hdr_t *)_o)->is_quant
 )
 ...>
 }
 
-@field_0_zpos@
+@field_0_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(sprite_partition_by_depth\|sprite_partition_step\|sprite_partition_tmap\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -314,11 +350,14 @@ R F(...) {
 |
 - _o[2] & 0x7f
 + ((uw_object_hdr_t *)_o)->zpos
+|
+- *(byte *)(_o + 0x2) & 0x7f
++ ((uw_object_hdr_t *)_o)->zpos
 )
 ...>
 }
 
-@field_0_heading@
+@field_0_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(sprite_partition_by_depth\|sprite_partition_step\|sprite_partition_tmap\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -347,7 +386,7 @@ R F(...) {
 ...>
 }
 
-@field_0_ypos@
+@field_0_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(sprite_partition_by_depth\|sprite_partition_step\|sprite_partition_tmap\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -378,11 +417,17 @@ R F(...) {
 |
 - (*(byte *)((char *)_o + 0x3) & 0x1c) >> 2
 + ((uw_object_hdr_t *)_o)->ypos
+|
+- (*(byte *)(_o + 0x3) >> 2) & 0x7
++ ((uw_object_hdr_t *)_o)->ypos
+|
+- (*(byte *)(_o + 0x3) & 0x1c) >> 2
++ ((uw_object_hdr_t *)_o)->ypos
 )
 ...>
 }
 
-@field_0_xpos@
+@field_0_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(sprite_partition_by_depth\|sprite_partition_step\|sprite_partition_tmap\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -413,11 +458,23 @@ R F(...) {
 |
 - (*(byte *)((char *)_o + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)_o)->xpos
+|
+- *(byte *)((char *)_o + 0x3) >> 5
++ ((uw_object_hdr_t *)_o)->xpos
+|
+- (*(byte *)(_o + 0x3) >> 5) & 0x7
++ ((uw_object_hdr_t *)_o)->xpos
+|
+- (*(byte *)(_o + 0x3) & 0xe0) >> 5
++ ((uw_object_hdr_t *)_o)->xpos
+|
+- *(byte *)(_o + 0x3) >> 5
++ ((uw_object_hdr_t *)_o)->xpos
 )
 ...>
 }
 
-@field_0_quality@
+@field_0_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(sprite_partition_by_depth\|sprite_partition_step\|sprite_partition_tmap\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -439,11 +496,14 @@ R F(...) {
 |
 - _o[4] & 0x3f
 + ((uw_object_hdr_t *)_o)->quality
+|
+- *(byte *)(_o + 0x4) & 0x3f
++ ((uw_object_hdr_t *)_o)->quality
 )
 ...>
 }
 
-@field_0_next@
+@field_0_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(sprite_partition_by_depth\|sprite_partition_step\|sprite_partition_tmap\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -472,7 +532,7 @@ R F(...) {
 ...>
 }
 
-@field_0_owner@
+@field_0_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(sprite_partition_by_depth\|sprite_partition_step\|sprite_partition_tmap\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -494,11 +554,14 @@ R F(...) {
 |
 - _o[6] & 0x3f
 + ((uw_object_hdr_t *)_o)->owner
+|
+- *(byte *)(_o + 0x6) & 0x3f
++ ((uw_object_hdr_t *)_o)->owner
 )
 ...>
 }
 
-@field_0_link@
+@field_0_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(sprite_partition_by_depth\|sprite_partition_step\|sprite_partition_tmap\)$";
 typedef ushort, byte, uw_object_hdr_t;

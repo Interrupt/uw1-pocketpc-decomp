@@ -57,6 +57,14 @@ function(add_supported_game_unit_test name)
   add_test(NAME ${name} COMMAND test_${name})
 endfunction()
 
+add_game_test_library(uw_test_babl_objects
+  src/babl.c:babl_builtin_x_obj_pos
+  src/babl.c:babl_builtin_count_inv
+  src/babl.c:babl_builtin_check_inv_quality
+  src/babl.c:babl_builtin_set_inv_quality
+  src/babl.c:babl_builtin_find_barter_total)
+add_supported_game_unit_test(babl_objects uw_test_babl_objects)
+
 # Keep service functions in separate archive members so suite-specific mocks
 # override only their own boundary without pulling unrelated definitions.
 add_game_test_library(uw_test_memory src/ordinal_stubs.c:ce_memset)
@@ -1004,6 +1012,10 @@ if(UW_SPATCH_EXECUTABLE)
   add_test(NAME projectile_spawn_fields
     COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_projectile_spawn_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME void_object_headers
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_void_object_headers.py"
       "${UW_SPATCH_EXECUTABLE}")
   add_test(NAME npc_death_fields
     COMMAND "${Python3_EXECUTABLE}"

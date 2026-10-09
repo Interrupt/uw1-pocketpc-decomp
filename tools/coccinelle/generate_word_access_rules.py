@@ -16,6 +16,7 @@ def generate(pointer, words, scope=None, typed=False, raw_type=None):
     after = '\n...>\n}\n' if scope else ''
     meta = f'type R;\nidentifier F =~ "{scope}";\n' if scope else ''
     byte_pointer = raw_type in ('char *', 'byte *', 'undefined1 *', 'unsigned char *')
+    byte_arithmetic = byte_pointer or raw_type == 'void *'
     word_pointer = raw_type in ('ushort *', 'undefined2 *', 'unsigned short *',
                                 'short *', 'const ushort *', 'const short *')
     signed_pointer = raw_type in ('short *', 'const short *')
@@ -40,7 +41,7 @@ identifier V;
             if offset % 2 == 0:
                 variants.append(f'(({type_} *){pointer})[{hex(offset//2)}]')
                 variants.append(f'*({type_} *)(({type_} *){pointer} + {hex(offset//2)})')
-            if byte_pointer:
+            if byte_arithmetic:
                 variants.append(f'*({type_} *)({pointer} + {hex(offset)})')
             if word_pointer:
                 variants.append(f'*({type_} *)({pointer} + {hex(offset//2)})')
@@ -62,9 +63,9 @@ identifier V;
                     variants.append(f'({type_})((ushort *){pointer})[{hex(index//2)}]')
                 if index == 0:
                     variants.append(f'*({type_} *){pointer}')
-                if byte_pointer:
+                if byte_arithmetic:
                     variants.append(f'*({type_} *)({pointer} + {hex(index)})')
-                    if (raw_type == 'char *') == (type_ == 'char'):
+                    if byte_pointer and (raw_type == 'char *') == (type_ == 'char'):
                         variants.append(f'{pointer}[{hex(index)}]')
                         if index == 0:
                             variants.append(f'*{pointer}')
@@ -90,38 +91,43 @@ expression E;
 {before}(\n'''+ '\n|\n'.join(f'- {v}\n+ {read}' for v in variants)+'\n)'+after+'\n')
     return '\n'.join(rules)
 
-# Globals have known types. The extended NPC words are deliberately scoped
-# away from the projectile physics function, whose coordinate words overlap.
-parts=[]
-for name in ['g_player_object','DAT_0010190c']:
-    words={off:'hdr.'+field for off,field in HEADER.items()}
-    # Distinct rule names for each global, since they share one patch.
-    patch=generate(name,words,typed=True)
-    parts.append(patch.replace('@w_', '@'+name+'_w_'))
-    scope=r'^\(npc_.*\|setup_npc_ai_tick_state\|set_npc_altitude_state\|refresh_npc_target_delta\|check_npc_morale_flee\|initiate_npc_death\|handle_monster_death\|compute_pathfind_search_radius\|movement_tick\|try_npc_special_ability_.*\|walk_using_cached_path\|handle_blocked_cached_path\|collision_response_default\)$' if name=='DAT_0010190c' else None
-    patch=generate(name,MOBILE,scope,typed=True)
-    parts.append(patch.replace('@w_', '@'+name+'_mobile_w_'))
-parts.append("""@cached_path_slot@
+def main():
+    # Globals have known types. The extended NPC words are deliberately scoped
+    # away from the projectile physics function, whose coordinate words overlap.
+    parts=[]
+    for name in ['g_player_object','DAT_0010190c']:
+        words={off:'hdr.'+field for off,field in HEADER.items()}
+        # Distinct rule names for each global, since they share one patch.
+        patch=generate(name,words,typed=True)
+        parts.append(patch.replace('@w_', '@'+name+'_w_'))
+        scope=r'^\(npc_.*\|setup_npc_ai_tick_state\|set_npc_altitude_state\|refresh_npc_target_delta\|check_npc_morale_flee\|initiate_npc_death\|handle_monster_death\|compute_pathfind_search_radius\|movement_tick\|try_npc_special_ability_.*\|walk_using_cached_path\|handle_blocked_cached_path\|collision_response_default\)$' if name=='DAT_0010190c' else None
+        patch=generate(name,MOBILE,scope,typed=True)
+        parts.append(patch.replace('@w_', '@'+name+'_mobile_w_'))
+    parts.append("""@cached_path_slot@
 @@
 - DAT_0010190c->tile_word_low & 0xf
 + DAT_0010190c->npc_path_slot
 """)
-(HERE/'object-word-accesses.cocci').write_text('\n'.join(parts).rstrip()+'\n')
+    (HERE/'object-word-accesses.cocci').write_text('\n'.join(parts).rstrip()+'\n')
 
-# Explicit byte views preserve their cast's scaling. Bare pointer arithmetic
-# and indexes require the original declaration type from the Clang role audit.
-roles=json.loads((HERE/'object-pointer-roles.json').read_text())
-out=HERE/'header-bytes'
-out.mkdir(exist_ok=True)
-for source in roles['sources']:
-    groups={}
-    for function in source.get('functions',[]):
-        for role in function['roles']:
-            if '**' not in role['type'] and role['name'] not in ['g_player_object','DAT_0010190c']:
-                groups.setdefault((role['name'], role['type']),[]).append(function['function'])
-    patches=[]
-    for number,((name, raw_type),functions) in enumerate(groups.items()):
-        scope=r'^\(' + r'\|'.join(sorted(set(functions))) + r'\)$'
-        patches.append(generate(name,HEADER,scope,raw_type=raw_type).replace('@w_',f'@receiver_{number}_w_'))
-    if patches:
-        (out/(Path(source['source']).stem+'.cocci')).write_text('\n'.join(patches).rstrip()+'\n')
+    # Explicit byte views preserve their cast's scaling. Bare pointer arithmetic
+    # and indexes require the original declaration type from the Clang role audit.
+    roles=json.loads((HERE/'object-pointer-roles.json').read_text())
+    out=HERE/'header-bytes'
+    out.mkdir(exist_ok=True)
+    for source in roles['sources']:
+        groups={}
+        for function in source.get('functions',[]):
+            for role in function['roles']:
+                if '**' not in role['type'] and role['name'] not in ['g_player_object','DAT_0010190c']:
+                    groups.setdefault((role['name'], role['type']),[]).append(function['function'])
+        patches=[]
+        for number,((name, raw_type),functions) in enumerate(groups.items()):
+            scope=r'^\(' + r'\|'.join(sorted(set(functions))) + r'\)$'
+            patches.append(generate(name,HEADER,scope,raw_type=raw_type).replace('@w_',f'@receiver_{number}_w_'))
+        if patches:
+            (out/(Path(source['source']).stem+'.cocci')).write_text('\n'.join(patches).rstrip()+'\n')
+
+
+if __name__ == "__main__":
+    main()

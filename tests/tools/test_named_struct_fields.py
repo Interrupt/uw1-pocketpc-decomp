@@ -14,7 +14,8 @@ patch = ROOT / 'tools/coccinelle/named-field-reads.cocci'
 
 def transform(path):
     result = subprocess.run([spatch, '--sp-file', str(patch), str(path),
-                             '--no-includes', '--in-place'], capture_output=True, text=True)
+                             '--all-includes', '--include-headers-for-types',
+                             '-I', str(ROOT), '-I', str(ROOT / 'src'), '--in-place'], capture_output=True, text=True)
     assert result.returncode == 0, result.stdout + result.stderr
 
 
@@ -52,6 +53,7 @@ for word, fields in WORDS.items():
                 expressions.append((f'{base} >> {bit}', field))
             if bit:
                 expressions.append((f'{base} & {hex(mask << bit)}', field))
+                expressions.append((f'3 + ({base} & {hex(mask << bit)}) * 5', field))
                 for value in range(1 << min(width, 4)):
                     expressions.append((f'({base} & {hex(mask << bit)}) == {hex(value << bit)}', field))
 for byte, fields in BYTES.items():

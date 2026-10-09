@@ -355,6 +355,9 @@ R F(...) {
 |
 - *(ushort *)link_cursor
 + ((uw_object_hdr_t *)link_cursor)->type_flags
+|
+- *(ushort *)(link_cursor + 0)
++ ((uw_object_hdr_t *)link_cursor)->type_flags
 )
 ...>
 }
@@ -371,6 +374,9 @@ R F(...) {
 + ((uw_object_hdr_t *)link_cursor)->position_word
 |
 - ((ushort *)link_cursor)[1]
++ ((uw_object_hdr_t *)link_cursor)->position_word
+|
+- *(ushort *)(link_cursor + 2)
 + ((uw_object_hdr_t *)link_cursor)->position_word
 )
 ...>
@@ -389,6 +395,9 @@ R F(...) {
 |
 - ((ushort *)link_cursor)[2]
 + ((uw_object_hdr_t *)link_cursor)->chain_word
+|
+- *(ushort *)(link_cursor + 4)
++ ((uw_object_hdr_t *)link_cursor)->chain_word
 )
 ...>
 }
@@ -406,13 +415,16 @@ R F(...) {
 |
 - ((ushort *)link_cursor)[3]
 + ((uw_object_hdr_t *)link_cursor)->link_word
+|
+- *(ushort *)(link_cursor + 6)
++ ((uw_object_hdr_t *)link_cursor)->link_word
 )
 ...>
 }
 
 @word_5_0@
 type R;
-identifier F =~ "^\(babl_builtin_find_barter_total\|babl_builtin_take_from_npc_inv\)$";
+identifier F =~ "^\(babl_builtin_take_from_npc_inv\)$";
 typedef ushort, uw_object_hdr_t;
 @@
 R F(...) {
@@ -426,13 +438,16 @@ R F(...) {
 |
 - *(ushort *)iVar3
 + ((uw_object_hdr_t *)iVar3)->type_flags
+|
+- *(ushort *)(iVar3 + 0)
++ ((uw_object_hdr_t *)iVar3)->type_flags
 )
 ...>
 }
 
 @word_5_1@
 type R;
-identifier F =~ "^\(babl_builtin_find_barter_total\|babl_builtin_take_from_npc_inv\)$";
+identifier F =~ "^\(babl_builtin_take_from_npc_inv\)$";
 typedef ushort, uw_object_hdr_t;
 @@
 R F(...) {
@@ -443,13 +458,16 @@ R F(...) {
 |
 - ((ushort *)iVar3)[1]
 + ((uw_object_hdr_t *)iVar3)->position_word
+|
+- *(ushort *)(iVar3 + 2)
++ ((uw_object_hdr_t *)iVar3)->position_word
 )
 ...>
 }
 
 @word_5_2@
 type R;
-identifier F =~ "^\(babl_builtin_find_barter_total\|babl_builtin_take_from_npc_inv\)$";
+identifier F =~ "^\(babl_builtin_take_from_npc_inv\)$";
 typedef ushort, uw_object_hdr_t;
 @@
 R F(...) {
@@ -460,13 +478,16 @@ R F(...) {
 |
 - ((ushort *)iVar3)[2]
 + ((uw_object_hdr_t *)iVar3)->chain_word
+|
+- *(ushort *)(iVar3 + 4)
++ ((uw_object_hdr_t *)iVar3)->chain_word
 )
 ...>
 }
 
 @word_5_3@
 type R;
-identifier F =~ "^\(babl_builtin_find_barter_total\|babl_builtin_take_from_npc_inv\)$";
+identifier F =~ "^\(babl_builtin_take_from_npc_inv\)$";
 typedef ushort, uw_object_hdr_t;
 @@
 R F(...) {
@@ -476,6 +497,9 @@ R F(...) {
 + ((uw_object_hdr_t *)iVar3)->link_word
 |
 - ((ushort *)iVar3)[3]
++ ((uw_object_hdr_t *)iVar3)->link_word
+|
+- *(ushort *)(iVar3 + 6)
 + ((uw_object_hdr_t *)iVar3)->link_word
 )
 ...>
@@ -497,6 +521,9 @@ R F(...) {
 |
 - *(ushort *)uVar1
 + ((uw_object_hdr_t *)uVar1)->type_flags
+|
+- *(ushort *)(uVar1 + 0)
++ ((uw_object_hdr_t *)uVar1)->type_flags
 )
 ...>
 }
@@ -513,6 +540,9 @@ R F(...) {
 + ((uw_object_hdr_t *)uVar1)->position_word
 |
 - ((ushort *)uVar1)[1]
++ ((uw_object_hdr_t *)uVar1)->position_word
+|
+- *(ushort *)(uVar1 + 2)
 + ((uw_object_hdr_t *)uVar1)->position_word
 )
 ...>
@@ -531,6 +561,9 @@ R F(...) {
 |
 - ((ushort *)uVar1)[2]
 + ((uw_object_hdr_t *)uVar1)->chain_word
+|
+- *(ushort *)(uVar1 + 4)
++ ((uw_object_hdr_t *)uVar1)->chain_word
 )
 ...>
 }
@@ -547,6 +580,9 @@ R F(...) {
 + ((uw_object_hdr_t *)uVar1)->link_word
 |
 - ((ushort *)uVar1)[3]
++ ((uw_object_hdr_t *)uVar1)->link_word
+|
+- *(ushort *)(uVar1 + 6)
 + ((uw_object_hdr_t *)uVar1)->link_word
 )
 ...>
@@ -797,6 +833,77 @@ R F(...) {
 
 @word_10_0@
 type R;
+identifier F =~ "^\(babl_builtin_find_barter_total\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar3 + 0)
++ ((uw_object_hdr_t *)iVar3)->type_flags
+|
+- ((ushort *)iVar3)[0]
++ ((uw_object_hdr_t *)iVar3)->type_flags
+|
+- *(ushort *)iVar3
++ ((uw_object_hdr_t *)iVar3)->type_flags
+)
+...>
+}
+
+@word_10_1@
+type R;
+identifier F =~ "^\(babl_builtin_find_barter_total\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar3 + 2)
++ ((uw_object_hdr_t *)iVar3)->position_word
+|
+- ((ushort *)iVar3)[1]
++ ((uw_object_hdr_t *)iVar3)->position_word
+)
+...>
+}
+
+@word_10_2@
+type R;
+identifier F =~ "^\(babl_builtin_find_barter_total\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar3 + 4)
++ ((uw_object_hdr_t *)iVar3)->chain_word
+|
+- ((ushort *)iVar3)[2]
++ ((uw_object_hdr_t *)iVar3)->chain_word
+)
+...>
+}
+
+@word_10_3@
+type R;
+identifier F =~ "^\(babl_builtin_find_barter_total\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar3 + 6)
++ ((uw_object_hdr_t *)iVar3)->link_word
+|
+- ((ushort *)iVar3)[3]
++ ((uw_object_hdr_t *)iVar3)->link_word
+)
+...>
+}
+
+@word_11_0@
+type R;
 identifier F =~ "^\(babl_builtin_give_ptr_npc\)$";
 typedef ushort, uw_object_hdr_t;
 @@
@@ -818,7 +925,7 @@ R F(...) {
 ...>
 }
 
-@word_10_1@
+@word_11_1@
 type R;
 identifier F =~ "^\(babl_builtin_give_ptr_npc\)$";
 typedef ushort, uw_object_hdr_t;
@@ -838,7 +945,7 @@ R F(...) {
 ...>
 }
 
-@word_10_2@
+@word_11_2@
 type R;
 identifier F =~ "^\(babl_builtin_give_ptr_npc\)$";
 typedef ushort, uw_object_hdr_t;
@@ -858,7 +965,7 @@ R F(...) {
 ...>
 }
 
-@word_10_3@
+@word_11_3@
 type R;
 identifier F =~ "^\(babl_builtin_give_ptr_npc\)$";
 typedef ushort, uw_object_hdr_t;
@@ -878,7 +985,7 @@ R F(...) {
 ...>
 }
 
-@word_11_0@
+@word_12_0@
 type R;
 identifier F =~ "^\(babl_builtin_identify_inv\)$";
 typedef ushort, uw_object_hdr_t;
@@ -901,7 +1008,7 @@ R F(...) {
 ...>
 }
 
-@word_11_1@
+@word_12_1@
 type R;
 identifier F =~ "^\(babl_builtin_identify_inv\)$";
 typedef ushort, uw_object_hdr_t;
@@ -921,7 +1028,7 @@ R F(...) {
 ...>
 }
 
-@word_11_2@
+@word_12_2@
 type R;
 identifier F =~ "^\(babl_builtin_identify_inv\)$";
 typedef ushort, uw_object_hdr_t;
@@ -941,7 +1048,7 @@ R F(...) {
 ...>
 }
 
-@word_11_3@
+@word_12_3@
 type R;
 identifier F =~ "^\(babl_builtin_identify_inv\)$";
 typedef ushort, uw_object_hdr_t;
@@ -961,7 +1068,7 @@ R F(...) {
 ...>
 }
 
-@word_12_0@
+@word_13_0@
 type R;
 identifier F =~ "^\(babl_builtin_count_inv\)$";
 typedef ushort, uw_object_hdr_t;
@@ -981,7 +1088,7 @@ R F(...) {
 ...>
 }
 
-@word_12_1@
+@word_13_1@
 type R;
 identifier F =~ "^\(babl_builtin_count_inv\)$";
 typedef ushort, uw_object_hdr_t;
@@ -998,7 +1105,7 @@ R F(...) {
 ...>
 }
 
-@word_12_2@
+@word_13_2@
 type R;
 identifier F =~ "^\(babl_builtin_count_inv\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1015,7 +1122,7 @@ R F(...) {
 ...>
 }
 
-@word_12_3@
+@word_13_3@
 type R;
 identifier F =~ "^\(babl_builtin_count_inv\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1032,7 +1139,7 @@ R F(...) {
 ...>
 }
 
-@word_13_0@
+@word_14_0@
 type R;
 identifier F =~ "^\(babl_builtin_check_inv_quality\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1052,7 +1159,7 @@ R F(...) {
 ...>
 }
 
-@word_13_1@
+@word_14_1@
 type R;
 identifier F =~ "^\(babl_builtin_check_inv_quality\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1069,7 +1176,7 @@ R F(...) {
 ...>
 }
 
-@word_13_2@
+@word_14_2@
 type R;
 identifier F =~ "^\(babl_builtin_check_inv_quality\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1086,7 +1193,7 @@ R F(...) {
 ...>
 }
 
-@word_13_3@
+@word_14_3@
 type R;
 identifier F =~ "^\(babl_builtin_check_inv_quality\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1103,7 +1210,7 @@ R F(...) {
 ...>
 }
 
-@word_14_0@
+@word_15_0@
 type R;
 identifier F =~ "^\(babl_builtin_set_inv_quality\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1123,7 +1230,7 @@ R F(...) {
 ...>
 }
 
-@word_14_1@
+@word_15_1@
 type R;
 identifier F =~ "^\(babl_builtin_set_inv_quality\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1140,7 +1247,7 @@ R F(...) {
 ...>
 }
 
-@word_14_2@
+@word_15_2@
 type R;
 identifier F =~ "^\(babl_builtin_set_inv_quality\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1157,7 +1264,7 @@ R F(...) {
 ...>
 }
 
-@word_14_3@
+@word_15_3@
 type R;
 identifier F =~ "^\(babl_builtin_set_inv_quality\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1174,7 +1281,7 @@ R F(...) {
 ...>
 }
 
-@word_15_0@
+@word_16_0@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1200,7 +1307,7 @@ R F(...) {
 ...>
 }
 
-@word_15_1@
+@word_16_1@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1220,7 +1327,7 @@ R F(...) {
 ...>
 }
 
-@word_15_2@
+@word_16_2@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1240,7 +1347,7 @@ R F(...) {
 ...>
 }
 
-@word_15_3@
+@word_16_3@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1260,7 +1367,7 @@ R F(...) {
 ...>
 }
 
-@word_16_0@
+@word_17_0@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1286,7 +1393,7 @@ R F(...) {
 ...>
 }
 
-@word_16_1@
+@word_17_1@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1306,7 +1413,7 @@ R F(...) {
 ...>
 }
 
-@word_16_2@
+@word_17_2@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1326,7 +1433,7 @@ R F(...) {
 ...>
 }
 
-@word_16_3@
+@word_17_3@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1346,7 +1453,7 @@ R F(...) {
 ...>
 }
 
-@word_17_0@
+@word_18_0@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1372,7 +1479,7 @@ R F(...) {
 ...>
 }
 
-@word_17_1@
+@word_18_1@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1392,7 +1499,7 @@ R F(...) {
 ...>
 }
 
-@word_17_2@
+@word_18_2@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1412,7 +1519,7 @@ R F(...) {
 ...>
 }
 
-@word_17_3@
+@word_18_3@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1432,7 +1539,7 @@ R F(...) {
 ...>
 }
 
-@word_18_0@
+@word_19_0@
 type R;
 identifier F =~ "^\(end_barter_ui\|finalize_npc_barter_items\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1458,7 +1565,7 @@ R F(...) {
 ...>
 }
 
-@word_18_1@
+@word_19_1@
 type R;
 identifier F =~ "^\(end_barter_ui\|finalize_npc_barter_items\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1478,7 +1585,7 @@ R F(...) {
 ...>
 }
 
-@word_18_2@
+@word_19_2@
 type R;
 identifier F =~ "^\(end_barter_ui\|finalize_npc_barter_items\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1498,7 +1605,7 @@ R F(...) {
 ...>
 }
 
-@word_18_3@
+@word_19_3@
 type R;
 identifier F =~ "^\(end_barter_ui\|finalize_npc_barter_items\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1518,7 +1625,7 @@ R F(...) {
 ...>
 }
 
-@word_19_0@
+@word_20_0@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1541,7 +1648,7 @@ R F(...) {
 ...>
 }
 
-@word_19_1@
+@word_20_1@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1561,7 +1668,7 @@ R F(...) {
 ...>
 }
 
-@word_19_2@
+@word_20_2@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1581,7 +1688,7 @@ R F(...) {
 ...>
 }
 
-@word_19_3@
+@word_20_3@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1601,7 +1708,7 @@ R F(...) {
 ...>
 }
 
-@word_20_0@
+@word_21_0@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1617,11 +1724,14 @@ R F(...) {
 |
 - *(ushort *)obj_ptr
 + ((uw_object_hdr_t *)obj_ptr)->type_flags
+|
+- *(ushort *)(obj_ptr + 0)
++ ((uw_object_hdr_t *)obj_ptr)->type_flags
 )
 ...>
 }
 
-@word_20_1@
+@word_21_1@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1634,11 +1744,14 @@ R F(...) {
 |
 - ((ushort *)obj_ptr)[1]
 + ((uw_object_hdr_t *)obj_ptr)->position_word
+|
+- *(ushort *)(obj_ptr + 2)
++ ((uw_object_hdr_t *)obj_ptr)->position_word
 )
 ...>
 }
 
-@word_20_2@
+@word_21_2@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1651,11 +1764,14 @@ R F(...) {
 |
 - ((ushort *)obj_ptr)[2]
 + ((uw_object_hdr_t *)obj_ptr)->chain_word
+|
+- *(ushort *)(obj_ptr + 4)
++ ((uw_object_hdr_t *)obj_ptr)->chain_word
 )
 ...>
 }
 
-@word_20_3@
+@word_21_3@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1668,11 +1784,14 @@ R F(...) {
 |
 - ((ushort *)obj_ptr)[3]
 + ((uw_object_hdr_t *)obj_ptr)->link_word
+|
+- *(ushort *)(obj_ptr + 6)
++ ((uw_object_hdr_t *)obj_ptr)->link_word
 )
 ...>
 }
 
-@word_21_0@
+@word_22_0@
 type R;
 identifier F =~ "^\(redraw_barter_slot_icon\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1692,7 +1811,7 @@ R F(...) {
 ...>
 }
 
-@word_21_1@
+@word_22_1@
 type R;
 identifier F =~ "^\(redraw_barter_slot_icon\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1709,7 +1828,7 @@ R F(...) {
 ...>
 }
 
-@word_21_2@
+@word_22_2@
 type R;
 identifier F =~ "^\(redraw_barter_slot_icon\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1726,7 +1845,7 @@ R F(...) {
 ...>
 }
 
-@word_21_3@
+@word_22_3@
 type R;
 identifier F =~ "^\(redraw_barter_slot_icon\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1743,7 +1862,7 @@ R F(...) {
 ...>
 }
 
-@word_22_0@
+@word_23_0@
 type R;
 identifier F =~ "^\(merge_or_swap_barter_slot_item\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1769,7 +1888,7 @@ R F(...) {
 ...>
 }
 
-@word_22_1@
+@word_23_1@
 type R;
 identifier F =~ "^\(merge_or_swap_barter_slot_item\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1789,7 +1908,7 @@ R F(...) {
 ...>
 }
 
-@word_22_2@
+@word_23_2@
 type R;
 identifier F =~ "^\(merge_or_swap_barter_slot_item\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1809,7 +1928,7 @@ R F(...) {
 ...>
 }
 
-@word_22_3@
+@word_23_3@
 type R;
 identifier F =~ "^\(merge_or_swap_barter_slot_item\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1829,7 +1948,7 @@ R F(...) {
 ...>
 }
 
-@word_23_0@
+@word_24_0@
 type R;
 identifier F =~ "^\(check_npc_item_preference\|finalize_player_barter_items\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1855,7 +1974,7 @@ R F(...) {
 ...>
 }
 
-@word_23_1@
+@word_24_1@
 type R;
 identifier F =~ "^\(check_npc_item_preference\|finalize_player_barter_items\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1875,7 +1994,7 @@ R F(...) {
 ...>
 }
 
-@word_23_2@
+@word_24_2@
 type R;
 identifier F =~ "^\(check_npc_item_preference\|finalize_player_barter_items\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1895,7 +2014,7 @@ R F(...) {
 ...>
 }
 
-@word_23_3@
+@word_24_3@
 type R;
 identifier F =~ "^\(check_npc_item_preference\|finalize_player_barter_items\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1915,7 +2034,7 @@ R F(...) {
 ...>
 }
 
-@word_24_0@
+@word_25_0@
 type R;
 identifier F =~ "^\(compute_barter_item_value\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1941,7 +2060,7 @@ R F(...) {
 ...>
 }
 
-@word_24_1@
+@word_25_1@
 type R;
 identifier F =~ "^\(compute_barter_item_value\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1961,7 +2080,7 @@ R F(...) {
 ...>
 }
 
-@word_24_2@
+@word_25_2@
 type R;
 identifier F =~ "^\(compute_barter_item_value\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1981,7 +2100,7 @@ R F(...) {
 ...>
 }
 
-@word_24_3@
+@word_25_3@
 type R;
 identifier F =~ "^\(compute_barter_item_value\)$";
 typedef ushort, uw_object_hdr_t;
@@ -2001,7 +2120,7 @@ R F(...) {
 ...>
 }
 
-@word_25_0@
+@word_26_0@
 type R;
 identifier F =~ "^\(collect_included_player_barter_items\|remove_item_from_npc_inventory_by_id\)$";
 typedef ushort, uw_object_hdr_t;
@@ -2027,7 +2146,7 @@ R F(...) {
 ...>
 }
 
-@word_25_1@
+@word_26_1@
 type R;
 identifier F =~ "^\(collect_included_player_barter_items\|remove_item_from_npc_inventory_by_id\)$";
 typedef ushort, uw_object_hdr_t;
@@ -2047,7 +2166,7 @@ R F(...) {
 ...>
 }
 
-@word_25_2@
+@word_26_2@
 type R;
 identifier F =~ "^\(collect_included_player_barter_items\|remove_item_from_npc_inventory_by_id\)$";
 typedef ushort, uw_object_hdr_t;
@@ -2067,7 +2186,7 @@ R F(...) {
 ...>
 }
 
-@word_25_3@
+@word_26_3@
 type R;
 identifier F =~ "^\(collect_included_player_barter_items\|remove_item_from_npc_inventory_by_id\)$";
 typedef ushort, uw_object_hdr_t;
@@ -2087,7 +2206,7 @@ R F(...) {
 ...>
 }
 
-@word_26_0@
+@word_27_0@
 type R;
 identifier F =~ "^\(give_barter_item_by_item_id\)$";
 typedef ushort, uw_object_hdr_t;
@@ -2103,11 +2222,14 @@ R F(...) {
 |
 - *(ushort *)pvItem
 + ((uw_object_hdr_t *)pvItem)->type_flags
+|
+- *(ushort *)(pvItem + 0)
++ ((uw_object_hdr_t *)pvItem)->type_flags
 )
 ...>
 }
 
-@word_26_1@
+@word_27_1@
 type R;
 identifier F =~ "^\(give_barter_item_by_item_id\)$";
 typedef ushort, uw_object_hdr_t;
@@ -2120,11 +2242,14 @@ R F(...) {
 |
 - ((ushort *)pvItem)[1]
 + ((uw_object_hdr_t *)pvItem)->position_word
+|
+- *(ushort *)(pvItem + 2)
++ ((uw_object_hdr_t *)pvItem)->position_word
 )
 ...>
 }
 
-@word_26_2@
+@word_27_2@
 type R;
 identifier F =~ "^\(give_barter_item_by_item_id\)$";
 typedef ushort, uw_object_hdr_t;
@@ -2137,11 +2262,14 @@ R F(...) {
 |
 - ((ushort *)pvItem)[2]
 + ((uw_object_hdr_t *)pvItem)->chain_word
+|
+- *(ushort *)(pvItem + 4)
++ ((uw_object_hdr_t *)pvItem)->chain_word
 )
 ...>
 }
 
-@word_26_3@
+@word_27_3@
 type R;
 identifier F =~ "^\(give_barter_item_by_item_id\)$";
 typedef ushort, uw_object_hdr_t;
@@ -2153,6 +2281,9 @@ R F(...) {
 + ((uw_object_hdr_t *)pvItem)->link_word
 |
 - ((ushort *)pvItem)[3]
++ ((uw_object_hdr_t *)pvItem)->link_word
+|
+- *(ushort *)(pvItem + 6)
 + ((uw_object_hdr_t *)pvItem)->link_word
 )
 ...>

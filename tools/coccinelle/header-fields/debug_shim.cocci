@@ -1,4 +1,4 @@
-@field_0_item_id@
+@field_0_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(uw_debug_force_item_id_once\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -24,7 +24,7 @@ R F(...) {
 ...>
 }
 
-@field_0_flags_res@
+@field_0_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(uw_debug_force_item_id_once\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -71,7 +71,7 @@ R F(...) {
 ...>
 }
 
-@field_0_enchanted@
+@field_0_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(uw_debug_force_item_id_once\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -118,7 +118,7 @@ R F(...) {
 ...>
 }
 
-@field_0_doordir@
+@field_0_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(uw_debug_force_item_id_once\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -165,7 +165,7 @@ R F(...) {
 ...>
 }
 
-@field_0_invisible@
+@field_0_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(uw_debug_force_item_id_once\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -212,7 +212,7 @@ R F(...) {
 ...>
 }
 
-@field_0_is_quant@
+@field_0_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(uw_debug_force_item_id_once\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -270,11 +270,14 @@ R F(...) {
 |
 - (*(byte *)((char *)obj + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)obj)->is_quant
+|
+- *(byte *)((char *)obj + 0x1) >> 7
++ ((uw_object_hdr_t *)obj)->is_quant
 )
 ...>
 }
 
-@field_0_zpos@
+@field_0_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(uw_debug_force_item_id_once\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -300,7 +303,7 @@ R F(...) {
 ...>
 }
 
-@field_0_heading@
+@field_0_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(uw_debug_force_item_id_once\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -329,7 +332,7 @@ R F(...) {
 ...>
 }
 
-@field_0_ypos@
+@field_0_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(uw_debug_force_item_id_once\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -364,7 +367,7 @@ R F(...) {
 ...>
 }
 
-@field_0_xpos@
+@field_0_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(uw_debug_force_item_id_once\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -404,11 +407,14 @@ R F(...) {
 |
 - (*(byte *)((char *)obj + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)obj)->xpos
+|
+- *(byte *)((char *)obj + 0x3) >> 5
++ ((uw_object_hdr_t *)obj)->xpos
 )
 ...>
 }
 
-@field_0_quality@
+@field_0_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(uw_debug_force_item_id_once\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -434,7 +440,7 @@ R F(...) {
 ...>
 }
 
-@field_0_next@
+@field_0_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(uw_debug_force_item_id_once\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -472,7 +478,7 @@ R F(...) {
 ...>
 }
 
-@field_0_owner@
+@field_0_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(uw_debug_force_item_id_once\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -498,7 +504,7 @@ R F(...) {
 ...>
 }
 
-@field_0_link@
+@field_0_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(uw_debug_force_item_id_once\)$";
 typedef ushort, byte, uw_object_hdr_t;

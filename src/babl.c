@@ -1013,8 +1013,8 @@ void babl_builtin_x_obj_pos(char *args)
   ushort *puVar2;
   short *psVar3;
   ushort *puVar4;
-  void *iVar5;
-  byte *pbVar6;
+  uw_object_hdr_t *iVar5;
+  uw_tile_t *pbVar6;
   uint uVar7;
   ushort uVar8;
   
@@ -1025,39 +1025,39 @@ void babl_builtin_x_obj_pos(char *args)
   sVar1 = babl_read_var_word((int)*(short *)(args + -8));
   if (sVar1 == 0) {
     if (*puVar2 != 0xffff) {
-      *puVar2 = (ushort)(*(byte *)(iVar5 + 3) >> 5);
+      *puVar2 = (ushort)(iVar5->xpos);
     }
     if (*psVar3 != -1) {
-      *psVar3 = (short)((*(byte *)(iVar5 + 3) & 0x1c) >> 2);
+      *psVar3 = (short)(iVar5->ypos);
     }
     if (*puVar4 != 0xffff) {
-      *puVar4 = *(byte *)(iVar5 + 2) & 0x7f;
+      *puVar4 = iVar5->zpos;
     }
   }
   else {
     uVar8 = *puVar2;
     if (uVar8 != 0xffff) {
-      uVar7 = *(ushort *)(iVar5 + 2) & 0x1fff;
-      *(char *)(iVar5 + 2) = (char)uVar7;
-      *(byte *)(iVar5 + 3) = (byte)(uVar7 >> 8) | (byte)(((uVar8 & 7) << 0xd) >> 8);
+      uVar7 = iVar5->position_word & 0x1fff;
+      iVar5->xpos = uVar8 & 7;
     }
     sVar1 = *psVar3;
     if ((int)sVar1 != 0xffffffff) {
-      uVar7 = *(ushort *)(iVar5 + 2) & 0xe3ff;
-      *(char *)(iVar5 + 2) = (char)uVar7;
-      *(byte *)(iVar5 + 3) = (byte)(uVar7 >> 8) | (byte)((((int)sVar1 & 7U) << 10) >> 8);
+      uVar7 = iVar5->position_word & 0xe3ff;
+      iVar5->ypos = sVar1 & 7;
     }
     uVar8 = *puVar4;
     if (uVar8 != 0xffff) {
       if ((short)uVar8 < 0x80) {
-        uVar8 = (uVar8 ^ *(ushort *)(iVar5 + 2)) & 0x7f ^ *(ushort *)(iVar5 + 2);
+        iVar5->zpos = uVar8 & 0x7f;
+        uVar8 = iVar5->position_word;
       }
       else {
-        pbVar6 = (byte *)tilemap_lookup((int)(short)*puVar2,(int)*psVar3);
-        uVar8 = *pbVar6 >> 1 & 0x78 | *(ushort *)(iVar5 + 2) & 0xff80;
+        pbVar6 = (uw_tile_t *)tilemap_lookup((int)(short)*puVar2,
+                                             (int)*psVar3);
+        iVar5->zpos = pbVar6->floor_height << 3;
+        uVar8 = iVar5->position_word;
       }
-      *(char *)(iVar5 + 2) = (char)uVar8;
-      *(char *)(iVar5 + 3) = (char)(uVar8 >> 8);
+      iVar5->position_word = uVar8;
     }
   }
 }
@@ -2598,7 +2598,7 @@ bool babl_builtin_find_barter_total(char *args)
 {
   short sVar1;
   short sVar2;
-  void *iVar3;
+  uw_object_hdr_t *iVar3;
   int iVar4;
   int iVar5;
   int iVar6;
@@ -2617,11 +2617,11 @@ bool babl_builtin_find_barter_total(char *args)
       if (local_4c[iVar5] == sVar1) {
         iVar3 = get_object_record_by_slot_index((int)local_3c[iVar5]);
         local_2c[(short)iVar4] = local_3c[iVar5];
-        if (((*(byte *)(iVar3 + 1) & 0x80) == 0) || ((*(ushort *)(iVar3 + 6) & 0x8000) != 0)) {
+        if ((iVar3->is_quant == 0) || ((iVar3->link & 0x200) != 0)) {
           iVar6 = iVar6 + 1;
         }
         else {
-          iVar6 = iVar6 + (uint)(*(ushort *)(iVar3 + 6) >> 6);
+          iVar6 = iVar6 + (uint)(iVar3->link);
         }
         iVar4 = ((short)iVar4 + 1) * 0x10000 >> 0x10;
       }
@@ -2889,14 +2889,14 @@ LAB_0002a154:
 ushort babl_builtin_count_inv(char *args)
 {
   ushort uVar1;
-  void *iVar2;
+  uw_object_hdr_t *iVar2;
 
   iVar2 = get_object_record_by_slot_index(babl_read_var_word((int)*(short *)(args + -2)));  /* r0 passthrough */
-  if (((*(byte *)(iVar2 + 1) & 0x80) == 0) || ((*(ushort *)(iVar2 + 6) & 0x8000) != 0)) {
+  if ((iVar2->is_quant == 0) || ((iVar2->link & 0x200) != 0)) {
     uVar1 = 1;
   }
   else {
-    uVar1 = *(ushort *)(iVar2 + 6) >> 6;
+    uVar1 = iVar2->link;
   }
   return uVar1;
 }
@@ -2906,10 +2906,10 @@ ushort babl_builtin_count_inv(char *args)
 // was FUN_0002a258
 byte babl_builtin_check_inv_quality(char *args)
 {
-  void *iVar1;
+  uw_object_hdr_t *iVar1;
 
   iVar1 = get_object_record_by_slot_index(babl_read_var_word((int)*(short *)(args + -2)));  /* r0 passthrough */
-  return *(byte *)(iVar1 + 4) & 0x3f;
+  return iVar1->quality;
 }
 
 
@@ -2920,14 +2920,13 @@ int babl_builtin_set_inv_quality(char *args)
   undefined2 uVar1;
   byte bVar2;
   byte bVar3;
-  void *iVar4;
+  uw_object_hdr_t *iVar4;
   
   iVar4 = get_object_record_by_slot_index(babl_read_var_word((int)*(short *)(args + -4)));  /* r0 passthrough */
   bVar3 = babl_read_var_word((int)*(short *)(args + -2));
-  uVar1 = *(undefined2 *)(iVar4 + 4);
+  uVar1 = iVar4->chain_word;
   bVar2 = (byte)uVar1;
-  *(byte *)(iVar4 + 4) = (bVar2 ^ bVar3) & 0x3f ^ bVar2;
-  *(char *)(iVar4 + 5) = (char)((ushort)uVar1 >> 8);
+  iVar4->quality = bVar3 & 0x3f;
   return 1;
 }
 

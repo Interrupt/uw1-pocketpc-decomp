@@ -1,4 +1,4 @@
-@field_0_item_id@
+@field_0_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -24,7 +24,7 @@ R F(...) {
 ...>
 }
 
-@field_0_flags_res@
+@field_0_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -71,7 +71,7 @@ R F(...) {
 ...>
 }
 
-@field_0_enchanted@
+@field_0_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -118,7 +118,7 @@ R F(...) {
 ...>
 }
 
-@field_0_doordir@
+@field_0_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -165,7 +165,7 @@ R F(...) {
 ...>
 }
 
-@field_0_invisible@
+@field_0_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -212,7 +212,7 @@ R F(...) {
 ...>
 }
 
-@field_0_is_quant@
+@field_0_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -270,11 +270,14 @@ R F(...) {
 |
 - (*(byte *)((char *)_o + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)_o)->is_quant
+|
+- *(byte *)((char *)_o + 0x1) >> 7
++ ((uw_object_hdr_t *)_o)->is_quant
 )
 ...>
 }
 
-@field_0_zpos@
+@field_0_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -300,7 +303,7 @@ R F(...) {
 ...>
 }
 
-@field_0_heading@
+@field_0_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -329,7 +332,7 @@ R F(...) {
 ...>
 }
 
-@field_0_ypos@
+@field_0_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -364,7 +367,7 @@ R F(...) {
 ...>
 }
 
-@field_0_xpos@
+@field_0_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -404,11 +407,14 @@ R F(...) {
 |
 - (*(byte *)((char *)_o + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)_o)->xpos
+|
+- *(byte *)((char *)_o + 0x3) >> 5
++ ((uw_object_hdr_t *)_o)->xpos
 )
 ...>
 }
 
-@field_0_quality@
+@field_0_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -434,7 +440,7 @@ R F(...) {
 ...>
 }
 
-@field_0_next@
+@field_0_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -472,7 +478,7 @@ R F(...) {
 ...>
 }
 
-@field_0_owner@
+@field_0_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -498,7 +504,7 @@ R F(...) {
 ...>
 }
 
-@field_0_link@
+@field_0_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -536,7 +542,7 @@ R F(...) {
 ...>
 }
 
-@field_1_item_id@
+@field_1_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -562,7 +568,7 @@ R F(...) {
 ...>
 }
 
-@field_1_flags_res@
+@field_1_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -609,7 +615,7 @@ R F(...) {
 ...>
 }
 
-@field_1_enchanted@
+@field_1_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -656,7 +662,7 @@ R F(...) {
 ...>
 }
 
-@field_1_doordir@
+@field_1_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -703,7 +709,7 @@ R F(...) {
 ...>
 }
 
-@field_1_invisible@
+@field_1_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -750,7 +756,7 @@ R F(...) {
 ...>
 }
 
-@field_1_is_quant@
+@field_1_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -808,11 +814,14 @@ R F(...) {
 |
 - (*(byte *)((char *)equipped + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)equipped)->is_quant
+|
+- *(byte *)((char *)equipped + 0x1) >> 7
++ ((uw_object_hdr_t *)equipped)->is_quant
 )
 ...>
 }
 
-@field_1_zpos@
+@field_1_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -838,7 +847,7 @@ R F(...) {
 ...>
 }
 
-@field_1_heading@
+@field_1_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -867,7 +876,7 @@ R F(...) {
 ...>
 }
 
-@field_1_ypos@
+@field_1_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -902,7 +911,7 @@ R F(...) {
 ...>
 }
 
-@field_1_xpos@
+@field_1_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -942,11 +951,14 @@ R F(...) {
 |
 - (*(byte *)((char *)equipped + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)equipped)->xpos
+|
+- *(byte *)((char *)equipped + 0x3) >> 5
++ ((uw_object_hdr_t *)equipped)->xpos
 )
 ...>
 }
 
-@field_1_quality@
+@field_1_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -972,7 +984,7 @@ R F(...) {
 ...>
 }
 
-@field_1_next@
+@field_1_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1010,7 +1022,7 @@ R F(...) {
 ...>
 }
 
-@field_1_owner@
+@field_1_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1036,7 +1048,7 @@ R F(...) {
 ...>
 }
 
-@field_1_link@
+@field_1_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1074,7 +1086,7 @@ R F(...) {
 ...>
 }
 
-@field_2_item_id@
+@field_2_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_game_victory_sequence\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1094,7 +1106,7 @@ R F(...) {
 ...>
 }
 
-@field_2_flags_res@
+@field_2_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_game_victory_sequence\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1129,7 +1141,7 @@ R F(...) {
 ...>
 }
 
-@field_2_enchanted@
+@field_2_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_game_victory_sequence\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1164,7 +1176,7 @@ R F(...) {
 ...>
 }
 
-@field_2_doordir@
+@field_2_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_game_victory_sequence\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1199,7 +1211,7 @@ R F(...) {
 ...>
 }
 
-@field_2_invisible@
+@field_2_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_game_victory_sequence\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1234,7 +1246,7 @@ R F(...) {
 ...>
 }
 
-@field_2_is_quant@
+@field_2_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_game_victory_sequence\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1265,11 +1277,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar5 + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)puVar5)->is_quant
+|
+- *(byte *)((char *)puVar5 + 0x1) >> 7
++ ((uw_object_hdr_t *)puVar5)->is_quant
 )
 ...>
 }
 
-@field_2_zpos@
+@field_2_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_game_victory_sequence\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1289,7 +1304,7 @@ R F(...) {
 ...>
 }
 
-@field_2_heading@
+@field_2_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_game_victory_sequence\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1312,7 +1327,7 @@ R F(...) {
 ...>
 }
 
-@field_2_ypos@
+@field_2_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_game_victory_sequence\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1341,7 +1356,7 @@ R F(...) {
 ...>
 }
 
-@field_2_xpos@
+@field_2_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_game_victory_sequence\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1366,11 +1381,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar5 + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)puVar5)->xpos
+|
+- *(byte *)((char *)puVar5 + 0x3) >> 5
++ ((uw_object_hdr_t *)puVar5)->xpos
 )
 ...>
 }
 
-@field_2_quality@
+@field_2_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_game_victory_sequence\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1390,7 +1408,7 @@ R F(...) {
 ...>
 }
 
-@field_2_next@
+@field_2_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_game_victory_sequence\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1413,7 +1431,7 @@ R F(...) {
 ...>
 }
 
-@field_2_owner@
+@field_2_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_game_victory_sequence\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1433,7 +1451,7 @@ R F(...) {
 ...>
 }
 
-@field_2_link@
+@field_2_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_game_victory_sequence\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1456,7 +1474,7 @@ R F(...) {
 ...>
 }
 
-@field_3_item_id@
+@field_3_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_starvation_penalty\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1485,7 +1503,7 @@ R F(...) {
 ...>
 }
 
-@field_3_flags_res@
+@field_3_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_starvation_penalty\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1534,11 +1552,17 @@ R F(...) {
 |
 - (*(byte *)((char *)pNewObj + 0x1) & 0xe) >> 1
 + ((uw_object_hdr_t *)pNewObj)->flags_res
+|
+- (*(byte *)(pNewObj + 0x1) >> 1) & 0x7
++ ((uw_object_hdr_t *)pNewObj)->flags_res
+|
+- (*(byte *)(pNewObj + 0x1) & 0xe) >> 1
++ ((uw_object_hdr_t *)pNewObj)->flags_res
 )
 ...>
 }
 
-@field_3_enchanted@
+@field_3_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_starvation_penalty\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1587,11 +1611,17 @@ R F(...) {
 |
 - (*(byte *)((char *)pNewObj + 0x1) & 0x10) >> 4
 + ((uw_object_hdr_t *)pNewObj)->enchanted
+|
+- (*(byte *)(pNewObj + 0x1) >> 4) & 0x1
++ ((uw_object_hdr_t *)pNewObj)->enchanted
+|
+- (*(byte *)(pNewObj + 0x1) & 0x10) >> 4
++ ((uw_object_hdr_t *)pNewObj)->enchanted
 )
 ...>
 }
 
-@field_3_doordir@
+@field_3_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_starvation_penalty\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1640,11 +1670,17 @@ R F(...) {
 |
 - (*(byte *)((char *)pNewObj + 0x1) & 0x20) >> 5
 + ((uw_object_hdr_t *)pNewObj)->doordir
+|
+- (*(byte *)(pNewObj + 0x1) >> 5) & 0x1
++ ((uw_object_hdr_t *)pNewObj)->doordir
+|
+- (*(byte *)(pNewObj + 0x1) & 0x20) >> 5
++ ((uw_object_hdr_t *)pNewObj)->doordir
 )
 ...>
 }
 
-@field_3_invisible@
+@field_3_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_starvation_penalty\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1693,11 +1729,17 @@ R F(...) {
 |
 - (*(byte *)((char *)pNewObj + 0x1) & 0x40) >> 6
 + ((uw_object_hdr_t *)pNewObj)->invisible
+|
+- (*(byte *)(pNewObj + 0x1) >> 6) & 0x1
++ ((uw_object_hdr_t *)pNewObj)->invisible
+|
+- (*(byte *)(pNewObj + 0x1) & 0x40) >> 6
++ ((uw_object_hdr_t *)pNewObj)->invisible
 )
 ...>
 }
 
-@field_3_is_quant@
+@field_3_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_starvation_penalty\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1746,11 +1788,23 @@ R F(...) {
 |
 - (*(byte *)((char *)pNewObj + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)pNewObj)->is_quant
+|
+- *(byte *)((char *)pNewObj + 0x1) >> 7
++ ((uw_object_hdr_t *)pNewObj)->is_quant
+|
+- (*(byte *)(pNewObj + 0x1) >> 7) & 0x1
++ ((uw_object_hdr_t *)pNewObj)->is_quant
+|
+- (*(byte *)(pNewObj + 0x1) & 0x80) >> 7
++ ((uw_object_hdr_t *)pNewObj)->is_quant
+|
+- *(byte *)(pNewObj + 0x1) >> 7
++ ((uw_object_hdr_t *)pNewObj)->is_quant
 )
 ...>
 }
 
-@field_3_zpos@
+@field_3_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_starvation_penalty\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1772,11 +1826,14 @@ R F(...) {
 |
 - pNewObj[2] & 0x7f
 + ((uw_object_hdr_t *)pNewObj)->zpos
+|
+- *(byte *)(pNewObj + 0x2) & 0x7f
++ ((uw_object_hdr_t *)pNewObj)->zpos
 )
 ...>
 }
 
-@field_3_heading@
+@field_3_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_starvation_penalty\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1805,7 +1862,7 @@ R F(...) {
 ...>
 }
 
-@field_3_ypos@
+@field_3_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_starvation_penalty\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1836,11 +1893,17 @@ R F(...) {
 |
 - (*(byte *)((char *)pNewObj + 0x3) & 0x1c) >> 2
 + ((uw_object_hdr_t *)pNewObj)->ypos
+|
+- (*(byte *)(pNewObj + 0x3) >> 2) & 0x7
++ ((uw_object_hdr_t *)pNewObj)->ypos
+|
+- (*(byte *)(pNewObj + 0x3) & 0x1c) >> 2
++ ((uw_object_hdr_t *)pNewObj)->ypos
 )
 ...>
 }
 
-@field_3_xpos@
+@field_3_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_starvation_penalty\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1871,11 +1934,23 @@ R F(...) {
 |
 - (*(byte *)((char *)pNewObj + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)pNewObj)->xpos
+|
+- *(byte *)((char *)pNewObj + 0x3) >> 5
++ ((uw_object_hdr_t *)pNewObj)->xpos
+|
+- (*(byte *)(pNewObj + 0x3) >> 5) & 0x7
++ ((uw_object_hdr_t *)pNewObj)->xpos
+|
+- (*(byte *)(pNewObj + 0x3) & 0xe0) >> 5
++ ((uw_object_hdr_t *)pNewObj)->xpos
+|
+- *(byte *)(pNewObj + 0x3) >> 5
++ ((uw_object_hdr_t *)pNewObj)->xpos
 )
 ...>
 }
 
-@field_3_quality@
+@field_3_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_starvation_penalty\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1897,11 +1972,14 @@ R F(...) {
 |
 - pNewObj[4] & 0x3f
 + ((uw_object_hdr_t *)pNewObj)->quality
+|
+- *(byte *)(pNewObj + 0x4) & 0x3f
++ ((uw_object_hdr_t *)pNewObj)->quality
 )
 ...>
 }
 
-@field_3_next@
+@field_3_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_starvation_penalty\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1930,7 +2008,7 @@ R F(...) {
 ...>
 }
 
-@field_3_owner@
+@field_3_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_starvation_penalty\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1952,11 +2030,14 @@ R F(...) {
 |
 - pNewObj[6] & 0x3f
 + ((uw_object_hdr_t *)pNewObj)->owner
+|
+- *(byte *)(pNewObj + 0x6) & 0x3f
++ ((uw_object_hdr_t *)pNewObj)->owner
 )
 ...>
 }
 
-@field_3_link@
+@field_3_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_starvation_penalty\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1985,7 +2066,7 @@ R F(...) {
 ...>
 }
 
-@field_4_item_id@
+@field_4_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(decay_equipped_light_sources\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2011,7 +2092,7 @@ R F(...) {
 ...>
 }
 
-@field_4_flags_res@
+@field_4_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(decay_equipped_light_sources\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2058,7 +2139,7 @@ R F(...) {
 ...>
 }
 
-@field_4_enchanted@
+@field_4_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(decay_equipped_light_sources\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2105,7 +2186,7 @@ R F(...) {
 ...>
 }
 
-@field_4_doordir@
+@field_4_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(decay_equipped_light_sources\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2152,7 +2233,7 @@ R F(...) {
 ...>
 }
 
-@field_4_invisible@
+@field_4_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(decay_equipped_light_sources\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2199,7 +2280,7 @@ R F(...) {
 ...>
 }
 
-@field_4_is_quant@
+@field_4_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(decay_equipped_light_sources\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2257,11 +2338,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar6 + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)puVar6)->is_quant
+|
+- *(byte *)((char *)puVar6 + 0x1) >> 7
++ ((uw_object_hdr_t *)puVar6)->is_quant
 )
 ...>
 }
 
-@field_4_zpos@
+@field_4_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(decay_equipped_light_sources\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2287,7 +2371,7 @@ R F(...) {
 ...>
 }
 
-@field_4_heading@
+@field_4_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(decay_equipped_light_sources\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2316,7 +2400,7 @@ R F(...) {
 ...>
 }
 
-@field_4_ypos@
+@field_4_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(decay_equipped_light_sources\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2351,7 +2435,7 @@ R F(...) {
 ...>
 }
 
-@field_4_xpos@
+@field_4_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(decay_equipped_light_sources\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2391,11 +2475,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar6 + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)puVar6)->xpos
+|
+- *(byte *)((char *)puVar6 + 0x3) >> 5
++ ((uw_object_hdr_t *)puVar6)->xpos
 )
 ...>
 }
 
-@field_4_quality@
+@field_4_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(decay_equipped_light_sources\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2421,7 +2508,7 @@ R F(...) {
 ...>
 }
 
-@field_4_next@
+@field_4_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(decay_equipped_light_sources\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2459,7 +2546,7 @@ R F(...) {
 ...>
 }
 
-@field_4_owner@
+@field_4_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(decay_equipped_light_sources\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2485,7 +2572,7 @@ R F(...) {
 ...>
 }
 
-@field_4_link@
+@field_4_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(decay_equipped_light_sources\)$";
 typedef ushort, byte, uw_object_hdr_t;

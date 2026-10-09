@@ -1,4 +1,4 @@
-@field_0_item_id@
+@field_0_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(build_collision_height_field_for_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -24,7 +24,7 @@ R F(...) {
 ...>
 }
 
-@field_0_flags_res@
+@field_0_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(build_collision_height_field_for_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -71,7 +71,7 @@ R F(...) {
 ...>
 }
 
-@field_0_enchanted@
+@field_0_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(build_collision_height_field_for_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -118,7 +118,7 @@ R F(...) {
 ...>
 }
 
-@field_0_doordir@
+@field_0_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(build_collision_height_field_for_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -165,7 +165,7 @@ R F(...) {
 ...>
 }
 
-@field_0_invisible@
+@field_0_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(build_collision_height_field_for_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -212,7 +212,7 @@ R F(...) {
 ...>
 }
 
-@field_0_is_quant@
+@field_0_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(build_collision_height_field_for_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -270,11 +270,14 @@ R F(...) {
 |
 - (*(byte *)((char *)object + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)object)->is_quant
+|
+- *(byte *)((char *)object + 0x1) >> 7
++ ((uw_object_hdr_t *)object)->is_quant
 )
 ...>
 }
 
-@field_0_zpos@
+@field_0_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(build_collision_height_field_for_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -300,7 +303,7 @@ R F(...) {
 ...>
 }
 
-@field_0_heading@
+@field_0_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(build_collision_height_field_for_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -329,7 +332,7 @@ R F(...) {
 ...>
 }
 
-@field_0_ypos@
+@field_0_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(build_collision_height_field_for_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -364,7 +367,7 @@ R F(...) {
 ...>
 }
 
-@field_0_xpos@
+@field_0_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(build_collision_height_field_for_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -404,11 +407,14 @@ R F(...) {
 |
 - (*(byte *)((char *)object + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)object)->xpos
+|
+- *(byte *)((char *)object + 0x3) >> 5
++ ((uw_object_hdr_t *)object)->xpos
 )
 ...>
 }
 
-@field_0_quality@
+@field_0_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(build_collision_height_field_for_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -434,7 +440,7 @@ R F(...) {
 ...>
 }
 
-@field_0_next@
+@field_0_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(build_collision_height_field_for_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -472,7 +478,7 @@ R F(...) {
 ...>
 }
 
-@field_0_owner@
+@field_0_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(build_collision_height_field_for_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -498,7 +504,7 @@ R F(...) {
 ...>
 }
 
-@field_0_link@
+@field_0_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(build_collision_height_field_for_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -536,7 +542,7 @@ R F(...) {
 ...>
 }
 
-@field_1_item_id@
+@field_1_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collision_height_envelope\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -562,7 +568,7 @@ R F(...) {
 ...>
 }
 
-@field_1_flags_res@
+@field_1_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collision_height_envelope\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -609,7 +615,7 @@ R F(...) {
 ...>
 }
 
-@field_1_enchanted@
+@field_1_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collision_height_envelope\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -656,7 +662,7 @@ R F(...) {
 ...>
 }
 
-@field_1_doordir@
+@field_1_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collision_height_envelope\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -703,7 +709,7 @@ R F(...) {
 ...>
 }
 
-@field_1_invisible@
+@field_1_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collision_height_envelope\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -750,7 +756,7 @@ R F(...) {
 ...>
 }
 
-@field_1_is_quant@
+@field_1_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collision_height_envelope\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -808,11 +814,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar7 + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)puVar7)->is_quant
+|
+- *(byte *)((char *)puVar7 + 0x1) >> 7
++ ((uw_object_hdr_t *)puVar7)->is_quant
 )
 ...>
 }
 
-@field_1_zpos@
+@field_1_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collision_height_envelope\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -838,7 +847,7 @@ R F(...) {
 ...>
 }
 
-@field_1_heading@
+@field_1_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collision_height_envelope\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -867,7 +876,7 @@ R F(...) {
 ...>
 }
 
-@field_1_ypos@
+@field_1_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collision_height_envelope\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -902,7 +911,7 @@ R F(...) {
 ...>
 }
 
-@field_1_xpos@
+@field_1_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collision_height_envelope\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -942,11 +951,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar7 + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)puVar7)->xpos
+|
+- *(byte *)((char *)puVar7 + 0x3) >> 5
++ ((uw_object_hdr_t *)puVar7)->xpos
 )
 ...>
 }
 
-@field_1_quality@
+@field_1_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collision_height_envelope\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -972,7 +984,7 @@ R F(...) {
 ...>
 }
 
-@field_1_next@
+@field_1_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collision_height_envelope\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1010,7 +1022,7 @@ R F(...) {
 ...>
 }
 
-@field_1_owner@
+@field_1_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collision_height_envelope\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1036,7 +1048,7 @@ R F(...) {
 ...>
 }
 
-@field_1_link@
+@field_1_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collision_height_envelope\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1074,7 +1086,7 @@ R F(...) {
 ...>
 }
 
-@field_2_item_id@
+@field_2_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_object_placement_clearance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1100,7 +1112,7 @@ R F(...) {
 ...>
 }
 
-@field_2_flags_res@
+@field_2_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_object_placement_clearance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1147,7 +1159,7 @@ R F(...) {
 ...>
 }
 
-@field_2_enchanted@
+@field_2_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_object_placement_clearance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1194,7 +1206,7 @@ R F(...) {
 ...>
 }
 
-@field_2_doordir@
+@field_2_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_object_placement_clearance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1241,7 +1253,7 @@ R F(...) {
 ...>
 }
 
-@field_2_invisible@
+@field_2_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_object_placement_clearance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1288,7 +1300,7 @@ R F(...) {
 ...>
 }
 
-@field_2_is_quant@
+@field_2_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_object_placement_clearance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1346,11 +1358,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar4 + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- *(byte *)((char *)puVar4 + 0x1) >> 7
++ ((uw_object_hdr_t *)puVar4)->is_quant
 )
 ...>
 }
 
-@field_2_zpos@
+@field_2_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_object_placement_clearance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1376,7 +1391,7 @@ R F(...) {
 ...>
 }
 
-@field_2_heading@
+@field_2_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_object_placement_clearance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1405,7 +1420,7 @@ R F(...) {
 ...>
 }
 
-@field_2_ypos@
+@field_2_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_object_placement_clearance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1440,7 +1455,7 @@ R F(...) {
 ...>
 }
 
-@field_2_xpos@
+@field_2_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_object_placement_clearance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1480,11 +1495,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar4 + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)puVar4)->xpos
+|
+- *(byte *)((char *)puVar4 + 0x3) >> 5
++ ((uw_object_hdr_t *)puVar4)->xpos
 )
 ...>
 }
 
-@field_2_quality@
+@field_2_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_object_placement_clearance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1510,7 +1528,7 @@ R F(...) {
 ...>
 }
 
-@field_2_next@
+@field_2_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_object_placement_clearance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1548,7 +1566,7 @@ R F(...) {
 ...>
 }
 
-@field_2_owner@
+@field_2_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_object_placement_clearance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1574,7 +1592,7 @@ R F(...) {
 ...>
 }
 
-@field_2_link@
+@field_2_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_object_placement_clearance\)$";
 typedef ushort, byte, uw_object_hdr_t;

@@ -1,9 +1,9 @@
 {
   "scope": "Named packed views and existing audited object-pointer roles in src/*.c; unrecorded aliases and other structures still require independent auditing.",
   "counts": {
-    "byte_view": 394,
-    "packed_word": 387,
-    "raw_audited_object_access": 173,
+    "byte_view": 398,
+    "packed_word": 396,
+    "raw_audited_object_access": 138,
     "signed_word_view": 9
   },
   "records": [
@@ -2026,223 +2026,61 @@
     {
       "source": "src/babl.c",
       "function": "babl_builtin_x_obj_pos",
-      "line": 1028,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar5",
-      "code": "*puVar2 = (ushort)(*(byte *)(iVar5 + 3) >> 5);"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "babl_builtin_x_obj_pos",
-      "line": 1031,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar5",
-      "code": "*psVar3 = (short)((*(byte *)(iVar5 + 3) & 0x1c) >> 2);"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "babl_builtin_x_obj_pos",
-      "line": 1034,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar5",
-      "code": "*puVar4 = *(byte *)(iVar5 + 2) & 0x7f;"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "babl_builtin_x_obj_pos",
       "line": 1040,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar5",
-      "code": "uVar7 = *(ushort *)(iVar5 + 2) & 0x1fff;"
+      "category": "packed_word",
+      "member": "position_word",
+      "pointer": null,
+      "code": "uVar7 = iVar5->position_word & 0x1fff;"
     },
     {
       "source": "src/babl.c",
       "function": "babl_builtin_x_obj_pos",
-      "line": 1041,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar5",
-      "code": "*(char *)(iVar5 + 2) = (char)uVar7;"
+      "line": 1045,
+      "category": "packed_word",
+      "member": "position_word",
+      "pointer": null,
+      "code": "uVar7 = iVar5->position_word & 0xe3ff;"
     },
     {
       "source": "src/babl.c",
       "function": "babl_builtin_x_obj_pos",
-      "line": 1042,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar5",
-      "code": "*(byte *)(iVar5 + 3) = (byte)(uVar7 >> 8) | (byte)(((uVar8 & 7) << 0xd) >> 8);"
+      "line": 1052,
+      "category": "packed_word",
+      "member": "position_word",
+      "pointer": null,
+      "code": "uVar8 = iVar5->position_word;"
     },
     {
       "source": "src/babl.c",
       "function": "babl_builtin_x_obj_pos",
-      "line": 1046,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar5",
-      "code": "uVar7 = *(ushort *)(iVar5 + 2) & 0xe3ff;"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "babl_builtin_x_obj_pos",
-      "line": 1047,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar5",
-      "code": "*(char *)(iVar5 + 2) = (char)uVar7;"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "babl_builtin_x_obj_pos",
-      "line": 1048,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar5",
-      "code": "*(byte *)(iVar5 + 3) = (byte)(uVar7 >> 8) | (byte)((((int)sVar1 & 7U) << 10) >> 8);"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "babl_builtin_x_obj_pos",
-      "line": 1053,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar5",
-      "code": "uVar8 = (uVar8 ^ *(ushort *)(iVar5 + 2)) & 0x7f ^ *(ushort *)(iVar5 + 2);"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "babl_builtin_x_obj_pos",
-      "line": 1053,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar5",
-      "code": "uVar8 = (uVar8 ^ *(ushort *)(iVar5 + 2)) & 0x7f ^ *(ushort *)(iVar5 + 2);"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "babl_builtin_x_obj_pos",
-      "line": 1057,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar5",
-      "code": "uVar8 = *pbVar6 >> 1 & 0x78 | *(ushort *)(iVar5 + 2) & 0xff80;"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "babl_builtin_x_obj_pos",
-      "line": 1059,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar5",
-      "code": "*(char *)(iVar5 + 2) = (char)uVar8;"
+      "line": 1058,
+      "category": "packed_word",
+      "member": "position_word",
+      "pointer": null,
+      "code": "uVar8 = iVar5->position_word;"
     },
     {
       "source": "src/babl.c",
       "function": "babl_builtin_x_obj_pos",
       "line": 1060,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar5",
-      "code": "*(char *)(iVar5 + 3) = (char)(uVar8 >> 8);"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "babl_builtin_find_barter_total",
-      "line": 2620,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar3",
-      "code": "if (((*(byte *)(iVar3 + 1) & 0x80) == 0) || ((*(ushort *)(iVar3 + 6) & 0x8000) != 0)) {"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "babl_builtin_find_barter_total",
-      "line": 2620,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar3",
-      "code": "if (((*(byte *)(iVar3 + 1) & 0x80) == 0) || ((*(ushort *)(iVar3 + 6) & 0x8000) != 0)) {"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "babl_builtin_find_barter_total",
-      "line": 2624,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar3",
-      "code": "iVar6 = iVar6 + (uint)(*(ushort *)(iVar3 + 6) >> 6);"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "babl_builtin_count_inv",
-      "line": 2895,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar2",
-      "code": "if (((*(byte *)(iVar2 + 1) & 0x80) == 0) || ((*(ushort *)(iVar2 + 6) & 0x8000) != 0)) {"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "babl_builtin_count_inv",
-      "line": 2895,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar2",
-      "code": "if (((*(byte *)(iVar2 + 1) & 0x80) == 0) || ((*(ushort *)(iVar2 + 6) & 0x8000) != 0)) {"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "babl_builtin_count_inv",
-      "line": 2899,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar2",
-      "code": "uVar1 = *(ushort *)(iVar2 + 6) >> 6;"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "babl_builtin_check_inv_quality",
-      "line": 2912,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar1",
-      "code": "return *(byte *)(iVar1 + 4) & 0x3f;"
+      "category": "packed_word",
+      "member": "position_word",
+      "pointer": null,
+      "code": "iVar5->position_word = uVar8;"
     },
     {
       "source": "src/babl.c",
       "function": "babl_builtin_set_inv_quality",
       "line": 2927,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar4",
-      "code": "uVar1 = *(undefined2 *)(iVar4 + 4);"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "babl_builtin_set_inv_quality",
-      "line": 2929,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar4",
-      "code": "*(byte *)(iVar4 + 4) = (bVar2 ^ bVar3) & 0x3f ^ bVar2;"
-    },
-    {
-      "source": "src/babl.c",
-      "function": "babl_builtin_set_inv_quality",
-      "line": 2930,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar4",
-      "code": "*(char *)(iVar4 + 5) = (char)((ushort)uVar1 >> 8);"
+      "category": "packed_word",
+      "member": "chain_word",
+      "pointer": null,
+      "code": "uVar1 = iVar4->chain_word;"
     },
     {
       "source": "src/babl.c",
       "function": "sync_conv_vars_from_npc",
-      "line": 3007,
+      "line": 3006,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -2251,7 +2089,7 @@
     {
       "source": "src/babl.c",
       "function": "babl_builtin_setup_to_barter",
-      "line": 3563,
+      "line": 3562,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -2260,7 +2098,7 @@
     {
       "source": "src/babl.c",
       "function": "handle_barter_slot_click",
-      "line": 3871,
+      "line": 3870,
       "category": "byte_view",
       "member": "link_word",
       "pointer": null,
@@ -2269,7 +2107,7 @@
     {
       "source": "src/babl.c",
       "function": "handle_barter_slot_click",
-      "line": 3872,
+      "line": 3871,
       "category": "byte_view",
       "member": "link_word",
       "pointer": null,
@@ -2278,7 +2116,7 @@
     {
       "source": "src/babl.c",
       "function": "redraw_barter_slot_icon",
-      "line": 4020,
+      "line": 4019,
       "category": "signed_word_view",
       "member": "type_flags",
       "pointer": null,
@@ -2287,7 +2125,7 @@
     {
       "source": "src/babl.c",
       "function": "redraw_barter_slot_icon",
-      "line": 4037,
+      "line": 4036,
       "category": "signed_word_view",
       "member": "link_word",
       "pointer": null,
@@ -2296,7 +2134,7 @@
     {
       "source": "src/babl.c",
       "function": "redraw_barter_slot_icon",
-      "line": 4037,
+      "line": 4036,
       "category": "signed_word_view",
       "member": "type_flags",
       "pointer": null,
@@ -2305,7 +2143,7 @@
     {
       "source": "src/babl.c",
       "function": "redraw_barter_slot_icon",
-      "line": 4041,
+      "line": 4040,
       "category": "signed_word_view",
       "member": "link_word",
       "pointer": null,
@@ -2314,7 +2152,7 @@
     {
       "source": "src/babl.c",
       "function": "merge_or_swap_barter_slot_item",
-      "line": 4140,
+      "line": 4139,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -2323,7 +2161,7 @@
     {
       "source": "src/babl.c",
       "function": "merge_or_swap_barter_slot_item",
-      "line": 4147,
+      "line": 4146,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -2332,7 +2170,7 @@
     {
       "source": "src/babl.c",
       "function": "merge_or_swap_barter_slot_item",
-      "line": 4151,
+      "line": 4150,
       "category": "byte_view",
       "member": "link_word",
       "pointer": null,
@@ -2341,7 +2179,7 @@
     {
       "source": "src/babl.c",
       "function": "merge_or_swap_barter_slot_item",
-      "line": 4152,
+      "line": 4151,
       "category": "byte_view",
       "member": "link_word",
       "pointer": null,
@@ -2350,7 +2188,7 @@
     {
       "source": "src/babl.c",
       "function": "finalize_player_barter_items",
-      "line": 4284,
+      "line": 4283,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -2359,7 +2197,7 @@
     {
       "source": "src/babl.c",
       "function": "finalize_player_barter_items",
-      "line": 4284,
+      "line": 4283,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -2368,7 +2206,7 @@
     {
       "source": "src/babl.c",
       "function": "finalize_player_barter_items",
-      "line": 4287,
+      "line": 4286,
       "category": "byte_view",
       "member": "link_word",
       "pointer": null,
@@ -2377,7 +2215,7 @@
     {
       "source": "src/babl.c",
       "function": "finalize_player_barter_items",
-      "line": 4288,
+      "line": 4287,
       "category": "byte_view",
       "member": "link_word",
       "pointer": null,
@@ -2386,7 +2224,7 @@
     {
       "source": "src/babl.c",
       "function": "compute_barter_item_value",
-      "line": 4466,
+      "line": 4465,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -2395,7 +2233,7 @@
     {
       "source": "src/babl.c",
       "function": "compute_barter_item_value",
-      "line": 4474,
+      "line": 4473,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -3812,16 +3650,7 @@
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "iVar1",
-      "code": "DAT_0023be90 = (*(byte *)(iVar1 + 0x17) & 0xfc) * 0x40 + (*(byte *)(iVar1 + 3) & 0xe0);"
-    },
-    {
-      "source": "src/game.c",
-      "function": "set_custom_view_target",
-      "line": 861,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar1",
-      "code": "DAT_0023be90 = (*(byte *)(iVar1 + 0x17) & 0xfc) * 0x40 + (*(byte *)(iVar1 + 3) & 0xe0);"
+      "code": "DAT_0023be90 = (*(byte *)(iVar1 + 0x17) & 0xfc) * 0x40 + ((((uw_object_hdr_t *)iVar1)->xpos << 5));"
     },
     {
       "source": "src/game.c",
@@ -3830,34 +3659,16 @@
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "iVar1",
-      "code": "DAT_0023be92 = (*(byte *)(iVar1 + 3) & 0x1c) * 8 + (*(ushort *)(iVar1 + 0x16) & 0x3f0) * 0x10;"
-    },
-    {
-      "source": "src/game.c",
-      "function": "set_custom_view_target",
-      "line": 862,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar1",
-      "code": "DAT_0023be92 = (*(byte *)(iVar1 + 3) & 0x1c) * 8 + (*(ushort *)(iVar1 + 0x16) & 0x3f0) * 0x10;"
-    },
-    {
-      "source": "src/game.c",
-      "function": "set_custom_view_target",
-      "line": 863,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar1",
-      "code": "DAT_0023be94 = (*(byte *)(iVar1 + 2) & 0x7f) << 3;"
+      "code": "DAT_0023be92 = ((((uw_object_hdr_t *)iVar1)->ypos << 2)) * 8 + (*(ushort *)(iVar1 + 0x16) & 0x3f0) * 0x10;"
     },
     {
       "source": "src/game.c",
       "function": "set_custom_view_target",
       "line": 864,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar1",
-      "code": "DAT_0023bf00 = (*(ushort *)(iVar1 + 2) & 0xff80) << 6;"
+      "category": "packed_word",
+      "member": "position_word",
+      "pointer": null,
+      "code": "DAT_0023bf00 = (((uw_object_hdr_t *)iVar1)->position_word & 0xff80) << 6;"
     },
     {
       "source": "src/input.c",
@@ -5572,38 +5383,29 @@
     {
       "source": "src/object_actions.c",
       "function": "consume_linked_special_object_charge",
-      "line": 2106,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar3",
-      "code": "(iVar3 = find_object_in_chain(&local_c,0,4,2,0), iVar3 != 0)) && ((*(byte *)(iVar3 + 1) & 8) != 0)) {"
-    },
-    {
-      "source": "src/object_actions.c",
-      "function": "consume_linked_special_object_charge",
       "line": 2107,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar3",
-      "code": "uVar1 = *(ushort *)(iVar3 + 4);"
+      "category": "packed_word",
+      "member": "chain_word",
+      "pointer": null,
+      "code": "uVar1 = ((uw_object_hdr_t *)iVar3)->chain_word;"
     },
     {
       "source": "src/object_actions.c",
       "function": "consume_linked_special_object_charge",
       "line": 2117,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar3",
-      "code": "*(byte *)(iVar3 + 4) = (bVar2 - 1 ^ bVar2) & 0x3f ^ bVar2;"
+      "category": "byte_view",
+      "member": "chain_word",
+      "pointer": null,
+      "code": "((uw_object_hdr_t *)iVar3)->chain_word_low = (bVar2 - 1 ^ bVar2) & 0x3f ^ bVar2;"
     },
     {
       "source": "src/object_actions.c",
       "function": "consume_linked_special_object_charge",
       "line": 2118,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar3",
-      "code": "*(char *)(iVar3 + 5) = (char)(uVar1 >> 8);"
+      "category": "byte_view",
+      "member": "chain_word",
+      "pointer": null,
+      "code": "((uw_object_hdr_t *)iVar3)->chain_word_high = (byte)(char)(uVar1 >> 8);"
     },
     {
       "source": "src/object_actions.c",
@@ -8417,28 +8219,28 @@
       "source": "src/traps.c",
       "function": "apply_quest_event_numeric_effect",
       "line": 1122,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar3",
-      "code": "uVar1 = *(undefined2 *)(iVar3 + 2);"
+      "category": "packed_word",
+      "member": "position_word",
+      "pointer": null,
+      "code": "uVar1 = ((uw_object_hdr_t *)iVar3)->position_word;"
     },
     {
       "source": "src/traps.c",
       "function": "apply_quest_event_numeric_effect",
       "line": 1124,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar3",
-      "code": "*(byte *)(iVar3 + 2) = (bVar2 ^ (byte)iVar4) & 0x7f ^ bVar2;"
+      "category": "byte_view",
+      "member": "position_word",
+      "pointer": null,
+      "code": "((uw_object_hdr_t *)iVar3)->position_word_low = (bVar2 ^ (byte)iVar4) & 0x7f ^ bVar2;"
     },
     {
       "source": "src/traps.c",
       "function": "apply_quest_event_numeric_effect",
       "line": 1125,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "iVar3",
-      "code": "*(char *)(iVar3 + 3) = (char)((ushort)uVar1 >> 8);"
+      "category": "byte_view",
+      "member": "position_word",
+      "pointer": null,
+      "code": "((uw_object_hdr_t *)iVar3)->position_word_high = (byte)(char)((ushort)uVar1 >> 8);"
     },
     {
       "source": "src/traps.c",

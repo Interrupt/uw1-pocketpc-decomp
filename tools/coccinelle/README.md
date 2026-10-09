@@ -257,9 +257,9 @@ the repair leaves unrelated functions untouched.
 
 No game function is moved to a different source file during this work.
 
-Checkpoint validation: game build, all 52 C unit suites, and all ten conversion
+Checkpoint validation: game build, all 53 C unit suites, and all eleven conversion
 tool suites pass. The latest
-AddressSanitizer pass covers 18 consumers: throw/throw_cursor/npc_state/npc_combat/npc_ai/creatures/
+AddressSanitizer pass covers 19 consumers: babl_objects/throw/throw_cursor/npc_state/npc_combat/npc_ai/creatures/
 combat/object_layout/object_core/movement/scheduler/spells/chargen/inventory/
 lighting/sleep/teleport/babl_vm. This is a checkpoint for continuing the full
 migration, not a completion claim.
@@ -519,3 +519,35 @@ and value receivers retain their original evaluation count.
 `partial_field_reads` executes every generated spelling and zero comparison
 over all 65,536 input words using the actual object structs. It checks
 conversion coverage, identical values, exclusions and repeatability.
+
+## Audited void-pointer headers and BABL objects
+
+The header generators support explicit byte-offset dereferences on audited
+`void *` receivers: GNU C arithmetic on these pointers advances by bytes.
+They do not emit bare void-pointer indexing. Layout evidence still comes
+from the function-scoped Clang object-role audit, and this pass only covers
+the eight-byte common header. Mobile extensions need their own role proof.
+
+`apply_void_object_header_rules.py` applies field reads, storage views and
+named reads sequentially on a temporary source copy before updating a file.
+Use `--in-place` to apply, `--check` to verify idempotence, or neither to preview.
+The driver supplies header/type include options. Positioned fields retain
+parentheses in larger arithmetic; zero comparisons also cover the parentheses
+retained around cast receivers.
+
+`generate_babl_object_rules.py` emits `babl-object-fields.cocci` for the
+position, quantity, quality and barter-total builtins. Their object receivers
+use `uw_object_hdr_t *`; floor fallback uses `uw_tile_t::floor_height`.
+VM argument offsets remain VM accesses. The x/y masks intentionally retain
+the original masked `uVar7` snapshot; quality keeps the old chain/low-byte
+temporaries. The z update reconstructs the complete `uVar8` word before the
+final word store. These snapshots preserve original temporary values.
+
+`void_object_headers` checks 118 read forms against original expressions over
+all 65,536 words, including signed byte reads, stores and addresses, unrelated
+buffers, extension exclusions and idempotence. Its standalone runner accepts
+`--asan`. `babl_objects` extracts the five actual builtins and exhaustively
+checks getters, sentinel and negative setters, floor fallback, quantity,
+quality, barter results and neighboring storage. The same tests also pass
+against the pre-conversion builtins. This batch removes 35 raw-access inventory
+entries; 138 remain, alongside packed operations requiring further review.

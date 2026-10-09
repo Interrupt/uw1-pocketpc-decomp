@@ -14,6 +14,9 @@ R F(...) {
 |
 - *(ushort *)_obj
 + ((uw_object_hdr_t *)_obj)->type_flags
+|
+- *(ushort *)(_obj + 0)
++ ((uw_object_hdr_t *)_obj)->type_flags
 )
 ...>
 }
@@ -30,6 +33,9 @@ R F(...) {
 + ((uw_object_hdr_t *)_obj)->position_word
 |
 - ((ushort *)_obj)[1]
++ ((uw_object_hdr_t *)_obj)->position_word
+|
+- *(ushort *)(_obj + 2)
 + ((uw_object_hdr_t *)_obj)->position_word
 )
 ...>
@@ -48,6 +54,9 @@ R F(...) {
 |
 - ((ushort *)_obj)[2]
 + ((uw_object_hdr_t *)_obj)->chain_word
+|
+- *(ushort *)(_obj + 4)
++ ((uw_object_hdr_t *)_obj)->chain_word
 )
 ...>
 }
@@ -64,6 +73,9 @@ R F(...) {
 + ((uw_object_hdr_t *)_obj)->link_word
 |
 - ((ushort *)_obj)[3]
++ ((uw_object_hdr_t *)_obj)->link_word
+|
+- *(ushort *)(_obj + 6)
 + ((uw_object_hdr_t *)_obj)->link_word
 )
 ...>

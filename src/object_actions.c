@@ -2103,8 +2103,8 @@ void consume_linked_special_object_charge(void *object_ptr)
   
   if (((((*(byte *)(object + 1) & 0x80) == 0) &&
        (local_c = (ushort *)(object + 6), (*local_c & 0xffc0) != 0)) &&
-      (iVar3 = find_object_in_chain(&local_c,0,4,2,0), iVar3 != 0)) && ((*(byte *)(iVar3 + 1) & 8) != 0)) {
-    uVar1 = *(ushort *)(iVar3 + 4);
+      (iVar3 = find_object_in_chain(&local_c,0,4,2,0), iVar3 != 0)) && ((((uw_object_hdr_t *)iVar3)->flags_res & 0x4) != 0)) {
+    uVar1 = ((uw_object_hdr_t *)iVar3)->chain_word;
     if ((uVar1 & 0x3f) == 0) {
       iVar4 = rand_below(10);
       if (iVar4 < 4) {
@@ -2114,8 +2114,8 @@ void consume_linked_special_object_charge(void *object_ptr)
     }
     else {
       bVar2 = (byte)uVar1;
-      *(byte *)(iVar3 + 4) = (bVar2 - 1 ^ bVar2) & 0x3f ^ bVar2;
-      *(char *)(iVar3 + 5) = (char)(uVar1 >> 8);
+      ((uw_object_hdr_t *)iVar3)->chain_word_low = (bVar2 - 1 ^ bVar2) & 0x3f ^ bVar2;
+      ((uw_object_hdr_t *)iVar3)->chain_word_high = (byte)(char)(uVar1 >> 8);
     }
   }
 }

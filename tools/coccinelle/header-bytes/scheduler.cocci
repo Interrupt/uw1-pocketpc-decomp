@@ -77,6 +77,9 @@ R F(...) {
 |
 - *(ushort *)((ushort *)uVar1 + 0x0)
 + ((uw_object_hdr_t *)uVar1)->type_flags
+|
+- *(ushort *)(uVar1 + 0x0)
++ ((uw_object_hdr_t *)uVar1)->type_flags
 )
 ...>
 }
@@ -101,6 +104,9 @@ R F(...) {
 |
 - *(undefined2 *)((undefined2 *)uVar1 + 0x0)
 + ((uw_object_hdr_t *)uVar1)->type_flags
+|
+- *(undefined2 *)(uVar1 + 0x0)
++ ((uw_object_hdr_t *)uVar1)->type_flags
 )
 ...>
 }
@@ -124,6 +130,9 @@ R F(...) {
 + ((uw_object_hdr_t *)uVar1)->type_flags_signed
 |
 - *(short *)((short *)uVar1 + 0x0)
++ ((uw_object_hdr_t *)uVar1)->type_flags_signed
+|
+- *(short *)(uVar1 + 0x0)
 + ((uw_object_hdr_t *)uVar1)->type_flags_signed
 )
 ...>
@@ -155,6 +164,9 @@ R F(...) {
 |
 - *(byte *)uVar1
 + ((uw_object_hdr_t *)uVar1)->type_flags_low
+|
+- *(byte *)(uVar1 + 0x0)
++ ((uw_object_hdr_t *)uVar1)->type_flags_low
 )
 ...>
 }
@@ -185,6 +197,9 @@ R F(...) {
 |
 - *(undefined1 *)uVar1
 + ((uw_object_hdr_t *)uVar1)->type_flags_low
+|
+- *(undefined1 *)(uVar1 + 0x0)
++ ((uw_object_hdr_t *)uVar1)->type_flags_low
 )
 ...>
 }
@@ -211,6 +226,9 @@ R F(...) {
 + (char *)&((uw_object_hdr_t *)uVar1)->type_flags_low
 |
 - &*(char *)uVar1
++ (char *)&((uw_object_hdr_t *)uVar1)->type_flags_low
+|
+- &*(char *)(uVar1 + 0x0)
 + (char *)&((uw_object_hdr_t *)uVar1)->type_flags_low
 )
 ...>
@@ -239,6 +257,9 @@ R F(...) {
 + ((uw_object_hdr_t *)uVar1)->type_flags_low = (byte)E;
 |
 - *(char *)uVar1 = E;
++ ((uw_object_hdr_t *)uVar1)->type_flags_low = (byte)E;
+|
+- *(char *)(uVar1 + 0x0) = E;
 + ((uw_object_hdr_t *)uVar1)->type_flags_low = (byte)E;
 )
 ...>
@@ -270,6 +291,9 @@ R F(...) {
 |
 - *(char *)uVar1
 + (char)((uw_object_hdr_t *)uVar1)->type_flags_low
+|
+- *(char *)(uVar1 + 0x0)
++ (char)((uw_object_hdr_t *)uVar1)->type_flags_low
 )
 ...>
 }
@@ -290,6 +314,9 @@ R F(...) {
 + ((uw_object_hdr_t *)uVar1)->type_flags_high
 |
 - ((byte *)uVar1)[0x1]
++ ((uw_object_hdr_t *)uVar1)->type_flags_high
+|
+- *(byte *)(uVar1 + 0x1)
 + ((uw_object_hdr_t *)uVar1)->type_flags_high
 )
 ...>
@@ -312,6 +339,9 @@ R F(...) {
 |
 - ((undefined1 *)uVar1)[0x1]
 + ((uw_object_hdr_t *)uVar1)->type_flags_high
+|
+- *(undefined1 *)(uVar1 + 0x1)
++ ((uw_object_hdr_t *)uVar1)->type_flags_high
 )
 ...>
 }
@@ -332,6 +362,9 @@ R F(...) {
 + (char *)&((uw_object_hdr_t *)uVar1)->type_flags_high
 |
 - &((char *)uVar1)[0x1]
++ (char *)&((uw_object_hdr_t *)uVar1)->type_flags_high
+|
+- &*(char *)(uVar1 + 0x1)
 + (char *)&((uw_object_hdr_t *)uVar1)->type_flags_high
 )
 ...>
@@ -355,6 +388,9 @@ R F(...) {
 |
 - ((char *)uVar1)[0x1] = E;
 + ((uw_object_hdr_t *)uVar1)->type_flags_high = (byte)E;
+|
+- *(char *)(uVar1 + 0x1) = E;
++ ((uw_object_hdr_t *)uVar1)->type_flags_high = (byte)E;
 )
 ...>
 }
@@ -375,6 +411,9 @@ R F(...) {
 + (char)((uw_object_hdr_t *)uVar1)->type_flags_high
 |
 - ((char *)uVar1)[0x1]
++ (char)((uw_object_hdr_t *)uVar1)->type_flags_high
+|
+- *(char *)(uVar1 + 0x1)
 + (char)((uw_object_hdr_t *)uVar1)->type_flags_high
 )
 ...>
@@ -460,6 +499,9 @@ R F(...) {
 |
 - *(ushort *)((ushort *)uVar1 + 0x1)
 + ((uw_object_hdr_t *)uVar1)->position_word
+|
+- *(ushort *)(uVar1 + 0x2)
++ ((uw_object_hdr_t *)uVar1)->position_word
 )
 ...>
 }
@@ -484,6 +526,9 @@ R F(...) {
 |
 - *(undefined2 *)((undefined2 *)uVar1 + 0x1)
 + ((uw_object_hdr_t *)uVar1)->position_word
+|
+- *(undefined2 *)(uVar1 + 0x2)
++ ((uw_object_hdr_t *)uVar1)->position_word
 )
 ...>
 }
@@ -507,6 +552,9 @@ R F(...) {
 + ((uw_object_hdr_t *)uVar1)->position_word_signed
 |
 - *(short *)((short *)uVar1 + 0x1)
++ ((uw_object_hdr_t *)uVar1)->position_word_signed
+|
+- *(short *)(uVar1 + 0x2)
 + ((uw_object_hdr_t *)uVar1)->position_word_signed
 )
 ...>
@@ -535,6 +583,9 @@ R F(...) {
 |
 - (byte)((ushort *)uVar1)[0x1]
 + ((uw_object_hdr_t *)uVar1)->position_word_low
+|
+- *(byte *)(uVar1 + 0x2)
++ ((uw_object_hdr_t *)uVar1)->position_word_low
 )
 ...>
 }
@@ -562,6 +613,9 @@ R F(...) {
 |
 - (undefined1)((ushort *)uVar1)[0x1]
 + ((uw_object_hdr_t *)uVar1)->position_word_low
+|
+- *(undefined1 *)(uVar1 + 0x2)
++ ((uw_object_hdr_t *)uVar1)->position_word_low
 )
 ...>
 }
@@ -585,6 +639,9 @@ R F(...) {
 + (char *)&((uw_object_hdr_t *)uVar1)->position_word_low
 |
 - &*(char *)((ushort *)uVar1 + 0x1)
++ (char *)&((uw_object_hdr_t *)uVar1)->position_word_low
+|
+- &*(char *)(uVar1 + 0x2)
 + (char *)&((uw_object_hdr_t *)uVar1)->position_word_low
 )
 ...>
@@ -610,6 +667,9 @@ R F(...) {
 + ((uw_object_hdr_t *)uVar1)->position_word_low = (byte)E;
 |
 - *(char *)((ushort *)uVar1 + 0x1) = E;
++ ((uw_object_hdr_t *)uVar1)->position_word_low = (byte)E;
+|
+- *(char *)(uVar1 + 0x2) = E;
 + ((uw_object_hdr_t *)uVar1)->position_word_low = (byte)E;
 )
 ...>
@@ -638,6 +698,9 @@ R F(...) {
 |
 - (char)((ushort *)uVar1)[0x1]
 + (char)((uw_object_hdr_t *)uVar1)->position_word_low
+|
+- *(char *)(uVar1 + 0x2)
++ (char)((uw_object_hdr_t *)uVar1)->position_word_low
 )
 ...>
 }
@@ -658,6 +721,9 @@ R F(...) {
 + ((uw_object_hdr_t *)uVar1)->position_word_high
 |
 - ((byte *)uVar1)[0x3]
++ ((uw_object_hdr_t *)uVar1)->position_word_high
+|
+- *(byte *)(uVar1 + 0x3)
 + ((uw_object_hdr_t *)uVar1)->position_word_high
 )
 ...>
@@ -680,6 +746,9 @@ R F(...) {
 |
 - ((undefined1 *)uVar1)[0x3]
 + ((uw_object_hdr_t *)uVar1)->position_word_high
+|
+- *(undefined1 *)(uVar1 + 0x3)
++ ((uw_object_hdr_t *)uVar1)->position_word_high
 )
 ...>
 }
@@ -700,6 +769,9 @@ R F(...) {
 + (char *)&((uw_object_hdr_t *)uVar1)->position_word_high
 |
 - &((char *)uVar1)[0x3]
++ (char *)&((uw_object_hdr_t *)uVar1)->position_word_high
+|
+- &*(char *)(uVar1 + 0x3)
 + (char *)&((uw_object_hdr_t *)uVar1)->position_word_high
 )
 ...>
@@ -723,6 +795,9 @@ R F(...) {
 |
 - ((char *)uVar1)[0x3] = E;
 + ((uw_object_hdr_t *)uVar1)->position_word_high = (byte)E;
+|
+- *(char *)(uVar1 + 0x3) = E;
++ ((uw_object_hdr_t *)uVar1)->position_word_high = (byte)E;
 )
 ...>
 }
@@ -743,6 +818,9 @@ R F(...) {
 + (char)((uw_object_hdr_t *)uVar1)->position_word_high
 |
 - ((char *)uVar1)[0x3]
++ (char)((uw_object_hdr_t *)uVar1)->position_word_high
+|
+- *(char *)(uVar1 + 0x3)
 + (char)((uw_object_hdr_t *)uVar1)->position_word_high
 )
 ...>
@@ -828,6 +906,9 @@ R F(...) {
 |
 - *(ushort *)((ushort *)uVar1 + 0x2)
 + ((uw_object_hdr_t *)uVar1)->chain_word
+|
+- *(ushort *)(uVar1 + 0x4)
++ ((uw_object_hdr_t *)uVar1)->chain_word
 )
 ...>
 }
@@ -852,6 +933,9 @@ R F(...) {
 |
 - *(undefined2 *)((undefined2 *)uVar1 + 0x2)
 + ((uw_object_hdr_t *)uVar1)->chain_word
+|
+- *(undefined2 *)(uVar1 + 0x4)
++ ((uw_object_hdr_t *)uVar1)->chain_word
 )
 ...>
 }
@@ -875,6 +959,9 @@ R F(...) {
 + ((uw_object_hdr_t *)uVar1)->chain_word_signed
 |
 - *(short *)((short *)uVar1 + 0x2)
++ ((uw_object_hdr_t *)uVar1)->chain_word_signed
+|
+- *(short *)(uVar1 + 0x4)
 + ((uw_object_hdr_t *)uVar1)->chain_word_signed
 )
 ...>
@@ -903,6 +990,9 @@ R F(...) {
 |
 - (byte)((ushort *)uVar1)[0x2]
 + ((uw_object_hdr_t *)uVar1)->chain_word_low
+|
+- *(byte *)(uVar1 + 0x4)
++ ((uw_object_hdr_t *)uVar1)->chain_word_low
 )
 ...>
 }
@@ -930,6 +1020,9 @@ R F(...) {
 |
 - (undefined1)((ushort *)uVar1)[0x2]
 + ((uw_object_hdr_t *)uVar1)->chain_word_low
+|
+- *(undefined1 *)(uVar1 + 0x4)
++ ((uw_object_hdr_t *)uVar1)->chain_word_low
 )
 ...>
 }
@@ -953,6 +1046,9 @@ R F(...) {
 + (char *)&((uw_object_hdr_t *)uVar1)->chain_word_low
 |
 - &*(char *)((ushort *)uVar1 + 0x2)
++ (char *)&((uw_object_hdr_t *)uVar1)->chain_word_low
+|
+- &*(char *)(uVar1 + 0x4)
 + (char *)&((uw_object_hdr_t *)uVar1)->chain_word_low
 )
 ...>
@@ -978,6 +1074,9 @@ R F(...) {
 + ((uw_object_hdr_t *)uVar1)->chain_word_low = (byte)E;
 |
 - *(char *)((ushort *)uVar1 + 0x2) = E;
++ ((uw_object_hdr_t *)uVar1)->chain_word_low = (byte)E;
+|
+- *(char *)(uVar1 + 0x4) = E;
 + ((uw_object_hdr_t *)uVar1)->chain_word_low = (byte)E;
 )
 ...>
@@ -1006,6 +1105,9 @@ R F(...) {
 |
 - (char)((ushort *)uVar1)[0x2]
 + (char)((uw_object_hdr_t *)uVar1)->chain_word_low
+|
+- *(char *)(uVar1 + 0x4)
++ (char)((uw_object_hdr_t *)uVar1)->chain_word_low
 )
 ...>
 }
@@ -1026,6 +1128,9 @@ R F(...) {
 + ((uw_object_hdr_t *)uVar1)->chain_word_high
 |
 - ((byte *)uVar1)[0x5]
++ ((uw_object_hdr_t *)uVar1)->chain_word_high
+|
+- *(byte *)(uVar1 + 0x5)
 + ((uw_object_hdr_t *)uVar1)->chain_word_high
 )
 ...>
@@ -1048,6 +1153,9 @@ R F(...) {
 |
 - ((undefined1 *)uVar1)[0x5]
 + ((uw_object_hdr_t *)uVar1)->chain_word_high
+|
+- *(undefined1 *)(uVar1 + 0x5)
++ ((uw_object_hdr_t *)uVar1)->chain_word_high
 )
 ...>
 }
@@ -1068,6 +1176,9 @@ R F(...) {
 + (char *)&((uw_object_hdr_t *)uVar1)->chain_word_high
 |
 - &((char *)uVar1)[0x5]
++ (char *)&((uw_object_hdr_t *)uVar1)->chain_word_high
+|
+- &*(char *)(uVar1 + 0x5)
 + (char *)&((uw_object_hdr_t *)uVar1)->chain_word_high
 )
 ...>
@@ -1091,6 +1202,9 @@ R F(...) {
 |
 - ((char *)uVar1)[0x5] = E;
 + ((uw_object_hdr_t *)uVar1)->chain_word_high = (byte)E;
+|
+- *(char *)(uVar1 + 0x5) = E;
++ ((uw_object_hdr_t *)uVar1)->chain_word_high = (byte)E;
 )
 ...>
 }
@@ -1111,6 +1225,9 @@ R F(...) {
 + (char)((uw_object_hdr_t *)uVar1)->chain_word_high
 |
 - ((char *)uVar1)[0x5]
++ (char)((uw_object_hdr_t *)uVar1)->chain_word_high
+|
+- *(char *)(uVar1 + 0x5)
 + (char)((uw_object_hdr_t *)uVar1)->chain_word_high
 )
 ...>
@@ -1196,6 +1313,9 @@ R F(...) {
 |
 - *(ushort *)((ushort *)uVar1 + 0x3)
 + ((uw_object_hdr_t *)uVar1)->link_word
+|
+- *(ushort *)(uVar1 + 0x6)
++ ((uw_object_hdr_t *)uVar1)->link_word
 )
 ...>
 }
@@ -1220,6 +1340,9 @@ R F(...) {
 |
 - *(undefined2 *)((undefined2 *)uVar1 + 0x3)
 + ((uw_object_hdr_t *)uVar1)->link_word
+|
+- *(undefined2 *)(uVar1 + 0x6)
++ ((uw_object_hdr_t *)uVar1)->link_word
 )
 ...>
 }
@@ -1243,6 +1366,9 @@ R F(...) {
 + ((uw_object_hdr_t *)uVar1)->link_word_signed
 |
 - *(short *)((short *)uVar1 + 0x3)
++ ((uw_object_hdr_t *)uVar1)->link_word_signed
+|
+- *(short *)(uVar1 + 0x6)
 + ((uw_object_hdr_t *)uVar1)->link_word_signed
 )
 ...>
@@ -1271,6 +1397,9 @@ R F(...) {
 |
 - (byte)((ushort *)uVar1)[0x3]
 + ((uw_object_hdr_t *)uVar1)->link_word_low
+|
+- *(byte *)(uVar1 + 0x6)
++ ((uw_object_hdr_t *)uVar1)->link_word_low
 )
 ...>
 }
@@ -1298,6 +1427,9 @@ R F(...) {
 |
 - (undefined1)((ushort *)uVar1)[0x3]
 + ((uw_object_hdr_t *)uVar1)->link_word_low
+|
+- *(undefined1 *)(uVar1 + 0x6)
++ ((uw_object_hdr_t *)uVar1)->link_word_low
 )
 ...>
 }
@@ -1321,6 +1453,9 @@ R F(...) {
 + (char *)&((uw_object_hdr_t *)uVar1)->link_word_low
 |
 - &*(char *)((ushort *)uVar1 + 0x3)
++ (char *)&((uw_object_hdr_t *)uVar1)->link_word_low
+|
+- &*(char *)(uVar1 + 0x6)
 + (char *)&((uw_object_hdr_t *)uVar1)->link_word_low
 )
 ...>
@@ -1346,6 +1481,9 @@ R F(...) {
 + ((uw_object_hdr_t *)uVar1)->link_word_low = (byte)E;
 |
 - *(char *)((ushort *)uVar1 + 0x3) = E;
++ ((uw_object_hdr_t *)uVar1)->link_word_low = (byte)E;
+|
+- *(char *)(uVar1 + 0x6) = E;
 + ((uw_object_hdr_t *)uVar1)->link_word_low = (byte)E;
 )
 ...>
@@ -1374,6 +1512,9 @@ R F(...) {
 |
 - (char)((ushort *)uVar1)[0x3]
 + (char)((uw_object_hdr_t *)uVar1)->link_word_low
+|
+- *(char *)(uVar1 + 0x6)
++ (char)((uw_object_hdr_t *)uVar1)->link_word_low
 )
 ...>
 }
@@ -1394,6 +1535,9 @@ R F(...) {
 + ((uw_object_hdr_t *)uVar1)->link_word_high
 |
 - ((byte *)uVar1)[0x7]
++ ((uw_object_hdr_t *)uVar1)->link_word_high
+|
+- *(byte *)(uVar1 + 0x7)
 + ((uw_object_hdr_t *)uVar1)->link_word_high
 )
 ...>
@@ -1416,6 +1560,9 @@ R F(...) {
 |
 - ((undefined1 *)uVar1)[0x7]
 + ((uw_object_hdr_t *)uVar1)->link_word_high
+|
+- *(undefined1 *)(uVar1 + 0x7)
++ ((uw_object_hdr_t *)uVar1)->link_word_high
 )
 ...>
 }
@@ -1436,6 +1583,9 @@ R F(...) {
 + (char *)&((uw_object_hdr_t *)uVar1)->link_word_high
 |
 - &((char *)uVar1)[0x7]
++ (char *)&((uw_object_hdr_t *)uVar1)->link_word_high
+|
+- &*(char *)(uVar1 + 0x7)
 + (char *)&((uw_object_hdr_t *)uVar1)->link_word_high
 )
 ...>
@@ -1459,6 +1609,9 @@ R F(...) {
 |
 - ((char *)uVar1)[0x7] = E;
 + ((uw_object_hdr_t *)uVar1)->link_word_high = (byte)E;
+|
+- *(char *)(uVar1 + 0x7) = E;
++ ((uw_object_hdr_t *)uVar1)->link_word_high = (byte)E;
 )
 ...>
 }
@@ -1479,6 +1632,9 @@ R F(...) {
 + (char)((uw_object_hdr_t *)uVar1)->link_word_high
 |
 - ((char *)uVar1)[0x7]
++ (char)((uw_object_hdr_t *)uVar1)->link_word_high
+|
+- *(char *)(uVar1 + 0x7)
 + (char)((uw_object_hdr_t *)uVar1)->link_word_high
 )
 ...>

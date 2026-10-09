@@ -1,4 +1,4 @@
-@field_0_item_id@
+@field_0_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_take_from_npc\|babl_builtin_take_id_from_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -24,7 +24,7 @@ R F(...) {
 ...>
 }
 
-@field_0_flags_res@
+@field_0_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_take_from_npc\|babl_builtin_take_id_from_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -71,7 +71,7 @@ R F(...) {
 ...>
 }
 
-@field_0_enchanted@
+@field_0_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_take_from_npc\|babl_builtin_take_id_from_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -118,7 +118,7 @@ R F(...) {
 ...>
 }
 
-@field_0_doordir@
+@field_0_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_take_from_npc\|babl_builtin_take_id_from_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -165,7 +165,7 @@ R F(...) {
 ...>
 }
 
-@field_0_invisible@
+@field_0_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_take_from_npc\|babl_builtin_take_id_from_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -212,7 +212,7 @@ R F(...) {
 ...>
 }
 
-@field_0_is_quant@
+@field_0_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_take_from_npc\|babl_builtin_take_id_from_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -270,11 +270,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar9 + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)puVar9)->is_quant
+|
+- *(byte *)((char *)puVar9 + 0x1) >> 7
++ ((uw_object_hdr_t *)puVar9)->is_quant
 )
 ...>
 }
 
-@field_0_zpos@
+@field_0_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_take_from_npc\|babl_builtin_take_id_from_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -300,7 +303,7 @@ R F(...) {
 ...>
 }
 
-@field_0_heading@
+@field_0_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_take_from_npc\|babl_builtin_take_id_from_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -329,7 +332,7 @@ R F(...) {
 ...>
 }
 
-@field_0_ypos@
+@field_0_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_take_from_npc\|babl_builtin_take_id_from_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -364,7 +367,7 @@ R F(...) {
 ...>
 }
 
-@field_0_xpos@
+@field_0_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_take_from_npc\|babl_builtin_take_id_from_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -404,11 +407,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar9 + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)puVar9)->xpos
+|
+- *(byte *)((char *)puVar9 + 0x3) >> 5
++ ((uw_object_hdr_t *)puVar9)->xpos
 )
 ...>
 }
 
-@field_0_quality@
+@field_0_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_take_from_npc\|babl_builtin_take_id_from_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -434,7 +440,7 @@ R F(...) {
 ...>
 }
 
-@field_0_next@
+@field_0_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_take_from_npc\|babl_builtin_take_id_from_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -472,7 +478,7 @@ R F(...) {
 ...>
 }
 
-@field_0_owner@
+@field_0_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_take_from_npc\|babl_builtin_take_id_from_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -498,7 +504,7 @@ R F(...) {
 ...>
 }
 
-@field_0_link@
+@field_0_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_take_from_npc\|babl_builtin_take_id_from_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -536,7 +542,7 @@ R F(...) {
 ...>
 }
 
-@field_1_item_id@
+@field_1_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_do_inv_create\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -562,7 +568,7 @@ R F(...) {
 ...>
 }
 
-@field_1_flags_res@
+@field_1_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_do_inv_create\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -609,7 +615,7 @@ R F(...) {
 ...>
 }
 
-@field_1_enchanted@
+@field_1_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_do_inv_create\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -656,7 +662,7 @@ R F(...) {
 ...>
 }
 
-@field_1_doordir@
+@field_1_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_do_inv_create\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -703,7 +709,7 @@ R F(...) {
 ...>
 }
 
-@field_1_invisible@
+@field_1_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_do_inv_create\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -750,7 +756,7 @@ R F(...) {
 ...>
 }
 
-@field_1_is_quant@
+@field_1_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_do_inv_create\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -808,11 +814,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar3 + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)puVar3)->is_quant
+|
+- *(byte *)((char *)puVar3 + 0x1) >> 7
++ ((uw_object_hdr_t *)puVar3)->is_quant
 )
 ...>
 }
 
-@field_1_zpos@
+@field_1_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_do_inv_create\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -838,7 +847,7 @@ R F(...) {
 ...>
 }
 
-@field_1_heading@
+@field_1_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_do_inv_create\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -867,7 +876,7 @@ R F(...) {
 ...>
 }
 
-@field_1_ypos@
+@field_1_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_do_inv_create\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -902,7 +911,7 @@ R F(...) {
 ...>
 }
 
-@field_1_xpos@
+@field_1_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_do_inv_create\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -942,11 +951,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar3 + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)puVar3)->xpos
+|
+- *(byte *)((char *)puVar3 + 0x3) >> 5
++ ((uw_object_hdr_t *)puVar3)->xpos
 )
 ...>
 }
 
-@field_1_quality@
+@field_1_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_do_inv_create\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -972,7 +984,7 @@ R F(...) {
 ...>
 }
 
-@field_1_next@
+@field_1_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_do_inv_create\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1010,7 +1022,7 @@ R F(...) {
 ...>
 }
 
-@field_1_owner@
+@field_1_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_do_inv_create\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1036,7 +1048,7 @@ R F(...) {
 ...>
 }
 
-@field_1_link@
+@field_1_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_do_inv_create\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1074,7 +1086,7 @@ R F(...) {
 ...>
 }
 
-@field_2_item_id@
+@field_2_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_race_attitude\|babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1100,7 +1112,7 @@ R F(...) {
 ...>
 }
 
-@field_2_flags_res@
+@field_2_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_race_attitude\|babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1147,7 +1159,7 @@ R F(...) {
 ...>
 }
 
-@field_2_enchanted@
+@field_2_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_race_attitude\|babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1194,7 +1206,7 @@ R F(...) {
 ...>
 }
 
-@field_2_doordir@
+@field_2_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_race_attitude\|babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1241,7 +1253,7 @@ R F(...) {
 ...>
 }
 
-@field_2_invisible@
+@field_2_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_race_attitude\|babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1288,7 +1300,7 @@ R F(...) {
 ...>
 }
 
-@field_2_is_quant@
+@field_2_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_race_attitude\|babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1346,11 +1358,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar7 + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)puVar7)->is_quant
+|
+- *(byte *)((char *)puVar7 + 0x1) >> 7
++ ((uw_object_hdr_t *)puVar7)->is_quant
 )
 ...>
 }
 
-@field_2_zpos@
+@field_2_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_race_attitude\|babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1376,7 +1391,7 @@ R F(...) {
 ...>
 }
 
-@field_2_heading@
+@field_2_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_race_attitude\|babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1405,7 +1420,7 @@ R F(...) {
 ...>
 }
 
-@field_2_ypos@
+@field_2_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_race_attitude\|babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1440,7 +1455,7 @@ R F(...) {
 ...>
 }
 
-@field_2_xpos@
+@field_2_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_race_attitude\|babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1480,11 +1495,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar7 + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)puVar7)->xpos
+|
+- *(byte *)((char *)puVar7 + 0x3) >> 5
++ ((uw_object_hdr_t *)puVar7)->xpos
 )
 ...>
 }
 
-@field_2_quality@
+@field_2_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_race_attitude\|babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1510,7 +1528,7 @@ R F(...) {
 ...>
 }
 
-@field_2_next@
+@field_2_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_race_attitude\|babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1548,7 +1566,7 @@ R F(...) {
 ...>
 }
 
-@field_2_owner@
+@field_2_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_race_attitude\|babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1574,7 +1592,7 @@ R F(...) {
 ...>
 }
 
-@field_2_link@
+@field_2_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_race_attitude\|babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1612,7 +1630,7 @@ R F(...) {
 ...>
 }
 
-@field_3_item_id@
+@field_3_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1641,7 +1659,7 @@ R F(...) {
 ...>
 }
 
-@field_3_flags_res@
+@field_3_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1690,11 +1708,17 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar4 + 0x1) & 0xe) >> 1
 + ((uw_object_hdr_t *)puVar4)->flags_res
+|
+- (*(byte *)(puVar4 + 0x1) >> 1) & 0x7
++ ((uw_object_hdr_t *)puVar4)->flags_res
+|
+- (*(byte *)(puVar4 + 0x1) & 0xe) >> 1
++ ((uw_object_hdr_t *)puVar4)->flags_res
 )
 ...>
 }
 
-@field_3_enchanted@
+@field_3_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1743,11 +1767,17 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar4 + 0x1) & 0x10) >> 4
 + ((uw_object_hdr_t *)puVar4)->enchanted
+|
+- (*(byte *)(puVar4 + 0x1) >> 4) & 0x1
++ ((uw_object_hdr_t *)puVar4)->enchanted
+|
+- (*(byte *)(puVar4 + 0x1) & 0x10) >> 4
++ ((uw_object_hdr_t *)puVar4)->enchanted
 )
 ...>
 }
 
-@field_3_doordir@
+@field_3_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1796,11 +1826,17 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar4 + 0x1) & 0x20) >> 5
 + ((uw_object_hdr_t *)puVar4)->doordir
+|
+- (*(byte *)(puVar4 + 0x1) >> 5) & 0x1
++ ((uw_object_hdr_t *)puVar4)->doordir
+|
+- (*(byte *)(puVar4 + 0x1) & 0x20) >> 5
++ ((uw_object_hdr_t *)puVar4)->doordir
 )
 ...>
 }
 
-@field_3_invisible@
+@field_3_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1849,11 +1885,17 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar4 + 0x1) & 0x40) >> 6
 + ((uw_object_hdr_t *)puVar4)->invisible
+|
+- (*(byte *)(puVar4 + 0x1) >> 6) & 0x1
++ ((uw_object_hdr_t *)puVar4)->invisible
+|
+- (*(byte *)(puVar4 + 0x1) & 0x40) >> 6
++ ((uw_object_hdr_t *)puVar4)->invisible
 )
 ...>
 }
 
-@field_3_is_quant@
+@field_3_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1902,11 +1944,23 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar4 + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- *(byte *)((char *)puVar4 + 0x1) >> 7
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- (*(byte *)(puVar4 + 0x1) >> 7) & 0x1
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- (*(byte *)(puVar4 + 0x1) & 0x80) >> 7
++ ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- *(byte *)(puVar4 + 0x1) >> 7
++ ((uw_object_hdr_t *)puVar4)->is_quant
 )
 ...>
 }
 
-@field_3_zpos@
+@field_3_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1928,11 +1982,14 @@ R F(...) {
 |
 - puVar4[2] & 0x7f
 + ((uw_object_hdr_t *)puVar4)->zpos
+|
+- *(byte *)(puVar4 + 0x2) & 0x7f
++ ((uw_object_hdr_t *)puVar4)->zpos
 )
 ...>
 }
 
-@field_3_heading@
+@field_3_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1961,7 +2018,7 @@ R F(...) {
 ...>
 }
 
-@field_3_ypos@
+@field_3_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1992,11 +2049,17 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar4 + 0x3) & 0x1c) >> 2
 + ((uw_object_hdr_t *)puVar4)->ypos
+|
+- (*(byte *)(puVar4 + 0x3) >> 2) & 0x7
++ ((uw_object_hdr_t *)puVar4)->ypos
+|
+- (*(byte *)(puVar4 + 0x3) & 0x1c) >> 2
++ ((uw_object_hdr_t *)puVar4)->ypos
 )
 ...>
 }
 
-@field_3_xpos@
+@field_3_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2027,11 +2090,23 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar4 + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)puVar4)->xpos
+|
+- *(byte *)((char *)puVar4 + 0x3) >> 5
++ ((uw_object_hdr_t *)puVar4)->xpos
+|
+- (*(byte *)(puVar4 + 0x3) >> 5) & 0x7
++ ((uw_object_hdr_t *)puVar4)->xpos
+|
+- (*(byte *)(puVar4 + 0x3) & 0xe0) >> 5
++ ((uw_object_hdr_t *)puVar4)->xpos
+|
+- *(byte *)(puVar4 + 0x3) >> 5
++ ((uw_object_hdr_t *)puVar4)->xpos
 )
 ...>
 }
 
-@field_3_quality@
+@field_3_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2053,11 +2128,14 @@ R F(...) {
 |
 - puVar4[4] & 0x3f
 + ((uw_object_hdr_t *)puVar4)->quality
+|
+- *(byte *)(puVar4 + 0x4) & 0x3f
++ ((uw_object_hdr_t *)puVar4)->quality
 )
 ...>
 }
 
-@field_3_next@
+@field_3_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2086,7 +2164,7 @@ R F(...) {
 ...>
 }
 
-@field_3_owner@
+@field_3_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2108,11 +2186,14 @@ R F(...) {
 |
 - puVar4[6] & 0x3f
 + ((uw_object_hdr_t *)puVar4)->owner
+|
+- *(byte *)(puVar4 + 0x6) & 0x3f
++ ((uw_object_hdr_t *)puVar4)->owner
 )
 ...>
 }
 
-@field_3_link@
+@field_3_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2141,7 +2222,7 @@ R F(...) {
 ...>
 }
 
-@field_4_item_id@
+@field_4_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2157,11 +2238,14 @@ R F(...) {
 |
 - *(ushort *)link_cursor & 0x1ff
 + ((uw_object_hdr_t *)link_cursor)->item_id
+|
+- *(ushort *)(link_cursor + 0x0) & 0x1ff
++ ((uw_object_hdr_t *)link_cursor)->item_id
 )
 ...>
 }
 
-@field_4_flags_res@
+@field_4_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2187,16 +2271,28 @@ R F(...) {
 - (*(ushort *)link_cursor & 0xe00) >> 9
 + ((uw_object_hdr_t *)link_cursor)->flags_res
 |
+- (*(ushort *)(link_cursor + 0x0) >> 9) & 0x7
++ ((uw_object_hdr_t *)link_cursor)->flags_res
+|
+- (*(ushort *)(link_cursor + 0x0) & 0xe00) >> 9
++ ((uw_object_hdr_t *)link_cursor)->flags_res
+|
 - (*(byte *)((char *)link_cursor + 0x1) >> 1) & 0x7
 + ((uw_object_hdr_t *)link_cursor)->flags_res
 |
 - (*(byte *)((char *)link_cursor + 0x1) & 0xe) >> 1
 + ((uw_object_hdr_t *)link_cursor)->flags_res
+|
+- (*(byte *)(link_cursor + 0x1) >> 1) & 0x7
++ ((uw_object_hdr_t *)link_cursor)->flags_res
+|
+- (*(byte *)(link_cursor + 0x1) & 0xe) >> 1
++ ((uw_object_hdr_t *)link_cursor)->flags_res
 )
 ...>
 }
 
-@field_4_enchanted@
+@field_4_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2222,16 +2318,28 @@ R F(...) {
 - (*(ushort *)link_cursor & 0x1000) >> 12
 + ((uw_object_hdr_t *)link_cursor)->enchanted
 |
+- (*(ushort *)(link_cursor + 0x0) >> 12) & 0x1
++ ((uw_object_hdr_t *)link_cursor)->enchanted
+|
+- (*(ushort *)(link_cursor + 0x0) & 0x1000) >> 12
++ ((uw_object_hdr_t *)link_cursor)->enchanted
+|
 - (*(byte *)((char *)link_cursor + 0x1) >> 4) & 0x1
 + ((uw_object_hdr_t *)link_cursor)->enchanted
 |
 - (*(byte *)((char *)link_cursor + 0x1) & 0x10) >> 4
 + ((uw_object_hdr_t *)link_cursor)->enchanted
+|
+- (*(byte *)(link_cursor + 0x1) >> 4) & 0x1
++ ((uw_object_hdr_t *)link_cursor)->enchanted
+|
+- (*(byte *)(link_cursor + 0x1) & 0x10) >> 4
++ ((uw_object_hdr_t *)link_cursor)->enchanted
 )
 ...>
 }
 
-@field_4_doordir@
+@field_4_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2257,16 +2365,28 @@ R F(...) {
 - (*(ushort *)link_cursor & 0x2000) >> 13
 + ((uw_object_hdr_t *)link_cursor)->doordir
 |
+- (*(ushort *)(link_cursor + 0x0) >> 13) & 0x1
++ ((uw_object_hdr_t *)link_cursor)->doordir
+|
+- (*(ushort *)(link_cursor + 0x0) & 0x2000) >> 13
++ ((uw_object_hdr_t *)link_cursor)->doordir
+|
 - (*(byte *)((char *)link_cursor + 0x1) >> 5) & 0x1
 + ((uw_object_hdr_t *)link_cursor)->doordir
 |
 - (*(byte *)((char *)link_cursor + 0x1) & 0x20) >> 5
 + ((uw_object_hdr_t *)link_cursor)->doordir
+|
+- (*(byte *)(link_cursor + 0x1) >> 5) & 0x1
++ ((uw_object_hdr_t *)link_cursor)->doordir
+|
+- (*(byte *)(link_cursor + 0x1) & 0x20) >> 5
++ ((uw_object_hdr_t *)link_cursor)->doordir
 )
 ...>
 }
 
-@field_4_invisible@
+@field_4_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2292,16 +2412,28 @@ R F(...) {
 - (*(ushort *)link_cursor & 0x4000) >> 14
 + ((uw_object_hdr_t *)link_cursor)->invisible
 |
+- (*(ushort *)(link_cursor + 0x0) >> 14) & 0x1
++ ((uw_object_hdr_t *)link_cursor)->invisible
+|
+- (*(ushort *)(link_cursor + 0x0) & 0x4000) >> 14
++ ((uw_object_hdr_t *)link_cursor)->invisible
+|
 - (*(byte *)((char *)link_cursor + 0x1) >> 6) & 0x1
 + ((uw_object_hdr_t *)link_cursor)->invisible
 |
 - (*(byte *)((char *)link_cursor + 0x1) & 0x40) >> 6
 + ((uw_object_hdr_t *)link_cursor)->invisible
+|
+- (*(byte *)(link_cursor + 0x1) >> 6) & 0x1
++ ((uw_object_hdr_t *)link_cursor)->invisible
+|
+- (*(byte *)(link_cursor + 0x1) & 0x40) >> 6
++ ((uw_object_hdr_t *)link_cursor)->invisible
 )
 ...>
 }
 
-@field_4_is_quant@
+@field_4_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2327,16 +2459,34 @@ R F(...) {
 - (*(ushort *)link_cursor & 0x8000) >> 15
 + ((uw_object_hdr_t *)link_cursor)->is_quant
 |
+- (*(ushort *)(link_cursor + 0x0) >> 15) & 0x1
++ ((uw_object_hdr_t *)link_cursor)->is_quant
+|
+- (*(ushort *)(link_cursor + 0x0) & 0x8000) >> 15
++ ((uw_object_hdr_t *)link_cursor)->is_quant
+|
 - (*(byte *)((char *)link_cursor + 0x1) >> 7) & 0x1
 + ((uw_object_hdr_t *)link_cursor)->is_quant
 |
 - (*(byte *)((char *)link_cursor + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)link_cursor)->is_quant
+|
+- *(byte *)((char *)link_cursor + 0x1) >> 7
++ ((uw_object_hdr_t *)link_cursor)->is_quant
+|
+- (*(byte *)(link_cursor + 0x1) >> 7) & 0x1
++ ((uw_object_hdr_t *)link_cursor)->is_quant
+|
+- (*(byte *)(link_cursor + 0x1) & 0x80) >> 7
++ ((uw_object_hdr_t *)link_cursor)->is_quant
+|
+- *(byte *)(link_cursor + 0x1) >> 7
++ ((uw_object_hdr_t *)link_cursor)->is_quant
 )
 ...>
 }
 
-@field_4_zpos@
+@field_4_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2350,13 +2500,19 @@ R F(...) {
 - ((ushort *)link_cursor)[1] & 0x7f
 + ((uw_object_hdr_t *)link_cursor)->zpos
 |
+- *(ushort *)(link_cursor + 0x2) & 0x7f
++ ((uw_object_hdr_t *)link_cursor)->zpos
+|
 - *(byte *)((char *)link_cursor + 0x2) & 0x7f
++ ((uw_object_hdr_t *)link_cursor)->zpos
+|
+- *(byte *)(link_cursor + 0x2) & 0x7f
 + ((uw_object_hdr_t *)link_cursor)->zpos
 )
 ...>
 }
 
-@field_4_heading@
+@field_4_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2375,11 +2531,17 @@ R F(...) {
 |
 - (((ushort *)link_cursor)[1] & 0x380) >> 7
 + ((uw_object_hdr_t *)link_cursor)->heading
+|
+- (*(ushort *)(link_cursor + 0x2) >> 7) & 0x7
++ ((uw_object_hdr_t *)link_cursor)->heading
+|
+- (*(ushort *)(link_cursor + 0x2) & 0x380) >> 7
++ ((uw_object_hdr_t *)link_cursor)->heading
 )
 ...>
 }
 
-@field_4_ypos@
+@field_4_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2399,16 +2561,28 @@ R F(...) {
 - (((ushort *)link_cursor)[1] & 0x1c00) >> 10
 + ((uw_object_hdr_t *)link_cursor)->ypos
 |
+- (*(ushort *)(link_cursor + 0x2) >> 10) & 0x7
++ ((uw_object_hdr_t *)link_cursor)->ypos
+|
+- (*(ushort *)(link_cursor + 0x2) & 0x1c00) >> 10
++ ((uw_object_hdr_t *)link_cursor)->ypos
+|
 - (*(byte *)((char *)link_cursor + 0x3) >> 2) & 0x7
 + ((uw_object_hdr_t *)link_cursor)->ypos
 |
 - (*(byte *)((char *)link_cursor + 0x3) & 0x1c) >> 2
 + ((uw_object_hdr_t *)link_cursor)->ypos
+|
+- (*(byte *)(link_cursor + 0x3) >> 2) & 0x7
++ ((uw_object_hdr_t *)link_cursor)->ypos
+|
+- (*(byte *)(link_cursor + 0x3) & 0x1c) >> 2
++ ((uw_object_hdr_t *)link_cursor)->ypos
 )
 ...>
 }
 
-@field_4_xpos@
+@field_4_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2428,16 +2602,34 @@ R F(...) {
 - (((ushort *)link_cursor)[1] & 0xe000) >> 13
 + ((uw_object_hdr_t *)link_cursor)->xpos
 |
+- (*(ushort *)(link_cursor + 0x2) >> 13) & 0x7
++ ((uw_object_hdr_t *)link_cursor)->xpos
+|
+- (*(ushort *)(link_cursor + 0x2) & 0xe000) >> 13
++ ((uw_object_hdr_t *)link_cursor)->xpos
+|
 - (*(byte *)((char *)link_cursor + 0x3) >> 5) & 0x7
 + ((uw_object_hdr_t *)link_cursor)->xpos
 |
 - (*(byte *)((char *)link_cursor + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)link_cursor)->xpos
+|
+- *(byte *)((char *)link_cursor + 0x3) >> 5
++ ((uw_object_hdr_t *)link_cursor)->xpos
+|
+- (*(byte *)(link_cursor + 0x3) >> 5) & 0x7
++ ((uw_object_hdr_t *)link_cursor)->xpos
+|
+- (*(byte *)(link_cursor + 0x3) & 0xe0) >> 5
++ ((uw_object_hdr_t *)link_cursor)->xpos
+|
+- *(byte *)(link_cursor + 0x3) >> 5
++ ((uw_object_hdr_t *)link_cursor)->xpos
 )
 ...>
 }
 
-@field_4_quality@
+@field_4_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2451,13 +2643,19 @@ R F(...) {
 - ((ushort *)link_cursor)[2] & 0x3f
 + ((uw_object_hdr_t *)link_cursor)->quality
 |
+- *(ushort *)(link_cursor + 0x4) & 0x3f
++ ((uw_object_hdr_t *)link_cursor)->quality
+|
 - *(byte *)((char *)link_cursor + 0x4) & 0x3f
++ ((uw_object_hdr_t *)link_cursor)->quality
+|
+- *(byte *)(link_cursor + 0x4) & 0x3f
 + ((uw_object_hdr_t *)link_cursor)->quality
 )
 ...>
 }
 
-@field_4_next@
+@field_4_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2476,11 +2674,17 @@ R F(...) {
 |
 - (((ushort *)link_cursor)[2] & 0xffc0) >> 6
 + ((uw_object_hdr_t *)link_cursor)->next
+|
+- (*(ushort *)(link_cursor + 0x4) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)link_cursor)->next
+|
+- (*(ushort *)(link_cursor + 0x4) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)link_cursor)->next
 )
 ...>
 }
 
-@field_4_owner@
+@field_4_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2494,13 +2698,19 @@ R F(...) {
 - ((ushort *)link_cursor)[3] & 0x3f
 + ((uw_object_hdr_t *)link_cursor)->owner
 |
+- *(ushort *)(link_cursor + 0x6) & 0x3f
++ ((uw_object_hdr_t *)link_cursor)->owner
+|
 - *(byte *)((char *)link_cursor + 0x6) & 0x3f
++ ((uw_object_hdr_t *)link_cursor)->owner
+|
+- *(byte *)(link_cursor + 0x6) & 0x3f
 + ((uw_object_hdr_t *)link_cursor)->owner
 )
 ...>
 }
 
-@field_4_link@
+@field_4_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_place_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2519,13 +2729,19 @@ R F(...) {
 |
 - (((ushort *)link_cursor)[3] & 0xffc0) >> 6
 + ((uw_object_hdr_t *)link_cursor)->link
+|
+- (*(ushort *)(link_cursor + 0x6) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)link_cursor)->link
+|
+- (*(ushort *)(link_cursor + 0x6) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)link_cursor)->link
 )
 ...>
 }
 
-@field_5_item_id@
+@field_5_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
-identifier F =~ "^\(babl_builtin_find_barter_total\|babl_builtin_take_from_npc_inv\)$";
+identifier F =~ "^\(babl_builtin_take_from_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -2539,13 +2755,16 @@ R F(...) {
 |
 - *(ushort *)iVar3 & 0x1ff
 + ((uw_object_hdr_t *)iVar3)->item_id
+|
+- *(ushort *)(iVar3 + 0x0) & 0x1ff
++ ((uw_object_hdr_t *)iVar3)->item_id
 )
 ...>
 }
 
-@field_5_flags_res@
+@field_5_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
-identifier F =~ "^\(babl_builtin_find_barter_total\|babl_builtin_take_from_npc_inv\)$";
+identifier F =~ "^\(babl_builtin_take_from_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -2569,18 +2788,30 @@ R F(...) {
 - (*(ushort *)iVar3 & 0xe00) >> 9
 + ((uw_object_hdr_t *)iVar3)->flags_res
 |
+- (*(ushort *)(iVar3 + 0x0) >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar3)->flags_res
+|
+- (*(ushort *)(iVar3 + 0x0) & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar3)->flags_res
+|
 - (*(byte *)((char *)iVar3 + 0x1) >> 1) & 0x7
 + ((uw_object_hdr_t *)iVar3)->flags_res
 |
 - (*(byte *)((char *)iVar3 + 0x1) & 0xe) >> 1
 + ((uw_object_hdr_t *)iVar3)->flags_res
+|
+- (*(byte *)(iVar3 + 0x1) >> 1) & 0x7
++ ((uw_object_hdr_t *)iVar3)->flags_res
+|
+- (*(byte *)(iVar3 + 0x1) & 0xe) >> 1
++ ((uw_object_hdr_t *)iVar3)->flags_res
 )
 ...>
 }
 
-@field_5_enchanted@
+@field_5_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
-identifier F =~ "^\(babl_builtin_find_barter_total\|babl_builtin_take_from_npc_inv\)$";
+identifier F =~ "^\(babl_builtin_take_from_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -2604,18 +2835,30 @@ R F(...) {
 - (*(ushort *)iVar3 & 0x1000) >> 12
 + ((uw_object_hdr_t *)iVar3)->enchanted
 |
+- (*(ushort *)(iVar3 + 0x0) >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar3)->enchanted
+|
+- (*(ushort *)(iVar3 + 0x0) & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar3)->enchanted
+|
 - (*(byte *)((char *)iVar3 + 0x1) >> 4) & 0x1
 + ((uw_object_hdr_t *)iVar3)->enchanted
 |
 - (*(byte *)((char *)iVar3 + 0x1) & 0x10) >> 4
 + ((uw_object_hdr_t *)iVar3)->enchanted
+|
+- (*(byte *)(iVar3 + 0x1) >> 4) & 0x1
++ ((uw_object_hdr_t *)iVar3)->enchanted
+|
+- (*(byte *)(iVar3 + 0x1) & 0x10) >> 4
++ ((uw_object_hdr_t *)iVar3)->enchanted
 )
 ...>
 }
 
-@field_5_doordir@
+@field_5_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
-identifier F =~ "^\(babl_builtin_find_barter_total\|babl_builtin_take_from_npc_inv\)$";
+identifier F =~ "^\(babl_builtin_take_from_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -2639,18 +2882,30 @@ R F(...) {
 - (*(ushort *)iVar3 & 0x2000) >> 13
 + ((uw_object_hdr_t *)iVar3)->doordir
 |
+- (*(ushort *)(iVar3 + 0x0) >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar3)->doordir
+|
+- (*(ushort *)(iVar3 + 0x0) & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar3)->doordir
+|
 - (*(byte *)((char *)iVar3 + 0x1) >> 5) & 0x1
 + ((uw_object_hdr_t *)iVar3)->doordir
 |
 - (*(byte *)((char *)iVar3 + 0x1) & 0x20) >> 5
 + ((uw_object_hdr_t *)iVar3)->doordir
+|
+- (*(byte *)(iVar3 + 0x1) >> 5) & 0x1
++ ((uw_object_hdr_t *)iVar3)->doordir
+|
+- (*(byte *)(iVar3 + 0x1) & 0x20) >> 5
++ ((uw_object_hdr_t *)iVar3)->doordir
 )
 ...>
 }
 
-@field_5_invisible@
+@field_5_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
-identifier F =~ "^\(babl_builtin_find_barter_total\|babl_builtin_take_from_npc_inv\)$";
+identifier F =~ "^\(babl_builtin_take_from_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -2674,18 +2929,30 @@ R F(...) {
 - (*(ushort *)iVar3 & 0x4000) >> 14
 + ((uw_object_hdr_t *)iVar3)->invisible
 |
+- (*(ushort *)(iVar3 + 0x0) >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar3)->invisible
+|
+- (*(ushort *)(iVar3 + 0x0) & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar3)->invisible
+|
 - (*(byte *)((char *)iVar3 + 0x1) >> 6) & 0x1
 + ((uw_object_hdr_t *)iVar3)->invisible
 |
 - (*(byte *)((char *)iVar3 + 0x1) & 0x40) >> 6
 + ((uw_object_hdr_t *)iVar3)->invisible
+|
+- (*(byte *)(iVar3 + 0x1) >> 6) & 0x1
++ ((uw_object_hdr_t *)iVar3)->invisible
+|
+- (*(byte *)(iVar3 + 0x1) & 0x40) >> 6
++ ((uw_object_hdr_t *)iVar3)->invisible
 )
 ...>
 }
 
-@field_5_is_quant@
+@field_5_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
-identifier F =~ "^\(babl_builtin_find_barter_total\|babl_builtin_take_from_npc_inv\)$";
+identifier F =~ "^\(babl_builtin_take_from_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -2709,18 +2976,36 @@ R F(...) {
 - (*(ushort *)iVar3 & 0x8000) >> 15
 + ((uw_object_hdr_t *)iVar3)->is_quant
 |
+- (*(ushort *)(iVar3 + 0x0) >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar3)->is_quant
+|
+- (*(ushort *)(iVar3 + 0x0) & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar3)->is_quant
+|
 - (*(byte *)((char *)iVar3 + 0x1) >> 7) & 0x1
 + ((uw_object_hdr_t *)iVar3)->is_quant
 |
 - (*(byte *)((char *)iVar3 + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)iVar3)->is_quant
+|
+- *(byte *)((char *)iVar3 + 0x1) >> 7
++ ((uw_object_hdr_t *)iVar3)->is_quant
+|
+- (*(byte *)(iVar3 + 0x1) >> 7) & 0x1
++ ((uw_object_hdr_t *)iVar3)->is_quant
+|
+- (*(byte *)(iVar3 + 0x1) & 0x80) >> 7
++ ((uw_object_hdr_t *)iVar3)->is_quant
+|
+- *(byte *)(iVar3 + 0x1) >> 7
++ ((uw_object_hdr_t *)iVar3)->is_quant
 )
 ...>
 }
 
-@field_5_zpos@
+@field_5_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
-identifier F =~ "^\(babl_builtin_find_barter_total\|babl_builtin_take_from_npc_inv\)$";
+identifier F =~ "^\(babl_builtin_take_from_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -2732,15 +3017,21 @@ R F(...) {
 - ((ushort *)iVar3)[1] & 0x7f
 + ((uw_object_hdr_t *)iVar3)->zpos
 |
+- *(ushort *)(iVar3 + 0x2) & 0x7f
++ ((uw_object_hdr_t *)iVar3)->zpos
+|
 - *(byte *)((char *)iVar3 + 0x2) & 0x7f
++ ((uw_object_hdr_t *)iVar3)->zpos
+|
+- *(byte *)(iVar3 + 0x2) & 0x7f
 + ((uw_object_hdr_t *)iVar3)->zpos
 )
 ...>
 }
 
-@field_5_heading@
+@field_5_heading disable drop_cast, is_zero, isnt_zero@
 type R;
-identifier F =~ "^\(babl_builtin_find_barter_total\|babl_builtin_take_from_npc_inv\)$";
+identifier F =~ "^\(babl_builtin_take_from_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -2757,13 +3048,19 @@ R F(...) {
 |
 - (((ushort *)iVar3)[1] & 0x380) >> 7
 + ((uw_object_hdr_t *)iVar3)->heading
+|
+- (*(ushort *)(iVar3 + 0x2) >> 7) & 0x7
++ ((uw_object_hdr_t *)iVar3)->heading
+|
+- (*(ushort *)(iVar3 + 0x2) & 0x380) >> 7
++ ((uw_object_hdr_t *)iVar3)->heading
 )
 ...>
 }
 
-@field_5_ypos@
+@field_5_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
-identifier F =~ "^\(babl_builtin_find_barter_total\|babl_builtin_take_from_npc_inv\)$";
+identifier F =~ "^\(babl_builtin_take_from_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -2781,18 +3078,30 @@ R F(...) {
 - (((ushort *)iVar3)[1] & 0x1c00) >> 10
 + ((uw_object_hdr_t *)iVar3)->ypos
 |
+- (*(ushort *)(iVar3 + 0x2) >> 10) & 0x7
++ ((uw_object_hdr_t *)iVar3)->ypos
+|
+- (*(ushort *)(iVar3 + 0x2) & 0x1c00) >> 10
++ ((uw_object_hdr_t *)iVar3)->ypos
+|
 - (*(byte *)((char *)iVar3 + 0x3) >> 2) & 0x7
 + ((uw_object_hdr_t *)iVar3)->ypos
 |
 - (*(byte *)((char *)iVar3 + 0x3) & 0x1c) >> 2
 + ((uw_object_hdr_t *)iVar3)->ypos
+|
+- (*(byte *)(iVar3 + 0x3) >> 2) & 0x7
++ ((uw_object_hdr_t *)iVar3)->ypos
+|
+- (*(byte *)(iVar3 + 0x3) & 0x1c) >> 2
++ ((uw_object_hdr_t *)iVar3)->ypos
 )
 ...>
 }
 
-@field_5_xpos@
+@field_5_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
-identifier F =~ "^\(babl_builtin_find_barter_total\|babl_builtin_take_from_npc_inv\)$";
+identifier F =~ "^\(babl_builtin_take_from_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -2810,18 +3119,36 @@ R F(...) {
 - (((ushort *)iVar3)[1] & 0xe000) >> 13
 + ((uw_object_hdr_t *)iVar3)->xpos
 |
+- (*(ushort *)(iVar3 + 0x2) >> 13) & 0x7
++ ((uw_object_hdr_t *)iVar3)->xpos
+|
+- (*(ushort *)(iVar3 + 0x2) & 0xe000) >> 13
++ ((uw_object_hdr_t *)iVar3)->xpos
+|
 - (*(byte *)((char *)iVar3 + 0x3) >> 5) & 0x7
 + ((uw_object_hdr_t *)iVar3)->xpos
 |
 - (*(byte *)((char *)iVar3 + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)iVar3)->xpos
+|
+- *(byte *)((char *)iVar3 + 0x3) >> 5
++ ((uw_object_hdr_t *)iVar3)->xpos
+|
+- (*(byte *)(iVar3 + 0x3) >> 5) & 0x7
++ ((uw_object_hdr_t *)iVar3)->xpos
+|
+- (*(byte *)(iVar3 + 0x3) & 0xe0) >> 5
++ ((uw_object_hdr_t *)iVar3)->xpos
+|
+- *(byte *)(iVar3 + 0x3) >> 5
++ ((uw_object_hdr_t *)iVar3)->xpos
 )
 ...>
 }
 
-@field_5_quality@
+@field_5_quality disable drop_cast, is_zero, isnt_zero@
 type R;
-identifier F =~ "^\(babl_builtin_find_barter_total\|babl_builtin_take_from_npc_inv\)$";
+identifier F =~ "^\(babl_builtin_take_from_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -2833,15 +3160,21 @@ R F(...) {
 - ((ushort *)iVar3)[2] & 0x3f
 + ((uw_object_hdr_t *)iVar3)->quality
 |
+- *(ushort *)(iVar3 + 0x4) & 0x3f
++ ((uw_object_hdr_t *)iVar3)->quality
+|
 - *(byte *)((char *)iVar3 + 0x4) & 0x3f
++ ((uw_object_hdr_t *)iVar3)->quality
+|
+- *(byte *)(iVar3 + 0x4) & 0x3f
 + ((uw_object_hdr_t *)iVar3)->quality
 )
 ...>
 }
 
-@field_5_next@
+@field_5_next disable drop_cast, is_zero, isnt_zero@
 type R;
-identifier F =~ "^\(babl_builtin_find_barter_total\|babl_builtin_take_from_npc_inv\)$";
+identifier F =~ "^\(babl_builtin_take_from_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -2858,13 +3191,19 @@ R F(...) {
 |
 - (((ushort *)iVar3)[2] & 0xffc0) >> 6
 + ((uw_object_hdr_t *)iVar3)->next
+|
+- (*(ushort *)(iVar3 + 0x4) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar3)->next
+|
+- (*(ushort *)(iVar3 + 0x4) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar3)->next
 )
 ...>
 }
 
-@field_5_owner@
+@field_5_owner disable drop_cast, is_zero, isnt_zero@
 type R;
-identifier F =~ "^\(babl_builtin_find_barter_total\|babl_builtin_take_from_npc_inv\)$";
+identifier F =~ "^\(babl_builtin_take_from_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -2876,15 +3215,21 @@ R F(...) {
 - ((ushort *)iVar3)[3] & 0x3f
 + ((uw_object_hdr_t *)iVar3)->owner
 |
+- *(ushort *)(iVar3 + 0x6) & 0x3f
++ ((uw_object_hdr_t *)iVar3)->owner
+|
 - *(byte *)((char *)iVar3 + 0x6) & 0x3f
++ ((uw_object_hdr_t *)iVar3)->owner
+|
+- *(byte *)(iVar3 + 0x6) & 0x3f
 + ((uw_object_hdr_t *)iVar3)->owner
 )
 ...>
 }
 
-@field_5_link@
+@field_5_link disable drop_cast, is_zero, isnt_zero@
 type R;
-identifier F =~ "^\(babl_builtin_find_barter_total\|babl_builtin_take_from_npc_inv\)$";
+identifier F =~ "^\(babl_builtin_take_from_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
 @@
 R F(...) {
@@ -2901,11 +3246,17 @@ R F(...) {
 |
 - (((ushort *)iVar3)[3] & 0xffc0) >> 6
 + ((uw_object_hdr_t *)iVar3)->link
+|
+- (*(ushort *)(iVar3 + 0x6) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar3)->link
+|
+- (*(ushort *)(iVar3 + 0x6) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar3)->link
 )
 ...>
 }
 
-@field_6_item_id@
+@field_6_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_add_to_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2921,11 +3272,14 @@ R F(...) {
 |
 - *(ushort *)uVar1 & 0x1ff
 + ((uw_object_hdr_t *)uVar1)->item_id
+|
+- *(ushort *)(uVar1 + 0x0) & 0x1ff
++ ((uw_object_hdr_t *)uVar1)->item_id
 )
 ...>
 }
 
-@field_6_flags_res@
+@field_6_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_add_to_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2951,16 +3305,28 @@ R F(...) {
 - (*(ushort *)uVar1 & 0xe00) >> 9
 + ((uw_object_hdr_t *)uVar1)->flags_res
 |
+- (*(ushort *)(uVar1 + 0x0) >> 9) & 0x7
++ ((uw_object_hdr_t *)uVar1)->flags_res
+|
+- (*(ushort *)(uVar1 + 0x0) & 0xe00) >> 9
++ ((uw_object_hdr_t *)uVar1)->flags_res
+|
 - (*(byte *)((char *)uVar1 + 0x1) >> 1) & 0x7
 + ((uw_object_hdr_t *)uVar1)->flags_res
 |
 - (*(byte *)((char *)uVar1 + 0x1) & 0xe) >> 1
 + ((uw_object_hdr_t *)uVar1)->flags_res
+|
+- (*(byte *)(uVar1 + 0x1) >> 1) & 0x7
++ ((uw_object_hdr_t *)uVar1)->flags_res
+|
+- (*(byte *)(uVar1 + 0x1) & 0xe) >> 1
++ ((uw_object_hdr_t *)uVar1)->flags_res
 )
 ...>
 }
 
-@field_6_enchanted@
+@field_6_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_add_to_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2986,16 +3352,28 @@ R F(...) {
 - (*(ushort *)uVar1 & 0x1000) >> 12
 + ((uw_object_hdr_t *)uVar1)->enchanted
 |
+- (*(ushort *)(uVar1 + 0x0) >> 12) & 0x1
++ ((uw_object_hdr_t *)uVar1)->enchanted
+|
+- (*(ushort *)(uVar1 + 0x0) & 0x1000) >> 12
++ ((uw_object_hdr_t *)uVar1)->enchanted
+|
 - (*(byte *)((char *)uVar1 + 0x1) >> 4) & 0x1
 + ((uw_object_hdr_t *)uVar1)->enchanted
 |
 - (*(byte *)((char *)uVar1 + 0x1) & 0x10) >> 4
 + ((uw_object_hdr_t *)uVar1)->enchanted
+|
+- (*(byte *)(uVar1 + 0x1) >> 4) & 0x1
++ ((uw_object_hdr_t *)uVar1)->enchanted
+|
+- (*(byte *)(uVar1 + 0x1) & 0x10) >> 4
++ ((uw_object_hdr_t *)uVar1)->enchanted
 )
 ...>
 }
 
-@field_6_doordir@
+@field_6_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_add_to_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3021,16 +3399,28 @@ R F(...) {
 - (*(ushort *)uVar1 & 0x2000) >> 13
 + ((uw_object_hdr_t *)uVar1)->doordir
 |
+- (*(ushort *)(uVar1 + 0x0) >> 13) & 0x1
++ ((uw_object_hdr_t *)uVar1)->doordir
+|
+- (*(ushort *)(uVar1 + 0x0) & 0x2000) >> 13
++ ((uw_object_hdr_t *)uVar1)->doordir
+|
 - (*(byte *)((char *)uVar1 + 0x1) >> 5) & 0x1
 + ((uw_object_hdr_t *)uVar1)->doordir
 |
 - (*(byte *)((char *)uVar1 + 0x1) & 0x20) >> 5
 + ((uw_object_hdr_t *)uVar1)->doordir
+|
+- (*(byte *)(uVar1 + 0x1) >> 5) & 0x1
++ ((uw_object_hdr_t *)uVar1)->doordir
+|
+- (*(byte *)(uVar1 + 0x1) & 0x20) >> 5
++ ((uw_object_hdr_t *)uVar1)->doordir
 )
 ...>
 }
 
-@field_6_invisible@
+@field_6_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_add_to_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3056,16 +3446,28 @@ R F(...) {
 - (*(ushort *)uVar1 & 0x4000) >> 14
 + ((uw_object_hdr_t *)uVar1)->invisible
 |
+- (*(ushort *)(uVar1 + 0x0) >> 14) & 0x1
++ ((uw_object_hdr_t *)uVar1)->invisible
+|
+- (*(ushort *)(uVar1 + 0x0) & 0x4000) >> 14
++ ((uw_object_hdr_t *)uVar1)->invisible
+|
 - (*(byte *)((char *)uVar1 + 0x1) >> 6) & 0x1
 + ((uw_object_hdr_t *)uVar1)->invisible
 |
 - (*(byte *)((char *)uVar1 + 0x1) & 0x40) >> 6
 + ((uw_object_hdr_t *)uVar1)->invisible
+|
+- (*(byte *)(uVar1 + 0x1) >> 6) & 0x1
++ ((uw_object_hdr_t *)uVar1)->invisible
+|
+- (*(byte *)(uVar1 + 0x1) & 0x40) >> 6
++ ((uw_object_hdr_t *)uVar1)->invisible
 )
 ...>
 }
 
-@field_6_is_quant@
+@field_6_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_add_to_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3091,16 +3493,34 @@ R F(...) {
 - (*(ushort *)uVar1 & 0x8000) >> 15
 + ((uw_object_hdr_t *)uVar1)->is_quant
 |
+- (*(ushort *)(uVar1 + 0x0) >> 15) & 0x1
++ ((uw_object_hdr_t *)uVar1)->is_quant
+|
+- (*(ushort *)(uVar1 + 0x0) & 0x8000) >> 15
++ ((uw_object_hdr_t *)uVar1)->is_quant
+|
 - (*(byte *)((char *)uVar1 + 0x1) >> 7) & 0x1
 + ((uw_object_hdr_t *)uVar1)->is_quant
 |
 - (*(byte *)((char *)uVar1 + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)uVar1)->is_quant
+|
+- *(byte *)((char *)uVar1 + 0x1) >> 7
++ ((uw_object_hdr_t *)uVar1)->is_quant
+|
+- (*(byte *)(uVar1 + 0x1) >> 7) & 0x1
++ ((uw_object_hdr_t *)uVar1)->is_quant
+|
+- (*(byte *)(uVar1 + 0x1) & 0x80) >> 7
++ ((uw_object_hdr_t *)uVar1)->is_quant
+|
+- *(byte *)(uVar1 + 0x1) >> 7
++ ((uw_object_hdr_t *)uVar1)->is_quant
 )
 ...>
 }
 
-@field_6_zpos@
+@field_6_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_add_to_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3114,13 +3534,19 @@ R F(...) {
 - ((ushort *)uVar1)[1] & 0x7f
 + ((uw_object_hdr_t *)uVar1)->zpos
 |
+- *(ushort *)(uVar1 + 0x2) & 0x7f
++ ((uw_object_hdr_t *)uVar1)->zpos
+|
 - *(byte *)((char *)uVar1 + 0x2) & 0x7f
++ ((uw_object_hdr_t *)uVar1)->zpos
+|
+- *(byte *)(uVar1 + 0x2) & 0x7f
 + ((uw_object_hdr_t *)uVar1)->zpos
 )
 ...>
 }
 
-@field_6_heading@
+@field_6_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_add_to_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3139,11 +3565,17 @@ R F(...) {
 |
 - (((ushort *)uVar1)[1] & 0x380) >> 7
 + ((uw_object_hdr_t *)uVar1)->heading
+|
+- (*(ushort *)(uVar1 + 0x2) >> 7) & 0x7
++ ((uw_object_hdr_t *)uVar1)->heading
+|
+- (*(ushort *)(uVar1 + 0x2) & 0x380) >> 7
++ ((uw_object_hdr_t *)uVar1)->heading
 )
 ...>
 }
 
-@field_6_ypos@
+@field_6_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_add_to_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3163,16 +3595,28 @@ R F(...) {
 - (((ushort *)uVar1)[1] & 0x1c00) >> 10
 + ((uw_object_hdr_t *)uVar1)->ypos
 |
+- (*(ushort *)(uVar1 + 0x2) >> 10) & 0x7
++ ((uw_object_hdr_t *)uVar1)->ypos
+|
+- (*(ushort *)(uVar1 + 0x2) & 0x1c00) >> 10
++ ((uw_object_hdr_t *)uVar1)->ypos
+|
 - (*(byte *)((char *)uVar1 + 0x3) >> 2) & 0x7
 + ((uw_object_hdr_t *)uVar1)->ypos
 |
 - (*(byte *)((char *)uVar1 + 0x3) & 0x1c) >> 2
 + ((uw_object_hdr_t *)uVar1)->ypos
+|
+- (*(byte *)(uVar1 + 0x3) >> 2) & 0x7
++ ((uw_object_hdr_t *)uVar1)->ypos
+|
+- (*(byte *)(uVar1 + 0x3) & 0x1c) >> 2
++ ((uw_object_hdr_t *)uVar1)->ypos
 )
 ...>
 }
 
-@field_6_xpos@
+@field_6_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_add_to_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3192,16 +3636,34 @@ R F(...) {
 - (((ushort *)uVar1)[1] & 0xe000) >> 13
 + ((uw_object_hdr_t *)uVar1)->xpos
 |
+- (*(ushort *)(uVar1 + 0x2) >> 13) & 0x7
++ ((uw_object_hdr_t *)uVar1)->xpos
+|
+- (*(ushort *)(uVar1 + 0x2) & 0xe000) >> 13
++ ((uw_object_hdr_t *)uVar1)->xpos
+|
 - (*(byte *)((char *)uVar1 + 0x3) >> 5) & 0x7
 + ((uw_object_hdr_t *)uVar1)->xpos
 |
 - (*(byte *)((char *)uVar1 + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)uVar1)->xpos
+|
+- *(byte *)((char *)uVar1 + 0x3) >> 5
++ ((uw_object_hdr_t *)uVar1)->xpos
+|
+- (*(byte *)(uVar1 + 0x3) >> 5) & 0x7
++ ((uw_object_hdr_t *)uVar1)->xpos
+|
+- (*(byte *)(uVar1 + 0x3) & 0xe0) >> 5
++ ((uw_object_hdr_t *)uVar1)->xpos
+|
+- *(byte *)(uVar1 + 0x3) >> 5
++ ((uw_object_hdr_t *)uVar1)->xpos
 )
 ...>
 }
 
-@field_6_quality@
+@field_6_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_add_to_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3215,13 +3677,19 @@ R F(...) {
 - ((ushort *)uVar1)[2] & 0x3f
 + ((uw_object_hdr_t *)uVar1)->quality
 |
+- *(ushort *)(uVar1 + 0x4) & 0x3f
++ ((uw_object_hdr_t *)uVar1)->quality
+|
 - *(byte *)((char *)uVar1 + 0x4) & 0x3f
++ ((uw_object_hdr_t *)uVar1)->quality
+|
+- *(byte *)(uVar1 + 0x4) & 0x3f
 + ((uw_object_hdr_t *)uVar1)->quality
 )
 ...>
 }
 
-@field_6_next@
+@field_6_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_add_to_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3240,11 +3708,17 @@ R F(...) {
 |
 - (((ushort *)uVar1)[2] & 0xffc0) >> 6
 + ((uw_object_hdr_t *)uVar1)->next
+|
+- (*(ushort *)(uVar1 + 0x4) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)uVar1)->next
+|
+- (*(ushort *)(uVar1 + 0x4) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)uVar1)->next
 )
 ...>
 }
 
-@field_6_owner@
+@field_6_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_add_to_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3258,13 +3732,19 @@ R F(...) {
 - ((ushort *)uVar1)[3] & 0x3f
 + ((uw_object_hdr_t *)uVar1)->owner
 |
+- *(ushort *)(uVar1 + 0x6) & 0x3f
++ ((uw_object_hdr_t *)uVar1)->owner
+|
 - *(byte *)((char *)uVar1 + 0x6) & 0x3f
++ ((uw_object_hdr_t *)uVar1)->owner
+|
+- *(byte *)(uVar1 + 0x6) & 0x3f
 + ((uw_object_hdr_t *)uVar1)->owner
 )
 ...>
 }
 
-@field_6_link@
+@field_6_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_add_to_npc_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3283,11 +3763,17 @@ R F(...) {
 |
 - (((ushort *)uVar1)[3] & 0xffc0) >> 6
 + ((uw_object_hdr_t *)uVar1)->link
+|
+- (*(ushort *)(uVar1 + 0x6) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)uVar1)->link
+|
+- (*(ushort *)(uVar1 + 0x6) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)uVar1)->link
 )
 ...>
 }
 
-@field_7_item_id@
+@field_7_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_gronk_door\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3313,7 +3799,7 @@ R F(...) {
 ...>
 }
 
-@field_7_flags_res@
+@field_7_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_gronk_door\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3360,7 +3846,7 @@ R F(...) {
 ...>
 }
 
-@field_7_enchanted@
+@field_7_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_gronk_door\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3407,7 +3893,7 @@ R F(...) {
 ...>
 }
 
-@field_7_doordir@
+@field_7_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_gronk_door\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3454,7 +3940,7 @@ R F(...) {
 ...>
 }
 
-@field_7_invisible@
+@field_7_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_gronk_door\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3501,7 +3987,7 @@ R F(...) {
 ...>
 }
 
-@field_7_is_quant@
+@field_7_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_gronk_door\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3559,11 +4045,14 @@ R F(...) {
 |
 - (*(byte *)((char *)iVar6 + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)iVar6)->is_quant
+|
+- *(byte *)((char *)iVar6 + 0x1) >> 7
++ ((uw_object_hdr_t *)iVar6)->is_quant
 )
 ...>
 }
 
-@field_7_zpos@
+@field_7_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_gronk_door\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3589,7 +4078,7 @@ R F(...) {
 ...>
 }
 
-@field_7_heading@
+@field_7_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_gronk_door\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3618,7 +4107,7 @@ R F(...) {
 ...>
 }
 
-@field_7_ypos@
+@field_7_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_gronk_door\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3653,7 +4142,7 @@ R F(...) {
 ...>
 }
 
-@field_7_xpos@
+@field_7_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_gronk_door\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3693,11 +4182,14 @@ R F(...) {
 |
 - (*(byte *)((char *)iVar6 + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)iVar6)->xpos
+|
+- *(byte *)((char *)iVar6 + 0x3) >> 5
++ ((uw_object_hdr_t *)iVar6)->xpos
 )
 ...>
 }
 
-@field_7_quality@
+@field_7_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_gronk_door\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3723,7 +4215,7 @@ R F(...) {
 ...>
 }
 
-@field_7_next@
+@field_7_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_gronk_door\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3761,7 +4253,7 @@ R F(...) {
 ...>
 }
 
-@field_7_owner@
+@field_7_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_gronk_door\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3787,7 +4279,7 @@ R F(...) {
 ...>
 }
 
-@field_7_link@
+@field_7_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_gronk_door\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3825,7 +4317,7 @@ R F(...) {
 ...>
 }
 
-@field_8_item_id@
+@field_8_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_stuff\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3851,7 +4343,7 @@ R F(...) {
 ...>
 }
 
-@field_8_flags_res@
+@field_8_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_stuff\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3898,7 +4390,7 @@ R F(...) {
 ...>
 }
 
-@field_8_enchanted@
+@field_8_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_stuff\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3945,7 +4437,7 @@ R F(...) {
 ...>
 }
 
-@field_8_doordir@
+@field_8_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_stuff\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3992,7 +4484,7 @@ R F(...) {
 ...>
 }
 
-@field_8_invisible@
+@field_8_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_stuff\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4039,7 +4531,7 @@ R F(...) {
 ...>
 }
 
-@field_8_is_quant@
+@field_8_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_stuff\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4097,11 +4589,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar11_rec + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)puVar11_rec)->is_quant
+|
+- *(byte *)((char *)puVar11_rec + 0x1) >> 7
++ ((uw_object_hdr_t *)puVar11_rec)->is_quant
 )
 ...>
 }
 
-@field_8_zpos@
+@field_8_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_stuff\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4127,7 +4622,7 @@ R F(...) {
 ...>
 }
 
-@field_8_heading@
+@field_8_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_stuff\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4156,7 +4651,7 @@ R F(...) {
 ...>
 }
 
-@field_8_ypos@
+@field_8_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_stuff\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4191,7 +4686,7 @@ R F(...) {
 ...>
 }
 
-@field_8_xpos@
+@field_8_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_stuff\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4231,11 +4726,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar11_rec + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)puVar11_rec)->xpos
+|
+- *(byte *)((char *)puVar11_rec + 0x3) >> 5
++ ((uw_object_hdr_t *)puVar11_rec)->xpos
 )
 ...>
 }
 
-@field_8_quality@
+@field_8_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_stuff\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4261,7 +4759,7 @@ R F(...) {
 ...>
 }
 
-@field_8_next@
+@field_8_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_stuff\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4299,7 +4797,7 @@ R F(...) {
 ...>
 }
 
-@field_8_owner@
+@field_8_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_stuff\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4325,7 +4823,7 @@ R F(...) {
 ...>
 }
 
-@field_8_link@
+@field_8_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_stuff\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4363,7 +4861,7 @@ R F(...) {
 ...>
 }
 
-@field_9_item_id@
+@field_9_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_pos\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4383,7 +4881,7 @@ R F(...) {
 ...>
 }
 
-@field_9_flags_res@
+@field_9_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_pos\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4418,7 +4916,7 @@ R F(...) {
 ...>
 }
 
-@field_9_enchanted@
+@field_9_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_pos\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4453,7 +4951,7 @@ R F(...) {
 ...>
 }
 
-@field_9_doordir@
+@field_9_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_pos\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4488,7 +4986,7 @@ R F(...) {
 ...>
 }
 
-@field_9_invisible@
+@field_9_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_pos\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4523,7 +5021,7 @@ R F(...) {
 ...>
 }
 
-@field_9_is_quant@
+@field_9_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_pos\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4554,11 +5052,14 @@ R F(...) {
 |
 - (*(byte *)((char *)iVar5 + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)iVar5)->is_quant
+|
+- *(byte *)((char *)iVar5 + 0x1) >> 7
++ ((uw_object_hdr_t *)iVar5)->is_quant
 )
 ...>
 }
 
-@field_9_zpos@
+@field_9_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_pos\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4578,7 +5079,7 @@ R F(...) {
 ...>
 }
 
-@field_9_heading@
+@field_9_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_pos\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4601,7 +5102,7 @@ R F(...) {
 ...>
 }
 
-@field_9_ypos@
+@field_9_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_pos\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4630,7 +5131,7 @@ R F(...) {
 ...>
 }
 
-@field_9_xpos@
+@field_9_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_pos\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4655,11 +5156,14 @@ R F(...) {
 |
 - (*(byte *)((char *)iVar5 + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)iVar5)->xpos
+|
+- *(byte *)((char *)iVar5 + 0x3) >> 5
++ ((uw_object_hdr_t *)iVar5)->xpos
 )
 ...>
 }
 
-@field_9_quality@
+@field_9_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_pos\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4679,7 +5183,7 @@ R F(...) {
 ...>
 }
 
-@field_9_next@
+@field_9_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_pos\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4702,7 +5206,7 @@ R F(...) {
 ...>
 }
 
-@field_9_owner@
+@field_9_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_pos\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4722,7 +5226,7 @@ R F(...) {
 ...>
 }
 
-@field_9_link@
+@field_9_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_x_obj_pos\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4745,7 +5249,395 @@ R F(...) {
 ...>
 }
 
-@field_10_item_id@
+@field_10_item_id disable drop_cast, is_zero, isnt_zero@
+type R;
+identifier F =~ "^\(babl_builtin_find_barter_total\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar3 + 0x0) & 0x1ff
++ ((uw_object_hdr_t *)iVar3)->item_id
+|
+- ((ushort *)iVar3)[0] & 0x1ff
++ ((uw_object_hdr_t *)iVar3)->item_id
+|
+- *(ushort *)iVar3 & 0x1ff
++ ((uw_object_hdr_t *)iVar3)->item_id
+)
+...>
+}
+
+@field_10_flags_res disable drop_cast, is_zero, isnt_zero@
+type R;
+identifier F =~ "^\(babl_builtin_find_barter_total\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar3 + 0x0) >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar3)->flags_res
+|
+- (*(ushort *)((char *)iVar3 + 0x0) & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar3)->flags_res
+|
+- (((ushort *)iVar3)[0] >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar3)->flags_res
+|
+- (((ushort *)iVar3)[0] & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar3)->flags_res
+|
+- (*(ushort *)iVar3 >> 9) & 0x7
++ ((uw_object_hdr_t *)iVar3)->flags_res
+|
+- (*(ushort *)iVar3 & 0xe00) >> 9
++ ((uw_object_hdr_t *)iVar3)->flags_res
+|
+- (*(byte *)((char *)iVar3 + 0x1) >> 1) & 0x7
++ ((uw_object_hdr_t *)iVar3)->flags_res
+|
+- (*(byte *)((char *)iVar3 + 0x1) & 0xe) >> 1
++ ((uw_object_hdr_t *)iVar3)->flags_res
+)
+...>
+}
+
+@field_10_enchanted disable drop_cast, is_zero, isnt_zero@
+type R;
+identifier F =~ "^\(babl_builtin_find_barter_total\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar3 + 0x0) >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar3)->enchanted
+|
+- (*(ushort *)((char *)iVar3 + 0x0) & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar3)->enchanted
+|
+- (((ushort *)iVar3)[0] >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar3)->enchanted
+|
+- (((ushort *)iVar3)[0] & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar3)->enchanted
+|
+- (*(ushort *)iVar3 >> 12) & 0x1
++ ((uw_object_hdr_t *)iVar3)->enchanted
+|
+- (*(ushort *)iVar3 & 0x1000) >> 12
++ ((uw_object_hdr_t *)iVar3)->enchanted
+|
+- (*(byte *)((char *)iVar3 + 0x1) >> 4) & 0x1
++ ((uw_object_hdr_t *)iVar3)->enchanted
+|
+- (*(byte *)((char *)iVar3 + 0x1) & 0x10) >> 4
++ ((uw_object_hdr_t *)iVar3)->enchanted
+)
+...>
+}
+
+@field_10_doordir disable drop_cast, is_zero, isnt_zero@
+type R;
+identifier F =~ "^\(babl_builtin_find_barter_total\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar3 + 0x0) >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar3)->doordir
+|
+- (*(ushort *)((char *)iVar3 + 0x0) & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar3)->doordir
+|
+- (((ushort *)iVar3)[0] >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar3)->doordir
+|
+- (((ushort *)iVar3)[0] & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar3)->doordir
+|
+- (*(ushort *)iVar3 >> 13) & 0x1
++ ((uw_object_hdr_t *)iVar3)->doordir
+|
+- (*(ushort *)iVar3 & 0x2000) >> 13
++ ((uw_object_hdr_t *)iVar3)->doordir
+|
+- (*(byte *)((char *)iVar3 + 0x1) >> 5) & 0x1
++ ((uw_object_hdr_t *)iVar3)->doordir
+|
+- (*(byte *)((char *)iVar3 + 0x1) & 0x20) >> 5
++ ((uw_object_hdr_t *)iVar3)->doordir
+)
+...>
+}
+
+@field_10_invisible disable drop_cast, is_zero, isnt_zero@
+type R;
+identifier F =~ "^\(babl_builtin_find_barter_total\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar3 + 0x0) >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar3)->invisible
+|
+- (*(ushort *)((char *)iVar3 + 0x0) & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar3)->invisible
+|
+- (((ushort *)iVar3)[0] >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar3)->invisible
+|
+- (((ushort *)iVar3)[0] & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar3)->invisible
+|
+- (*(ushort *)iVar3 >> 14) & 0x1
++ ((uw_object_hdr_t *)iVar3)->invisible
+|
+- (*(ushort *)iVar3 & 0x4000) >> 14
++ ((uw_object_hdr_t *)iVar3)->invisible
+|
+- (*(byte *)((char *)iVar3 + 0x1) >> 6) & 0x1
++ ((uw_object_hdr_t *)iVar3)->invisible
+|
+- (*(byte *)((char *)iVar3 + 0x1) & 0x40) >> 6
++ ((uw_object_hdr_t *)iVar3)->invisible
+)
+...>
+}
+
+@field_10_is_quant disable drop_cast, is_zero, isnt_zero@
+type R;
+identifier F =~ "^\(babl_builtin_find_barter_total\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar3 + 0x0) >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar3)->is_quant
+|
+- (*(ushort *)((char *)iVar3 + 0x0) & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar3)->is_quant
+|
+- (((ushort *)iVar3)[0] >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar3)->is_quant
+|
+- (((ushort *)iVar3)[0] & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar3)->is_quant
+|
+- (*(ushort *)iVar3 >> 15) & 0x1
++ ((uw_object_hdr_t *)iVar3)->is_quant
+|
+- (*(ushort *)iVar3 & 0x8000) >> 15
++ ((uw_object_hdr_t *)iVar3)->is_quant
+|
+- (*(byte *)((char *)iVar3 + 0x1) >> 7) & 0x1
++ ((uw_object_hdr_t *)iVar3)->is_quant
+|
+- (*(byte *)((char *)iVar3 + 0x1) & 0x80) >> 7
++ ((uw_object_hdr_t *)iVar3)->is_quant
+|
+- *(byte *)((char *)iVar3 + 0x1) >> 7
++ ((uw_object_hdr_t *)iVar3)->is_quant
+)
+...>
+}
+
+@field_10_zpos disable drop_cast, is_zero, isnt_zero@
+type R;
+identifier F =~ "^\(babl_builtin_find_barter_total\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar3 + 0x2) & 0x7f
++ ((uw_object_hdr_t *)iVar3)->zpos
+|
+- ((ushort *)iVar3)[1] & 0x7f
++ ((uw_object_hdr_t *)iVar3)->zpos
+|
+- *(byte *)((char *)iVar3 + 0x2) & 0x7f
++ ((uw_object_hdr_t *)iVar3)->zpos
+)
+...>
+}
+
+@field_10_heading disable drop_cast, is_zero, isnt_zero@
+type R;
+identifier F =~ "^\(babl_builtin_find_barter_total\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar3 + 0x2) >> 7) & 0x7
++ ((uw_object_hdr_t *)iVar3)->heading
+|
+- (*(ushort *)((char *)iVar3 + 0x2) & 0x380) >> 7
++ ((uw_object_hdr_t *)iVar3)->heading
+|
+- (((ushort *)iVar3)[1] >> 7) & 0x7
++ ((uw_object_hdr_t *)iVar3)->heading
+|
+- (((ushort *)iVar3)[1] & 0x380) >> 7
++ ((uw_object_hdr_t *)iVar3)->heading
+)
+...>
+}
+
+@field_10_ypos disable drop_cast, is_zero, isnt_zero@
+type R;
+identifier F =~ "^\(babl_builtin_find_barter_total\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar3 + 0x2) >> 10) & 0x7
++ ((uw_object_hdr_t *)iVar3)->ypos
+|
+- (*(ushort *)((char *)iVar3 + 0x2) & 0x1c00) >> 10
++ ((uw_object_hdr_t *)iVar3)->ypos
+|
+- (((ushort *)iVar3)[1] >> 10) & 0x7
++ ((uw_object_hdr_t *)iVar3)->ypos
+|
+- (((ushort *)iVar3)[1] & 0x1c00) >> 10
++ ((uw_object_hdr_t *)iVar3)->ypos
+|
+- (*(byte *)((char *)iVar3 + 0x3) >> 2) & 0x7
++ ((uw_object_hdr_t *)iVar3)->ypos
+|
+- (*(byte *)((char *)iVar3 + 0x3) & 0x1c) >> 2
++ ((uw_object_hdr_t *)iVar3)->ypos
+)
+...>
+}
+
+@field_10_xpos disable drop_cast, is_zero, isnt_zero@
+type R;
+identifier F =~ "^\(babl_builtin_find_barter_total\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar3 + 0x2) >> 13) & 0x7
++ ((uw_object_hdr_t *)iVar3)->xpos
+|
+- (*(ushort *)((char *)iVar3 + 0x2) & 0xe000) >> 13
++ ((uw_object_hdr_t *)iVar3)->xpos
+|
+- (((ushort *)iVar3)[1] >> 13) & 0x7
++ ((uw_object_hdr_t *)iVar3)->xpos
+|
+- (((ushort *)iVar3)[1] & 0xe000) >> 13
++ ((uw_object_hdr_t *)iVar3)->xpos
+|
+- (*(byte *)((char *)iVar3 + 0x3) >> 5) & 0x7
++ ((uw_object_hdr_t *)iVar3)->xpos
+|
+- (*(byte *)((char *)iVar3 + 0x3) & 0xe0) >> 5
++ ((uw_object_hdr_t *)iVar3)->xpos
+|
+- *(byte *)((char *)iVar3 + 0x3) >> 5
++ ((uw_object_hdr_t *)iVar3)->xpos
+)
+...>
+}
+
+@field_10_quality disable drop_cast, is_zero, isnt_zero@
+type R;
+identifier F =~ "^\(babl_builtin_find_barter_total\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar3 + 0x4) & 0x3f
++ ((uw_object_hdr_t *)iVar3)->quality
+|
+- ((ushort *)iVar3)[2] & 0x3f
++ ((uw_object_hdr_t *)iVar3)->quality
+|
+- *(byte *)((char *)iVar3 + 0x4) & 0x3f
++ ((uw_object_hdr_t *)iVar3)->quality
+)
+...>
+}
+
+@field_10_next disable drop_cast, is_zero, isnt_zero@
+type R;
+identifier F =~ "^\(babl_builtin_find_barter_total\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar3 + 0x4) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar3)->next
+|
+- (*(ushort *)((char *)iVar3 + 0x4) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar3)->next
+|
+- (((ushort *)iVar3)[2] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar3)->next
+|
+- (((ushort *)iVar3)[2] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar3)->next
+)
+...>
+}
+
+@field_10_owner disable drop_cast, is_zero, isnt_zero@
+type R;
+identifier F =~ "^\(babl_builtin_find_barter_total\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)iVar3 + 0x6) & 0x3f
++ ((uw_object_hdr_t *)iVar3)->owner
+|
+- ((ushort *)iVar3)[3] & 0x3f
++ ((uw_object_hdr_t *)iVar3)->owner
+|
+- *(byte *)((char *)iVar3 + 0x6) & 0x3f
++ ((uw_object_hdr_t *)iVar3)->owner
+)
+...>
+}
+
+@field_10_link disable drop_cast, is_zero, isnt_zero@
+type R;
+identifier F =~ "^\(babl_builtin_find_barter_total\)$";
+typedef ushort, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- (*(ushort *)((char *)iVar3 + 0x6) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar3)->link
+|
+- (*(ushort *)((char *)iVar3 + 0x6) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar3)->link
+|
+- (((ushort *)iVar3)[3] >> 6) & 0x3ff
++ ((uw_object_hdr_t *)iVar3)->link
+|
+- (((ushort *)iVar3)[3] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)iVar3)->link
+)
+...>
+}
+
+@field_11_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_give_ptr_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4774,7 +5666,7 @@ R F(...) {
 ...>
 }
 
-@field_10_flags_res@
+@field_11_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_give_ptr_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4823,11 +5715,17 @@ R F(...) {
 |
 - (*(byte *)((char *)item_rec + 0x1) & 0xe) >> 1
 + ((uw_object_hdr_t *)item_rec)->flags_res
+|
+- (*(byte *)(item_rec + 0x1) >> 1) & 0x7
++ ((uw_object_hdr_t *)item_rec)->flags_res
+|
+- (*(byte *)(item_rec + 0x1) & 0xe) >> 1
++ ((uw_object_hdr_t *)item_rec)->flags_res
 )
 ...>
 }
 
-@field_10_enchanted@
+@field_11_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_give_ptr_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4876,11 +5774,17 @@ R F(...) {
 |
 - (*(byte *)((char *)item_rec + 0x1) & 0x10) >> 4
 + ((uw_object_hdr_t *)item_rec)->enchanted
+|
+- (*(byte *)(item_rec + 0x1) >> 4) & 0x1
++ ((uw_object_hdr_t *)item_rec)->enchanted
+|
+- (*(byte *)(item_rec + 0x1) & 0x10) >> 4
++ ((uw_object_hdr_t *)item_rec)->enchanted
 )
 ...>
 }
 
-@field_10_doordir@
+@field_11_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_give_ptr_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4929,11 +5833,17 @@ R F(...) {
 |
 - (*(byte *)((char *)item_rec + 0x1) & 0x20) >> 5
 + ((uw_object_hdr_t *)item_rec)->doordir
+|
+- (*(byte *)(item_rec + 0x1) >> 5) & 0x1
++ ((uw_object_hdr_t *)item_rec)->doordir
+|
+- (*(byte *)(item_rec + 0x1) & 0x20) >> 5
++ ((uw_object_hdr_t *)item_rec)->doordir
 )
 ...>
 }
 
-@field_10_invisible@
+@field_11_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_give_ptr_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4982,11 +5892,17 @@ R F(...) {
 |
 - (*(byte *)((char *)item_rec + 0x1) & 0x40) >> 6
 + ((uw_object_hdr_t *)item_rec)->invisible
+|
+- (*(byte *)(item_rec + 0x1) >> 6) & 0x1
++ ((uw_object_hdr_t *)item_rec)->invisible
+|
+- (*(byte *)(item_rec + 0x1) & 0x40) >> 6
++ ((uw_object_hdr_t *)item_rec)->invisible
 )
 ...>
 }
 
-@field_10_is_quant@
+@field_11_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_give_ptr_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5035,11 +5951,23 @@ R F(...) {
 |
 - (*(byte *)((char *)item_rec + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)item_rec)->is_quant
+|
+- *(byte *)((char *)item_rec + 0x1) >> 7
++ ((uw_object_hdr_t *)item_rec)->is_quant
+|
+- (*(byte *)(item_rec + 0x1) >> 7) & 0x1
++ ((uw_object_hdr_t *)item_rec)->is_quant
+|
+- (*(byte *)(item_rec + 0x1) & 0x80) >> 7
++ ((uw_object_hdr_t *)item_rec)->is_quant
+|
+- *(byte *)(item_rec + 0x1) >> 7
++ ((uw_object_hdr_t *)item_rec)->is_quant
 )
 ...>
 }
 
-@field_10_zpos@
+@field_11_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_give_ptr_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5061,11 +5989,14 @@ R F(...) {
 |
 - item_rec[2] & 0x7f
 + ((uw_object_hdr_t *)item_rec)->zpos
+|
+- *(byte *)(item_rec + 0x2) & 0x7f
++ ((uw_object_hdr_t *)item_rec)->zpos
 )
 ...>
 }
 
-@field_10_heading@
+@field_11_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_give_ptr_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5094,7 +6025,7 @@ R F(...) {
 ...>
 }
 
-@field_10_ypos@
+@field_11_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_give_ptr_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5125,11 +6056,17 @@ R F(...) {
 |
 - (*(byte *)((char *)item_rec + 0x3) & 0x1c) >> 2
 + ((uw_object_hdr_t *)item_rec)->ypos
+|
+- (*(byte *)(item_rec + 0x3) >> 2) & 0x7
++ ((uw_object_hdr_t *)item_rec)->ypos
+|
+- (*(byte *)(item_rec + 0x3) & 0x1c) >> 2
++ ((uw_object_hdr_t *)item_rec)->ypos
 )
 ...>
 }
 
-@field_10_xpos@
+@field_11_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_give_ptr_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5160,11 +6097,23 @@ R F(...) {
 |
 - (*(byte *)((char *)item_rec + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)item_rec)->xpos
+|
+- *(byte *)((char *)item_rec + 0x3) >> 5
++ ((uw_object_hdr_t *)item_rec)->xpos
+|
+- (*(byte *)(item_rec + 0x3) >> 5) & 0x7
++ ((uw_object_hdr_t *)item_rec)->xpos
+|
+- (*(byte *)(item_rec + 0x3) & 0xe0) >> 5
++ ((uw_object_hdr_t *)item_rec)->xpos
+|
+- *(byte *)(item_rec + 0x3) >> 5
++ ((uw_object_hdr_t *)item_rec)->xpos
 )
 ...>
 }
 
-@field_10_quality@
+@field_11_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_give_ptr_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5186,11 +6135,14 @@ R F(...) {
 |
 - item_rec[4] & 0x3f
 + ((uw_object_hdr_t *)item_rec)->quality
+|
+- *(byte *)(item_rec + 0x4) & 0x3f
++ ((uw_object_hdr_t *)item_rec)->quality
 )
 ...>
 }
 
-@field_10_next@
+@field_11_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_give_ptr_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5219,7 +6171,7 @@ R F(...) {
 ...>
 }
 
-@field_10_owner@
+@field_11_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_give_ptr_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5241,11 +6193,14 @@ R F(...) {
 |
 - item_rec[6] & 0x3f
 + ((uw_object_hdr_t *)item_rec)->owner
+|
+- *(byte *)(item_rec + 0x6) & 0x3f
++ ((uw_object_hdr_t *)item_rec)->owner
 )
 ...>
 }
 
-@field_10_link@
+@field_11_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_give_ptr_npc\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5274,7 +6229,7 @@ R F(...) {
 ...>
 }
 
-@field_11_item_id@
+@field_12_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_identify_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5303,7 +6258,7 @@ R F(...) {
 ...>
 }
 
-@field_11_flags_res@
+@field_12_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_identify_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5352,11 +6307,17 @@ R F(...) {
 |
 - (*(byte *)((char *)iVar5 + 0x1) & 0xe) >> 1
 + ((uw_object_hdr_t *)iVar5)->flags_res
+|
+- (*(byte *)(iVar5 + 0x1) >> 1) & 0x7
++ ((uw_object_hdr_t *)iVar5)->flags_res
+|
+- (*(byte *)(iVar5 + 0x1) & 0xe) >> 1
++ ((uw_object_hdr_t *)iVar5)->flags_res
 )
 ...>
 }
 
-@field_11_enchanted@
+@field_12_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_identify_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5405,11 +6366,17 @@ R F(...) {
 |
 - (*(byte *)((char *)iVar5 + 0x1) & 0x10) >> 4
 + ((uw_object_hdr_t *)iVar5)->enchanted
+|
+- (*(byte *)(iVar5 + 0x1) >> 4) & 0x1
++ ((uw_object_hdr_t *)iVar5)->enchanted
+|
+- (*(byte *)(iVar5 + 0x1) & 0x10) >> 4
++ ((uw_object_hdr_t *)iVar5)->enchanted
 )
 ...>
 }
 
-@field_11_doordir@
+@field_12_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_identify_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5458,11 +6425,17 @@ R F(...) {
 |
 - (*(byte *)((char *)iVar5 + 0x1) & 0x20) >> 5
 + ((uw_object_hdr_t *)iVar5)->doordir
+|
+- (*(byte *)(iVar5 + 0x1) >> 5) & 0x1
++ ((uw_object_hdr_t *)iVar5)->doordir
+|
+- (*(byte *)(iVar5 + 0x1) & 0x20) >> 5
++ ((uw_object_hdr_t *)iVar5)->doordir
 )
 ...>
 }
 
-@field_11_invisible@
+@field_12_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_identify_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5511,11 +6484,17 @@ R F(...) {
 |
 - (*(byte *)((char *)iVar5 + 0x1) & 0x40) >> 6
 + ((uw_object_hdr_t *)iVar5)->invisible
+|
+- (*(byte *)(iVar5 + 0x1) >> 6) & 0x1
++ ((uw_object_hdr_t *)iVar5)->invisible
+|
+- (*(byte *)(iVar5 + 0x1) & 0x40) >> 6
++ ((uw_object_hdr_t *)iVar5)->invisible
 )
 ...>
 }
 
-@field_11_is_quant@
+@field_12_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_identify_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5564,11 +6543,23 @@ R F(...) {
 |
 - (*(byte *)((char *)iVar5 + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)iVar5)->is_quant
+|
+- *(byte *)((char *)iVar5 + 0x1) >> 7
++ ((uw_object_hdr_t *)iVar5)->is_quant
+|
+- (*(byte *)(iVar5 + 0x1) >> 7) & 0x1
++ ((uw_object_hdr_t *)iVar5)->is_quant
+|
+- (*(byte *)(iVar5 + 0x1) & 0x80) >> 7
++ ((uw_object_hdr_t *)iVar5)->is_quant
+|
+- *(byte *)(iVar5 + 0x1) >> 7
++ ((uw_object_hdr_t *)iVar5)->is_quant
 )
 ...>
 }
 
-@field_11_zpos@
+@field_12_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_identify_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5590,11 +6581,14 @@ R F(...) {
 |
 - iVar5[2] & 0x7f
 + ((uw_object_hdr_t *)iVar5)->zpos
+|
+- *(byte *)(iVar5 + 0x2) & 0x7f
++ ((uw_object_hdr_t *)iVar5)->zpos
 )
 ...>
 }
 
-@field_11_heading@
+@field_12_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_identify_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5623,7 +6617,7 @@ R F(...) {
 ...>
 }
 
-@field_11_ypos@
+@field_12_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_identify_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5654,11 +6648,17 @@ R F(...) {
 |
 - (*(byte *)((char *)iVar5 + 0x3) & 0x1c) >> 2
 + ((uw_object_hdr_t *)iVar5)->ypos
+|
+- (*(byte *)(iVar5 + 0x3) >> 2) & 0x7
++ ((uw_object_hdr_t *)iVar5)->ypos
+|
+- (*(byte *)(iVar5 + 0x3) & 0x1c) >> 2
++ ((uw_object_hdr_t *)iVar5)->ypos
 )
 ...>
 }
 
-@field_11_xpos@
+@field_12_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_identify_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5689,11 +6689,23 @@ R F(...) {
 |
 - (*(byte *)((char *)iVar5 + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)iVar5)->xpos
+|
+- *(byte *)((char *)iVar5 + 0x3) >> 5
++ ((uw_object_hdr_t *)iVar5)->xpos
+|
+- (*(byte *)(iVar5 + 0x3) >> 5) & 0x7
++ ((uw_object_hdr_t *)iVar5)->xpos
+|
+- (*(byte *)(iVar5 + 0x3) & 0xe0) >> 5
++ ((uw_object_hdr_t *)iVar5)->xpos
+|
+- *(byte *)(iVar5 + 0x3) >> 5
++ ((uw_object_hdr_t *)iVar5)->xpos
 )
 ...>
 }
 
-@field_11_quality@
+@field_12_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_identify_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5715,11 +6727,14 @@ R F(...) {
 |
 - iVar5[4] & 0x3f
 + ((uw_object_hdr_t *)iVar5)->quality
+|
+- *(byte *)(iVar5 + 0x4) & 0x3f
++ ((uw_object_hdr_t *)iVar5)->quality
 )
 ...>
 }
 
-@field_11_next@
+@field_12_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_identify_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5748,7 +6763,7 @@ R F(...) {
 ...>
 }
 
-@field_11_owner@
+@field_12_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_identify_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5770,11 +6785,14 @@ R F(...) {
 |
 - iVar5[6] & 0x3f
 + ((uw_object_hdr_t *)iVar5)->owner
+|
+- *(byte *)(iVar5 + 0x6) & 0x3f
++ ((uw_object_hdr_t *)iVar5)->owner
 )
 ...>
 }
 
-@field_11_link@
+@field_12_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_identify_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5803,7 +6821,7 @@ R F(...) {
 ...>
 }
 
-@field_12_item_id@
+@field_13_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_count_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5823,7 +6841,7 @@ R F(...) {
 ...>
 }
 
-@field_12_flags_res@
+@field_13_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_count_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5858,7 +6876,7 @@ R F(...) {
 ...>
 }
 
-@field_12_enchanted@
+@field_13_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_count_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5893,7 +6911,7 @@ R F(...) {
 ...>
 }
 
-@field_12_doordir@
+@field_13_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_count_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5928,7 +6946,7 @@ R F(...) {
 ...>
 }
 
-@field_12_invisible@
+@field_13_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_count_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5963,7 +6981,7 @@ R F(...) {
 ...>
 }
 
-@field_12_is_quant@
+@field_13_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_count_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5994,11 +7012,14 @@ R F(...) {
 |
 - (*(byte *)((char *)iVar2 + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)iVar2)->is_quant
+|
+- *(byte *)((char *)iVar2 + 0x1) >> 7
++ ((uw_object_hdr_t *)iVar2)->is_quant
 )
 ...>
 }
 
-@field_12_zpos@
+@field_13_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_count_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6018,7 +7039,7 @@ R F(...) {
 ...>
 }
 
-@field_12_heading@
+@field_13_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_count_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6041,7 +7062,7 @@ R F(...) {
 ...>
 }
 
-@field_12_ypos@
+@field_13_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_count_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6070,7 +7091,7 @@ R F(...) {
 ...>
 }
 
-@field_12_xpos@
+@field_13_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_count_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6095,11 +7116,14 @@ R F(...) {
 |
 - (*(byte *)((char *)iVar2 + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)iVar2)->xpos
+|
+- *(byte *)((char *)iVar2 + 0x3) >> 5
++ ((uw_object_hdr_t *)iVar2)->xpos
 )
 ...>
 }
 
-@field_12_quality@
+@field_13_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_count_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6119,7 +7143,7 @@ R F(...) {
 ...>
 }
 
-@field_12_next@
+@field_13_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_count_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6142,7 +7166,7 @@ R F(...) {
 ...>
 }
 
-@field_12_owner@
+@field_13_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_count_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6162,7 +7186,7 @@ R F(...) {
 ...>
 }
 
-@field_12_link@
+@field_13_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_count_inv\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6185,7 +7209,7 @@ R F(...) {
 ...>
 }
 
-@field_13_item_id@
+@field_14_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_check_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6205,7 +7229,7 @@ R F(...) {
 ...>
 }
 
-@field_13_flags_res@
+@field_14_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_check_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6240,7 +7264,7 @@ R F(...) {
 ...>
 }
 
-@field_13_enchanted@
+@field_14_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_check_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6275,7 +7299,7 @@ R F(...) {
 ...>
 }
 
-@field_13_doordir@
+@field_14_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_check_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6310,7 +7334,7 @@ R F(...) {
 ...>
 }
 
-@field_13_invisible@
+@field_14_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_check_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6345,7 +7369,7 @@ R F(...) {
 ...>
 }
 
-@field_13_is_quant@
+@field_14_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_check_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6376,11 +7400,14 @@ R F(...) {
 |
 - (*(byte *)((char *)iVar1 + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)iVar1)->is_quant
+|
+- *(byte *)((char *)iVar1 + 0x1) >> 7
++ ((uw_object_hdr_t *)iVar1)->is_quant
 )
 ...>
 }
 
-@field_13_zpos@
+@field_14_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_check_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6400,7 +7427,7 @@ R F(...) {
 ...>
 }
 
-@field_13_heading@
+@field_14_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_check_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6423,7 +7450,7 @@ R F(...) {
 ...>
 }
 
-@field_13_ypos@
+@field_14_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_check_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6452,7 +7479,7 @@ R F(...) {
 ...>
 }
 
-@field_13_xpos@
+@field_14_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_check_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6477,11 +7504,14 @@ R F(...) {
 |
 - (*(byte *)((char *)iVar1 + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)iVar1)->xpos
+|
+- *(byte *)((char *)iVar1 + 0x3) >> 5
++ ((uw_object_hdr_t *)iVar1)->xpos
 )
 ...>
 }
 
-@field_13_quality@
+@field_14_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_check_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6501,7 +7531,7 @@ R F(...) {
 ...>
 }
 
-@field_13_next@
+@field_14_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_check_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6524,7 +7554,7 @@ R F(...) {
 ...>
 }
 
-@field_13_owner@
+@field_14_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_check_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6544,7 +7574,7 @@ R F(...) {
 ...>
 }
 
-@field_13_link@
+@field_14_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_check_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6567,7 +7597,7 @@ R F(...) {
 ...>
 }
 
-@field_14_item_id@
+@field_15_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6587,7 +7617,7 @@ R F(...) {
 ...>
 }
 
-@field_14_flags_res@
+@field_15_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6622,7 +7652,7 @@ R F(...) {
 ...>
 }
 
-@field_14_enchanted@
+@field_15_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6657,7 +7687,7 @@ R F(...) {
 ...>
 }
 
-@field_14_doordir@
+@field_15_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6692,7 +7722,7 @@ R F(...) {
 ...>
 }
 
-@field_14_invisible@
+@field_15_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6727,7 +7757,7 @@ R F(...) {
 ...>
 }
 
-@field_14_is_quant@
+@field_15_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6758,11 +7788,14 @@ R F(...) {
 |
 - (*(byte *)((char *)iVar4 + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)iVar4)->is_quant
+|
+- *(byte *)((char *)iVar4 + 0x1) >> 7
++ ((uw_object_hdr_t *)iVar4)->is_quant
 )
 ...>
 }
 
-@field_14_zpos@
+@field_15_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6782,7 +7815,7 @@ R F(...) {
 ...>
 }
 
-@field_14_heading@
+@field_15_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6805,7 +7838,7 @@ R F(...) {
 ...>
 }
 
-@field_14_ypos@
+@field_15_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6834,7 +7867,7 @@ R F(...) {
 ...>
 }
 
-@field_14_xpos@
+@field_15_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6859,11 +7892,14 @@ R F(...) {
 |
 - (*(byte *)((char *)iVar4 + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)iVar4)->xpos
+|
+- *(byte *)((char *)iVar4 + 0x3) >> 5
++ ((uw_object_hdr_t *)iVar4)->xpos
 )
 ...>
 }
 
-@field_14_quality@
+@field_15_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6883,7 +7919,7 @@ R F(...) {
 ...>
 }
 
-@field_14_next@
+@field_15_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6906,7 +7942,7 @@ R F(...) {
 ...>
 }
 
-@field_14_owner@
+@field_15_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6926,7 +7962,7 @@ R F(...) {
 ...>
 }
 
-@field_14_link@
+@field_15_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_set_inv_quality\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6949,7 +7985,7 @@ R F(...) {
 ...>
 }
 
-@field_15_item_id@
+@field_16_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6975,7 +8011,7 @@ R F(...) {
 ...>
 }
 
-@field_15_flags_res@
+@field_16_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7022,7 +8058,7 @@ R F(...) {
 ...>
 }
 
-@field_15_enchanted@
+@field_16_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7069,7 +8105,7 @@ R F(...) {
 ...>
 }
 
-@field_15_doordir@
+@field_16_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7116,7 +8152,7 @@ R F(...) {
 ...>
 }
 
-@field_15_invisible@
+@field_16_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7163,7 +8199,7 @@ R F(...) {
 ...>
 }
 
-@field_15_is_quant@
+@field_16_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7221,11 +8257,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar6 + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)puVar6)->is_quant
+|
+- *(byte *)((char *)puVar6 + 0x1) >> 7
++ ((uw_object_hdr_t *)puVar6)->is_quant
 )
 ...>
 }
 
-@field_15_zpos@
+@field_16_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7251,7 +8290,7 @@ R F(...) {
 ...>
 }
 
-@field_15_heading@
+@field_16_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7280,7 +8319,7 @@ R F(...) {
 ...>
 }
 
-@field_15_ypos@
+@field_16_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7315,7 +8354,7 @@ R F(...) {
 ...>
 }
 
-@field_15_xpos@
+@field_16_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7355,11 +8394,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar6 + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)puVar6)->xpos
+|
+- *(byte *)((char *)puVar6 + 0x3) >> 5
++ ((uw_object_hdr_t *)puVar6)->xpos
 )
 ...>
 }
 
-@field_15_quality@
+@field_16_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7385,7 +8427,7 @@ R F(...) {
 ...>
 }
 
-@field_15_next@
+@field_16_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7423,7 +8465,7 @@ R F(...) {
 ...>
 }
 
-@field_15_owner@
+@field_16_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7449,7 +8491,7 @@ R F(...) {
 ...>
 }
 
-@field_15_link@
+@field_16_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7487,7 +8529,7 @@ R F(...) {
 ...>
 }
 
-@field_16_item_id@
+@field_17_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7513,7 +8555,7 @@ R F(...) {
 ...>
 }
 
-@field_16_flags_res@
+@field_17_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7560,7 +8602,7 @@ R F(...) {
 ...>
 }
 
-@field_16_enchanted@
+@field_17_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7607,7 +8649,7 @@ R F(...) {
 ...>
 }
 
-@field_16_doordir@
+@field_17_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7654,7 +8696,7 @@ R F(...) {
 ...>
 }
 
-@field_16_invisible@
+@field_17_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7701,7 +8743,7 @@ R F(...) {
 ...>
 }
 
-@field_16_is_quant@
+@field_17_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7759,11 +8801,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar14 + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)puVar14)->is_quant
+|
+- *(byte *)((char *)puVar14 + 0x1) >> 7
++ ((uw_object_hdr_t *)puVar14)->is_quant
 )
 ...>
 }
 
-@field_16_zpos@
+@field_17_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7789,7 +8834,7 @@ R F(...) {
 ...>
 }
 
-@field_16_heading@
+@field_17_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7818,7 +8863,7 @@ R F(...) {
 ...>
 }
 
-@field_16_ypos@
+@field_17_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7853,7 +8898,7 @@ R F(...) {
 ...>
 }
 
-@field_16_xpos@
+@field_17_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7893,11 +8938,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar14 + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)puVar14)->xpos
+|
+- *(byte *)((char *)puVar14 + 0x3) >> 5
++ ((uw_object_hdr_t *)puVar14)->xpos
 )
 ...>
 }
 
-@field_16_quality@
+@field_17_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7923,7 +8971,7 @@ R F(...) {
 ...>
 }
 
-@field_16_next@
+@field_17_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7961,7 +9009,7 @@ R F(...) {
 ...>
 }
 
-@field_16_owner@
+@field_17_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7987,7 +9035,7 @@ R F(...) {
 ...>
 }
 
-@field_16_link@
+@field_17_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8025,7 +9073,7 @@ R F(...) {
 ...>
 }
 
-@field_17_item_id@
+@field_18_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8051,7 +9099,7 @@ R F(...) {
 ...>
 }
 
-@field_17_flags_res@
+@field_18_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8098,7 +9146,7 @@ R F(...) {
 ...>
 }
 
-@field_17_enchanted@
+@field_18_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8145,7 +9193,7 @@ R F(...) {
 ...>
 }
 
-@field_17_doordir@
+@field_18_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8192,7 +9240,7 @@ R F(...) {
 ...>
 }
 
-@field_17_invisible@
+@field_18_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8239,7 +9287,7 @@ R F(...) {
 ...>
 }
 
-@field_17_is_quant@
+@field_18_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8297,11 +9345,14 @@ R F(...) {
 |
 - (*(byte *)((char *)uVar9 + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)uVar9)->is_quant
+|
+- *(byte *)((char *)uVar9 + 0x1) >> 7
++ ((uw_object_hdr_t *)uVar9)->is_quant
 )
 ...>
 }
 
-@field_17_zpos@
+@field_18_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8327,7 +9378,7 @@ R F(...) {
 ...>
 }
 
-@field_17_heading@
+@field_18_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8356,7 +9407,7 @@ R F(...) {
 ...>
 }
 
-@field_17_ypos@
+@field_18_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8391,7 +9442,7 @@ R F(...) {
 ...>
 }
 
-@field_17_xpos@
+@field_18_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8431,11 +9482,14 @@ R F(...) {
 |
 - (*(byte *)((char *)uVar9 + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)uVar9)->xpos
+|
+- *(byte *)((char *)uVar9 + 0x3) >> 5
++ ((uw_object_hdr_t *)uVar9)->xpos
 )
 ...>
 }
 
-@field_17_quality@
+@field_18_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8461,7 +9515,7 @@ R F(...) {
 ...>
 }
 
-@field_17_next@
+@field_18_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8499,7 +9553,7 @@ R F(...) {
 ...>
 }
 
-@field_17_owner@
+@field_18_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8525,7 +9579,7 @@ R F(...) {
 ...>
 }
 
-@field_17_link@
+@field_18_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8563,7 +9617,7 @@ R F(...) {
 ...>
 }
 
-@field_18_item_id@
+@field_19_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(end_barter_ui\|finalize_npc_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8589,7 +9643,7 @@ R F(...) {
 ...>
 }
 
-@field_18_flags_res@
+@field_19_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(end_barter_ui\|finalize_npc_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8636,7 +9690,7 @@ R F(...) {
 ...>
 }
 
-@field_18_enchanted@
+@field_19_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(end_barter_ui\|finalize_npc_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8683,7 +9737,7 @@ R F(...) {
 ...>
 }
 
-@field_18_doordir@
+@field_19_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(end_barter_ui\|finalize_npc_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8730,7 +9784,7 @@ R F(...) {
 ...>
 }
 
-@field_18_invisible@
+@field_19_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(end_barter_ui\|finalize_npc_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8777,7 +9831,7 @@ R F(...) {
 ...>
 }
 
-@field_18_is_quant@
+@field_19_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(end_barter_ui\|finalize_npc_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8835,11 +9889,14 @@ R F(...) {
 |
 - (*(byte *)((char *)uVar1 + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)uVar1)->is_quant
+|
+- *(byte *)((char *)uVar1 + 0x1) >> 7
++ ((uw_object_hdr_t *)uVar1)->is_quant
 )
 ...>
 }
 
-@field_18_zpos@
+@field_19_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(end_barter_ui\|finalize_npc_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8865,7 +9922,7 @@ R F(...) {
 ...>
 }
 
-@field_18_heading@
+@field_19_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(end_barter_ui\|finalize_npc_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8894,7 +9951,7 @@ R F(...) {
 ...>
 }
 
-@field_18_ypos@
+@field_19_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(end_barter_ui\|finalize_npc_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8929,7 +9986,7 @@ R F(...) {
 ...>
 }
 
-@field_18_xpos@
+@field_19_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(end_barter_ui\|finalize_npc_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8969,11 +10026,14 @@ R F(...) {
 |
 - (*(byte *)((char *)uVar1 + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)uVar1)->xpos
+|
+- *(byte *)((char *)uVar1 + 0x3) >> 5
++ ((uw_object_hdr_t *)uVar1)->xpos
 )
 ...>
 }
 
-@field_18_quality@
+@field_19_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(end_barter_ui\|finalize_npc_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8999,7 +10059,7 @@ R F(...) {
 ...>
 }
 
-@field_18_next@
+@field_19_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(end_barter_ui\|finalize_npc_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9037,7 +10097,7 @@ R F(...) {
 ...>
 }
 
-@field_18_owner@
+@field_19_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(end_barter_ui\|finalize_npc_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9063,7 +10123,7 @@ R F(...) {
 ...>
 }
 
-@field_18_link@
+@field_19_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(end_barter_ui\|finalize_npc_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9101,7 +10161,7 @@ R F(...) {
 ...>
 }
 
-@field_19_item_id@
+@field_20_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9130,7 +10190,7 @@ R F(...) {
 ...>
 }
 
-@field_19_flags_res@
+@field_20_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9179,11 +10239,17 @@ R F(...) {
 |
 - (*(byte *)((char *)obj_rec + 0x1) & 0xe) >> 1
 + ((uw_object_hdr_t *)obj_rec)->flags_res
+|
+- (*(byte *)(obj_rec + 0x1) >> 1) & 0x7
++ ((uw_object_hdr_t *)obj_rec)->flags_res
+|
+- (*(byte *)(obj_rec + 0x1) & 0xe) >> 1
++ ((uw_object_hdr_t *)obj_rec)->flags_res
 )
 ...>
 }
 
-@field_19_enchanted@
+@field_20_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9232,11 +10298,17 @@ R F(...) {
 |
 - (*(byte *)((char *)obj_rec + 0x1) & 0x10) >> 4
 + ((uw_object_hdr_t *)obj_rec)->enchanted
+|
+- (*(byte *)(obj_rec + 0x1) >> 4) & 0x1
++ ((uw_object_hdr_t *)obj_rec)->enchanted
+|
+- (*(byte *)(obj_rec + 0x1) & 0x10) >> 4
++ ((uw_object_hdr_t *)obj_rec)->enchanted
 )
 ...>
 }
 
-@field_19_doordir@
+@field_20_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9285,11 +10357,17 @@ R F(...) {
 |
 - (*(byte *)((char *)obj_rec + 0x1) & 0x20) >> 5
 + ((uw_object_hdr_t *)obj_rec)->doordir
+|
+- (*(byte *)(obj_rec + 0x1) >> 5) & 0x1
++ ((uw_object_hdr_t *)obj_rec)->doordir
+|
+- (*(byte *)(obj_rec + 0x1) & 0x20) >> 5
++ ((uw_object_hdr_t *)obj_rec)->doordir
 )
 ...>
 }
 
-@field_19_invisible@
+@field_20_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9338,11 +10416,17 @@ R F(...) {
 |
 - (*(byte *)((char *)obj_rec + 0x1) & 0x40) >> 6
 + ((uw_object_hdr_t *)obj_rec)->invisible
+|
+- (*(byte *)(obj_rec + 0x1) >> 6) & 0x1
++ ((uw_object_hdr_t *)obj_rec)->invisible
+|
+- (*(byte *)(obj_rec + 0x1) & 0x40) >> 6
++ ((uw_object_hdr_t *)obj_rec)->invisible
 )
 ...>
 }
 
-@field_19_is_quant@
+@field_20_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9391,11 +10475,23 @@ R F(...) {
 |
 - (*(byte *)((char *)obj_rec + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)obj_rec)->is_quant
+|
+- *(byte *)((char *)obj_rec + 0x1) >> 7
++ ((uw_object_hdr_t *)obj_rec)->is_quant
+|
+- (*(byte *)(obj_rec + 0x1) >> 7) & 0x1
++ ((uw_object_hdr_t *)obj_rec)->is_quant
+|
+- (*(byte *)(obj_rec + 0x1) & 0x80) >> 7
++ ((uw_object_hdr_t *)obj_rec)->is_quant
+|
+- *(byte *)(obj_rec + 0x1) >> 7
++ ((uw_object_hdr_t *)obj_rec)->is_quant
 )
 ...>
 }
 
-@field_19_zpos@
+@field_20_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9417,11 +10513,14 @@ R F(...) {
 |
 - obj_rec[2] & 0x7f
 + ((uw_object_hdr_t *)obj_rec)->zpos
+|
+- *(byte *)(obj_rec + 0x2) & 0x7f
++ ((uw_object_hdr_t *)obj_rec)->zpos
 )
 ...>
 }
 
-@field_19_heading@
+@field_20_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9450,7 +10549,7 @@ R F(...) {
 ...>
 }
 
-@field_19_ypos@
+@field_20_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9481,11 +10580,17 @@ R F(...) {
 |
 - (*(byte *)((char *)obj_rec + 0x3) & 0x1c) >> 2
 + ((uw_object_hdr_t *)obj_rec)->ypos
+|
+- (*(byte *)(obj_rec + 0x3) >> 2) & 0x7
++ ((uw_object_hdr_t *)obj_rec)->ypos
+|
+- (*(byte *)(obj_rec + 0x3) & 0x1c) >> 2
++ ((uw_object_hdr_t *)obj_rec)->ypos
 )
 ...>
 }
 
-@field_19_xpos@
+@field_20_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9516,11 +10621,23 @@ R F(...) {
 |
 - (*(byte *)((char *)obj_rec + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)obj_rec)->xpos
+|
+- *(byte *)((char *)obj_rec + 0x3) >> 5
++ ((uw_object_hdr_t *)obj_rec)->xpos
+|
+- (*(byte *)(obj_rec + 0x3) >> 5) & 0x7
++ ((uw_object_hdr_t *)obj_rec)->xpos
+|
+- (*(byte *)(obj_rec + 0x3) & 0xe0) >> 5
++ ((uw_object_hdr_t *)obj_rec)->xpos
+|
+- *(byte *)(obj_rec + 0x3) >> 5
++ ((uw_object_hdr_t *)obj_rec)->xpos
 )
 ...>
 }
 
-@field_19_quality@
+@field_20_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9542,11 +10659,14 @@ R F(...) {
 |
 - obj_rec[4] & 0x3f
 + ((uw_object_hdr_t *)obj_rec)->quality
+|
+- *(byte *)(obj_rec + 0x4) & 0x3f
++ ((uw_object_hdr_t *)obj_rec)->quality
 )
 ...>
 }
 
-@field_19_next@
+@field_20_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9575,7 +10695,7 @@ R F(...) {
 ...>
 }
 
-@field_19_owner@
+@field_20_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9597,11 +10717,14 @@ R F(...) {
 |
 - obj_rec[6] & 0x3f
 + ((uw_object_hdr_t *)obj_rec)->owner
+|
+- *(byte *)(obj_rec + 0x6) & 0x3f
++ ((uw_object_hdr_t *)obj_rec)->owner
 )
 ...>
 }
 
-@field_19_link@
+@field_20_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9630,7 +10753,7 @@ R F(...) {
 ...>
 }
 
-@field_20_item_id@
+@field_21_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9646,11 +10769,14 @@ R F(...) {
 |
 - *(ushort *)obj_ptr & 0x1ff
 + ((uw_object_hdr_t *)obj_ptr)->item_id
+|
+- *(ushort *)(obj_ptr + 0x0) & 0x1ff
++ ((uw_object_hdr_t *)obj_ptr)->item_id
 )
 ...>
 }
 
-@field_20_flags_res@
+@field_21_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9676,16 +10802,28 @@ R F(...) {
 - (*(ushort *)obj_ptr & 0xe00) >> 9
 + ((uw_object_hdr_t *)obj_ptr)->flags_res
 |
+- (*(ushort *)(obj_ptr + 0x0) >> 9) & 0x7
++ ((uw_object_hdr_t *)obj_ptr)->flags_res
+|
+- (*(ushort *)(obj_ptr + 0x0) & 0xe00) >> 9
++ ((uw_object_hdr_t *)obj_ptr)->flags_res
+|
 - (*(byte *)((char *)obj_ptr + 0x1) >> 1) & 0x7
 + ((uw_object_hdr_t *)obj_ptr)->flags_res
 |
 - (*(byte *)((char *)obj_ptr + 0x1) & 0xe) >> 1
 + ((uw_object_hdr_t *)obj_ptr)->flags_res
+|
+- (*(byte *)(obj_ptr + 0x1) >> 1) & 0x7
++ ((uw_object_hdr_t *)obj_ptr)->flags_res
+|
+- (*(byte *)(obj_ptr + 0x1) & 0xe) >> 1
++ ((uw_object_hdr_t *)obj_ptr)->flags_res
 )
 ...>
 }
 
-@field_20_enchanted@
+@field_21_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9711,16 +10849,28 @@ R F(...) {
 - (*(ushort *)obj_ptr & 0x1000) >> 12
 + ((uw_object_hdr_t *)obj_ptr)->enchanted
 |
+- (*(ushort *)(obj_ptr + 0x0) >> 12) & 0x1
++ ((uw_object_hdr_t *)obj_ptr)->enchanted
+|
+- (*(ushort *)(obj_ptr + 0x0) & 0x1000) >> 12
++ ((uw_object_hdr_t *)obj_ptr)->enchanted
+|
 - (*(byte *)((char *)obj_ptr + 0x1) >> 4) & 0x1
 + ((uw_object_hdr_t *)obj_ptr)->enchanted
 |
 - (*(byte *)((char *)obj_ptr + 0x1) & 0x10) >> 4
 + ((uw_object_hdr_t *)obj_ptr)->enchanted
+|
+- (*(byte *)(obj_ptr + 0x1) >> 4) & 0x1
++ ((uw_object_hdr_t *)obj_ptr)->enchanted
+|
+- (*(byte *)(obj_ptr + 0x1) & 0x10) >> 4
++ ((uw_object_hdr_t *)obj_ptr)->enchanted
 )
 ...>
 }
 
-@field_20_doordir@
+@field_21_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9746,16 +10896,28 @@ R F(...) {
 - (*(ushort *)obj_ptr & 0x2000) >> 13
 + ((uw_object_hdr_t *)obj_ptr)->doordir
 |
+- (*(ushort *)(obj_ptr + 0x0) >> 13) & 0x1
++ ((uw_object_hdr_t *)obj_ptr)->doordir
+|
+- (*(ushort *)(obj_ptr + 0x0) & 0x2000) >> 13
++ ((uw_object_hdr_t *)obj_ptr)->doordir
+|
 - (*(byte *)((char *)obj_ptr + 0x1) >> 5) & 0x1
 + ((uw_object_hdr_t *)obj_ptr)->doordir
 |
 - (*(byte *)((char *)obj_ptr + 0x1) & 0x20) >> 5
 + ((uw_object_hdr_t *)obj_ptr)->doordir
+|
+- (*(byte *)(obj_ptr + 0x1) >> 5) & 0x1
++ ((uw_object_hdr_t *)obj_ptr)->doordir
+|
+- (*(byte *)(obj_ptr + 0x1) & 0x20) >> 5
++ ((uw_object_hdr_t *)obj_ptr)->doordir
 )
 ...>
 }
 
-@field_20_invisible@
+@field_21_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9781,16 +10943,28 @@ R F(...) {
 - (*(ushort *)obj_ptr & 0x4000) >> 14
 + ((uw_object_hdr_t *)obj_ptr)->invisible
 |
+- (*(ushort *)(obj_ptr + 0x0) >> 14) & 0x1
++ ((uw_object_hdr_t *)obj_ptr)->invisible
+|
+- (*(ushort *)(obj_ptr + 0x0) & 0x4000) >> 14
++ ((uw_object_hdr_t *)obj_ptr)->invisible
+|
 - (*(byte *)((char *)obj_ptr + 0x1) >> 6) & 0x1
 + ((uw_object_hdr_t *)obj_ptr)->invisible
 |
 - (*(byte *)((char *)obj_ptr + 0x1) & 0x40) >> 6
 + ((uw_object_hdr_t *)obj_ptr)->invisible
+|
+- (*(byte *)(obj_ptr + 0x1) >> 6) & 0x1
++ ((uw_object_hdr_t *)obj_ptr)->invisible
+|
+- (*(byte *)(obj_ptr + 0x1) & 0x40) >> 6
++ ((uw_object_hdr_t *)obj_ptr)->invisible
 )
 ...>
 }
 
-@field_20_is_quant@
+@field_21_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9816,16 +10990,34 @@ R F(...) {
 - (*(ushort *)obj_ptr & 0x8000) >> 15
 + ((uw_object_hdr_t *)obj_ptr)->is_quant
 |
+- (*(ushort *)(obj_ptr + 0x0) >> 15) & 0x1
++ ((uw_object_hdr_t *)obj_ptr)->is_quant
+|
+- (*(ushort *)(obj_ptr + 0x0) & 0x8000) >> 15
++ ((uw_object_hdr_t *)obj_ptr)->is_quant
+|
 - (*(byte *)((char *)obj_ptr + 0x1) >> 7) & 0x1
 + ((uw_object_hdr_t *)obj_ptr)->is_quant
 |
 - (*(byte *)((char *)obj_ptr + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)obj_ptr)->is_quant
+|
+- *(byte *)((char *)obj_ptr + 0x1) >> 7
++ ((uw_object_hdr_t *)obj_ptr)->is_quant
+|
+- (*(byte *)(obj_ptr + 0x1) >> 7) & 0x1
++ ((uw_object_hdr_t *)obj_ptr)->is_quant
+|
+- (*(byte *)(obj_ptr + 0x1) & 0x80) >> 7
++ ((uw_object_hdr_t *)obj_ptr)->is_quant
+|
+- *(byte *)(obj_ptr + 0x1) >> 7
++ ((uw_object_hdr_t *)obj_ptr)->is_quant
 )
 ...>
 }
 
-@field_20_zpos@
+@field_21_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9839,13 +11031,19 @@ R F(...) {
 - ((ushort *)obj_ptr)[1] & 0x7f
 + ((uw_object_hdr_t *)obj_ptr)->zpos
 |
+- *(ushort *)(obj_ptr + 0x2) & 0x7f
++ ((uw_object_hdr_t *)obj_ptr)->zpos
+|
 - *(byte *)((char *)obj_ptr + 0x2) & 0x7f
++ ((uw_object_hdr_t *)obj_ptr)->zpos
+|
+- *(byte *)(obj_ptr + 0x2) & 0x7f
 + ((uw_object_hdr_t *)obj_ptr)->zpos
 )
 ...>
 }
 
-@field_20_heading@
+@field_21_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9864,11 +11062,17 @@ R F(...) {
 |
 - (((ushort *)obj_ptr)[1] & 0x380) >> 7
 + ((uw_object_hdr_t *)obj_ptr)->heading
+|
+- (*(ushort *)(obj_ptr + 0x2) >> 7) & 0x7
++ ((uw_object_hdr_t *)obj_ptr)->heading
+|
+- (*(ushort *)(obj_ptr + 0x2) & 0x380) >> 7
++ ((uw_object_hdr_t *)obj_ptr)->heading
 )
 ...>
 }
 
-@field_20_ypos@
+@field_21_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9888,16 +11092,28 @@ R F(...) {
 - (((ushort *)obj_ptr)[1] & 0x1c00) >> 10
 + ((uw_object_hdr_t *)obj_ptr)->ypos
 |
+- (*(ushort *)(obj_ptr + 0x2) >> 10) & 0x7
++ ((uw_object_hdr_t *)obj_ptr)->ypos
+|
+- (*(ushort *)(obj_ptr + 0x2) & 0x1c00) >> 10
++ ((uw_object_hdr_t *)obj_ptr)->ypos
+|
 - (*(byte *)((char *)obj_ptr + 0x3) >> 2) & 0x7
 + ((uw_object_hdr_t *)obj_ptr)->ypos
 |
 - (*(byte *)((char *)obj_ptr + 0x3) & 0x1c) >> 2
 + ((uw_object_hdr_t *)obj_ptr)->ypos
+|
+- (*(byte *)(obj_ptr + 0x3) >> 2) & 0x7
++ ((uw_object_hdr_t *)obj_ptr)->ypos
+|
+- (*(byte *)(obj_ptr + 0x3) & 0x1c) >> 2
++ ((uw_object_hdr_t *)obj_ptr)->ypos
 )
 ...>
 }
 
-@field_20_xpos@
+@field_21_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9917,16 +11133,34 @@ R F(...) {
 - (((ushort *)obj_ptr)[1] & 0xe000) >> 13
 + ((uw_object_hdr_t *)obj_ptr)->xpos
 |
+- (*(ushort *)(obj_ptr + 0x2) >> 13) & 0x7
++ ((uw_object_hdr_t *)obj_ptr)->xpos
+|
+- (*(ushort *)(obj_ptr + 0x2) & 0xe000) >> 13
++ ((uw_object_hdr_t *)obj_ptr)->xpos
+|
 - (*(byte *)((char *)obj_ptr + 0x3) >> 5) & 0x7
 + ((uw_object_hdr_t *)obj_ptr)->xpos
 |
 - (*(byte *)((char *)obj_ptr + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)obj_ptr)->xpos
+|
+- *(byte *)((char *)obj_ptr + 0x3) >> 5
++ ((uw_object_hdr_t *)obj_ptr)->xpos
+|
+- (*(byte *)(obj_ptr + 0x3) >> 5) & 0x7
++ ((uw_object_hdr_t *)obj_ptr)->xpos
+|
+- (*(byte *)(obj_ptr + 0x3) & 0xe0) >> 5
++ ((uw_object_hdr_t *)obj_ptr)->xpos
+|
+- *(byte *)(obj_ptr + 0x3) >> 5
++ ((uw_object_hdr_t *)obj_ptr)->xpos
 )
 ...>
 }
 
-@field_20_quality@
+@field_21_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9940,13 +11174,19 @@ R F(...) {
 - ((ushort *)obj_ptr)[2] & 0x3f
 + ((uw_object_hdr_t *)obj_ptr)->quality
 |
+- *(ushort *)(obj_ptr + 0x4) & 0x3f
++ ((uw_object_hdr_t *)obj_ptr)->quality
+|
 - *(byte *)((char *)obj_ptr + 0x4) & 0x3f
++ ((uw_object_hdr_t *)obj_ptr)->quality
+|
+- *(byte *)(obj_ptr + 0x4) & 0x3f
 + ((uw_object_hdr_t *)obj_ptr)->quality
 )
 ...>
 }
 
-@field_20_next@
+@field_21_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9965,11 +11205,17 @@ R F(...) {
 |
 - (((ushort *)obj_ptr)[2] & 0xffc0) >> 6
 + ((uw_object_hdr_t *)obj_ptr)->next
+|
+- (*(ushort *)(obj_ptr + 0x4) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)obj_ptr)->next
+|
+- (*(ushort *)(obj_ptr + 0x4) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)obj_ptr)->next
 )
 ...>
 }
 
-@field_20_owner@
+@field_21_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9983,13 +11229,19 @@ R F(...) {
 - ((ushort *)obj_ptr)[3] & 0x3f
 + ((uw_object_hdr_t *)obj_ptr)->owner
 |
+- *(ushort *)(obj_ptr + 0x6) & 0x3f
++ ((uw_object_hdr_t *)obj_ptr)->owner
+|
 - *(byte *)((char *)obj_ptr + 0x6) & 0x3f
++ ((uw_object_hdr_t *)obj_ptr)->owner
+|
+- *(byte *)(obj_ptr + 0x6) & 0x3f
 + ((uw_object_hdr_t *)obj_ptr)->owner
 )
 ...>
 }
 
-@field_20_link@
+@field_21_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10008,11 +11260,17 @@ R F(...) {
 |
 - (((ushort *)obj_ptr)[3] & 0xffc0) >> 6
 + ((uw_object_hdr_t *)obj_ptr)->link
+|
+- (*(ushort *)(obj_ptr + 0x6) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)obj_ptr)->link
+|
+- (*(ushort *)(obj_ptr + 0x6) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)obj_ptr)->link
 )
 ...>
 }
 
-@field_21_item_id@
+@field_22_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(redraw_barter_slot_icon\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10038,7 +11296,7 @@ R F(...) {
 ...>
 }
 
-@field_21_flags_res@
+@field_22_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(redraw_barter_slot_icon\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10085,7 +11343,7 @@ R F(...) {
 ...>
 }
 
-@field_21_enchanted@
+@field_22_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(redraw_barter_slot_icon\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10132,7 +11390,7 @@ R F(...) {
 ...>
 }
 
-@field_21_doordir@
+@field_22_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(redraw_barter_slot_icon\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10179,7 +11437,7 @@ R F(...) {
 ...>
 }
 
-@field_21_invisible@
+@field_22_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(redraw_barter_slot_icon\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10226,7 +11484,7 @@ R F(...) {
 ...>
 }
 
-@field_21_is_quant@
+@field_22_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(redraw_barter_slot_icon\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10269,11 +11527,14 @@ R F(...) {
 |
 - (*(byte *)((char *)psVar6 + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)psVar6)->is_quant
+|
+- *(byte *)((char *)psVar6 + 0x1) >> 7
++ ((uw_object_hdr_t *)psVar6)->is_quant
 )
 ...>
 }
 
-@field_21_zpos@
+@field_22_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(redraw_barter_slot_icon\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10299,7 +11560,7 @@ R F(...) {
 ...>
 }
 
-@field_21_heading@
+@field_22_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(redraw_barter_slot_icon\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10328,7 +11589,7 @@ R F(...) {
 ...>
 }
 
-@field_21_ypos@
+@field_22_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(redraw_barter_slot_icon\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10363,7 +11624,7 @@ R F(...) {
 ...>
 }
 
-@field_21_xpos@
+@field_22_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(redraw_barter_slot_icon\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10394,11 +11655,14 @@ R F(...) {
 |
 - (*(byte *)((char *)psVar6 + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)psVar6)->xpos
+|
+- *(byte *)((char *)psVar6 + 0x3) >> 5
++ ((uw_object_hdr_t *)psVar6)->xpos
 )
 ...>
 }
 
-@field_21_quality@
+@field_22_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(redraw_barter_slot_icon\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10424,7 +11688,7 @@ R F(...) {
 ...>
 }
 
-@field_21_next@
+@field_22_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(redraw_barter_slot_icon\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10453,7 +11717,7 @@ R F(...) {
 ...>
 }
 
-@field_21_owner@
+@field_22_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(redraw_barter_slot_icon\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10479,7 +11743,7 @@ R F(...) {
 ...>
 }
 
-@field_21_link@
+@field_22_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(redraw_barter_slot_icon\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10508,7 +11772,7 @@ R F(...) {
 ...>
 }
 
-@field_22_item_id@
+@field_23_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(merge_or_swap_barter_slot_item\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10534,7 +11798,7 @@ R F(...) {
 ...>
 }
 
-@field_22_flags_res@
+@field_23_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(merge_or_swap_barter_slot_item\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10581,7 +11845,7 @@ R F(...) {
 ...>
 }
 
-@field_22_enchanted@
+@field_23_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(merge_or_swap_barter_slot_item\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10628,7 +11892,7 @@ R F(...) {
 ...>
 }
 
-@field_22_doordir@
+@field_23_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(merge_or_swap_barter_slot_item\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10675,7 +11939,7 @@ R F(...) {
 ...>
 }
 
-@field_22_invisible@
+@field_23_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(merge_or_swap_barter_slot_item\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10722,7 +11986,7 @@ R F(...) {
 ...>
 }
 
-@field_22_is_quant@
+@field_23_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(merge_or_swap_barter_slot_item\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10780,11 +12044,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar5 + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)puVar5)->is_quant
+|
+- *(byte *)((char *)puVar5 + 0x1) >> 7
++ ((uw_object_hdr_t *)puVar5)->is_quant
 )
 ...>
 }
 
-@field_22_zpos@
+@field_23_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(merge_or_swap_barter_slot_item\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10810,7 +12077,7 @@ R F(...) {
 ...>
 }
 
-@field_22_heading@
+@field_23_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(merge_or_swap_barter_slot_item\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10839,7 +12106,7 @@ R F(...) {
 ...>
 }
 
-@field_22_ypos@
+@field_23_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(merge_or_swap_barter_slot_item\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10874,7 +12141,7 @@ R F(...) {
 ...>
 }
 
-@field_22_xpos@
+@field_23_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(merge_or_swap_barter_slot_item\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10914,11 +12181,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar5 + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)puVar5)->xpos
+|
+- *(byte *)((char *)puVar5 + 0x3) >> 5
++ ((uw_object_hdr_t *)puVar5)->xpos
 )
 ...>
 }
 
-@field_22_quality@
+@field_23_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(merge_or_swap_barter_slot_item\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10944,7 +12214,7 @@ R F(...) {
 ...>
 }
 
-@field_22_next@
+@field_23_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(merge_or_swap_barter_slot_item\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10982,7 +12252,7 @@ R F(...) {
 ...>
 }
 
-@field_22_owner@
+@field_23_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(merge_or_swap_barter_slot_item\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11008,7 +12278,7 @@ R F(...) {
 ...>
 }
 
-@field_22_link@
+@field_23_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(merge_or_swap_barter_slot_item\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11046,7 +12316,7 @@ R F(...) {
 ...>
 }
 
-@field_23_item_id@
+@field_24_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_npc_item_preference\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11072,7 +12342,7 @@ R F(...) {
 ...>
 }
 
-@field_23_flags_res@
+@field_24_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_npc_item_preference\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11119,7 +12389,7 @@ R F(...) {
 ...>
 }
 
-@field_23_enchanted@
+@field_24_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_npc_item_preference\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11166,7 +12436,7 @@ R F(...) {
 ...>
 }
 
-@field_23_doordir@
+@field_24_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_npc_item_preference\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11213,7 +12483,7 @@ R F(...) {
 ...>
 }
 
-@field_23_invisible@
+@field_24_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_npc_item_preference\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11260,7 +12530,7 @@ R F(...) {
 ...>
 }
 
-@field_23_is_quant@
+@field_24_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_npc_item_preference\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11318,11 +12588,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar2 + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)puVar2)->is_quant
+|
+- *(byte *)((char *)puVar2 + 0x1) >> 7
++ ((uw_object_hdr_t *)puVar2)->is_quant
 )
 ...>
 }
 
-@field_23_zpos@
+@field_24_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_npc_item_preference\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11348,7 +12621,7 @@ R F(...) {
 ...>
 }
 
-@field_23_heading@
+@field_24_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_npc_item_preference\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11377,7 +12650,7 @@ R F(...) {
 ...>
 }
 
-@field_23_ypos@
+@field_24_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_npc_item_preference\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11412,7 +12685,7 @@ R F(...) {
 ...>
 }
 
-@field_23_xpos@
+@field_24_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_npc_item_preference\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11452,11 +12725,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar2 + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)puVar2)->xpos
+|
+- *(byte *)((char *)puVar2 + 0x3) >> 5
++ ((uw_object_hdr_t *)puVar2)->xpos
 )
 ...>
 }
 
-@field_23_quality@
+@field_24_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_npc_item_preference\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11482,7 +12758,7 @@ R F(...) {
 ...>
 }
 
-@field_23_next@
+@field_24_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_npc_item_preference\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11520,7 +12796,7 @@ R F(...) {
 ...>
 }
 
-@field_23_owner@
+@field_24_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_npc_item_preference\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11546,7 +12822,7 @@ R F(...) {
 ...>
 }
 
-@field_23_link@
+@field_24_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_npc_item_preference\|finalize_player_barter_items\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11584,7 +12860,7 @@ R F(...) {
 ...>
 }
 
-@field_24_item_id@
+@field_25_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(compute_barter_item_value\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11610,7 +12886,7 @@ R F(...) {
 ...>
 }
 
-@field_24_flags_res@
+@field_25_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(compute_barter_item_value\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11657,7 +12933,7 @@ R F(...) {
 ...>
 }
 
-@field_24_enchanted@
+@field_25_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(compute_barter_item_value\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11704,7 +12980,7 @@ R F(...) {
 ...>
 }
 
-@field_24_doordir@
+@field_25_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(compute_barter_item_value\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11751,7 +13027,7 @@ R F(...) {
 ...>
 }
 
-@field_24_invisible@
+@field_25_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(compute_barter_item_value\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11798,7 +13074,7 @@ R F(...) {
 ...>
 }
 
-@field_24_is_quant@
+@field_25_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(compute_barter_item_value\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11856,11 +13132,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar4 + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)puVar4)->is_quant
+|
+- *(byte *)((char *)puVar4 + 0x1) >> 7
++ ((uw_object_hdr_t *)puVar4)->is_quant
 )
 ...>
 }
 
-@field_24_zpos@
+@field_25_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(compute_barter_item_value\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11886,7 +13165,7 @@ R F(...) {
 ...>
 }
 
-@field_24_heading@
+@field_25_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(compute_barter_item_value\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11915,7 +13194,7 @@ R F(...) {
 ...>
 }
 
-@field_24_ypos@
+@field_25_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(compute_barter_item_value\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11950,7 +13229,7 @@ R F(...) {
 ...>
 }
 
-@field_24_xpos@
+@field_25_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(compute_barter_item_value\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11990,11 +13269,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar4 + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)puVar4)->xpos
+|
+- *(byte *)((char *)puVar4 + 0x3) >> 5
++ ((uw_object_hdr_t *)puVar4)->xpos
 )
 ...>
 }
 
-@field_24_quality@
+@field_25_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(compute_barter_item_value\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12020,7 +13302,7 @@ R F(...) {
 ...>
 }
 
-@field_24_next@
+@field_25_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(compute_barter_item_value\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12058,7 +13340,7 @@ R F(...) {
 ...>
 }
 
-@field_24_owner@
+@field_25_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(compute_barter_item_value\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12084,7 +13366,7 @@ R F(...) {
 ...>
 }
 
-@field_24_link@
+@field_25_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(compute_barter_item_value\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12122,7 +13404,7 @@ R F(...) {
 ...>
 }
 
-@field_25_item_id@
+@field_26_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collect_included_player_barter_items\|remove_item_from_npc_inventory_by_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12148,7 +13430,7 @@ R F(...) {
 ...>
 }
 
-@field_25_flags_res@
+@field_26_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collect_included_player_barter_items\|remove_item_from_npc_inventory_by_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12195,7 +13477,7 @@ R F(...) {
 ...>
 }
 
-@field_25_enchanted@
+@field_26_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collect_included_player_barter_items\|remove_item_from_npc_inventory_by_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12242,7 +13524,7 @@ R F(...) {
 ...>
 }
 
-@field_25_doordir@
+@field_26_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collect_included_player_barter_items\|remove_item_from_npc_inventory_by_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12289,7 +13571,7 @@ R F(...) {
 ...>
 }
 
-@field_25_invisible@
+@field_26_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collect_included_player_barter_items\|remove_item_from_npc_inventory_by_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12336,7 +13618,7 @@ R F(...) {
 ...>
 }
 
-@field_25_is_quant@
+@field_26_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collect_included_player_barter_items\|remove_item_from_npc_inventory_by_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12394,11 +13676,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar1 + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)puVar1)->is_quant
+|
+- *(byte *)((char *)puVar1 + 0x1) >> 7
++ ((uw_object_hdr_t *)puVar1)->is_quant
 )
 ...>
 }
 
-@field_25_zpos@
+@field_26_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collect_included_player_barter_items\|remove_item_from_npc_inventory_by_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12424,7 +13709,7 @@ R F(...) {
 ...>
 }
 
-@field_25_heading@
+@field_26_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collect_included_player_barter_items\|remove_item_from_npc_inventory_by_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12453,7 +13738,7 @@ R F(...) {
 ...>
 }
 
-@field_25_ypos@
+@field_26_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collect_included_player_barter_items\|remove_item_from_npc_inventory_by_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12488,7 +13773,7 @@ R F(...) {
 ...>
 }
 
-@field_25_xpos@
+@field_26_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collect_included_player_barter_items\|remove_item_from_npc_inventory_by_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12528,11 +13813,14 @@ R F(...) {
 |
 - (*(byte *)((char *)puVar1 + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)puVar1)->xpos
+|
+- *(byte *)((char *)puVar1 + 0x3) >> 5
++ ((uw_object_hdr_t *)puVar1)->xpos
 )
 ...>
 }
 
-@field_25_quality@
+@field_26_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collect_included_player_barter_items\|remove_item_from_npc_inventory_by_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12558,7 +13846,7 @@ R F(...) {
 ...>
 }
 
-@field_25_next@
+@field_26_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collect_included_player_barter_items\|remove_item_from_npc_inventory_by_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12596,7 +13884,7 @@ R F(...) {
 ...>
 }
 
-@field_25_owner@
+@field_26_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collect_included_player_barter_items\|remove_item_from_npc_inventory_by_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12622,7 +13910,7 @@ R F(...) {
 ...>
 }
 
-@field_25_link@
+@field_26_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collect_included_player_barter_items\|remove_item_from_npc_inventory_by_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12660,7 +13948,7 @@ R F(...) {
 ...>
 }
 
-@field_26_item_id@
+@field_27_item_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(give_barter_item_by_item_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12676,11 +13964,14 @@ R F(...) {
 |
 - *(ushort *)pvItem & 0x1ff
 + ((uw_object_hdr_t *)pvItem)->item_id
+|
+- *(ushort *)(pvItem + 0x0) & 0x1ff
++ ((uw_object_hdr_t *)pvItem)->item_id
 )
 ...>
 }
 
-@field_26_flags_res@
+@field_27_flags_res disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(give_barter_item_by_item_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12706,16 +13997,28 @@ R F(...) {
 - (*(ushort *)pvItem & 0xe00) >> 9
 + ((uw_object_hdr_t *)pvItem)->flags_res
 |
+- (*(ushort *)(pvItem + 0x0) >> 9) & 0x7
++ ((uw_object_hdr_t *)pvItem)->flags_res
+|
+- (*(ushort *)(pvItem + 0x0) & 0xe00) >> 9
++ ((uw_object_hdr_t *)pvItem)->flags_res
+|
 - (*(byte *)((char *)pvItem + 0x1) >> 1) & 0x7
 + ((uw_object_hdr_t *)pvItem)->flags_res
 |
 - (*(byte *)((char *)pvItem + 0x1) & 0xe) >> 1
 + ((uw_object_hdr_t *)pvItem)->flags_res
+|
+- (*(byte *)(pvItem + 0x1) >> 1) & 0x7
++ ((uw_object_hdr_t *)pvItem)->flags_res
+|
+- (*(byte *)(pvItem + 0x1) & 0xe) >> 1
++ ((uw_object_hdr_t *)pvItem)->flags_res
 )
 ...>
 }
 
-@field_26_enchanted@
+@field_27_enchanted disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(give_barter_item_by_item_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12741,16 +14044,28 @@ R F(...) {
 - (*(ushort *)pvItem & 0x1000) >> 12
 + ((uw_object_hdr_t *)pvItem)->enchanted
 |
+- (*(ushort *)(pvItem + 0x0) >> 12) & 0x1
++ ((uw_object_hdr_t *)pvItem)->enchanted
+|
+- (*(ushort *)(pvItem + 0x0) & 0x1000) >> 12
++ ((uw_object_hdr_t *)pvItem)->enchanted
+|
 - (*(byte *)((char *)pvItem + 0x1) >> 4) & 0x1
 + ((uw_object_hdr_t *)pvItem)->enchanted
 |
 - (*(byte *)((char *)pvItem + 0x1) & 0x10) >> 4
 + ((uw_object_hdr_t *)pvItem)->enchanted
+|
+- (*(byte *)(pvItem + 0x1) >> 4) & 0x1
++ ((uw_object_hdr_t *)pvItem)->enchanted
+|
+- (*(byte *)(pvItem + 0x1) & 0x10) >> 4
++ ((uw_object_hdr_t *)pvItem)->enchanted
 )
 ...>
 }
 
-@field_26_doordir@
+@field_27_doordir disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(give_barter_item_by_item_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12776,16 +14091,28 @@ R F(...) {
 - (*(ushort *)pvItem & 0x2000) >> 13
 + ((uw_object_hdr_t *)pvItem)->doordir
 |
+- (*(ushort *)(pvItem + 0x0) >> 13) & 0x1
++ ((uw_object_hdr_t *)pvItem)->doordir
+|
+- (*(ushort *)(pvItem + 0x0) & 0x2000) >> 13
++ ((uw_object_hdr_t *)pvItem)->doordir
+|
 - (*(byte *)((char *)pvItem + 0x1) >> 5) & 0x1
 + ((uw_object_hdr_t *)pvItem)->doordir
 |
 - (*(byte *)((char *)pvItem + 0x1) & 0x20) >> 5
 + ((uw_object_hdr_t *)pvItem)->doordir
+|
+- (*(byte *)(pvItem + 0x1) >> 5) & 0x1
++ ((uw_object_hdr_t *)pvItem)->doordir
+|
+- (*(byte *)(pvItem + 0x1) & 0x20) >> 5
++ ((uw_object_hdr_t *)pvItem)->doordir
 )
 ...>
 }
 
-@field_26_invisible@
+@field_27_invisible disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(give_barter_item_by_item_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12811,16 +14138,28 @@ R F(...) {
 - (*(ushort *)pvItem & 0x4000) >> 14
 + ((uw_object_hdr_t *)pvItem)->invisible
 |
+- (*(ushort *)(pvItem + 0x0) >> 14) & 0x1
++ ((uw_object_hdr_t *)pvItem)->invisible
+|
+- (*(ushort *)(pvItem + 0x0) & 0x4000) >> 14
++ ((uw_object_hdr_t *)pvItem)->invisible
+|
 - (*(byte *)((char *)pvItem + 0x1) >> 6) & 0x1
 + ((uw_object_hdr_t *)pvItem)->invisible
 |
 - (*(byte *)((char *)pvItem + 0x1) & 0x40) >> 6
 + ((uw_object_hdr_t *)pvItem)->invisible
+|
+- (*(byte *)(pvItem + 0x1) >> 6) & 0x1
++ ((uw_object_hdr_t *)pvItem)->invisible
+|
+- (*(byte *)(pvItem + 0x1) & 0x40) >> 6
++ ((uw_object_hdr_t *)pvItem)->invisible
 )
 ...>
 }
 
-@field_26_is_quant@
+@field_27_is_quant disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(give_barter_item_by_item_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12846,16 +14185,34 @@ R F(...) {
 - (*(ushort *)pvItem & 0x8000) >> 15
 + ((uw_object_hdr_t *)pvItem)->is_quant
 |
+- (*(ushort *)(pvItem + 0x0) >> 15) & 0x1
++ ((uw_object_hdr_t *)pvItem)->is_quant
+|
+- (*(ushort *)(pvItem + 0x0) & 0x8000) >> 15
++ ((uw_object_hdr_t *)pvItem)->is_quant
+|
 - (*(byte *)((char *)pvItem + 0x1) >> 7) & 0x1
 + ((uw_object_hdr_t *)pvItem)->is_quant
 |
 - (*(byte *)((char *)pvItem + 0x1) & 0x80) >> 7
 + ((uw_object_hdr_t *)pvItem)->is_quant
+|
+- *(byte *)((char *)pvItem + 0x1) >> 7
++ ((uw_object_hdr_t *)pvItem)->is_quant
+|
+- (*(byte *)(pvItem + 0x1) >> 7) & 0x1
++ ((uw_object_hdr_t *)pvItem)->is_quant
+|
+- (*(byte *)(pvItem + 0x1) & 0x80) >> 7
++ ((uw_object_hdr_t *)pvItem)->is_quant
+|
+- *(byte *)(pvItem + 0x1) >> 7
++ ((uw_object_hdr_t *)pvItem)->is_quant
 )
 ...>
 }
 
-@field_26_zpos@
+@field_27_zpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(give_barter_item_by_item_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12869,13 +14226,19 @@ R F(...) {
 - ((ushort *)pvItem)[1] & 0x7f
 + ((uw_object_hdr_t *)pvItem)->zpos
 |
+- *(ushort *)(pvItem + 0x2) & 0x7f
++ ((uw_object_hdr_t *)pvItem)->zpos
+|
 - *(byte *)((char *)pvItem + 0x2) & 0x7f
++ ((uw_object_hdr_t *)pvItem)->zpos
+|
+- *(byte *)(pvItem + 0x2) & 0x7f
 + ((uw_object_hdr_t *)pvItem)->zpos
 )
 ...>
 }
 
-@field_26_heading@
+@field_27_heading disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(give_barter_item_by_item_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12894,11 +14257,17 @@ R F(...) {
 |
 - (((ushort *)pvItem)[1] & 0x380) >> 7
 + ((uw_object_hdr_t *)pvItem)->heading
+|
+- (*(ushort *)(pvItem + 0x2) >> 7) & 0x7
++ ((uw_object_hdr_t *)pvItem)->heading
+|
+- (*(ushort *)(pvItem + 0x2) & 0x380) >> 7
++ ((uw_object_hdr_t *)pvItem)->heading
 )
 ...>
 }
 
-@field_26_ypos@
+@field_27_ypos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(give_barter_item_by_item_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12918,16 +14287,28 @@ R F(...) {
 - (((ushort *)pvItem)[1] & 0x1c00) >> 10
 + ((uw_object_hdr_t *)pvItem)->ypos
 |
+- (*(ushort *)(pvItem + 0x2) >> 10) & 0x7
++ ((uw_object_hdr_t *)pvItem)->ypos
+|
+- (*(ushort *)(pvItem + 0x2) & 0x1c00) >> 10
++ ((uw_object_hdr_t *)pvItem)->ypos
+|
 - (*(byte *)((char *)pvItem + 0x3) >> 2) & 0x7
 + ((uw_object_hdr_t *)pvItem)->ypos
 |
 - (*(byte *)((char *)pvItem + 0x3) & 0x1c) >> 2
 + ((uw_object_hdr_t *)pvItem)->ypos
+|
+- (*(byte *)(pvItem + 0x3) >> 2) & 0x7
++ ((uw_object_hdr_t *)pvItem)->ypos
+|
+- (*(byte *)(pvItem + 0x3) & 0x1c) >> 2
++ ((uw_object_hdr_t *)pvItem)->ypos
 )
 ...>
 }
 
-@field_26_xpos@
+@field_27_xpos disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(give_barter_item_by_item_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12947,16 +14328,34 @@ R F(...) {
 - (((ushort *)pvItem)[1] & 0xe000) >> 13
 + ((uw_object_hdr_t *)pvItem)->xpos
 |
+- (*(ushort *)(pvItem + 0x2) >> 13) & 0x7
++ ((uw_object_hdr_t *)pvItem)->xpos
+|
+- (*(ushort *)(pvItem + 0x2) & 0xe000) >> 13
++ ((uw_object_hdr_t *)pvItem)->xpos
+|
 - (*(byte *)((char *)pvItem + 0x3) >> 5) & 0x7
 + ((uw_object_hdr_t *)pvItem)->xpos
 |
 - (*(byte *)((char *)pvItem + 0x3) & 0xe0) >> 5
 + ((uw_object_hdr_t *)pvItem)->xpos
+|
+- *(byte *)((char *)pvItem + 0x3) >> 5
++ ((uw_object_hdr_t *)pvItem)->xpos
+|
+- (*(byte *)(pvItem + 0x3) >> 5) & 0x7
++ ((uw_object_hdr_t *)pvItem)->xpos
+|
+- (*(byte *)(pvItem + 0x3) & 0xe0) >> 5
++ ((uw_object_hdr_t *)pvItem)->xpos
+|
+- *(byte *)(pvItem + 0x3) >> 5
++ ((uw_object_hdr_t *)pvItem)->xpos
 )
 ...>
 }
 
-@field_26_quality@
+@field_27_quality disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(give_barter_item_by_item_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12970,13 +14369,19 @@ R F(...) {
 - ((ushort *)pvItem)[2] & 0x3f
 + ((uw_object_hdr_t *)pvItem)->quality
 |
+- *(ushort *)(pvItem + 0x4) & 0x3f
++ ((uw_object_hdr_t *)pvItem)->quality
+|
 - *(byte *)((char *)pvItem + 0x4) & 0x3f
++ ((uw_object_hdr_t *)pvItem)->quality
+|
+- *(byte *)(pvItem + 0x4) & 0x3f
 + ((uw_object_hdr_t *)pvItem)->quality
 )
 ...>
 }
 
-@field_26_next@
+@field_27_next disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(give_barter_item_by_item_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -12995,11 +14400,17 @@ R F(...) {
 |
 - (((ushort *)pvItem)[2] & 0xffc0) >> 6
 + ((uw_object_hdr_t *)pvItem)->next
+|
+- (*(ushort *)(pvItem + 0x4) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)pvItem)->next
+|
+- (*(ushort *)(pvItem + 0x4) & 0xffc0) >> 6
++ ((uw_object_hdr_t *)pvItem)->next
 )
 ...>
 }
 
-@field_26_owner@
+@field_27_owner disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(give_barter_item_by_item_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -13013,13 +14424,19 @@ R F(...) {
 - ((ushort *)pvItem)[3] & 0x3f
 + ((uw_object_hdr_t *)pvItem)->owner
 |
+- *(ushort *)(pvItem + 0x6) & 0x3f
++ ((uw_object_hdr_t *)pvItem)->owner
+|
 - *(byte *)((char *)pvItem + 0x6) & 0x3f
++ ((uw_object_hdr_t *)pvItem)->owner
+|
+- *(byte *)(pvItem + 0x6) & 0x3f
 + ((uw_object_hdr_t *)pvItem)->owner
 )
 ...>
 }
 
-@field_26_link@
+@field_27_link disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(give_barter_item_by_item_id\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -13037,6 +14454,12 @@ R F(...) {
 + ((uw_object_hdr_t *)pvItem)->link
 |
 - (((ushort *)pvItem)[3] & 0xffc0) >> 6
++ ((uw_object_hdr_t *)pvItem)->link
+|
+- (*(ushort *)(pvItem + 0x6) >> 6) & 0x3ff
++ ((uw_object_hdr_t *)pvItem)->link
+|
+- (*(ushort *)(pvItem + 0x6) & 0xffc0) >> 6
 + ((uw_object_hdr_t *)pvItem)->link
 )
 ...>

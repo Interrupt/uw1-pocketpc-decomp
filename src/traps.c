@@ -1119,10 +1119,10 @@ void apply_quest_event_numeric_effect(int context_type, char *record, int tile_x
   }
   else {
     iVar3 = get_object_record_by_slot_index((*(ushort *)(record + 6) & 0x7fc0) >> 6);
-    uVar1 = *(undefined2 *)(iVar3 + 2);
+    uVar1 = ((uw_object_hdr_t *)iVar3)->position_word;
     bVar2 = (byte)uVar1;
-    *(byte *)(iVar3 + 2) = (bVar2 ^ (byte)iVar4) & 0x7f ^ bVar2;
-    *(char *)(iVar3 + 3) = (char)((ushort)uVar1 >> 8);
+    ((uw_object_hdr_t *)iVar3)->position_word_low = (bVar2 ^ (byte)iVar4) & 0x7f ^ bVar2;
+    ((uw_object_hdr_t *)iVar3)->position_word_high = (byte)(char)((ushort)uVar1 >> 8);
   }
 }
 

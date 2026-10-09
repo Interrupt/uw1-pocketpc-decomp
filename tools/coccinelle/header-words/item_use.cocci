@@ -257,6 +257,9 @@ R F(...) {
 |
 - *(ushort *)iVar3
 + ((uw_object_hdr_t *)iVar3)->type_flags
+|
+- *(ushort *)(iVar3 + 0)
++ ((uw_object_hdr_t *)iVar3)->type_flags
 )
 ...>
 }
@@ -273,6 +276,9 @@ R F(...) {
 + ((uw_object_hdr_t *)iVar3)->position_word
 |
 - ((ushort *)iVar3)[1]
++ ((uw_object_hdr_t *)iVar3)->position_word
+|
+- *(ushort *)(iVar3 + 2)
 + ((uw_object_hdr_t *)iVar3)->position_word
 )
 ...>
@@ -291,6 +297,9 @@ R F(...) {
 |
 - ((ushort *)iVar3)[2]
 + ((uw_object_hdr_t *)iVar3)->chain_word
+|
+- *(ushort *)(iVar3 + 4)
++ ((uw_object_hdr_t *)iVar3)->chain_word
 )
 ...>
 }
@@ -307,6 +316,9 @@ R F(...) {
 + ((uw_object_hdr_t *)iVar3)->link_word
 |
 - ((ushort *)iVar3)[3]
++ ((uw_object_hdr_t *)iVar3)->link_word
+|
+- *(ushort *)(iVar3 + 6)
 + ((uw_object_hdr_t *)iVar3)->link_word
 )
 ...>
@@ -1484,6 +1496,9 @@ R F(...) {
 |
 - *(ushort *)slot_item
 + ((uw_object_hdr_t *)slot_item)->type_flags
+|
+- *(ushort *)(slot_item + 0)
++ ((uw_object_hdr_t *)slot_item)->type_flags
 )
 ...>
 }
@@ -1500,6 +1515,9 @@ R F(...) {
 + ((uw_object_hdr_t *)slot_item)->position_word
 |
 - ((ushort *)slot_item)[1]
++ ((uw_object_hdr_t *)slot_item)->position_word
+|
+- *(ushort *)(slot_item + 2)
 + ((uw_object_hdr_t *)slot_item)->position_word
 )
 ...>
@@ -1518,6 +1536,9 @@ R F(...) {
 |
 - ((ushort *)slot_item)[2]
 + ((uw_object_hdr_t *)slot_item)->chain_word
+|
+- *(ushort *)(slot_item + 4)
++ ((uw_object_hdr_t *)slot_item)->chain_word
 )
 ...>
 }
@@ -1534,6 +1555,9 @@ R F(...) {
 + ((uw_object_hdr_t *)slot_item)->link_word
 |
 - ((ushort *)slot_item)[3]
++ ((uw_object_hdr_t *)slot_item)->link_word
+|
+- *(ushort *)(slot_item + 6)
 + ((uw_object_hdr_t *)slot_item)->link_word
 )
 ...>

@@ -28,7 +28,7 @@ def generate(source):
                 expressions += [f'{name}[{index}]']
                 if offset == 0:
                     expressions += [f'*{name}']
-            if rawtype in ('char *', 'byte *', 'undefined *', 'undefined1 *', 'unsigned char *'):
+            if rawtype in ('char *', 'byte *', 'undefined *', 'undefined1 *', 'unsigned char *', 'void *'):
                 expressions += [f'*(ushort *)({name} + {offset})']
             rules.append(f'''@word_{number}_{index}@
 type R;

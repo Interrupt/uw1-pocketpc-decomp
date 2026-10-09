@@ -858,10 +858,10 @@ void set_custom_view_target(short mode)
   }
   else if (mode < 0x100) {
     iVar1 = get_object_record_by_slot_index(mode);
-    DAT_0023be90 = (*(byte *)(iVar1 + 0x17) & 0xfc) * 0x40 + (*(byte *)(iVar1 + 3) & 0xe0);
-    DAT_0023be92 = (*(byte *)(iVar1 + 3) & 0x1c) * 8 + (*(ushort *)(iVar1 + 0x16) & 0x3f0) * 0x10;
-    DAT_0023be94 = (*(byte *)(iVar1 + 2) & 0x7f) << 3;
-    DAT_0023bf00 = (*(ushort *)(iVar1 + 2) & 0xff80) << 6;
+    DAT_0023be90 = (*(byte *)(iVar1 + 0x17) & 0xfc) * 0x40 + ((((uw_object_hdr_t *)iVar1)->xpos << 5));
+    DAT_0023be92 = ((((uw_object_hdr_t *)iVar1)->ypos << 2)) * 8 + (*(ushort *)(iVar1 + 0x16) & 0x3f0) * 0x10;
+    DAT_0023be94 = (((uw_object_hdr_t *)iVar1)->zpos) << 3;
+    DAT_0023bf00 = (((uw_object_hdr_t *)iVar1)->position_word & 0xff80) << 6;
   }
   if (DAT_0023b82c == 0) {
     set_pending_update_flags(2);

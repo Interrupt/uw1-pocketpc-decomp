@@ -27,10 +27,10 @@ def variants(base, shift, width, total, signed=False):
     return forms
 
 
-def generate():
+def generate(words=WORDS, bytes_=BYTES):
     rules = []
     for member in ['->', '.']:
-        for word, fields in WORDS.items():
+        for word, fields in words.items():
             for shift, width, field in fields:
                 forms = variants(f'B{member}{word}', shift, width, 16)
                 forms += variants(f'B{member}{word}_signed', shift, width, 16, True)
@@ -44,28 +44,28 @@ def generate():
                     forms += variants(f'(byte)B{member}{word}', shift, width, 8)
                     forms += variants(f'(char)B{member}{word}', shift, width, 8, True)
                 key = f'{word}_{field}_{"ptr" if member == "->" else "value"}'
-                rules.append(f'''@{key}@
+                rules.append(f'''@{key} disable drop_cast, is_zero, isnt_zero@
 expression B;
 typedef byte;
 @@
 (
-''' + '\n|\n'.join(f'- {before}\n+ B{member}{field}{after}'
+''' + '\n|\n'.join(f'- {before}\n+ ' + (f'(B{member}{field}{after})' if after else f'B{member}{field}')
                     for before, after in dict.fromkeys(forms)) + '\n)\n')
-        for byte, fields in BYTES.items():
+        for byte, fields in bytes_.items():
             for shift, width, field in fields:
                 forms = variants(f'B{member}{byte}', shift, width, 8)
                 key = f'{byte}_{field}_{"ptr" if member == "->" else "value"}'
-                rules.append(f'''@{key}@
+                rules.append(f'''@{key} disable drop_cast, is_zero, isnt_zero@
 expression B;
 @@
 (
-''' + '\n|\n'.join(f'- {before}\n+ B{member}{field}{after}'
+''' + '\n|\n'.join(f'- {before}\n+ ' + (f'(B{member}{field}{after})' if after else f'B{member}{field}')
                     for before, after in forms) + '\n)\n')
     # Undo the retained bit position when a comparison proves it unnecessary.
     # Enumerating the field domain gives exact constants without truncating an
     # arbitrary comparison value that could have bits outside the field mask.
     for member in ['->', '.']:
-        for word, fields in WORDS.items():
+        for word, fields in words.items():
             for shift, width, field in fields:
                 shifts = [shift] if shift else []
                 if shift >= 8:
@@ -75,9 +75,14 @@ expression B;
                     forms = []
                     for value in values:
                         for op in ['==', '!=']:
-                            forms.append((f'(B{member}{field} << {bit}) {op} {hex(value << bit)}',
-                                          f'B{member}{field} {op} {value}'))
-                    rules.append(f'''@compare_{word}_{field}_{bit}_{"ptr" if member == "->" else "value"}@
+                            # A positioned replacement can retain the input's
+                            # mask parentheses as well as its own. Match both
+                            # levels so cast receivers simplify in one pass.
+                            for depth in [1, 2]:
+                                positioned = '(' * depth + f'B{member}{field} << {bit}' + ')' * depth
+                                forms.append((f'{positioned} {op} {hex(value << bit)}',
+                                              f'B{member}{field} {op} {value}'))
+                    rules.append(f'''@compare_{word}_{field}_{bit}_{"ptr" if member == "->" else "value"} disable drop_cast, is_zero, isnt_zero@
 expression B;
 @@
 (

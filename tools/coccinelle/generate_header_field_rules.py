@@ -25,6 +25,9 @@ def generate(source):
     for number, ((name, rawtype), functions) in enumerate(groups.items()):
         word_pointer = rawtype in ('ushort *', 'short *', 'unsigned short *', 'const ushort *')
         byte_pointer = rawtype in ('char *', 'byte *', 'undefined *', 'undefined1 *', 'unsigned char *')
+        # GNU C void-pointer arithmetic in the existing port advances bytes.
+        # It supports explicit dereferences, not bare void-value indexing.
+        byte_arithmetic = byte_pointer or rawtype == 'void *'
         unsigned_word = word_pointer and rawtype != 'short *'
         for offset, shift, mask, field in FIELDS:
             words = [f'*(ushort *)((char *){name} + {hex(offset)})',
@@ -35,9 +38,9 @@ def generate(source):
                 words += [f'{name}[{offset//2}]']
                 if offset == 0:
                     words += [f'*{name}']
-            if byte_pointer:
+            if byte_arithmetic:
                 words += [f'*(ushort *)({name} + {hex(offset)})']
-                if offset == 0:
+                if byte_pointer and offset == 0:
                     words += [f'CONCAT11({name}[1], *{name})', f'CONCAT11({name}[1], {name}[0])']
             patterns=[]
             for word in words:
@@ -55,17 +58,25 @@ def generate(source):
                     bytes_ += [f'(byte){name}[{offset//2}]']
                 if byte_pointer:
                     bytes_ += [f'{name}[{offset}]']
+                if byte_arithmetic:
+                    bytes_ += [f'*(byte *)({name} + {hex(offset)})']
                 for byte in bytes_:
                     patterns += ([f'({byte} >> {shift}) & {hex(mask)}',
                                   f'({byte} & {hex(mask<<shift)}) >> {shift}'] if shift else [f'{byte} & {hex(mask)}'])
             if shift >= 8:
                 bs=shift-8
                 byte=f'*(byte *)((char *){name} + {hex(offset+1)})'
-                patterns += ([f'({byte} >> {bs}) & {hex(mask)}', f'({byte} & {hex(mask<<bs)}) >> {bs}'] if bs else [f'{byte} & {hex(mask)}'])
+                byteforms = [byte]
+                if byte_arithmetic:
+                    byteforms.append(f'*(byte *)({name} + {hex(offset+1)})')
+                for byte in byteforms:
+                    patterns += ([f'({byte} >> {bs}) & {hex(mask)}', f'({byte} & {hex(mask<<bs)}) >> {bs}'] if bs else [f'{byte} & {hex(mask)}'])
+                    if bs + mask.bit_length() == 8:
+                        patterns.append(f'{byte} >> {bs}')
             # Raw index forms were checked against the original declaration,
             # not guessed from the variable's puVar/pcVar prefix.
             patterns = list(dict.fromkeys(patterns))
-            rules.append(f'@field_{number}_{field}@\ntype R;\nidentifier F =~ "{regex(functions)}";\ntypedef ushort, byte, uw_object_hdr_t;\n@@\nR F(...) {{\n<...\n(\n'+
+            rules.append(f'@field_{number}_{field} disable drop_cast, is_zero, isnt_zero@\ntype R;\nidentifier F =~ "{regex(functions)}";\ntypedef ushort, byte, uw_object_hdr_t;\n@@\nR F(...) {{\n<...\n(\n'+
                          '\n|\n'.join(f'- {p}\n+ ((uw_object_hdr_t *){name})->{field}' for p in patterns)+'\n)\n...>\n}\n')
     return '\n'.join(rules).rstrip() + '\n' if rules else ''
 
