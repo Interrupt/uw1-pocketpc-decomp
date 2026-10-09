@@ -76,6 +76,7 @@ void tearDown(void) {}
 enum {
     SLOT_OFFSET = 2,      /* model 2 is the bridge: gets the -16 x correction */
     SLOT_SIMPLE = 14,     /* absolute vertex run + one quad, no x correction */
+    SLOT_NONPLANAR = 15,  /* a quad whose 4th vertex is far off the plane */
     SLOT_EMPTY = 3,       /* radius 0 */
     SLOT_REL1 = 4,        /* one-axis relative vertices */
     SLOT_REL2 = 5,        /* two-axis relative vertices */
@@ -291,6 +292,25 @@ static void build_texquad(void)
     emit16(w, sizeof w / sizeof w[0]);
 }
 
+/* The port's renderer fills a polygon from a single normal off its first
+   three vertices, so a face whose remaining vertices sit well off that plane
+   renders stretched. This quad's fourth vertex is 60 units out (a tile is
+   256), so it must come back as a fan of triangles. */
+static void build_nonplanar(void)
+{
+    model_begin(SLOT_NONPLANAR, 100);
+    unsigned int w[] = {
+        0x0082, 4, 0,
+        fx(0),   fx(0),  fx(0),
+        fx(100), fx(0),  fx(0),
+        fx(100), fx(0),  fx(100),
+        fx(0),   fx(60), fx(100),
+        0x007e, 4, vn(0), vn(1), vn(2), vn(3),
+        0x0000
+    };
+    emit16(w, sizeof w / sizeof w[0]);
+}
+
 static void setup_once(void)
 {
     if (g_dir[0]) return;
@@ -324,6 +344,7 @@ static void setup_once(void)
     build_single();
     build_zero_radius();
     build_texquad();
+    build_nonplanar();
     /* SLOT_EMPTY keeps its zero-radius default. */
     w8(0, 0);
     g_exe_len = g_next + 16;
@@ -515,6 +536,29 @@ static void test_a_textured_quad_keeps_its_texture_origin_first(void)
         "a textured quad must not be plainly reversed -- that rotates its texture");
 }
 
+static void test_a_non_planar_face_is_split_into_triangles(void)
+{
+    TEST_ASSERT_TRUE(script_of(SLOT_NONPLANAR) > 0);
+    /* Emitted points are (file x, file z, file y), so the quad is
+       (0,0,0) (100,0,0) (100,100,0) (0,100,60) -- the first three lie in the
+       plane z=0 and the fourth is 60 off it. Reversed winding is 3,2,1,0, and
+       a fan from its first vertex gives (3,2,1) then (3,1,0). */
+    TEST_ASSERT_NOT_NULL_MESSAGE(strstr(g_script, "0,N,0,FF04,(3,2,1);"), g_script);
+    TEST_ASSERT_NOT_NULL_MESSAGE(strstr(g_script, "0,N,1,FF04,(3,1,0);"), g_script);
+    TEST_ASSERT_NULL_MESSAGE(strstr(g_script, "(3,2,1,0)"),
+        "a non-planar quad must not be emitted whole");
+}
+
+/* The control for the test above: a planar quad stays one polygon, so the
+   split is driven by flatness and is not applied to every quad. */
+static void test_a_planar_face_stays_one_polygon(void)
+{
+    TEST_ASSERT_TRUE(script_of(SLOT_SIMPLE) > 0);
+    TEST_ASSERT_NOT_NULL_MESSAGE(strstr(g_script, "0,N,0,FF04,(3,2,1,0);"), g_script);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(1, count_substr(g_script, "0,N,"),
+                                  "a planar quad is one part, not a fan");
+}
+
 /* Every emitted script has to be something parse_e_model_file will accept:
    the keywords it scans for, in order. */
 static void test_every_script_is_shaped_like_a_dot_e_file(void)
@@ -535,7 +579,7 @@ static void test_every_script_is_shaped_like_a_dot_e_file(void)
         /* No CR anywhere: the in-memory path skips the CRLF stripper. */
         TEST_ASSERT_NULL_MESSAGE(strchr(g_script, '\r'), "scripts must be LF-only");
     }
-    TEST_ASSERT_EQUAL_INT_MESSAGE(11, seen, "every non-empty scenario slot should decode");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(12, seen, "every non-empty scenario slot should decode");
 }
 
 /* A buffer too small to hold the script must be refused, not half-filled. */
@@ -564,6 +608,8 @@ int main(void)
     RUN_TEST(test_sparse_vertex_slots_are_renumbered_densely);
     RUN_TEST(test_the_origin_opcode_also_defines_a_vertex);
     RUN_TEST(test_a_textured_quad_keeps_its_texture_origin_first);
+    RUN_TEST(test_a_non_planar_face_is_split_into_triangles);
+    RUN_TEST(test_a_planar_face_stays_one_polygon);
     RUN_TEST(test_every_script_is_shaped_like_a_dot_e_file);
     RUN_TEST(test_a_short_buffer_is_refused);
     return UNITY_END();

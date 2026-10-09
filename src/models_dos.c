@@ -671,6 +671,56 @@ static int dos_model_x_offset(int dos_index)
   }
 }
 
+/* Is this face flat enough to hand the port's renderer as one polygon?
+ 
+   The renderer fills a face from a single normal taken off its first three
+   vertices, so a polygon whose remaining vertices sit well off that plane
+   renders as a stretched, flickering mess. The DOS data has a handful of
+   those: the large boulder has three faces up to 55 units out of plane and
+   the medium boulder one at 41 (a tile is 256 units), which is exactly the
+   "faces stretching out to the sky" seen on rocks. The port's own art does
+   not hit this because it ships those models pre-triangulated -- ROCKSMAL.E
+   is 33 triangles where the DOS model is 32 polygons.
+ 
+   Measured over every decoded model, the deviation is either under 2 units
+   or over 14, so the threshold sits in a wide empty gap and no judgement call
+   is being hidden in it. Notably the shrine's 47 multi-vertex faces -- its
+   24-gon ankh outline included -- are planar to 0.35 units and stay whole.
+ 
+   Compares squared to avoid a square root: dev > T becomes
+   dot(n,v)^2 > T^2 * dot(n,n). */
+static int face_is_planar(const int (*pts)[3], int n)
+{
+  if (n < 4) {
+    return 1;                                   /* a triangle always is */
+  }
+  double nx = 0.0, ny = 0.0, nz = 0.0;
+  for (int k = 1; k + 1 < n; k++) {
+    double ax = pts[k][0] - pts[0][0], ay = pts[k][1] - pts[0][1], az = pts[k][2] - pts[0][2];
+    double bx = pts[k + 1][0] - pts[0][0], by = pts[k + 1][1] - pts[0][1],
+           bz = pts[k + 1][2] - pts[0][2];
+    nx = ay * bz - az * by;
+    ny = az * bx - ax * bz;
+    nz = ax * by - ay * bx;
+    if (nx * nx + ny * ny + nz * nz > 1e-6) {
+      break;                                    /* first non-degenerate corner */
+    }
+  }
+  double nn = nx * nx + ny * ny + nz * nz;
+  if (nn <= 1e-6) {
+    return 1;                                   /* degenerate: nothing to split */
+  }
+  const double tol = 2.0;
+  for (int k = 1; k < n; k++) {
+    double d = nx * (pts[k][0] - pts[0][0]) + ny * (pts[k][1] - pts[0][1])
+             + nz * (pts[k][2] - pts[0][2]);
+    if (d * d > tol * tol * nn) {
+      return 0;
+    }
+  }
+  return 1;
+}
+
 int uw_dos_model_script(int dos_index, char *out, unsigned int out_sz)
 {
   if (!out || out_sz < 64 || dos_index < 0 || dos_index > 31) {
@@ -765,14 +815,37 @@ int uw_dos_model_script(int dos_index, char *out, unsigned int out_sz)
     if (n < 3) {
       continue;
     }
-    int order[DOS_MAX_FACE_VERTS];
-    n = emit_face_order(face, mapped, n, order);
-    emit(out, out_sz, &pos, "0,N,%d,FF04,(", parts);
+    int wound[DOS_MAX_FACE_VERTS];
+    n = emit_face_order(face, mapped, n, wound);
+
+    /* Planarity is judged on the emitted coordinates, so it matches exactly
+       what the renderer will be given. */
+    int coords[DOS_MAX_FACE_VERTS][3];
     for (int k = 0; k < n; k++) {
-      emit(out, out_sz, &pos, "%s%d", k ? "," : "", order[k]);
+      const dos_vert *q = &m->verts[order[wound[k]]];
+      coords[k][0] = q->x + x_fix;
+      coords[k][1] = q->z;
+      coords[k][2] = q->y;
     }
-    emit(out, out_sz, &pos, ");\n");
-    parts++;
+
+    if (face_is_planar((const int (*)[3])coords, n)) {
+      if (parts >= DOS_MAX_FACES) { m->truncated = 1; break; }
+      emit(out, out_sz, &pos, "0,N,%d,FF04,(", parts);
+      for (int k = 0; k < n; k++) {
+        emit(out, out_sz, &pos, "%s%d", k ? "," : "", wound[k]);
+      }
+      emit(out, out_sz, &pos, ");\n");
+      parts++;
+    } else {
+      /* Fan from the first vertex, which keeps the winding the whole face had
+         and makes every piece planar by construction. */
+      for (int k = 1; k + 1 < n; k++) {
+        if (parts >= DOS_MAX_FACES) { m->truncated = 1; break; }
+        emit(out, out_sz, &pos, "0,N,%d,FF04,(%d,%d,%d);\n",
+             parts, wound[0], wound[k], wound[k + 1]);
+        parts++;
+      }
+    }
   }
   emit(out, out_sz, &pos, "}\n\nEND\n");
 
