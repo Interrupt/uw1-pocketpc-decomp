@@ -5,6 +5,8 @@
    Inventory/UI services are fixtures; the game functions stay in their files. */
 char *DAT_00086df8, *DAT_0023be74, *DAT_0024fa2c, *DAT_0023cca0;
 uw_object_hdr_t *g_scratch_object_ptr;
+unsigned char g_fullbright_palette_mask[256];
+byte lighting_span_shade = 88;
 char *g_selected_object;
 undefined1 DAT_00086da8;
 uw_melee_type_props_t g_melee_type_props[16];
@@ -70,6 +72,8 @@ void lighting_fixture_reset(void)
 {
     setenv("UW_DATA_DIR", UW_TEST_DATA_DIR, 1);
     unsetenv("UW_LIGHT_MODE");
+    unsetenv("UW_FULLBRIGHT");
+    lighting_span_shade = 88;
     setenv("UW_DITHER", "0", 1); /* Isolate undithered falloff assertions. */
     unsetenv("UW_AMBIENT_BIAS_REDUCTION");
     g_ambient_bias_reduction = 0;
@@ -90,12 +94,14 @@ void lighting_fixture_reset(void)
     TEST_ASSERT_EQUAL_INT(4096, uw_file_read(h, mappings, 4096)); uw_file_close(h);
     /* Distinct RGB565 entries let assertions identify the exact palette index. */
     for (int i = 0; i < 256; i++) g_palette_rgb565_backing[i] = i + 0x100;
+    update_fullbright_palette_mask();
 }
 void lighting_fixture_dispose(void)
 {
     unsetenv("UW_LIGHT_MODE");
     unsetenv("UW_DITHER");
     unsetenv("UW_AMBIENT_BIAS_REDUCTION");
+    unsetenv("UW_FULLBRIGHT");
 }
 void assert_mode(int mode, int falloff, int initial, int offset)
 {
@@ -118,7 +124,7 @@ void lighting_draw_span(int reciprocal_w, int x, int y, int count, int clip_left
     left[0x30/4] = reciprocal_w;
     right[0x28/4] = (x + count) << 14;
     raster_textured_span(320, (char *)framebuffer, (char *)gradients,
-                        (char *)left, (char *)right, 1, 1, 0, clip, 88);
+                        (char *)left, (char *)right, 1, 1, 0, clip, lighting_span_shade);
     memcpy(pixels, framebuffer + y * 320 + x, count * sizeof *pixels);
 }
 ushort lighting_draw_texel(int reciprocal_w, int x, int y)

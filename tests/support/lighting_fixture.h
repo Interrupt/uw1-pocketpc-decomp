@@ -31,6 +31,7 @@ char *ce_strcat(char *p, char *s);
 void lighting_fixture_reset(void);
 void lighting_fixture_dispose(void);
 ushort lighting_draw_texel(int reciprocal_w, int x, int y);
+extern byte lighting_span_shade;
 void lighting_draw_span(int reciprocal_w, int x, int y, int count, int clip_left, ushort *pixels);
 void assert_mode(int mode, int falloff, int initial, int offset);
 #endif

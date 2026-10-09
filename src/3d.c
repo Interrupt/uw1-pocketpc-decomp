@@ -19,6 +19,22 @@
  undefined4 DAT_000b5638_backing[160];
 /* Initial byte at 0x842b0 in the original Pocket PC executable. */
 char DAT_000842b0 = 8;
+/* HACK: palette indices LIGHT.DAT (the DAT_0024fa2c shade table, 16 rows x 256) leaves unchanged at
+   every lit shade -- in DOS terms the fullbright colours (the 0x10-0x17 fire/lava ramp, the
+   0x00-0x0f effect colours, 0xf0-0xff). Row 0 is skipped: update_screen_flicker_effect zeroes its
+   first entries to flicker the view. Rebuilt whenever the table is (re)loaded. */
+unsigned char g_fullbright_palette_mask[256];
+
+void update_fullbright_palette_mask()
+{
+  int index, row;
+
+  for (index = 0; index < 256; index++) {
+    g_fullbright_palette_mask[index] = DAT_0024fa2c != 0;
+    for (row = 1; row < 16 && g_fullbright_palette_mask[index]; row++)
+      if ((unsigned char)DAT_0024fa2c[row * 256 + index] != index) g_fullbright_palette_mask[index] = 0;
+  }
+}
 char DAT_0023b830;
 undefined2 DAT_000da47c;
 /* build_trig_tables builds these as 361-entry (0..360 degrees) sin / cos tables (float bit
@@ -646,6 +662,11 @@ void raster_textured_span(int row, char *framebuffer, char *gradients, char *lef
      or an empty value disables it. */
   const char *dither_mode = getenv("UW_DITHER");
   bool dither_enabled = !dither_mode || (*dither_mode && strcmp(dither_mode, "0") != 0);
+  /* HACK: skip the ARM distance falloff for texels whose palette index LIGHT.DAT treats as
+     fullbright (lava, fire, magic colours), like the DOS shade table does. On by default; an
+     explicit UW_FULLBRIGHT=0 or empty value disables it. */
+  const char *fullbright_mode = getenv("UW_FULLBRIGHT");
+  bool fullbright_enabled = !fullbright_mode || (*fullbright_mode && strcmp(fullbright_mode, "0") != 0);
   char *local_4; /* fb row pointer */
 
   iVar12 = (intptr_t)DAT_0023cca0;
@@ -744,6 +765,9 @@ void raster_textured_span(int row, char *framebuffer, char *gradients, char *lef
           if (iVar12 < 0) iVar12 = 0;
           if (iVar12 > 15) iVar12 = 15;
           bVar1 = ((byte *)DAT_0024fa2c)[iVar12 * 256 + bVar1];
+          *puVar10 = (ushort)(&g_palette_rgb565)[bVar1];
+        }
+        else if (fullbright_enabled && g_fullbright_palette_mask[bVar1]) {
           *puVar10 = (ushort)(&g_palette_rgb565)[bVar1];
         }
         else {

@@ -1467,6 +1467,7 @@ void load_shading_level_config(char shading_level)
   }
 LAB_0006fff4:
   DAT_000872a0 = shading_level;
+  update_fullbright_palette_mask();
   ce_memset(acStack_11c,0,0x104);
   /* Reset the walker after any LIGHT.DAT/MONO.DAT path construction. */
   stack0xffdc323c_ptr = acStack_11c;
@@ -1543,6 +1544,7 @@ void load_light_tables()
     read_file_handle(iVar3,DAT_0024fa2c,0x1000);
     CloseHandle(iVar3);
   }
+  update_fullbright_palette_mask();
   ce_memset(acStack_11c,0,0x104);
   do {
     cVar1 = *pcVar4;
