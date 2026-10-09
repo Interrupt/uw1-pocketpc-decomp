@@ -8470,21 +8470,1508 @@ R F(...) {
 
 @receiver_5_w_0_0_pair_char_char@
 type R;
-identifier F =~ "^\(settle_mobile_to_immobile\)$";
+identifier F =~ "^\(sync_object_tile_position\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
 @@
 R F(...) {
 <...
-- *(char *)((char *)puVar9 + 0x0) = (char)V;
-- *(char *)((char *)puVar9 + 0x1) = (char)(V >> 8);
-+ ((uw_object_hdr_t *)puVar9)->type_flags = (ushort)V;
+- *(char *)((char *)projectile + 0x0) = (char)V;
+- *(char *)((char *)projectile + 0x1) = (char)(V >> 8);
++ ((uw_object_hdr_t *)projectile)->type_flags = (ushort)V;
 
 ...>
 }
 
 @receiver_5_w_0_0_pair_char_byte@
 type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)projectile + 0x0) = (char)V;
+- *(byte *)((char *)projectile + 0x1) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)projectile)->type_flags = (ushort)V;
+
+...>
+}
+
+@receiver_5_w_0_0_pair_byte_char@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)projectile + 0x0) = (byte)V;
+- *(char *)((char *)projectile + 0x1) = (char)(V >> 8);
++ ((uw_object_hdr_t *)projectile)->type_flags = (ushort)V;
+
+...>
+}
+
+@receiver_5_w_0_0_pair_byte_byte@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)projectile + 0x0) = (byte)V;
+- *(byte *)((char *)projectile + 0x1) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)projectile)->type_flags = (ushort)V;
+
+...>
+}
+
+@receiver_5_w_0_0_word_ushort@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)projectile + 0x0)
++ ((uw_object_hdr_t *)projectile)->type_flags
+|
+- *(ushort *)((byte *)projectile + 0x0)
++ ((uw_object_hdr_t *)projectile)->type_flags
+|
+- ((ushort *)projectile)[0x0]
++ ((uw_object_hdr_t *)projectile)->type_flags
+|
+- *(ushort *)((ushort *)projectile + 0x0)
++ ((uw_object_hdr_t *)projectile)->type_flags
+)
+...>
+}
+
+
+@receiver_5_w_0_0_word_undefined2@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)projectile + 0x0)
++ ((uw_object_hdr_t *)projectile)->type_flags
+|
+- *(undefined2 *)((byte *)projectile + 0x0)
++ ((uw_object_hdr_t *)projectile)->type_flags
+|
+- ((undefined2 *)projectile)[0x0]
++ ((uw_object_hdr_t *)projectile)->type_flags
+|
+- *(undefined2 *)((undefined2 *)projectile + 0x0)
++ ((uw_object_hdr_t *)projectile)->type_flags
+)
+...>
+}
+
+
+@receiver_5_w_0_0_word_short@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(short *)((char *)projectile + 0x0)
++ ((uw_object_hdr_t *)projectile)->type_flags_signed
+|
+- *(short *)((byte *)projectile + 0x0)
++ ((uw_object_hdr_t *)projectile)->type_flags_signed
+|
+- ((short *)projectile)[0x0]
++ ((uw_object_hdr_t *)projectile)->type_flags_signed
+|
+- *(short *)((short *)projectile + 0x0)
++ ((uw_object_hdr_t *)projectile)->type_flags_signed
+)
+...>
+}
+
+
+@receiver_5_w_0_0_byte_0_byte@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)projectile + 0x0)
++ ((uw_object_hdr_t *)projectile)->type_flags_low
+|
+- *(byte *)((byte *)projectile + 0x0)
++ ((uw_object_hdr_t *)projectile)->type_flags_low
+|
+- ((byte *)projectile)[0x0]
++ ((uw_object_hdr_t *)projectile)->type_flags_low
+|
+- *(byte *)((ushort *)projectile + 0x0)
++ ((uw_object_hdr_t *)projectile)->type_flags_low
+|
+- (byte)((ushort *)projectile)[0x0]
++ ((uw_object_hdr_t *)projectile)->type_flags_low
+|
+- *(byte *)projectile
++ ((uw_object_hdr_t *)projectile)->type_flags_low
+)
+...>
+}
+
+
+@receiver_5_w_0_0_byte_0_undefined1@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)projectile + 0x0)
++ ((uw_object_hdr_t *)projectile)->type_flags_low
+|
+- *(undefined1 *)((byte *)projectile + 0x0)
++ ((uw_object_hdr_t *)projectile)->type_flags_low
+|
+- ((undefined1 *)projectile)[0x0]
++ ((uw_object_hdr_t *)projectile)->type_flags_low
+|
+- *(undefined1 *)((ushort *)projectile + 0x0)
++ ((uw_object_hdr_t *)projectile)->type_flags_low
+|
+- (undefined1)((ushort *)projectile)[0x0]
++ ((uw_object_hdr_t *)projectile)->type_flags_low
+|
+- *(undefined1 *)projectile
++ ((uw_object_hdr_t *)projectile)->type_flags_low
+)
+...>
+}
+
+
+@receiver_5_w_0_0_address_0@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)projectile + 0x0)
++ (char *)&((uw_object_hdr_t *)projectile)->type_flags_low
+|
+- &*(char *)((byte *)projectile + 0x0)
++ (char *)&((uw_object_hdr_t *)projectile)->type_flags_low
+|
+- &((char *)projectile)[0x0]
++ (char *)&((uw_object_hdr_t *)projectile)->type_flags_low
+|
+- &*(char *)((ushort *)projectile + 0x0)
++ (char *)&((uw_object_hdr_t *)projectile)->type_flags_low
+|
+- &*(char *)projectile
++ (char *)&((uw_object_hdr_t *)projectile)->type_flags_low
+)
+...>
+}
+
+
+@receiver_5_w_0_0_store_0@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)projectile + 0x0) = E;
++ ((uw_object_hdr_t *)projectile)->type_flags_low = (byte)E;
+|
+- *(char *)((byte *)projectile + 0x0) = E;
++ ((uw_object_hdr_t *)projectile)->type_flags_low = (byte)E;
+|
+- ((char *)projectile)[0x0] = E;
++ ((uw_object_hdr_t *)projectile)->type_flags_low = (byte)E;
+|
+- *(char *)((ushort *)projectile + 0x0) = E;
++ ((uw_object_hdr_t *)projectile)->type_flags_low = (byte)E;
+|
+- *(char *)projectile = E;
++ ((uw_object_hdr_t *)projectile)->type_flags_low = (byte)E;
+)
+...>
+}
+
+
+@receiver_5_w_0_0_byte_0_char@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)projectile + 0x0)
++ (char)((uw_object_hdr_t *)projectile)->type_flags_low
+|
+- *(char *)((byte *)projectile + 0x0)
++ (char)((uw_object_hdr_t *)projectile)->type_flags_low
+|
+- ((char *)projectile)[0x0]
++ (char)((uw_object_hdr_t *)projectile)->type_flags_low
+|
+- *(char *)((ushort *)projectile + 0x0)
++ (char)((uw_object_hdr_t *)projectile)->type_flags_low
+|
+- (char)((ushort *)projectile)[0x0]
++ (char)((uw_object_hdr_t *)projectile)->type_flags_low
+|
+- *(char *)projectile
++ (char)((uw_object_hdr_t *)projectile)->type_flags_low
+)
+...>
+}
+
+
+@receiver_5_w_0_0_byte_1_byte@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)projectile + 0x1)
++ ((uw_object_hdr_t *)projectile)->type_flags_high
+|
+- *(byte *)((byte *)projectile + 0x1)
++ ((uw_object_hdr_t *)projectile)->type_flags_high
+|
+- ((byte *)projectile)[0x1]
++ ((uw_object_hdr_t *)projectile)->type_flags_high
+)
+...>
+}
+
+
+@receiver_5_w_0_0_byte_1_undefined1@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)projectile + 0x1)
++ ((uw_object_hdr_t *)projectile)->type_flags_high
+|
+- *(undefined1 *)((byte *)projectile + 0x1)
++ ((uw_object_hdr_t *)projectile)->type_flags_high
+|
+- ((undefined1 *)projectile)[0x1]
++ ((uw_object_hdr_t *)projectile)->type_flags_high
+)
+...>
+}
+
+
+@receiver_5_w_0_0_address_1@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)projectile + 0x1)
++ (char *)&((uw_object_hdr_t *)projectile)->type_flags_high
+|
+- &*(char *)((byte *)projectile + 0x1)
++ (char *)&((uw_object_hdr_t *)projectile)->type_flags_high
+|
+- &((char *)projectile)[0x1]
++ (char *)&((uw_object_hdr_t *)projectile)->type_flags_high
+)
+...>
+}
+
+
+@receiver_5_w_0_0_store_1@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)projectile + 0x1) = E;
++ ((uw_object_hdr_t *)projectile)->type_flags_high = (byte)E;
+|
+- *(char *)((byte *)projectile + 0x1) = E;
++ ((uw_object_hdr_t *)projectile)->type_flags_high = (byte)E;
+|
+- ((char *)projectile)[0x1] = E;
++ ((uw_object_hdr_t *)projectile)->type_flags_high = (byte)E;
+)
+...>
+}
+
+
+@receiver_5_w_0_0_byte_1_char@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)projectile + 0x1)
++ (char)((uw_object_hdr_t *)projectile)->type_flags_high
+|
+- *(char *)((byte *)projectile + 0x1)
++ (char)((uw_object_hdr_t *)projectile)->type_flags_high
+|
+- ((char *)projectile)[0x1]
++ (char)((uw_object_hdr_t *)projectile)->type_flags_high
+)
+...>
+}
+
+
+@receiver_5_w_2_17_pair_char_char@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)projectile + 0x2) = (char)V;
+- *(char *)((char *)projectile + 0x3) = (char)(V >> 8);
++ ((uw_object_hdr_t *)projectile)->position_word = (ushort)V;
+
+...>
+}
+
+@receiver_5_w_2_17_pair_char_byte@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)projectile + 0x2) = (char)V;
+- *(byte *)((char *)projectile + 0x3) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)projectile)->position_word = (ushort)V;
+
+...>
+}
+
+@receiver_5_w_2_17_pair_byte_char@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)projectile + 0x2) = (byte)V;
+- *(char *)((char *)projectile + 0x3) = (char)(V >> 8);
++ ((uw_object_hdr_t *)projectile)->position_word = (ushort)V;
+
+...>
+}
+
+@receiver_5_w_2_17_pair_byte_byte@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)projectile + 0x2) = (byte)V;
+- *(byte *)((char *)projectile + 0x3) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)projectile)->position_word = (ushort)V;
+
+...>
+}
+
+@receiver_5_w_2_17_word_ushort@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)projectile + 0x2)
++ ((uw_object_hdr_t *)projectile)->position_word
+|
+- *(ushort *)((byte *)projectile + 0x2)
++ ((uw_object_hdr_t *)projectile)->position_word
+|
+- ((ushort *)projectile)[0x1]
++ ((uw_object_hdr_t *)projectile)->position_word
+|
+- *(ushort *)((ushort *)projectile + 0x1)
++ ((uw_object_hdr_t *)projectile)->position_word
+)
+...>
+}
+
+
+@receiver_5_w_2_17_word_undefined2@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)projectile + 0x2)
++ ((uw_object_hdr_t *)projectile)->position_word
+|
+- *(undefined2 *)((byte *)projectile + 0x2)
++ ((uw_object_hdr_t *)projectile)->position_word
+|
+- ((undefined2 *)projectile)[0x1]
++ ((uw_object_hdr_t *)projectile)->position_word
+|
+- *(undefined2 *)((undefined2 *)projectile + 0x1)
++ ((uw_object_hdr_t *)projectile)->position_word
+)
+...>
+}
+
+
+@receiver_5_w_2_17_word_short@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(short *)((char *)projectile + 0x2)
++ ((uw_object_hdr_t *)projectile)->position_word_signed
+|
+- *(short *)((byte *)projectile + 0x2)
++ ((uw_object_hdr_t *)projectile)->position_word_signed
+|
+- ((short *)projectile)[0x1]
++ ((uw_object_hdr_t *)projectile)->position_word_signed
+|
+- *(short *)((short *)projectile + 0x1)
++ ((uw_object_hdr_t *)projectile)->position_word_signed
+)
+...>
+}
+
+
+@receiver_5_w_2_17_byte_2_byte@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)projectile + 0x2)
++ ((uw_object_hdr_t *)projectile)->position_word_low
+|
+- *(byte *)((byte *)projectile + 0x2)
++ ((uw_object_hdr_t *)projectile)->position_word_low
+|
+- ((byte *)projectile)[0x2]
++ ((uw_object_hdr_t *)projectile)->position_word_low
+|
+- *(byte *)((ushort *)projectile + 0x1)
++ ((uw_object_hdr_t *)projectile)->position_word_low
+|
+- (byte)((ushort *)projectile)[0x1]
++ ((uw_object_hdr_t *)projectile)->position_word_low
+)
+...>
+}
+
+
+@receiver_5_w_2_17_byte_2_undefined1@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)projectile + 0x2)
++ ((uw_object_hdr_t *)projectile)->position_word_low
+|
+- *(undefined1 *)((byte *)projectile + 0x2)
++ ((uw_object_hdr_t *)projectile)->position_word_low
+|
+- ((undefined1 *)projectile)[0x2]
++ ((uw_object_hdr_t *)projectile)->position_word_low
+|
+- *(undefined1 *)((ushort *)projectile + 0x1)
++ ((uw_object_hdr_t *)projectile)->position_word_low
+|
+- (undefined1)((ushort *)projectile)[0x1]
++ ((uw_object_hdr_t *)projectile)->position_word_low
+)
+...>
+}
+
+
+@receiver_5_w_2_17_address_2@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)projectile + 0x2)
++ (char *)&((uw_object_hdr_t *)projectile)->position_word_low
+|
+- &*(char *)((byte *)projectile + 0x2)
++ (char *)&((uw_object_hdr_t *)projectile)->position_word_low
+|
+- &((char *)projectile)[0x2]
++ (char *)&((uw_object_hdr_t *)projectile)->position_word_low
+|
+- &*(char *)((ushort *)projectile + 0x1)
++ (char *)&((uw_object_hdr_t *)projectile)->position_word_low
+)
+...>
+}
+
+
+@receiver_5_w_2_17_store_2@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)projectile + 0x2) = E;
++ ((uw_object_hdr_t *)projectile)->position_word_low = (byte)E;
+|
+- *(char *)((byte *)projectile + 0x2) = E;
++ ((uw_object_hdr_t *)projectile)->position_word_low = (byte)E;
+|
+- ((char *)projectile)[0x2] = E;
++ ((uw_object_hdr_t *)projectile)->position_word_low = (byte)E;
+|
+- *(char *)((ushort *)projectile + 0x1) = E;
++ ((uw_object_hdr_t *)projectile)->position_word_low = (byte)E;
+)
+...>
+}
+
+
+@receiver_5_w_2_17_byte_2_char@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)projectile + 0x2)
++ (char)((uw_object_hdr_t *)projectile)->position_word_low
+|
+- *(char *)((byte *)projectile + 0x2)
++ (char)((uw_object_hdr_t *)projectile)->position_word_low
+|
+- ((char *)projectile)[0x2]
++ (char)((uw_object_hdr_t *)projectile)->position_word_low
+|
+- *(char *)((ushort *)projectile + 0x1)
++ (char)((uw_object_hdr_t *)projectile)->position_word_low
+|
+- (char)((ushort *)projectile)[0x1]
++ (char)((uw_object_hdr_t *)projectile)->position_word_low
+)
+...>
+}
+
+
+@receiver_5_w_2_17_byte_3_byte@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)projectile + 0x3)
++ ((uw_object_hdr_t *)projectile)->position_word_high
+|
+- *(byte *)((byte *)projectile + 0x3)
++ ((uw_object_hdr_t *)projectile)->position_word_high
+|
+- ((byte *)projectile)[0x3]
++ ((uw_object_hdr_t *)projectile)->position_word_high
+)
+...>
+}
+
+
+@receiver_5_w_2_17_byte_3_undefined1@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)projectile + 0x3)
++ ((uw_object_hdr_t *)projectile)->position_word_high
+|
+- *(undefined1 *)((byte *)projectile + 0x3)
++ ((uw_object_hdr_t *)projectile)->position_word_high
+|
+- ((undefined1 *)projectile)[0x3]
++ ((uw_object_hdr_t *)projectile)->position_word_high
+)
+...>
+}
+
+
+@receiver_5_w_2_17_address_3@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)projectile + 0x3)
++ (char *)&((uw_object_hdr_t *)projectile)->position_word_high
+|
+- &*(char *)((byte *)projectile + 0x3)
++ (char *)&((uw_object_hdr_t *)projectile)->position_word_high
+|
+- &((char *)projectile)[0x3]
++ (char *)&((uw_object_hdr_t *)projectile)->position_word_high
+)
+...>
+}
+
+
+@receiver_5_w_2_17_store_3@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)projectile + 0x3) = E;
++ ((uw_object_hdr_t *)projectile)->position_word_high = (byte)E;
+|
+- *(char *)((byte *)projectile + 0x3) = E;
++ ((uw_object_hdr_t *)projectile)->position_word_high = (byte)E;
+|
+- ((char *)projectile)[0x3] = E;
++ ((uw_object_hdr_t *)projectile)->position_word_high = (byte)E;
+)
+...>
+}
+
+
+@receiver_5_w_2_17_byte_3_char@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)projectile + 0x3)
++ (char)((uw_object_hdr_t *)projectile)->position_word_high
+|
+- *(char *)((byte *)projectile + 0x3)
++ (char)((uw_object_hdr_t *)projectile)->position_word_high
+|
+- ((char *)projectile)[0x3]
++ (char)((uw_object_hdr_t *)projectile)->position_word_high
+)
+...>
+}
+
+
+@receiver_5_w_4_34_pair_char_char@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)projectile + 0x4) = (char)V;
+- *(char *)((char *)projectile + 0x5) = (char)(V >> 8);
++ ((uw_object_hdr_t *)projectile)->chain_word = (ushort)V;
+
+...>
+}
+
+@receiver_5_w_4_34_pair_char_byte@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)projectile + 0x4) = (char)V;
+- *(byte *)((char *)projectile + 0x5) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)projectile)->chain_word = (ushort)V;
+
+...>
+}
+
+@receiver_5_w_4_34_pair_byte_char@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)projectile + 0x4) = (byte)V;
+- *(char *)((char *)projectile + 0x5) = (char)(V >> 8);
++ ((uw_object_hdr_t *)projectile)->chain_word = (ushort)V;
+
+...>
+}
+
+@receiver_5_w_4_34_pair_byte_byte@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)projectile + 0x4) = (byte)V;
+- *(byte *)((char *)projectile + 0x5) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)projectile)->chain_word = (ushort)V;
+
+...>
+}
+
+@receiver_5_w_4_34_word_ushort@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)projectile + 0x4)
++ ((uw_object_hdr_t *)projectile)->chain_word
+|
+- *(ushort *)((byte *)projectile + 0x4)
++ ((uw_object_hdr_t *)projectile)->chain_word
+|
+- ((ushort *)projectile)[0x2]
++ ((uw_object_hdr_t *)projectile)->chain_word
+|
+- *(ushort *)((ushort *)projectile + 0x2)
++ ((uw_object_hdr_t *)projectile)->chain_word
+)
+...>
+}
+
+
+@receiver_5_w_4_34_word_undefined2@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)projectile + 0x4)
++ ((uw_object_hdr_t *)projectile)->chain_word
+|
+- *(undefined2 *)((byte *)projectile + 0x4)
++ ((uw_object_hdr_t *)projectile)->chain_word
+|
+- ((undefined2 *)projectile)[0x2]
++ ((uw_object_hdr_t *)projectile)->chain_word
+|
+- *(undefined2 *)((undefined2 *)projectile + 0x2)
++ ((uw_object_hdr_t *)projectile)->chain_word
+)
+...>
+}
+
+
+@receiver_5_w_4_34_word_short@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(short *)((char *)projectile + 0x4)
++ ((uw_object_hdr_t *)projectile)->chain_word_signed
+|
+- *(short *)((byte *)projectile + 0x4)
++ ((uw_object_hdr_t *)projectile)->chain_word_signed
+|
+- ((short *)projectile)[0x2]
++ ((uw_object_hdr_t *)projectile)->chain_word_signed
+|
+- *(short *)((short *)projectile + 0x2)
++ ((uw_object_hdr_t *)projectile)->chain_word_signed
+)
+...>
+}
+
+
+@receiver_5_w_4_34_byte_4_byte@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)projectile + 0x4)
++ ((uw_object_hdr_t *)projectile)->chain_word_low
+|
+- *(byte *)((byte *)projectile + 0x4)
++ ((uw_object_hdr_t *)projectile)->chain_word_low
+|
+- ((byte *)projectile)[0x4]
++ ((uw_object_hdr_t *)projectile)->chain_word_low
+|
+- *(byte *)((ushort *)projectile + 0x2)
++ ((uw_object_hdr_t *)projectile)->chain_word_low
+|
+- (byte)((ushort *)projectile)[0x2]
++ ((uw_object_hdr_t *)projectile)->chain_word_low
+)
+...>
+}
+
+
+@receiver_5_w_4_34_byte_4_undefined1@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)projectile + 0x4)
++ ((uw_object_hdr_t *)projectile)->chain_word_low
+|
+- *(undefined1 *)((byte *)projectile + 0x4)
++ ((uw_object_hdr_t *)projectile)->chain_word_low
+|
+- ((undefined1 *)projectile)[0x4]
++ ((uw_object_hdr_t *)projectile)->chain_word_low
+|
+- *(undefined1 *)((ushort *)projectile + 0x2)
++ ((uw_object_hdr_t *)projectile)->chain_word_low
+|
+- (undefined1)((ushort *)projectile)[0x2]
++ ((uw_object_hdr_t *)projectile)->chain_word_low
+)
+...>
+}
+
+
+@receiver_5_w_4_34_address_4@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)projectile + 0x4)
++ (char *)&((uw_object_hdr_t *)projectile)->chain_word_low
+|
+- &*(char *)((byte *)projectile + 0x4)
++ (char *)&((uw_object_hdr_t *)projectile)->chain_word_low
+|
+- &((char *)projectile)[0x4]
++ (char *)&((uw_object_hdr_t *)projectile)->chain_word_low
+|
+- &*(char *)((ushort *)projectile + 0x2)
++ (char *)&((uw_object_hdr_t *)projectile)->chain_word_low
+)
+...>
+}
+
+
+@receiver_5_w_4_34_store_4@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)projectile + 0x4) = E;
++ ((uw_object_hdr_t *)projectile)->chain_word_low = (byte)E;
+|
+- *(char *)((byte *)projectile + 0x4) = E;
++ ((uw_object_hdr_t *)projectile)->chain_word_low = (byte)E;
+|
+- ((char *)projectile)[0x4] = E;
++ ((uw_object_hdr_t *)projectile)->chain_word_low = (byte)E;
+|
+- *(char *)((ushort *)projectile + 0x2) = E;
++ ((uw_object_hdr_t *)projectile)->chain_word_low = (byte)E;
+)
+...>
+}
+
+
+@receiver_5_w_4_34_byte_4_char@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)projectile + 0x4)
++ (char)((uw_object_hdr_t *)projectile)->chain_word_low
+|
+- *(char *)((byte *)projectile + 0x4)
++ (char)((uw_object_hdr_t *)projectile)->chain_word_low
+|
+- ((char *)projectile)[0x4]
++ (char)((uw_object_hdr_t *)projectile)->chain_word_low
+|
+- *(char *)((ushort *)projectile + 0x2)
++ (char)((uw_object_hdr_t *)projectile)->chain_word_low
+|
+- (char)((ushort *)projectile)[0x2]
++ (char)((uw_object_hdr_t *)projectile)->chain_word_low
+)
+...>
+}
+
+
+@receiver_5_w_4_34_byte_5_byte@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)projectile + 0x5)
++ ((uw_object_hdr_t *)projectile)->chain_word_high
+|
+- *(byte *)((byte *)projectile + 0x5)
++ ((uw_object_hdr_t *)projectile)->chain_word_high
+|
+- ((byte *)projectile)[0x5]
++ ((uw_object_hdr_t *)projectile)->chain_word_high
+)
+...>
+}
+
+
+@receiver_5_w_4_34_byte_5_undefined1@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)projectile + 0x5)
++ ((uw_object_hdr_t *)projectile)->chain_word_high
+|
+- *(undefined1 *)((byte *)projectile + 0x5)
++ ((uw_object_hdr_t *)projectile)->chain_word_high
+|
+- ((undefined1 *)projectile)[0x5]
++ ((uw_object_hdr_t *)projectile)->chain_word_high
+)
+...>
+}
+
+
+@receiver_5_w_4_34_address_5@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)projectile + 0x5)
++ (char *)&((uw_object_hdr_t *)projectile)->chain_word_high
+|
+- &*(char *)((byte *)projectile + 0x5)
++ (char *)&((uw_object_hdr_t *)projectile)->chain_word_high
+|
+- &((char *)projectile)[0x5]
++ (char *)&((uw_object_hdr_t *)projectile)->chain_word_high
+)
+...>
+}
+
+
+@receiver_5_w_4_34_store_5@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)projectile + 0x5) = E;
++ ((uw_object_hdr_t *)projectile)->chain_word_high = (byte)E;
+|
+- *(char *)((byte *)projectile + 0x5) = E;
++ ((uw_object_hdr_t *)projectile)->chain_word_high = (byte)E;
+|
+- ((char *)projectile)[0x5] = E;
++ ((uw_object_hdr_t *)projectile)->chain_word_high = (byte)E;
+)
+...>
+}
+
+
+@receiver_5_w_4_34_byte_5_char@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)projectile + 0x5)
++ (char)((uw_object_hdr_t *)projectile)->chain_word_high
+|
+- *(char *)((byte *)projectile + 0x5)
++ (char)((uw_object_hdr_t *)projectile)->chain_word_high
+|
+- ((char *)projectile)[0x5]
++ (char)((uw_object_hdr_t *)projectile)->chain_word_high
+)
+...>
+}
+
+
+@receiver_5_w_6_51_pair_char_char@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)projectile + 0x6) = (char)V;
+- *(char *)((char *)projectile + 0x7) = (char)(V >> 8);
++ ((uw_object_hdr_t *)projectile)->link_word = (ushort)V;
+
+...>
+}
+
+@receiver_5_w_6_51_pair_char_byte@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)projectile + 0x6) = (char)V;
+- *(byte *)((char *)projectile + 0x7) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)projectile)->link_word = (ushort)V;
+
+...>
+}
+
+@receiver_5_w_6_51_pair_byte_char@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)projectile + 0x6) = (byte)V;
+- *(char *)((char *)projectile + 0x7) = (char)(V >> 8);
++ ((uw_object_hdr_t *)projectile)->link_word = (ushort)V;
+
+...>
+}
+
+@receiver_5_w_6_51_pair_byte_byte@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(byte *)((char *)projectile + 0x6) = (byte)V;
+- *(byte *)((char *)projectile + 0x7) = (byte)(V >> 8);
++ ((uw_object_hdr_t *)projectile)->link_word = (ushort)V;
+
+...>
+}
+
+@receiver_5_w_6_51_word_ushort@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)projectile + 0x6)
++ ((uw_object_hdr_t *)projectile)->link_word
+|
+- *(ushort *)((byte *)projectile + 0x6)
++ ((uw_object_hdr_t *)projectile)->link_word
+|
+- ((ushort *)projectile)[0x3]
++ ((uw_object_hdr_t *)projectile)->link_word
+|
+- *(ushort *)((ushort *)projectile + 0x3)
++ ((uw_object_hdr_t *)projectile)->link_word
+)
+...>
+}
+
+
+@receiver_5_w_6_51_word_undefined2@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined2 *)((char *)projectile + 0x6)
++ ((uw_object_hdr_t *)projectile)->link_word
+|
+- *(undefined2 *)((byte *)projectile + 0x6)
++ ((uw_object_hdr_t *)projectile)->link_word
+|
+- ((undefined2 *)projectile)[0x3]
++ ((uw_object_hdr_t *)projectile)->link_word
+|
+- *(undefined2 *)((undefined2 *)projectile + 0x3)
++ ((uw_object_hdr_t *)projectile)->link_word
+)
+...>
+}
+
+
+@receiver_5_w_6_51_word_short@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef ushort, undefined2, byte, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(short *)((char *)projectile + 0x6)
++ ((uw_object_hdr_t *)projectile)->link_word_signed
+|
+- *(short *)((byte *)projectile + 0x6)
++ ((uw_object_hdr_t *)projectile)->link_word_signed
+|
+- ((short *)projectile)[0x3]
++ ((uw_object_hdr_t *)projectile)->link_word_signed
+|
+- *(short *)((short *)projectile + 0x3)
++ ((uw_object_hdr_t *)projectile)->link_word_signed
+)
+...>
+}
+
+
+@receiver_5_w_6_51_byte_6_byte@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)projectile + 0x6)
++ ((uw_object_hdr_t *)projectile)->link_word_low
+|
+- *(byte *)((byte *)projectile + 0x6)
++ ((uw_object_hdr_t *)projectile)->link_word_low
+|
+- ((byte *)projectile)[0x6]
++ ((uw_object_hdr_t *)projectile)->link_word_low
+|
+- *(byte *)((ushort *)projectile + 0x3)
++ ((uw_object_hdr_t *)projectile)->link_word_low
+|
+- (byte)((ushort *)projectile)[0x3]
++ ((uw_object_hdr_t *)projectile)->link_word_low
+)
+...>
+}
+
+
+@receiver_5_w_6_51_byte_6_undefined1@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)projectile + 0x6)
++ ((uw_object_hdr_t *)projectile)->link_word_low
+|
+- *(undefined1 *)((byte *)projectile + 0x6)
++ ((uw_object_hdr_t *)projectile)->link_word_low
+|
+- ((undefined1 *)projectile)[0x6]
++ ((uw_object_hdr_t *)projectile)->link_word_low
+|
+- *(undefined1 *)((ushort *)projectile + 0x3)
++ ((uw_object_hdr_t *)projectile)->link_word_low
+|
+- (undefined1)((ushort *)projectile)[0x3]
++ ((uw_object_hdr_t *)projectile)->link_word_low
+)
+...>
+}
+
+
+@receiver_5_w_6_51_address_6@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)projectile + 0x6)
++ (char *)&((uw_object_hdr_t *)projectile)->link_word_low
+|
+- &*(char *)((byte *)projectile + 0x6)
++ (char *)&((uw_object_hdr_t *)projectile)->link_word_low
+|
+- &((char *)projectile)[0x6]
++ (char *)&((uw_object_hdr_t *)projectile)->link_word_low
+|
+- &*(char *)((ushort *)projectile + 0x3)
++ (char *)&((uw_object_hdr_t *)projectile)->link_word_low
+)
+...>
+}
+
+
+@receiver_5_w_6_51_store_6@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)projectile + 0x6) = E;
++ ((uw_object_hdr_t *)projectile)->link_word_low = (byte)E;
+|
+- *(char *)((byte *)projectile + 0x6) = E;
++ ((uw_object_hdr_t *)projectile)->link_word_low = (byte)E;
+|
+- ((char *)projectile)[0x6] = E;
++ ((uw_object_hdr_t *)projectile)->link_word_low = (byte)E;
+|
+- *(char *)((ushort *)projectile + 0x3) = E;
++ ((uw_object_hdr_t *)projectile)->link_word_low = (byte)E;
+)
+...>
+}
+
+
+@receiver_5_w_6_51_byte_6_char@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)projectile + 0x6)
++ (char)((uw_object_hdr_t *)projectile)->link_word_low
+|
+- *(char *)((byte *)projectile + 0x6)
++ (char)((uw_object_hdr_t *)projectile)->link_word_low
+|
+- ((char *)projectile)[0x6]
++ (char)((uw_object_hdr_t *)projectile)->link_word_low
+|
+- *(char *)((ushort *)projectile + 0x3)
++ (char)((uw_object_hdr_t *)projectile)->link_word_low
+|
+- (char)((ushort *)projectile)[0x3]
++ (char)((uw_object_hdr_t *)projectile)->link_word_low
+)
+...>
+}
+
+
+@receiver_5_w_6_51_byte_7_byte@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(byte *)((char *)projectile + 0x7)
++ ((uw_object_hdr_t *)projectile)->link_word_high
+|
+- *(byte *)((byte *)projectile + 0x7)
++ ((uw_object_hdr_t *)projectile)->link_word_high
+|
+- ((byte *)projectile)[0x7]
++ ((uw_object_hdr_t *)projectile)->link_word_high
+)
+...>
+}
+
+
+@receiver_5_w_6_51_byte_7_undefined1@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(undefined1 *)((char *)projectile + 0x7)
++ ((uw_object_hdr_t *)projectile)->link_word_high
+|
+- *(undefined1 *)((byte *)projectile + 0x7)
++ ((uw_object_hdr_t *)projectile)->link_word_high
+|
+- ((undefined1 *)projectile)[0x7]
++ ((uw_object_hdr_t *)projectile)->link_word_high
+)
+...>
+}
+
+
+@receiver_5_w_6_51_address_7@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- &*(char *)((char *)projectile + 0x7)
++ (char *)&((uw_object_hdr_t *)projectile)->link_word_high
+|
+- &*(char *)((byte *)projectile + 0x7)
++ (char *)&((uw_object_hdr_t *)projectile)->link_word_high
+|
+- &((char *)projectile)[0x7]
++ (char *)&((uw_object_hdr_t *)projectile)->link_word_high
+)
+...>
+}
+
+
+@receiver_5_w_6_51_store_7@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, ushort, uw_object_hdr_t;
+expression E;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)projectile + 0x7) = E;
++ ((uw_object_hdr_t *)projectile)->link_word_high = (byte)E;
+|
+- *(char *)((byte *)projectile + 0x7) = E;
++ ((uw_object_hdr_t *)projectile)->link_word_high = (byte)E;
+|
+- ((char *)projectile)[0x7] = E;
++ ((uw_object_hdr_t *)projectile)->link_word_high = (byte)E;
+)
+...>
+}
+
+
+@receiver_5_w_6_51_byte_7_char@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef byte, undefined1, ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(char *)((char *)projectile + 0x7)
++ (char)((uw_object_hdr_t *)projectile)->link_word_high
+|
+- *(char *)((byte *)projectile + 0x7)
++ (char)((uw_object_hdr_t *)projectile)->link_word_high
+|
+- ((char *)projectile)[0x7]
++ (char)((uw_object_hdr_t *)projectile)->link_word_high
+)
+...>
+}
+
+
+@receiver_6_w_0_0_pair_char_char@
+type R;
+identifier F =~ "^\(settle_mobile_to_immobile\)$";
+typedef byte, ushort, uw_object_hdr_t;
+identifier V;
+@@
+R F(...) {
+<...
+- *(char *)((char *)puVar9 + 0x0) = (char)V;
+- *(char *)((char *)puVar9 + 0x1) = (char)(V >> 8);
++ ((uw_object_hdr_t *)puVar9)->type_flags = (ushort)V;
+
+...>
+}
+
+@receiver_6_w_0_0_pair_char_byte@
+type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
 identifier V;
@@ -8498,7 +9985,7 @@ R F(...) {
 ...>
 }
 
-@receiver_5_w_0_0_pair_byte_char@
+@receiver_6_w_0_0_pair_byte_char@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -8513,7 +10000,7 @@ R F(...) {
 ...>
 }
 
-@receiver_5_w_0_0_pair_byte_byte@
+@receiver_6_w_0_0_pair_byte_byte@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -8528,7 +10015,7 @@ R F(...) {
 ...>
 }
 
-@receiver_5_w_0_0_word_ushort@
+@receiver_6_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -8561,7 +10048,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_0_0_word_undefined2@
+@receiver_6_w_0_0_word_undefined2@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -8594,7 +10081,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_0_0_word_short@
+@receiver_6_w_0_0_word_short@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -8621,7 +10108,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_0_0_byte_0_byte@
+@receiver_6_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -8657,7 +10144,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_0_0_byte_0_undefined1@
+@receiver_6_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -8693,7 +10180,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_0_0_address_0@
+@receiver_6_w_0_0_address_0@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -8723,7 +10210,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_0_0_store_0@
+@receiver_6_w_0_0_store_0@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -8754,7 +10241,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_0_0_byte_0_char@
+@receiver_6_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -8790,7 +10277,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_0_0_byte_1_byte@
+@receiver_6_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -8811,7 +10298,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_0_0_byte_1_undefined1@
+@receiver_6_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -8832,7 +10319,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_0_0_address_1@
+@receiver_6_w_0_0_address_1@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -8853,7 +10340,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_0_0_store_1@
+@receiver_6_w_0_0_store_1@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -8875,7 +10362,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_0_0_byte_1_char@
+@receiver_6_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -8896,7 +10383,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_2_17_pair_char_char@
+@receiver_6_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -8911,7 +10398,7 @@ R F(...) {
 ...>
 }
 
-@receiver_5_w_2_17_pair_char_byte@
+@receiver_6_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -8926,7 +10413,7 @@ R F(...) {
 ...>
 }
 
-@receiver_5_w_2_17_pair_byte_char@
+@receiver_6_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -8941,7 +10428,7 @@ R F(...) {
 ...>
 }
 
-@receiver_5_w_2_17_pair_byte_byte@
+@receiver_6_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -8956,7 +10443,7 @@ R F(...) {
 ...>
 }
 
-@receiver_5_w_2_17_word_ushort@
+@receiver_6_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -8986,7 +10473,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_2_17_word_undefined2@
+@receiver_6_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -9016,7 +10503,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_2_17_word_short@
+@receiver_6_w_2_17_word_short@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -9043,7 +10530,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_2_17_byte_2_byte@
+@receiver_6_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -9076,7 +10563,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_2_17_byte_2_undefined1@
+@receiver_6_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -9109,7 +10596,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_2_17_address_2@
+@receiver_6_w_2_17_address_2@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9136,7 +10623,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_2_17_store_2@
+@receiver_6_w_2_17_store_2@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9164,7 +10651,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_2_17_byte_2_char@
+@receiver_6_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -9197,7 +10684,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_2_17_byte_3_byte@
+@receiver_6_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -9218,7 +10705,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_2_17_byte_3_undefined1@
+@receiver_6_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -9239,7 +10726,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_2_17_address_3@
+@receiver_6_w_2_17_address_3@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9260,7 +10747,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_2_17_store_3@
+@receiver_6_w_2_17_store_3@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9282,7 +10769,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_2_17_byte_3_char@
+@receiver_6_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -9303,7 +10790,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_4_34_pair_char_char@
+@receiver_6_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9318,7 +10805,7 @@ R F(...) {
 ...>
 }
 
-@receiver_5_w_4_34_pair_char_byte@
+@receiver_6_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9333,7 +10820,7 @@ R F(...) {
 ...>
 }
 
-@receiver_5_w_4_34_pair_byte_char@
+@receiver_6_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9348,7 +10835,7 @@ R F(...) {
 ...>
 }
 
-@receiver_5_w_4_34_pair_byte_byte@
+@receiver_6_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9363,7 +10850,7 @@ R F(...) {
 ...>
 }
 
-@receiver_5_w_4_34_word_ushort@
+@receiver_6_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -9393,7 +10880,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_4_34_word_undefined2@
+@receiver_6_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -9423,7 +10910,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_4_34_word_short@
+@receiver_6_w_4_34_word_short@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -9450,7 +10937,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_4_34_byte_4_byte@
+@receiver_6_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -9483,7 +10970,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_4_34_byte_4_undefined1@
+@receiver_6_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -9516,7 +11003,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_4_34_address_4@
+@receiver_6_w_4_34_address_4@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9543,7 +11030,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_4_34_store_4@
+@receiver_6_w_4_34_store_4@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9571,7 +11058,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_4_34_byte_4_char@
+@receiver_6_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -9604,7 +11091,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_4_34_byte_5_byte@
+@receiver_6_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -9625,7 +11112,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_4_34_byte_5_undefined1@
+@receiver_6_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -9646,7 +11133,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_4_34_address_5@
+@receiver_6_w_4_34_address_5@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9667,7 +11154,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_4_34_store_5@
+@receiver_6_w_4_34_store_5@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9689,7 +11176,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_4_34_byte_5_char@
+@receiver_6_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -9710,7 +11197,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_6_51_pair_char_char@
+@receiver_6_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9725,7 +11212,7 @@ R F(...) {
 ...>
 }
 
-@receiver_5_w_6_51_pair_char_byte@
+@receiver_6_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9740,7 +11227,7 @@ R F(...) {
 ...>
 }
 
-@receiver_5_w_6_51_pair_byte_char@
+@receiver_6_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9755,7 +11242,7 @@ R F(...) {
 ...>
 }
 
-@receiver_5_w_6_51_pair_byte_byte@
+@receiver_6_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9770,7 +11257,7 @@ R F(...) {
 ...>
 }
 
-@receiver_5_w_6_51_word_ushort@
+@receiver_6_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -9800,7 +11287,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_6_51_word_undefined2@
+@receiver_6_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -9830,7 +11317,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_6_51_word_short@
+@receiver_6_w_6_51_word_short@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -9857,7 +11344,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_6_51_byte_6_byte@
+@receiver_6_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -9890,7 +11377,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_6_51_byte_6_undefined1@
+@receiver_6_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -9923,7 +11410,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_6_51_address_6@
+@receiver_6_w_6_51_address_6@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9950,7 +11437,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_6_51_store_6@
+@receiver_6_w_6_51_store_6@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -9978,7 +11465,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_6_51_byte_6_char@
+@receiver_6_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -10011,7 +11498,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_6_51_byte_7_byte@
+@receiver_6_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -10032,7 +11519,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_6_51_byte_7_undefined1@
+@receiver_6_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -10053,7 +11540,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_6_51_address_7@
+@receiver_6_w_6_51_address_7@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10074,7 +11561,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_6_51_store_7@
+@receiver_6_w_6_51_store_7@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10096,7 +11583,7 @@ R F(...) {
 }
 
 
-@receiver_5_w_6_51_byte_7_char@
+@receiver_6_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -10117,7 +11604,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_0_0_pair_char_char@
+@receiver_7_w_0_0_pair_char_char@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10132,7 +11619,7 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_0_0_pair_char_byte@
+@receiver_7_w_0_0_pair_char_byte@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10147,7 +11634,7 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_0_0_pair_byte_char@
+@receiver_7_w_0_0_pair_byte_char@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10162,7 +11649,7 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_0_0_pair_byte_byte@
+@receiver_7_w_0_0_pair_byte_byte@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10177,7 +11664,7 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_0_0_word_ushort@
+@receiver_7_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -10204,7 +11691,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_0_0_word_undefined2@
+@receiver_7_w_0_0_word_undefined2@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -10231,7 +11718,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_0_0_word_short@
+@receiver_7_w_0_0_word_short@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -10258,7 +11745,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_0_0_byte_0_byte@
+@receiver_7_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -10291,7 +11778,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_0_0_byte_0_undefined1@
+@receiver_7_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -10324,7 +11811,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_0_0_address_0@
+@receiver_7_w_0_0_address_0@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10360,7 +11847,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_0_0_store_0@
+@receiver_7_w_0_0_store_0@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10397,7 +11884,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_0_0_byte_0_char@
+@receiver_7_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -10436,7 +11923,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_0_0_byte_1_byte@
+@receiver_7_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -10460,7 +11947,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_0_0_byte_1_undefined1@
+@receiver_7_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -10484,7 +11971,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_0_0_address_1@
+@receiver_7_w_0_0_address_1@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10511,7 +11998,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_0_0_store_1@
+@receiver_7_w_0_0_store_1@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10539,7 +12026,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_0_0_byte_1_char@
+@receiver_7_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -10566,7 +12053,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_2_17_pair_char_char@
+@receiver_7_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10581,7 +12068,7 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_2_17_pair_char_byte@
+@receiver_7_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10596,7 +12083,7 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_2_17_pair_byte_char@
+@receiver_7_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10611,7 +12098,7 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_2_17_pair_byte_byte@
+@receiver_7_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10626,7 +12113,7 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_2_17_word_ushort@
+@receiver_7_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -10653,7 +12140,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_2_17_word_undefined2@
+@receiver_7_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -10680,7 +12167,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_2_17_word_short@
+@receiver_7_w_2_17_word_short@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -10707,7 +12194,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_2_17_byte_2_byte@
+@receiver_7_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -10737,7 +12224,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_2_17_byte_2_undefined1@
+@receiver_7_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -10767,7 +12254,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_2_17_address_2@
+@receiver_7_w_2_17_address_2@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10797,7 +12284,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_2_17_store_2@
+@receiver_7_w_2_17_store_2@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10828,7 +12315,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_2_17_byte_2_char@
+@receiver_7_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -10861,7 +12348,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_2_17_byte_3_byte@
+@receiver_7_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -10885,7 +12372,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_2_17_byte_3_undefined1@
+@receiver_7_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -10909,7 +12396,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_2_17_address_3@
+@receiver_7_w_2_17_address_3@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10936,7 +12423,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_2_17_store_3@
+@receiver_7_w_2_17_store_3@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -10964,7 +12451,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_2_17_byte_3_char@
+@receiver_7_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -10991,7 +12478,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_4_34_pair_char_char@
+@receiver_7_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11006,7 +12493,7 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_4_34_pair_char_byte@
+@receiver_7_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11021,7 +12508,7 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_4_34_pair_byte_char@
+@receiver_7_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11036,7 +12523,7 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_4_34_pair_byte_byte@
+@receiver_7_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11051,7 +12538,7 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_4_34_word_ushort@
+@receiver_7_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -11078,7 +12565,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_4_34_word_undefined2@
+@receiver_7_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -11105,7 +12592,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_4_34_word_short@
+@receiver_7_w_4_34_word_short@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -11132,7 +12619,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_4_34_byte_4_byte@
+@receiver_7_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -11162,7 +12649,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_4_34_byte_4_undefined1@
+@receiver_7_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -11192,7 +12679,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_4_34_address_4@
+@receiver_7_w_4_34_address_4@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11222,7 +12709,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_4_34_store_4@
+@receiver_7_w_4_34_store_4@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11253,7 +12740,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_4_34_byte_4_char@
+@receiver_7_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -11286,7 +12773,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_4_34_byte_5_byte@
+@receiver_7_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -11310,7 +12797,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_4_34_byte_5_undefined1@
+@receiver_7_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -11334,7 +12821,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_4_34_address_5@
+@receiver_7_w_4_34_address_5@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11361,7 +12848,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_4_34_store_5@
+@receiver_7_w_4_34_store_5@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11389,7 +12876,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_4_34_byte_5_char@
+@receiver_7_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -11416,7 +12903,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_6_51_pair_char_char@
+@receiver_7_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11431,7 +12918,7 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_6_51_pair_char_byte@
+@receiver_7_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11446,7 +12933,7 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_6_51_pair_byte_char@
+@receiver_7_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11461,7 +12948,7 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_6_51_pair_byte_byte@
+@receiver_7_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11476,7 +12963,7 @@ R F(...) {
 ...>
 }
 
-@receiver_6_w_6_51_word_ushort@
+@receiver_7_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -11503,7 +12990,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_6_51_word_undefined2@
+@receiver_7_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -11530,7 +13017,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_6_51_word_short@
+@receiver_7_w_6_51_word_short@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -11557,7 +13044,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_6_51_byte_6_byte@
+@receiver_7_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -11587,7 +13074,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_6_51_byte_6_undefined1@
+@receiver_7_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -11617,7 +13104,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_6_51_address_6@
+@receiver_7_w_6_51_address_6@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11647,7 +13134,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_6_51_store_6@
+@receiver_7_w_6_51_store_6@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11678,7 +13165,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_6_51_byte_6_char@
+@receiver_7_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -11711,7 +13198,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_6_51_byte_7_byte@
+@receiver_7_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -11735,7 +13222,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_6_51_byte_7_undefined1@
+@receiver_7_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -11759,7 +13246,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_6_51_address_7@
+@receiver_7_w_6_51_address_7@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11786,7 +13273,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_6_51_store_7@
+@receiver_7_w_6_51_store_7@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11814,7 +13301,7 @@ R F(...) {
 }
 
 
-@receiver_6_w_6_51_byte_7_char@
+@receiver_7_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -11841,7 +13328,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_0_0_pair_char_char@
+@receiver_8_w_0_0_pair_char_char@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11856,7 +13343,7 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_0_0_pair_char_byte@
+@receiver_8_w_0_0_pair_char_byte@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11871,7 +13358,7 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_0_0_pair_byte_char@
+@receiver_8_w_0_0_pair_byte_char@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11886,7 +13373,7 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_0_0_pair_byte_byte@
+@receiver_8_w_0_0_pair_byte_byte@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -11901,7 +13388,7 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_0_0_word_ushort@
+@receiver_8_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -11928,7 +13415,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_0_0_word_undefined2@
+@receiver_8_w_0_0_word_undefined2@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -11955,7 +13442,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_0_0_word_short@
+@receiver_8_w_0_0_word_short@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -11982,7 +13469,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_0_0_byte_0_byte@
+@receiver_8_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -12021,7 +13508,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_0_0_byte_0_undefined1@
+@receiver_8_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -12060,7 +13547,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_0_0_address_0@
+@receiver_8_w_0_0_address_0@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -12090,7 +13577,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_0_0_store_0@
+@receiver_8_w_0_0_store_0@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -12121,7 +13608,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_0_0_byte_0_char@
+@receiver_8_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -12154,7 +13641,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_0_0_byte_1_byte@
+@receiver_8_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -12181,7 +13668,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_0_0_byte_1_undefined1@
+@receiver_8_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -12208,7 +13695,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_0_0_address_1@
+@receiver_8_w_0_0_address_1@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -12232,7 +13719,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_0_0_store_1@
+@receiver_8_w_0_0_store_1@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -12257,7 +13744,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_0_0_byte_1_char@
+@receiver_8_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -12281,7 +13768,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_2_17_pair_char_char@
+@receiver_8_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -12296,7 +13783,7 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_2_17_pair_char_byte@
+@receiver_8_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -12311,7 +13798,7 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_2_17_pair_byte_char@
+@receiver_8_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -12326,7 +13813,7 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_2_17_pair_byte_byte@
+@receiver_8_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -12341,7 +13828,7 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_2_17_word_ushort@
+@receiver_8_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -12368,7 +13855,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_2_17_word_undefined2@
+@receiver_8_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -12395,7 +13882,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_2_17_word_short@
+@receiver_8_w_2_17_word_short@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -12422,7 +13909,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_2_17_byte_2_byte@
+@receiver_8_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -12455,7 +13942,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_2_17_byte_2_undefined1@
+@receiver_8_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -12488,7 +13975,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_2_17_address_2@
+@receiver_8_w_2_17_address_2@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -12515,7 +14002,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_2_17_store_2@
+@receiver_8_w_2_17_store_2@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -12543,7 +14030,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_2_17_byte_2_char@
+@receiver_8_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -12573,7 +14060,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_2_17_byte_3_byte@
+@receiver_8_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -12600,7 +14087,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_2_17_byte_3_undefined1@
+@receiver_8_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -12627,7 +14114,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_2_17_address_3@
+@receiver_8_w_2_17_address_3@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -12651,7 +14138,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_2_17_store_3@
+@receiver_8_w_2_17_store_3@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -12676,7 +14163,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_2_17_byte_3_char@
+@receiver_8_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -12700,7 +14187,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_4_34_pair_char_char@
+@receiver_8_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -12715,7 +14202,7 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_4_34_pair_char_byte@
+@receiver_8_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -12730,7 +14217,7 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_4_34_pair_byte_char@
+@receiver_8_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -12745,7 +14232,7 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_4_34_pair_byte_byte@
+@receiver_8_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -12760,7 +14247,7 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_4_34_word_ushort@
+@receiver_8_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -12787,7 +14274,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_4_34_word_undefined2@
+@receiver_8_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -12814,7 +14301,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_4_34_word_short@
+@receiver_8_w_4_34_word_short@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -12841,7 +14328,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_4_34_byte_4_byte@
+@receiver_8_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -12874,7 +14361,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_4_34_byte_4_undefined1@
+@receiver_8_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -12907,7 +14394,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_4_34_address_4@
+@receiver_8_w_4_34_address_4@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -12934,7 +14421,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_4_34_store_4@
+@receiver_8_w_4_34_store_4@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -12962,7 +14449,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_4_34_byte_4_char@
+@receiver_8_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -12992,7 +14479,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_4_34_byte_5_byte@
+@receiver_8_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -13019,7 +14506,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_4_34_byte_5_undefined1@
+@receiver_8_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -13046,7 +14533,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_4_34_address_5@
+@receiver_8_w_4_34_address_5@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13070,7 +14557,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_4_34_store_5@
+@receiver_8_w_4_34_store_5@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13095,7 +14582,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_4_34_byte_5_char@
+@receiver_8_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -13119,7 +14606,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_6_51_pair_char_char@
+@receiver_8_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13134,7 +14621,7 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_6_51_pair_char_byte@
+@receiver_8_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13149,7 +14636,7 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_6_51_pair_byte_char@
+@receiver_8_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13164,7 +14651,7 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_6_51_pair_byte_byte@
+@receiver_8_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13179,7 +14666,7 @@ R F(...) {
 ...>
 }
 
-@receiver_7_w_6_51_word_ushort@
+@receiver_8_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -13206,7 +14693,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_6_51_word_undefined2@
+@receiver_8_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -13233,7 +14720,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_6_51_word_short@
+@receiver_8_w_6_51_word_short@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -13260,7 +14747,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_6_51_byte_6_byte@
+@receiver_8_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -13293,7 +14780,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_6_51_byte_6_undefined1@
+@receiver_8_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -13326,7 +14813,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_6_51_address_6@
+@receiver_8_w_6_51_address_6@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13353,7 +14840,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_6_51_store_6@
+@receiver_8_w_6_51_store_6@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13381,7 +14868,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_6_51_byte_6_char@
+@receiver_8_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -13411,7 +14898,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_6_51_byte_7_byte@
+@receiver_8_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -13438,7 +14925,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_6_51_byte_7_undefined1@
+@receiver_8_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -13465,7 +14952,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_6_51_address_7@
+@receiver_8_w_6_51_address_7@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13489,7 +14976,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_6_51_store_7@
+@receiver_8_w_6_51_store_7@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13514,7 +15001,7 @@ R F(...) {
 }
 
 
-@receiver_7_w_6_51_byte_7_char@
+@receiver_8_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -13538,7 +15025,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_0_0_pair_char_char@
+@receiver_9_w_0_0_pair_char_char@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13553,7 +15040,7 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_0_0_pair_char_byte@
+@receiver_9_w_0_0_pair_char_byte@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13568,7 +15055,7 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_0_0_pair_byte_char@
+@receiver_9_w_0_0_pair_byte_char@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13583,7 +15070,7 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_0_0_pair_byte_byte@
+@receiver_9_w_0_0_pair_byte_byte@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13598,7 +15085,7 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_0_0_word_ushort@
+@receiver_9_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -13625,7 +15112,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_0_0_word_undefined2@
+@receiver_9_w_0_0_word_undefined2@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -13652,7 +15139,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_0_0_word_short@
+@receiver_9_w_0_0_word_short@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -13679,7 +15166,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_0_0_byte_0_byte@
+@receiver_9_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -13712,7 +15199,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_0_0_byte_0_undefined1@
+@receiver_9_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -13745,7 +15232,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_0_0_address_0@
+@receiver_9_w_0_0_address_0@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13781,7 +15268,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_0_0_store_0@
+@receiver_9_w_0_0_store_0@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13818,7 +15305,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_0_0_byte_0_char@
+@receiver_9_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -13857,7 +15344,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_0_0_byte_1_byte@
+@receiver_9_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -13881,7 +15368,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_0_0_byte_1_undefined1@
+@receiver_9_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -13905,7 +15392,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_0_0_address_1@
+@receiver_9_w_0_0_address_1@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13932,7 +15419,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_0_0_store_1@
+@receiver_9_w_0_0_store_1@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -13960,7 +15447,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_0_0_byte_1_char@
+@receiver_9_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -13987,7 +15474,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_2_17_pair_char_char@
+@receiver_9_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -14002,7 +15489,7 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_2_17_pair_char_byte@
+@receiver_9_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -14017,7 +15504,7 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_2_17_pair_byte_char@
+@receiver_9_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -14032,7 +15519,7 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_2_17_pair_byte_byte@
+@receiver_9_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -14047,7 +15534,7 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_2_17_word_ushort@
+@receiver_9_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -14074,7 +15561,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_2_17_word_undefined2@
+@receiver_9_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -14101,7 +15588,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_2_17_word_short@
+@receiver_9_w_2_17_word_short@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -14128,7 +15615,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_2_17_byte_2_byte@
+@receiver_9_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -14158,7 +15645,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_2_17_byte_2_undefined1@
+@receiver_9_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -14188,7 +15675,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_2_17_address_2@
+@receiver_9_w_2_17_address_2@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -14218,7 +15705,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_2_17_store_2@
+@receiver_9_w_2_17_store_2@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -14249,7 +15736,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_2_17_byte_2_char@
+@receiver_9_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -14282,7 +15769,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_2_17_byte_3_byte@
+@receiver_9_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -14306,7 +15793,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_2_17_byte_3_undefined1@
+@receiver_9_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -14330,7 +15817,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_2_17_address_3@
+@receiver_9_w_2_17_address_3@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -14357,7 +15844,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_2_17_store_3@
+@receiver_9_w_2_17_store_3@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -14385,7 +15872,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_2_17_byte_3_char@
+@receiver_9_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -14412,7 +15899,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_4_34_pair_char_char@
+@receiver_9_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -14427,7 +15914,7 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_4_34_pair_char_byte@
+@receiver_9_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -14442,7 +15929,7 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_4_34_pair_byte_char@
+@receiver_9_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -14457,7 +15944,7 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_4_34_pair_byte_byte@
+@receiver_9_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -14472,7 +15959,7 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_4_34_word_ushort@
+@receiver_9_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -14499,7 +15986,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_4_34_word_undefined2@
+@receiver_9_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -14526,7 +16013,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_4_34_word_short@
+@receiver_9_w_4_34_word_short@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -14553,7 +16040,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_4_34_byte_4_byte@
+@receiver_9_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -14583,7 +16070,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_4_34_byte_4_undefined1@
+@receiver_9_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -14613,7 +16100,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_4_34_address_4@
+@receiver_9_w_4_34_address_4@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -14643,7 +16130,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_4_34_store_4@
+@receiver_9_w_4_34_store_4@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -14674,7 +16161,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_4_34_byte_4_char@
+@receiver_9_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -14707,7 +16194,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_4_34_byte_5_byte@
+@receiver_9_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -14731,7 +16218,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_4_34_byte_5_undefined1@
+@receiver_9_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -14755,7 +16242,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_4_34_address_5@
+@receiver_9_w_4_34_address_5@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -14782,7 +16269,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_4_34_store_5@
+@receiver_9_w_4_34_store_5@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -14810,7 +16297,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_4_34_byte_5_char@
+@receiver_9_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -14837,7 +16324,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_6_51_pair_char_char@
+@receiver_9_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -14852,7 +16339,7 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_6_51_pair_char_byte@
+@receiver_9_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -14867,7 +16354,7 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_6_51_pair_byte_char@
+@receiver_9_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -14882,7 +16369,7 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_6_51_pair_byte_byte@
+@receiver_9_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -14897,7 +16384,7 @@ R F(...) {
 ...>
 }
 
-@receiver_8_w_6_51_word_ushort@
+@receiver_9_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -14924,7 +16411,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_6_51_word_undefined2@
+@receiver_9_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -14951,7 +16438,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_6_51_word_short@
+@receiver_9_w_6_51_word_short@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -14978,7 +16465,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_6_51_byte_6_byte@
+@receiver_9_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -15008,7 +16495,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_6_51_byte_6_undefined1@
+@receiver_9_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -15038,7 +16525,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_6_51_address_6@
+@receiver_9_w_6_51_address_6@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -15068,7 +16555,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_6_51_store_6@
+@receiver_9_w_6_51_store_6@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -15099,7 +16586,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_6_51_byte_6_char@
+@receiver_9_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -15132,7 +16619,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_6_51_byte_7_byte@
+@receiver_9_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -15156,7 +16643,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_6_51_byte_7_undefined1@
+@receiver_9_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -15180,7 +16667,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_6_51_address_7@
+@receiver_9_w_6_51_address_7@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -15207,7 +16694,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_6_51_store_7@
+@receiver_9_w_6_51_store_7@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -15235,7 +16722,7 @@ R F(...) {
 }
 
 
-@receiver_8_w_6_51_byte_7_char@
+@receiver_9_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -15262,7 +16749,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_0_0_pair_char_char@
+@receiver_10_w_0_0_pair_char_char@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -15277,7 +16764,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_0_0_pair_char_byte@
+@receiver_10_w_0_0_pair_char_byte@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -15292,7 +16779,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_0_0_pair_byte_char@
+@receiver_10_w_0_0_pair_byte_char@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -15307,7 +16794,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_0_0_pair_byte_byte@
+@receiver_10_w_0_0_pair_byte_byte@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -15322,7 +16809,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_0_0_word_ushort@
+@receiver_10_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -15349,7 +16836,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_0_0_word_undefined2@
+@receiver_10_w_0_0_word_undefined2@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -15376,7 +16863,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_0_0_word_short@
+@receiver_10_w_0_0_word_short@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -15403,7 +16890,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_0_0_byte_0_byte@
+@receiver_10_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -15436,7 +16923,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_0_0_byte_0_undefined1@
+@receiver_10_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -15469,7 +16956,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_0_0_address_0@
+@receiver_10_w_0_0_address_0@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -15505,7 +16992,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_0_0_store_0@
+@receiver_10_w_0_0_store_0@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -15542,7 +17029,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_0_0_byte_0_char@
+@receiver_10_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -15581,7 +17068,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_0_0_byte_1_byte@
+@receiver_10_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -15605,7 +17092,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_0_0_byte_1_undefined1@
+@receiver_10_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -15629,7 +17116,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_0_0_address_1@
+@receiver_10_w_0_0_address_1@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -15656,7 +17143,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_0_0_store_1@
+@receiver_10_w_0_0_store_1@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -15684,7 +17171,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_0_0_byte_1_char@
+@receiver_10_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -15711,7 +17198,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_2_17_pair_char_char@
+@receiver_10_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -15726,7 +17213,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_2_17_pair_char_byte@
+@receiver_10_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -15741,7 +17228,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_2_17_pair_byte_char@
+@receiver_10_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -15756,7 +17243,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_2_17_pair_byte_byte@
+@receiver_10_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -15771,7 +17258,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_2_17_word_ushort@
+@receiver_10_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -15798,7 +17285,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_2_17_word_undefined2@
+@receiver_10_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -15825,7 +17312,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_2_17_word_short@
+@receiver_10_w_2_17_word_short@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -15852,7 +17339,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_2_17_byte_2_byte@
+@receiver_10_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -15882,7 +17369,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_2_17_byte_2_undefined1@
+@receiver_10_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -15912,7 +17399,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_2_17_address_2@
+@receiver_10_w_2_17_address_2@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -15942,7 +17429,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_2_17_store_2@
+@receiver_10_w_2_17_store_2@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -15973,7 +17460,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_2_17_byte_2_char@
+@receiver_10_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -16006,7 +17493,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_2_17_byte_3_byte@
+@receiver_10_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -16030,7 +17517,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_2_17_byte_3_undefined1@
+@receiver_10_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -16054,7 +17541,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_2_17_address_3@
+@receiver_10_w_2_17_address_3@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -16081,7 +17568,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_2_17_store_3@
+@receiver_10_w_2_17_store_3@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -16109,7 +17596,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_2_17_byte_3_char@
+@receiver_10_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -16136,7 +17623,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_4_34_pair_char_char@
+@receiver_10_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -16151,7 +17638,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_4_34_pair_char_byte@
+@receiver_10_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -16166,7 +17653,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_4_34_pair_byte_char@
+@receiver_10_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -16181,7 +17668,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_4_34_pair_byte_byte@
+@receiver_10_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -16196,7 +17683,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_4_34_word_ushort@
+@receiver_10_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -16223,7 +17710,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_4_34_word_undefined2@
+@receiver_10_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -16250,7 +17737,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_4_34_word_short@
+@receiver_10_w_4_34_word_short@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -16277,7 +17764,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_4_34_byte_4_byte@
+@receiver_10_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -16307,7 +17794,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_4_34_byte_4_undefined1@
+@receiver_10_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -16337,7 +17824,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_4_34_address_4@
+@receiver_10_w_4_34_address_4@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -16367,7 +17854,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_4_34_store_4@
+@receiver_10_w_4_34_store_4@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -16398,7 +17885,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_4_34_byte_4_char@
+@receiver_10_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -16431,7 +17918,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_4_34_byte_5_byte@
+@receiver_10_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -16455,7 +17942,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_4_34_byte_5_undefined1@
+@receiver_10_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -16479,7 +17966,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_4_34_address_5@
+@receiver_10_w_4_34_address_5@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -16506,7 +17993,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_4_34_store_5@
+@receiver_10_w_4_34_store_5@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -16534,7 +18021,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_4_34_byte_5_char@
+@receiver_10_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -16561,7 +18048,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_6_51_pair_char_char@
+@receiver_10_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -16576,7 +18063,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_6_51_pair_char_byte@
+@receiver_10_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -16591,7 +18078,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_6_51_pair_byte_char@
+@receiver_10_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -16606,7 +18093,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_6_51_pair_byte_byte@
+@receiver_10_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -16621,7 +18108,7 @@ R F(...) {
 ...>
 }
 
-@receiver_9_w_6_51_word_ushort@
+@receiver_10_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -16648,7 +18135,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_6_51_word_undefined2@
+@receiver_10_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -16675,7 +18162,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_6_51_word_short@
+@receiver_10_w_6_51_word_short@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -16702,7 +18189,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_6_51_byte_6_byte@
+@receiver_10_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -16732,7 +18219,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_6_51_byte_6_undefined1@
+@receiver_10_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -16762,7 +18249,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_6_51_address_6@
+@receiver_10_w_6_51_address_6@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -16792,7 +18279,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_6_51_store_6@
+@receiver_10_w_6_51_store_6@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -16823,7 +18310,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_6_51_byte_6_char@
+@receiver_10_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -16856,7 +18343,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_6_51_byte_7_byte@
+@receiver_10_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -16880,7 +18367,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_6_51_byte_7_undefined1@
+@receiver_10_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -16904,7 +18391,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_6_51_address_7@
+@receiver_10_w_6_51_address_7@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -16931,7 +18418,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_6_51_store_7@
+@receiver_10_w_6_51_store_7@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -16959,7 +18446,7 @@ R F(...) {
 }
 
 
-@receiver_9_w_6_51_byte_7_char@
+@receiver_10_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -16986,7 +18473,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_0_0_pair_char_char@
+@receiver_11_w_0_0_pair_char_char@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -17001,7 +18488,7 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_0_0_pair_char_byte@
+@receiver_11_w_0_0_pair_char_byte@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -17016,7 +18503,7 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_0_0_pair_byte_char@
+@receiver_11_w_0_0_pair_byte_char@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -17031,7 +18518,7 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_0_0_pair_byte_byte@
+@receiver_11_w_0_0_pair_byte_byte@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -17046,7 +18533,7 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_0_0_word_ushort@
+@receiver_11_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -17073,7 +18560,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_0_0_word_undefined2@
+@receiver_11_w_0_0_word_undefined2@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -17100,7 +18587,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_0_0_word_short@
+@receiver_11_w_0_0_word_short@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -17127,7 +18614,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_0_0_byte_0_byte@
+@receiver_11_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -17160,7 +18647,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_0_0_byte_0_undefined1@
+@receiver_11_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -17193,7 +18680,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_0_0_address_0@
+@receiver_11_w_0_0_address_0@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -17229,7 +18716,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_0_0_store_0@
+@receiver_11_w_0_0_store_0@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -17266,7 +18753,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_0_0_byte_0_char@
+@receiver_11_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -17305,7 +18792,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_0_0_byte_1_byte@
+@receiver_11_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -17329,7 +18816,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_0_0_byte_1_undefined1@
+@receiver_11_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -17353,7 +18840,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_0_0_address_1@
+@receiver_11_w_0_0_address_1@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -17380,7 +18867,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_0_0_store_1@
+@receiver_11_w_0_0_store_1@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -17408,7 +18895,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_0_0_byte_1_char@
+@receiver_11_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -17435,7 +18922,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_2_17_pair_char_char@
+@receiver_11_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -17450,7 +18937,7 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_2_17_pair_char_byte@
+@receiver_11_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -17465,7 +18952,7 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_2_17_pair_byte_char@
+@receiver_11_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -17480,7 +18967,7 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_2_17_pair_byte_byte@
+@receiver_11_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -17495,7 +18982,7 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_2_17_word_ushort@
+@receiver_11_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -17522,7 +19009,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_2_17_word_undefined2@
+@receiver_11_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -17549,7 +19036,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_2_17_word_short@
+@receiver_11_w_2_17_word_short@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -17576,7 +19063,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_2_17_byte_2_byte@
+@receiver_11_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -17606,7 +19093,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_2_17_byte_2_undefined1@
+@receiver_11_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -17636,7 +19123,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_2_17_address_2@
+@receiver_11_w_2_17_address_2@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -17666,7 +19153,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_2_17_store_2@
+@receiver_11_w_2_17_store_2@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -17697,7 +19184,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_2_17_byte_2_char@
+@receiver_11_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -17730,7 +19217,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_2_17_byte_3_byte@
+@receiver_11_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -17754,7 +19241,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_2_17_byte_3_undefined1@
+@receiver_11_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -17778,7 +19265,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_2_17_address_3@
+@receiver_11_w_2_17_address_3@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -17805,7 +19292,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_2_17_store_3@
+@receiver_11_w_2_17_store_3@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -17833,7 +19320,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_2_17_byte_3_char@
+@receiver_11_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -17860,7 +19347,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_4_34_pair_char_char@
+@receiver_11_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -17875,7 +19362,7 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_4_34_pair_char_byte@
+@receiver_11_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -17890,7 +19377,7 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_4_34_pair_byte_char@
+@receiver_11_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -17905,7 +19392,7 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_4_34_pair_byte_byte@
+@receiver_11_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -17920,7 +19407,7 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_4_34_word_ushort@
+@receiver_11_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -17947,7 +19434,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_4_34_word_undefined2@
+@receiver_11_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -17974,7 +19461,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_4_34_word_short@
+@receiver_11_w_4_34_word_short@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -18001,7 +19488,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_4_34_byte_4_byte@
+@receiver_11_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -18031,7 +19518,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_4_34_byte_4_undefined1@
+@receiver_11_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -18061,7 +19548,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_4_34_address_4@
+@receiver_11_w_4_34_address_4@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -18091,7 +19578,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_4_34_store_4@
+@receiver_11_w_4_34_store_4@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -18122,7 +19609,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_4_34_byte_4_char@
+@receiver_11_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -18155,7 +19642,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_4_34_byte_5_byte@
+@receiver_11_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -18179,7 +19666,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_4_34_byte_5_undefined1@
+@receiver_11_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -18203,7 +19690,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_4_34_address_5@
+@receiver_11_w_4_34_address_5@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -18230,7 +19717,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_4_34_store_5@
+@receiver_11_w_4_34_store_5@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -18258,7 +19745,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_4_34_byte_5_char@
+@receiver_11_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -18285,7 +19772,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_6_51_pair_char_char@
+@receiver_11_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -18300,7 +19787,7 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_6_51_pair_char_byte@
+@receiver_11_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -18315,7 +19802,7 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_6_51_pair_byte_char@
+@receiver_11_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -18330,7 +19817,7 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_6_51_pair_byte_byte@
+@receiver_11_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -18345,7 +19832,7 @@ R F(...) {
 ...>
 }
 
-@receiver_10_w_6_51_word_ushort@
+@receiver_11_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -18372,7 +19859,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_6_51_word_undefined2@
+@receiver_11_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -18399,7 +19886,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_6_51_word_short@
+@receiver_11_w_6_51_word_short@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -18426,7 +19913,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_6_51_byte_6_byte@
+@receiver_11_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -18456,7 +19943,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_6_51_byte_6_undefined1@
+@receiver_11_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -18486,7 +19973,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_6_51_address_6@
+@receiver_11_w_6_51_address_6@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -18516,7 +20003,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_6_51_store_6@
+@receiver_11_w_6_51_store_6@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -18547,7 +20034,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_6_51_byte_6_char@
+@receiver_11_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -18580,7 +20067,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_6_51_byte_7_byte@
+@receiver_11_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -18604,7 +20091,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_6_51_byte_7_undefined1@
+@receiver_11_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -18628,7 +20115,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_6_51_address_7@
+@receiver_11_w_6_51_address_7@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -18655,7 +20142,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_6_51_store_7@
+@receiver_11_w_6_51_store_7@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -18683,7 +20170,7 @@ R F(...) {
 }
 
 
-@receiver_10_w_6_51_byte_7_char@
+@receiver_11_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -18710,7 +20197,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_0_0_pair_char_char@
+@receiver_12_w_0_0_pair_char_char@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -18725,7 +20212,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_0_0_pair_char_byte@
+@receiver_12_w_0_0_pair_char_byte@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -18740,7 +20227,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_0_0_pair_byte_char@
+@receiver_12_w_0_0_pair_byte_char@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -18755,7 +20242,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_0_0_pair_byte_byte@
+@receiver_12_w_0_0_pair_byte_byte@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -18770,7 +20257,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_0_0_word_ushort@
+@receiver_12_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -18803,7 +20290,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_0_0_word_undefined2@
+@receiver_12_w_0_0_word_undefined2@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -18836,7 +20323,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_0_0_word_short@
+@receiver_12_w_0_0_word_short@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -18863,7 +20350,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_0_0_byte_0_byte@
+@receiver_12_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -18899,7 +20386,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_0_0_byte_0_undefined1@
+@receiver_12_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -18935,7 +20422,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_0_0_address_0@
+@receiver_12_w_0_0_address_0@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -18965,7 +20452,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_0_0_store_0@
+@receiver_12_w_0_0_store_0@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -18996,7 +20483,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_0_0_byte_0_char@
+@receiver_12_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -19032,7 +20519,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_0_0_byte_1_byte@
+@receiver_12_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -19053,7 +20540,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_0_0_byte_1_undefined1@
+@receiver_12_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -19074,7 +20561,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_0_0_address_1@
+@receiver_12_w_0_0_address_1@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -19095,7 +20582,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_0_0_store_1@
+@receiver_12_w_0_0_store_1@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -19117,7 +20604,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_0_0_byte_1_char@
+@receiver_12_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -19138,7 +20625,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_2_17_pair_char_char@
+@receiver_12_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -19153,7 +20640,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_2_17_pair_char_byte@
+@receiver_12_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -19168,7 +20655,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_2_17_pair_byte_char@
+@receiver_12_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -19183,7 +20670,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_2_17_pair_byte_byte@
+@receiver_12_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -19198,7 +20685,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_2_17_word_ushort@
+@receiver_12_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -19228,7 +20715,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_2_17_word_undefined2@
+@receiver_12_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -19258,7 +20745,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_2_17_word_short@
+@receiver_12_w_2_17_word_short@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -19285,7 +20772,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_2_17_byte_2_byte@
+@receiver_12_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -19318,7 +20805,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_2_17_byte_2_undefined1@
+@receiver_12_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -19351,7 +20838,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_2_17_address_2@
+@receiver_12_w_2_17_address_2@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -19378,7 +20865,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_2_17_store_2@
+@receiver_12_w_2_17_store_2@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -19406,7 +20893,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_2_17_byte_2_char@
+@receiver_12_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -19439,7 +20926,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_2_17_byte_3_byte@
+@receiver_12_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -19460,7 +20947,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_2_17_byte_3_undefined1@
+@receiver_12_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -19481,7 +20968,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_2_17_address_3@
+@receiver_12_w_2_17_address_3@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -19502,7 +20989,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_2_17_store_3@
+@receiver_12_w_2_17_store_3@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -19524,7 +21011,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_2_17_byte_3_char@
+@receiver_12_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -19545,7 +21032,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_4_34_pair_char_char@
+@receiver_12_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -19560,7 +21047,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_4_34_pair_char_byte@
+@receiver_12_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -19575,7 +21062,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_4_34_pair_byte_char@
+@receiver_12_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -19590,7 +21077,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_4_34_pair_byte_byte@
+@receiver_12_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -19605,7 +21092,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_4_34_word_ushort@
+@receiver_12_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -19635,7 +21122,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_4_34_word_undefined2@
+@receiver_12_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -19665,7 +21152,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_4_34_word_short@
+@receiver_12_w_4_34_word_short@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -19692,7 +21179,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_4_34_byte_4_byte@
+@receiver_12_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -19725,7 +21212,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_4_34_byte_4_undefined1@
+@receiver_12_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -19758,7 +21245,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_4_34_address_4@
+@receiver_12_w_4_34_address_4@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -19785,7 +21272,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_4_34_store_4@
+@receiver_12_w_4_34_store_4@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -19813,7 +21300,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_4_34_byte_4_char@
+@receiver_12_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -19846,7 +21333,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_4_34_byte_5_byte@
+@receiver_12_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -19867,7 +21354,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_4_34_byte_5_undefined1@
+@receiver_12_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -19888,7 +21375,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_4_34_address_5@
+@receiver_12_w_4_34_address_5@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -19909,7 +21396,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_4_34_store_5@
+@receiver_12_w_4_34_store_5@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -19931,7 +21418,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_4_34_byte_5_char@
+@receiver_12_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -19952,7 +21439,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_6_51_pair_char_char@
+@receiver_12_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -19967,7 +21454,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_6_51_pair_char_byte@
+@receiver_12_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -19982,7 +21469,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_6_51_pair_byte_char@
+@receiver_12_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -19997,7 +21484,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_6_51_pair_byte_byte@
+@receiver_12_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -20012,7 +21499,7 @@ R F(...) {
 ...>
 }
 
-@receiver_11_w_6_51_word_ushort@
+@receiver_12_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -20042,7 +21529,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_6_51_word_undefined2@
+@receiver_12_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -20072,7 +21559,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_6_51_word_short@
+@receiver_12_w_6_51_word_short@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -20099,7 +21586,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_6_51_byte_6_byte@
+@receiver_12_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -20132,7 +21619,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_6_51_byte_6_undefined1@
+@receiver_12_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -20165,7 +21652,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_6_51_address_6@
+@receiver_12_w_6_51_address_6@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -20192,7 +21679,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_6_51_store_6@
+@receiver_12_w_6_51_store_6@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -20220,7 +21707,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_6_51_byte_6_char@
+@receiver_12_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -20253,7 +21740,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_6_51_byte_7_byte@
+@receiver_12_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -20274,7 +21761,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_6_51_byte_7_undefined1@
+@receiver_12_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -20295,7 +21782,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_6_51_address_7@
+@receiver_12_w_6_51_address_7@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -20316,7 +21803,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_6_51_store_7@
+@receiver_12_w_6_51_store_7@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -20338,7 +21825,7 @@ R F(...) {
 }
 
 
-@receiver_11_w_6_51_byte_7_char@
+@receiver_12_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -20359,7 +21846,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_0_0_pair_char_char@
+@receiver_13_w_0_0_pair_char_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -20374,7 +21861,7 @@ R F(...) {
 ...>
 }
 
-@receiver_12_w_0_0_pair_char_byte@
+@receiver_13_w_0_0_pair_char_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -20389,7 +21876,7 @@ R F(...) {
 ...>
 }
 
-@receiver_12_w_0_0_pair_byte_char@
+@receiver_13_w_0_0_pair_byte_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -20404,7 +21891,7 @@ R F(...) {
 ...>
 }
 
-@receiver_12_w_0_0_pair_byte_byte@
+@receiver_13_w_0_0_pair_byte_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -20419,7 +21906,7 @@ R F(...) {
 ...>
 }
 
-@receiver_12_w_0_0_word_ushort@
+@receiver_13_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -20443,7 +21930,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_0_0_word_undefined2@
+@receiver_13_w_0_0_word_undefined2@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -20467,7 +21954,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_0_0_word_short@
+@receiver_13_w_0_0_word_short@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -20491,7 +21978,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_0_0_byte_0_byte@
+@receiver_13_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -20521,7 +22008,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_0_0_byte_0_undefined1@
+@receiver_13_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -20551,7 +22038,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_0_0_address_0@
+@receiver_13_w_0_0_address_0@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -20578,7 +22065,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_0_0_store_0@
+@receiver_13_w_0_0_store_0@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -20606,7 +22093,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_0_0_byte_0_char@
+@receiver_13_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -20636,7 +22123,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_0_0_byte_1_byte@
+@receiver_13_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -20657,7 +22144,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_0_0_byte_1_undefined1@
+@receiver_13_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -20678,7 +22165,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_0_0_address_1@
+@receiver_13_w_0_0_address_1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -20699,7 +22186,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_0_0_store_1@
+@receiver_13_w_0_0_store_1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -20721,7 +22208,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_0_0_byte_1_char@
+@receiver_13_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -20742,7 +22229,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_2_17_pair_char_char@
+@receiver_13_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -20757,7 +22244,7 @@ R F(...) {
 ...>
 }
 
-@receiver_12_w_2_17_pair_char_byte@
+@receiver_13_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -20772,7 +22259,7 @@ R F(...) {
 ...>
 }
 
-@receiver_12_w_2_17_pair_byte_char@
+@receiver_13_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -20787,7 +22274,7 @@ R F(...) {
 ...>
 }
 
-@receiver_12_w_2_17_pair_byte_byte@
+@receiver_13_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -20802,7 +22289,7 @@ R F(...) {
 ...>
 }
 
-@receiver_12_w_2_17_word_ushort@
+@receiver_13_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -20826,7 +22313,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_2_17_word_undefined2@
+@receiver_13_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -20850,7 +22337,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_2_17_word_short@
+@receiver_13_w_2_17_word_short@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -20874,7 +22361,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_2_17_byte_2_byte@
+@receiver_13_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -20901,7 +22388,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_2_17_byte_2_undefined1@
+@receiver_13_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -20928,7 +22415,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_2_17_address_2@
+@receiver_13_w_2_17_address_2@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -20952,7 +22439,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_2_17_store_2@
+@receiver_13_w_2_17_store_2@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -20977,7 +22464,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_2_17_byte_2_char@
+@receiver_13_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -21004,7 +22491,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_2_17_byte_3_byte@
+@receiver_13_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -21025,7 +22512,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_2_17_byte_3_undefined1@
+@receiver_13_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -21046,7 +22533,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_2_17_address_3@
+@receiver_13_w_2_17_address_3@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -21067,7 +22554,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_2_17_store_3@
+@receiver_13_w_2_17_store_3@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -21089,7 +22576,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_2_17_byte_3_char@
+@receiver_13_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -21110,7 +22597,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_4_34_pair_char_char@
+@receiver_13_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -21125,7 +22612,7 @@ R F(...) {
 ...>
 }
 
-@receiver_12_w_4_34_pair_char_byte@
+@receiver_13_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -21140,7 +22627,7 @@ R F(...) {
 ...>
 }
 
-@receiver_12_w_4_34_pair_byte_char@
+@receiver_13_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -21155,7 +22642,7 @@ R F(...) {
 ...>
 }
 
-@receiver_12_w_4_34_pair_byte_byte@
+@receiver_13_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -21170,7 +22657,7 @@ R F(...) {
 ...>
 }
 
-@receiver_12_w_4_34_word_ushort@
+@receiver_13_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -21194,7 +22681,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_4_34_word_undefined2@
+@receiver_13_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -21218,7 +22705,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_4_34_word_short@
+@receiver_13_w_4_34_word_short@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -21242,7 +22729,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_4_34_byte_4_byte@
+@receiver_13_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -21269,7 +22756,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_4_34_byte_4_undefined1@
+@receiver_13_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -21296,7 +22783,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_4_34_address_4@
+@receiver_13_w_4_34_address_4@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -21320,7 +22807,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_4_34_store_4@
+@receiver_13_w_4_34_store_4@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -21345,7 +22832,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_4_34_byte_4_char@
+@receiver_13_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -21372,7 +22859,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_4_34_byte_5_byte@
+@receiver_13_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -21393,7 +22880,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_4_34_byte_5_undefined1@
+@receiver_13_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -21414,7 +22901,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_4_34_address_5@
+@receiver_13_w_4_34_address_5@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -21435,7 +22922,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_4_34_store_5@
+@receiver_13_w_4_34_store_5@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -21457,7 +22944,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_4_34_byte_5_char@
+@receiver_13_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -21478,7 +22965,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_6_51_pair_char_char@
+@receiver_13_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -21493,7 +22980,7 @@ R F(...) {
 ...>
 }
 
-@receiver_12_w_6_51_pair_char_byte@
+@receiver_13_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -21508,7 +22995,7 @@ R F(...) {
 ...>
 }
 
-@receiver_12_w_6_51_pair_byte_char@
+@receiver_13_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -21523,7 +23010,7 @@ R F(...) {
 ...>
 }
 
-@receiver_12_w_6_51_pair_byte_byte@
+@receiver_13_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -21538,7 +23025,7 @@ R F(...) {
 ...>
 }
 
-@receiver_12_w_6_51_word_ushort@
+@receiver_13_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -21562,7 +23049,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_6_51_word_undefined2@
+@receiver_13_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -21586,7 +23073,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_6_51_word_short@
+@receiver_13_w_6_51_word_short@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -21610,7 +23097,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_6_51_byte_6_byte@
+@receiver_13_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -21637,7 +23124,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_6_51_byte_6_undefined1@
+@receiver_13_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -21664,7 +23151,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_6_51_address_6@
+@receiver_13_w_6_51_address_6@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -21688,7 +23175,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_6_51_store_6@
+@receiver_13_w_6_51_store_6@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -21713,7 +23200,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_6_51_byte_6_char@
+@receiver_13_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -21740,7 +23227,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_6_51_byte_7_byte@
+@receiver_13_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -21761,7 +23248,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_6_51_byte_7_undefined1@
+@receiver_13_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -21782,7 +23269,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_6_51_address_7@
+@receiver_13_w_6_51_address_7@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -21803,7 +23290,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_6_51_store_7@
+@receiver_13_w_6_51_store_7@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -21825,7 +23312,7 @@ R F(...) {
 }
 
 
-@receiver_12_w_6_51_byte_7_char@
+@receiver_13_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -21846,7 +23333,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_0_0_pair_char_char@
+@receiver_14_w_0_0_pair_char_char@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -21861,7 +23348,7 @@ R F(...) {
 ...>
 }
 
-@receiver_13_w_0_0_pair_char_byte@
+@receiver_14_w_0_0_pair_char_byte@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -21876,7 +23363,7 @@ R F(...) {
 ...>
 }
 
-@receiver_13_w_0_0_pair_byte_char@
+@receiver_14_w_0_0_pair_byte_char@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -21891,7 +23378,7 @@ R F(...) {
 ...>
 }
 
-@receiver_13_w_0_0_pair_byte_byte@
+@receiver_14_w_0_0_pair_byte_byte@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -21906,7 +23393,7 @@ R F(...) {
 ...>
 }
 
-@receiver_13_w_0_0_word_ushort@
+@receiver_14_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -21933,7 +23420,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_0_0_word_undefined2@
+@receiver_14_w_0_0_word_undefined2@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -21960,7 +23447,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_0_0_word_short@
+@receiver_14_w_0_0_word_short@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -21987,7 +23474,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_0_0_byte_0_byte@
+@receiver_14_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -22020,7 +23507,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_0_0_byte_0_undefined1@
+@receiver_14_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -22053,7 +23540,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_0_0_address_0@
+@receiver_14_w_0_0_address_0@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -22089,7 +23576,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_0_0_store_0@
+@receiver_14_w_0_0_store_0@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -22126,7 +23613,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_0_0_byte_0_char@
+@receiver_14_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -22165,7 +23652,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_0_0_byte_1_byte@
+@receiver_14_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -22189,7 +23676,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_0_0_byte_1_undefined1@
+@receiver_14_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -22213,7 +23700,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_0_0_address_1@
+@receiver_14_w_0_0_address_1@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -22240,7 +23727,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_0_0_store_1@
+@receiver_14_w_0_0_store_1@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -22268,7 +23755,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_0_0_byte_1_char@
+@receiver_14_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -22295,7 +23782,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_2_17_pair_char_char@
+@receiver_14_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -22310,7 +23797,7 @@ R F(...) {
 ...>
 }
 
-@receiver_13_w_2_17_pair_char_byte@
+@receiver_14_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -22325,7 +23812,7 @@ R F(...) {
 ...>
 }
 
-@receiver_13_w_2_17_pair_byte_char@
+@receiver_14_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -22340,7 +23827,7 @@ R F(...) {
 ...>
 }
 
-@receiver_13_w_2_17_pair_byte_byte@
+@receiver_14_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -22355,7 +23842,7 @@ R F(...) {
 ...>
 }
 
-@receiver_13_w_2_17_word_ushort@
+@receiver_14_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -22382,7 +23869,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_2_17_word_undefined2@
+@receiver_14_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -22409,7 +23896,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_2_17_word_short@
+@receiver_14_w_2_17_word_short@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -22436,7 +23923,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_2_17_byte_2_byte@
+@receiver_14_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -22466,7 +23953,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_2_17_byte_2_undefined1@
+@receiver_14_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -22496,7 +23983,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_2_17_address_2@
+@receiver_14_w_2_17_address_2@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -22526,7 +24013,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_2_17_store_2@
+@receiver_14_w_2_17_store_2@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -22557,7 +24044,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_2_17_byte_2_char@
+@receiver_14_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -22590,7 +24077,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_2_17_byte_3_byte@
+@receiver_14_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -22614,7 +24101,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_2_17_byte_3_undefined1@
+@receiver_14_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -22638,7 +24125,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_2_17_address_3@
+@receiver_14_w_2_17_address_3@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -22665,7 +24152,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_2_17_store_3@
+@receiver_14_w_2_17_store_3@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -22693,7 +24180,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_2_17_byte_3_char@
+@receiver_14_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -22720,7 +24207,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_4_34_pair_char_char@
+@receiver_14_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -22735,7 +24222,7 @@ R F(...) {
 ...>
 }
 
-@receiver_13_w_4_34_pair_char_byte@
+@receiver_14_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -22750,7 +24237,7 @@ R F(...) {
 ...>
 }
 
-@receiver_13_w_4_34_pair_byte_char@
+@receiver_14_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -22765,7 +24252,7 @@ R F(...) {
 ...>
 }
 
-@receiver_13_w_4_34_pair_byte_byte@
+@receiver_14_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -22780,7 +24267,7 @@ R F(...) {
 ...>
 }
 
-@receiver_13_w_4_34_word_ushort@
+@receiver_14_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -22807,7 +24294,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_4_34_word_undefined2@
+@receiver_14_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -22834,7 +24321,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_4_34_word_short@
+@receiver_14_w_4_34_word_short@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -22861,7 +24348,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_4_34_byte_4_byte@
+@receiver_14_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -22891,7 +24378,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_4_34_byte_4_undefined1@
+@receiver_14_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -22921,7 +24408,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_4_34_address_4@
+@receiver_14_w_4_34_address_4@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -22951,7 +24438,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_4_34_store_4@
+@receiver_14_w_4_34_store_4@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -22982,7 +24469,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_4_34_byte_4_char@
+@receiver_14_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -23015,7 +24502,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_4_34_byte_5_byte@
+@receiver_14_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -23039,7 +24526,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_4_34_byte_5_undefined1@
+@receiver_14_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -23063,7 +24550,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_4_34_address_5@
+@receiver_14_w_4_34_address_5@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -23090,7 +24577,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_4_34_store_5@
+@receiver_14_w_4_34_store_5@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -23118,7 +24605,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_4_34_byte_5_char@
+@receiver_14_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -23145,7 +24632,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_6_51_pair_char_char@
+@receiver_14_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -23160,7 +24647,7 @@ R F(...) {
 ...>
 }
 
-@receiver_13_w_6_51_pair_char_byte@
+@receiver_14_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -23175,7 +24662,7 @@ R F(...) {
 ...>
 }
 
-@receiver_13_w_6_51_pair_byte_char@
+@receiver_14_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -23190,7 +24677,7 @@ R F(...) {
 ...>
 }
 
-@receiver_13_w_6_51_pair_byte_byte@
+@receiver_14_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -23205,7 +24692,7 @@ R F(...) {
 ...>
 }
 
-@receiver_13_w_6_51_word_ushort@
+@receiver_14_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -23232,7 +24719,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_6_51_word_undefined2@
+@receiver_14_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -23259,7 +24746,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_6_51_word_short@
+@receiver_14_w_6_51_word_short@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -23286,7 +24773,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_6_51_byte_6_byte@
+@receiver_14_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -23316,7 +24803,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_6_51_byte_6_undefined1@
+@receiver_14_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -23346,7 +24833,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_6_51_address_6@
+@receiver_14_w_6_51_address_6@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -23376,7 +24863,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_6_51_store_6@
+@receiver_14_w_6_51_store_6@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -23407,7 +24894,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_6_51_byte_6_char@
+@receiver_14_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -23440,7 +24927,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_6_51_byte_7_byte@
+@receiver_14_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -23464,7 +24951,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_6_51_byte_7_undefined1@
+@receiver_14_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -23488,7 +24975,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_6_51_address_7@
+@receiver_14_w_6_51_address_7@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -23515,7 +25002,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_6_51_store_7@
+@receiver_14_w_6_51_store_7@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -23543,7 +25030,7 @@ R F(...) {
 }
 
 
-@receiver_13_w_6_51_byte_7_char@
+@receiver_14_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -23570,7 +25057,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_0_0_pair_char_char@
+@receiver_15_w_0_0_pair_char_char@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -23585,7 +25072,7 @@ R F(...) {
 ...>
 }
 
-@receiver_14_w_0_0_pair_char_byte@
+@receiver_15_w_0_0_pair_char_byte@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -23600,7 +25087,7 @@ R F(...) {
 ...>
 }
 
-@receiver_14_w_0_0_pair_byte_char@
+@receiver_15_w_0_0_pair_byte_char@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -23615,7 +25102,7 @@ R F(...) {
 ...>
 }
 
-@receiver_14_w_0_0_pair_byte_byte@
+@receiver_15_w_0_0_pair_byte_byte@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -23630,7 +25117,7 @@ R F(...) {
 ...>
 }
 
-@receiver_14_w_0_0_word_ushort@
+@receiver_15_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -23657,7 +25144,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_0_0_word_undefined2@
+@receiver_15_w_0_0_word_undefined2@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -23684,7 +25171,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_0_0_word_short@
+@receiver_15_w_0_0_word_short@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -23711,7 +25198,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_0_0_byte_0_byte@
+@receiver_15_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -23744,7 +25231,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_0_0_byte_0_undefined1@
+@receiver_15_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -23777,7 +25264,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_0_0_address_0@
+@receiver_15_w_0_0_address_0@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -23813,7 +25300,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_0_0_store_0@
+@receiver_15_w_0_0_store_0@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -23850,7 +25337,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_0_0_byte_0_char@
+@receiver_15_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -23889,7 +25376,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_0_0_byte_1_byte@
+@receiver_15_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -23913,7 +25400,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_0_0_byte_1_undefined1@
+@receiver_15_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -23937,7 +25424,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_0_0_address_1@
+@receiver_15_w_0_0_address_1@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -23964,7 +25451,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_0_0_store_1@
+@receiver_15_w_0_0_store_1@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -23992,7 +25479,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_0_0_byte_1_char@
+@receiver_15_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -24019,7 +25506,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_2_17_pair_char_char@
+@receiver_15_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -24034,7 +25521,7 @@ R F(...) {
 ...>
 }
 
-@receiver_14_w_2_17_pair_char_byte@
+@receiver_15_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -24049,7 +25536,7 @@ R F(...) {
 ...>
 }
 
-@receiver_14_w_2_17_pair_byte_char@
+@receiver_15_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -24064,7 +25551,7 @@ R F(...) {
 ...>
 }
 
-@receiver_14_w_2_17_pair_byte_byte@
+@receiver_15_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -24079,7 +25566,7 @@ R F(...) {
 ...>
 }
 
-@receiver_14_w_2_17_word_ushort@
+@receiver_15_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -24106,7 +25593,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_2_17_word_undefined2@
+@receiver_15_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -24133,7 +25620,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_2_17_word_short@
+@receiver_15_w_2_17_word_short@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -24160,7 +25647,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_2_17_byte_2_byte@
+@receiver_15_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -24190,7 +25677,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_2_17_byte_2_undefined1@
+@receiver_15_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -24220,7 +25707,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_2_17_address_2@
+@receiver_15_w_2_17_address_2@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -24250,7 +25737,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_2_17_store_2@
+@receiver_15_w_2_17_store_2@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -24281,7 +25768,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_2_17_byte_2_char@
+@receiver_15_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -24314,7 +25801,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_2_17_byte_3_byte@
+@receiver_15_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -24338,7 +25825,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_2_17_byte_3_undefined1@
+@receiver_15_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -24362,7 +25849,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_2_17_address_3@
+@receiver_15_w_2_17_address_3@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -24389,7 +25876,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_2_17_store_3@
+@receiver_15_w_2_17_store_3@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -24417,7 +25904,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_2_17_byte_3_char@
+@receiver_15_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -24444,7 +25931,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_4_34_pair_char_char@
+@receiver_15_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -24459,7 +25946,7 @@ R F(...) {
 ...>
 }
 
-@receiver_14_w_4_34_pair_char_byte@
+@receiver_15_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -24474,7 +25961,7 @@ R F(...) {
 ...>
 }
 
-@receiver_14_w_4_34_pair_byte_char@
+@receiver_15_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -24489,7 +25976,7 @@ R F(...) {
 ...>
 }
 
-@receiver_14_w_4_34_pair_byte_byte@
+@receiver_15_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -24504,7 +25991,7 @@ R F(...) {
 ...>
 }
 
-@receiver_14_w_4_34_word_ushort@
+@receiver_15_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -24531,7 +26018,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_4_34_word_undefined2@
+@receiver_15_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -24558,7 +26045,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_4_34_word_short@
+@receiver_15_w_4_34_word_short@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -24585,7 +26072,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_4_34_byte_4_byte@
+@receiver_15_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -24615,7 +26102,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_4_34_byte_4_undefined1@
+@receiver_15_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -24645,7 +26132,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_4_34_address_4@
+@receiver_15_w_4_34_address_4@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -24675,7 +26162,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_4_34_store_4@
+@receiver_15_w_4_34_store_4@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -24706,7 +26193,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_4_34_byte_4_char@
+@receiver_15_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -24739,7 +26226,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_4_34_byte_5_byte@
+@receiver_15_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -24763,7 +26250,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_4_34_byte_5_undefined1@
+@receiver_15_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -24787,7 +26274,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_4_34_address_5@
+@receiver_15_w_4_34_address_5@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -24814,7 +26301,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_4_34_store_5@
+@receiver_15_w_4_34_store_5@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -24842,7 +26329,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_4_34_byte_5_char@
+@receiver_15_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -24869,7 +26356,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_6_51_pair_char_char@
+@receiver_15_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -24884,7 +26371,7 @@ R F(...) {
 ...>
 }
 
-@receiver_14_w_6_51_pair_char_byte@
+@receiver_15_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -24899,7 +26386,7 @@ R F(...) {
 ...>
 }
 
-@receiver_14_w_6_51_pair_byte_char@
+@receiver_15_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -24914,7 +26401,7 @@ R F(...) {
 ...>
 }
 
-@receiver_14_w_6_51_pair_byte_byte@
+@receiver_15_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -24929,7 +26416,7 @@ R F(...) {
 ...>
 }
 
-@receiver_14_w_6_51_word_ushort@
+@receiver_15_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -24956,7 +26443,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_6_51_word_undefined2@
+@receiver_15_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -24983,7 +26470,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_6_51_word_short@
+@receiver_15_w_6_51_word_short@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -25010,7 +26497,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_6_51_byte_6_byte@
+@receiver_15_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -25040,7 +26527,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_6_51_byte_6_undefined1@
+@receiver_15_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -25070,7 +26557,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_6_51_address_6@
+@receiver_15_w_6_51_address_6@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -25100,7 +26587,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_6_51_store_6@
+@receiver_15_w_6_51_store_6@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -25131,7 +26618,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_6_51_byte_6_char@
+@receiver_15_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -25164,7 +26651,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_6_51_byte_7_byte@
+@receiver_15_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -25188,7 +26675,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_6_51_byte_7_undefined1@
+@receiver_15_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -25212,7 +26699,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_6_51_address_7@
+@receiver_15_w_6_51_address_7@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -25239,7 +26726,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_6_51_store_7@
+@receiver_15_w_6_51_store_7@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -25267,7 +26754,7 @@ R F(...) {
 }
 
 
-@receiver_14_w_6_51_byte_7_char@
+@receiver_15_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -25294,7 +26781,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_0_0_pair_char_char@
+@receiver_16_w_0_0_pair_char_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -25309,7 +26796,7 @@ R F(...) {
 ...>
 }
 
-@receiver_15_w_0_0_pair_char_byte@
+@receiver_16_w_0_0_pair_char_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -25324,7 +26811,7 @@ R F(...) {
 ...>
 }
 
-@receiver_15_w_0_0_pair_byte_char@
+@receiver_16_w_0_0_pair_byte_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -25339,7 +26826,7 @@ R F(...) {
 ...>
 }
 
-@receiver_15_w_0_0_pair_byte_byte@
+@receiver_16_w_0_0_pair_byte_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -25354,7 +26841,7 @@ R F(...) {
 ...>
 }
 
-@receiver_15_w_0_0_word_ushort@
+@receiver_16_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -25378,7 +26865,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_0_0_word_undefined2@
+@receiver_16_w_0_0_word_undefined2@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -25402,7 +26889,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_0_0_word_short@
+@receiver_16_w_0_0_word_short@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -25426,7 +26913,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_0_0_byte_0_byte@
+@receiver_16_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -25456,7 +26943,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_0_0_byte_0_undefined1@
+@receiver_16_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -25486,7 +26973,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_0_0_address_0@
+@receiver_16_w_0_0_address_0@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -25513,7 +27000,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_0_0_store_0@
+@receiver_16_w_0_0_store_0@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -25541,7 +27028,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_0_0_byte_0_char@
+@receiver_16_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -25571,7 +27058,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_0_0_byte_1_byte@
+@receiver_16_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -25592,7 +27079,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_0_0_byte_1_undefined1@
+@receiver_16_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -25613,7 +27100,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_0_0_address_1@
+@receiver_16_w_0_0_address_1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -25634,7 +27121,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_0_0_store_1@
+@receiver_16_w_0_0_store_1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -25656,7 +27143,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_0_0_byte_1_char@
+@receiver_16_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -25677,7 +27164,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_2_17_pair_char_char@
+@receiver_16_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -25692,7 +27179,7 @@ R F(...) {
 ...>
 }
 
-@receiver_15_w_2_17_pair_char_byte@
+@receiver_16_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -25707,7 +27194,7 @@ R F(...) {
 ...>
 }
 
-@receiver_15_w_2_17_pair_byte_char@
+@receiver_16_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -25722,7 +27209,7 @@ R F(...) {
 ...>
 }
 
-@receiver_15_w_2_17_pair_byte_byte@
+@receiver_16_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -25737,7 +27224,7 @@ R F(...) {
 ...>
 }
 
-@receiver_15_w_2_17_word_ushort@
+@receiver_16_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -25761,7 +27248,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_2_17_word_undefined2@
+@receiver_16_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -25785,7 +27272,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_2_17_word_short@
+@receiver_16_w_2_17_word_short@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -25809,7 +27296,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_2_17_byte_2_byte@
+@receiver_16_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -25836,7 +27323,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_2_17_byte_2_undefined1@
+@receiver_16_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -25863,7 +27350,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_2_17_address_2@
+@receiver_16_w_2_17_address_2@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -25887,7 +27374,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_2_17_store_2@
+@receiver_16_w_2_17_store_2@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -25912,7 +27399,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_2_17_byte_2_char@
+@receiver_16_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -25939,7 +27426,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_2_17_byte_3_byte@
+@receiver_16_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -25960,7 +27447,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_2_17_byte_3_undefined1@
+@receiver_16_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -25981,7 +27468,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_2_17_address_3@
+@receiver_16_w_2_17_address_3@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -26002,7 +27489,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_2_17_store_3@
+@receiver_16_w_2_17_store_3@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -26024,7 +27511,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_2_17_byte_3_char@
+@receiver_16_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -26045,7 +27532,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_4_34_pair_char_char@
+@receiver_16_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -26060,7 +27547,7 @@ R F(...) {
 ...>
 }
 
-@receiver_15_w_4_34_pair_char_byte@
+@receiver_16_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -26075,7 +27562,7 @@ R F(...) {
 ...>
 }
 
-@receiver_15_w_4_34_pair_byte_char@
+@receiver_16_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -26090,7 +27577,7 @@ R F(...) {
 ...>
 }
 
-@receiver_15_w_4_34_pair_byte_byte@
+@receiver_16_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -26105,7 +27592,7 @@ R F(...) {
 ...>
 }
 
-@receiver_15_w_4_34_word_ushort@
+@receiver_16_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -26129,7 +27616,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_4_34_word_undefined2@
+@receiver_16_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -26153,7 +27640,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_4_34_word_short@
+@receiver_16_w_4_34_word_short@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -26177,7 +27664,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_4_34_byte_4_byte@
+@receiver_16_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -26204,7 +27691,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_4_34_byte_4_undefined1@
+@receiver_16_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -26231,7 +27718,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_4_34_address_4@
+@receiver_16_w_4_34_address_4@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -26255,7 +27742,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_4_34_store_4@
+@receiver_16_w_4_34_store_4@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -26280,7 +27767,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_4_34_byte_4_char@
+@receiver_16_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -26307,7 +27794,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_4_34_byte_5_byte@
+@receiver_16_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -26328,7 +27815,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_4_34_byte_5_undefined1@
+@receiver_16_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -26349,7 +27836,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_4_34_address_5@
+@receiver_16_w_4_34_address_5@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -26370,7 +27857,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_4_34_store_5@
+@receiver_16_w_4_34_store_5@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -26392,7 +27879,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_4_34_byte_5_char@
+@receiver_16_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -26413,7 +27900,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_6_51_pair_char_char@
+@receiver_16_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -26428,7 +27915,7 @@ R F(...) {
 ...>
 }
 
-@receiver_15_w_6_51_pair_char_byte@
+@receiver_16_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -26443,7 +27930,7 @@ R F(...) {
 ...>
 }
 
-@receiver_15_w_6_51_pair_byte_char@
+@receiver_16_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -26458,7 +27945,7 @@ R F(...) {
 ...>
 }
 
-@receiver_15_w_6_51_pair_byte_byte@
+@receiver_16_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -26473,7 +27960,7 @@ R F(...) {
 ...>
 }
 
-@receiver_15_w_6_51_word_ushort@
+@receiver_16_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -26497,7 +27984,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_6_51_word_undefined2@
+@receiver_16_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -26521,7 +28008,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_6_51_word_short@
+@receiver_16_w_6_51_word_short@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -26545,7 +28032,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_6_51_byte_6_byte@
+@receiver_16_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -26572,7 +28059,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_6_51_byte_6_undefined1@
+@receiver_16_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -26599,7 +28086,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_6_51_address_6@
+@receiver_16_w_6_51_address_6@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -26623,7 +28110,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_6_51_store_6@
+@receiver_16_w_6_51_store_6@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -26648,7 +28135,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_6_51_byte_6_char@
+@receiver_16_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -26675,7 +28162,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_6_51_byte_7_byte@
+@receiver_16_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -26696,7 +28183,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_6_51_byte_7_undefined1@
+@receiver_16_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -26717,7 +28204,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_6_51_address_7@
+@receiver_16_w_6_51_address_7@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -26738,7 +28225,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_6_51_store_7@
+@receiver_16_w_6_51_store_7@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -26760,7 +28247,7 @@ R F(...) {
 }
 
 
-@receiver_15_w_6_51_byte_7_char@
+@receiver_16_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -26781,7 +28268,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_0_0_pair_char_char@
+@receiver_17_w_0_0_pair_char_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -26796,7 +28283,7 @@ R F(...) {
 ...>
 }
 
-@receiver_16_w_0_0_pair_char_byte@
+@receiver_17_w_0_0_pair_char_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -26811,7 +28298,7 @@ R F(...) {
 ...>
 }
 
-@receiver_16_w_0_0_pair_byte_char@
+@receiver_17_w_0_0_pair_byte_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -26826,7 +28313,7 @@ R F(...) {
 ...>
 }
 
-@receiver_16_w_0_0_pair_byte_byte@
+@receiver_17_w_0_0_pair_byte_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -26841,7 +28328,7 @@ R F(...) {
 ...>
 }
 
-@receiver_16_w_0_0_word_ushort@
+@receiver_17_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -26865,7 +28352,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_0_0_word_undefined2@
+@receiver_17_w_0_0_word_undefined2@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -26889,7 +28376,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_0_0_word_short@
+@receiver_17_w_0_0_word_short@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -26913,7 +28400,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_0_0_byte_0_byte@
+@receiver_17_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -26943,7 +28430,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_0_0_byte_0_undefined1@
+@receiver_17_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -26973,7 +28460,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_0_0_address_0@
+@receiver_17_w_0_0_address_0@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -27000,7 +28487,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_0_0_store_0@
+@receiver_17_w_0_0_store_0@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -27028,7 +28515,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_0_0_byte_0_char@
+@receiver_17_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -27058,7 +28545,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_0_0_byte_1_byte@
+@receiver_17_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -27079,7 +28566,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_0_0_byte_1_undefined1@
+@receiver_17_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -27100,7 +28587,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_0_0_address_1@
+@receiver_17_w_0_0_address_1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -27121,7 +28608,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_0_0_store_1@
+@receiver_17_w_0_0_store_1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -27143,7 +28630,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_0_0_byte_1_char@
+@receiver_17_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -27164,7 +28651,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_2_17_pair_char_char@
+@receiver_17_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -27179,7 +28666,7 @@ R F(...) {
 ...>
 }
 
-@receiver_16_w_2_17_pair_char_byte@
+@receiver_17_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -27194,7 +28681,7 @@ R F(...) {
 ...>
 }
 
-@receiver_16_w_2_17_pair_byte_char@
+@receiver_17_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -27209,7 +28696,7 @@ R F(...) {
 ...>
 }
 
-@receiver_16_w_2_17_pair_byte_byte@
+@receiver_17_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -27224,7 +28711,7 @@ R F(...) {
 ...>
 }
 
-@receiver_16_w_2_17_word_ushort@
+@receiver_17_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -27248,7 +28735,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_2_17_word_undefined2@
+@receiver_17_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -27272,7 +28759,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_2_17_word_short@
+@receiver_17_w_2_17_word_short@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -27296,7 +28783,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_2_17_byte_2_byte@
+@receiver_17_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -27323,7 +28810,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_2_17_byte_2_undefined1@
+@receiver_17_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -27350,7 +28837,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_2_17_address_2@
+@receiver_17_w_2_17_address_2@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -27374,7 +28861,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_2_17_store_2@
+@receiver_17_w_2_17_store_2@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -27399,7 +28886,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_2_17_byte_2_char@
+@receiver_17_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -27426,7 +28913,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_2_17_byte_3_byte@
+@receiver_17_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -27447,7 +28934,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_2_17_byte_3_undefined1@
+@receiver_17_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -27468,7 +28955,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_2_17_address_3@
+@receiver_17_w_2_17_address_3@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -27489,7 +28976,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_2_17_store_3@
+@receiver_17_w_2_17_store_3@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -27511,7 +28998,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_2_17_byte_3_char@
+@receiver_17_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -27532,7 +29019,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_4_34_pair_char_char@
+@receiver_17_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -27547,7 +29034,7 @@ R F(...) {
 ...>
 }
 
-@receiver_16_w_4_34_pair_char_byte@
+@receiver_17_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -27562,7 +29049,7 @@ R F(...) {
 ...>
 }
 
-@receiver_16_w_4_34_pair_byte_char@
+@receiver_17_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -27577,7 +29064,7 @@ R F(...) {
 ...>
 }
 
-@receiver_16_w_4_34_pair_byte_byte@
+@receiver_17_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -27592,7 +29079,7 @@ R F(...) {
 ...>
 }
 
-@receiver_16_w_4_34_word_ushort@
+@receiver_17_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -27616,7 +29103,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_4_34_word_undefined2@
+@receiver_17_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -27640,7 +29127,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_4_34_word_short@
+@receiver_17_w_4_34_word_short@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -27664,7 +29151,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_4_34_byte_4_byte@
+@receiver_17_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -27691,7 +29178,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_4_34_byte_4_undefined1@
+@receiver_17_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -27718,7 +29205,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_4_34_address_4@
+@receiver_17_w_4_34_address_4@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -27742,7 +29229,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_4_34_store_4@
+@receiver_17_w_4_34_store_4@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -27767,7 +29254,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_4_34_byte_4_char@
+@receiver_17_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -27794,7 +29281,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_4_34_byte_5_byte@
+@receiver_17_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -27815,7 +29302,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_4_34_byte_5_undefined1@
+@receiver_17_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -27836,7 +29323,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_4_34_address_5@
+@receiver_17_w_4_34_address_5@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -27857,7 +29344,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_4_34_store_5@
+@receiver_17_w_4_34_store_5@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -27879,7 +29366,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_4_34_byte_5_char@
+@receiver_17_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -27900,7 +29387,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_6_51_pair_char_char@
+@receiver_17_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -27915,7 +29402,7 @@ R F(...) {
 ...>
 }
 
-@receiver_16_w_6_51_pair_char_byte@
+@receiver_17_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -27930,7 +29417,7 @@ R F(...) {
 ...>
 }
 
-@receiver_16_w_6_51_pair_byte_char@
+@receiver_17_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -27945,7 +29432,7 @@ R F(...) {
 ...>
 }
 
-@receiver_16_w_6_51_pair_byte_byte@
+@receiver_17_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -27960,7 +29447,7 @@ R F(...) {
 ...>
 }
 
-@receiver_16_w_6_51_word_ushort@
+@receiver_17_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -27984,7 +29471,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_6_51_word_undefined2@
+@receiver_17_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -28008,7 +29495,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_6_51_word_short@
+@receiver_17_w_6_51_word_short@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -28032,7 +29519,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_6_51_byte_6_byte@
+@receiver_17_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -28059,7 +29546,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_6_51_byte_6_undefined1@
+@receiver_17_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -28086,7 +29573,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_6_51_address_6@
+@receiver_17_w_6_51_address_6@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -28110,7 +29597,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_6_51_store_6@
+@receiver_17_w_6_51_store_6@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -28135,7 +29622,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_6_51_byte_6_char@
+@receiver_17_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -28162,7 +29649,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_6_51_byte_7_byte@
+@receiver_17_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -28183,7 +29670,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_6_51_byte_7_undefined1@
+@receiver_17_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -28204,7 +29691,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_6_51_address_7@
+@receiver_17_w_6_51_address_7@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -28225,7 +29712,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_6_51_store_7@
+@receiver_17_w_6_51_store_7@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -28247,7 +29734,7 @@ R F(...) {
 }
 
 
-@receiver_16_w_6_51_byte_7_char@
+@receiver_17_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -28268,7 +29755,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_0_0_pair_char_char@
+@receiver_18_w_0_0_pair_char_char@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -28283,7 +29770,7 @@ R F(...) {
 ...>
 }
 
-@receiver_17_w_0_0_pair_char_byte@
+@receiver_18_w_0_0_pair_char_byte@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -28298,7 +29785,7 @@ R F(...) {
 ...>
 }
 
-@receiver_17_w_0_0_pair_byte_char@
+@receiver_18_w_0_0_pair_byte_char@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -28313,7 +29800,7 @@ R F(...) {
 ...>
 }
 
-@receiver_17_w_0_0_pair_byte_byte@
+@receiver_18_w_0_0_pair_byte_byte@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -28328,7 +29815,7 @@ R F(...) {
 ...>
 }
 
-@receiver_17_w_0_0_word_ushort@
+@receiver_18_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -28361,7 +29848,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_0_0_word_undefined2@
+@receiver_18_w_0_0_word_undefined2@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -28394,7 +29881,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_0_0_word_short@
+@receiver_18_w_0_0_word_short@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -28421,7 +29908,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_0_0_byte_0_byte@
+@receiver_18_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -28457,7 +29944,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_0_0_byte_0_undefined1@
+@receiver_18_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -28493,7 +29980,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_0_0_address_0@
+@receiver_18_w_0_0_address_0@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -28523,7 +30010,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_0_0_store_0@
+@receiver_18_w_0_0_store_0@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -28554,7 +30041,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_0_0_byte_0_char@
+@receiver_18_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -28590,7 +30077,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_0_0_byte_1_byte@
+@receiver_18_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -28611,7 +30098,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_0_0_byte_1_undefined1@
+@receiver_18_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -28632,7 +30119,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_0_0_address_1@
+@receiver_18_w_0_0_address_1@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -28653,7 +30140,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_0_0_store_1@
+@receiver_18_w_0_0_store_1@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -28675,7 +30162,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_0_0_byte_1_char@
+@receiver_18_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -28696,7 +30183,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_2_17_pair_char_char@
+@receiver_18_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -28711,7 +30198,7 @@ R F(...) {
 ...>
 }
 
-@receiver_17_w_2_17_pair_char_byte@
+@receiver_18_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -28726,7 +30213,7 @@ R F(...) {
 ...>
 }
 
-@receiver_17_w_2_17_pair_byte_char@
+@receiver_18_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -28741,7 +30228,7 @@ R F(...) {
 ...>
 }
 
-@receiver_17_w_2_17_pair_byte_byte@
+@receiver_18_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -28756,7 +30243,7 @@ R F(...) {
 ...>
 }
 
-@receiver_17_w_2_17_word_ushort@
+@receiver_18_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -28786,7 +30273,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_2_17_word_undefined2@
+@receiver_18_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -28816,7 +30303,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_2_17_word_short@
+@receiver_18_w_2_17_word_short@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -28843,7 +30330,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_2_17_byte_2_byte@
+@receiver_18_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -28876,7 +30363,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_2_17_byte_2_undefined1@
+@receiver_18_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -28909,7 +30396,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_2_17_address_2@
+@receiver_18_w_2_17_address_2@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -28936,7 +30423,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_2_17_store_2@
+@receiver_18_w_2_17_store_2@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -28964,7 +30451,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_2_17_byte_2_char@
+@receiver_18_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -28997,7 +30484,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_2_17_byte_3_byte@
+@receiver_18_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -29018,7 +30505,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_2_17_byte_3_undefined1@
+@receiver_18_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -29039,7 +30526,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_2_17_address_3@
+@receiver_18_w_2_17_address_3@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -29060,7 +30547,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_2_17_store_3@
+@receiver_18_w_2_17_store_3@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -29082,7 +30569,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_2_17_byte_3_char@
+@receiver_18_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -29103,7 +30590,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_4_34_pair_char_char@
+@receiver_18_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -29118,7 +30605,7 @@ R F(...) {
 ...>
 }
 
-@receiver_17_w_4_34_pair_char_byte@
+@receiver_18_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -29133,7 +30620,7 @@ R F(...) {
 ...>
 }
 
-@receiver_17_w_4_34_pair_byte_char@
+@receiver_18_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -29148,7 +30635,7 @@ R F(...) {
 ...>
 }
 
-@receiver_17_w_4_34_pair_byte_byte@
+@receiver_18_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -29163,7 +30650,7 @@ R F(...) {
 ...>
 }
 
-@receiver_17_w_4_34_word_ushort@
+@receiver_18_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -29193,7 +30680,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_4_34_word_undefined2@
+@receiver_18_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -29223,7 +30710,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_4_34_word_short@
+@receiver_18_w_4_34_word_short@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -29250,7 +30737,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_4_34_byte_4_byte@
+@receiver_18_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -29283,7 +30770,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_4_34_byte_4_undefined1@
+@receiver_18_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -29316,7 +30803,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_4_34_address_4@
+@receiver_18_w_4_34_address_4@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -29343,7 +30830,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_4_34_store_4@
+@receiver_18_w_4_34_store_4@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -29371,7 +30858,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_4_34_byte_4_char@
+@receiver_18_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -29404,7 +30891,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_4_34_byte_5_byte@
+@receiver_18_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -29425,7 +30912,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_4_34_byte_5_undefined1@
+@receiver_18_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -29446,7 +30933,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_4_34_address_5@
+@receiver_18_w_4_34_address_5@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -29467,7 +30954,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_4_34_store_5@
+@receiver_18_w_4_34_store_5@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -29489,7 +30976,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_4_34_byte_5_char@
+@receiver_18_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -29510,7 +30997,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_6_51_pair_char_char@
+@receiver_18_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -29525,7 +31012,7 @@ R F(...) {
 ...>
 }
 
-@receiver_17_w_6_51_pair_char_byte@
+@receiver_18_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -29540,7 +31027,7 @@ R F(...) {
 ...>
 }
 
-@receiver_17_w_6_51_pair_byte_char@
+@receiver_18_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -29555,7 +31042,7 @@ R F(...) {
 ...>
 }
 
-@receiver_17_w_6_51_pair_byte_byte@
+@receiver_18_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -29570,7 +31057,7 @@ R F(...) {
 ...>
 }
 
-@receiver_17_w_6_51_word_ushort@
+@receiver_18_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -29600,7 +31087,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_6_51_word_undefined2@
+@receiver_18_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -29630,7 +31117,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_6_51_word_short@
+@receiver_18_w_6_51_word_short@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -29657,7 +31144,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_6_51_byte_6_byte@
+@receiver_18_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -29690,7 +31177,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_6_51_byte_6_undefined1@
+@receiver_18_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -29723,7 +31210,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_6_51_address_6@
+@receiver_18_w_6_51_address_6@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -29750,7 +31237,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_6_51_store_6@
+@receiver_18_w_6_51_store_6@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -29778,7 +31265,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_6_51_byte_6_char@
+@receiver_18_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -29811,7 +31298,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_6_51_byte_7_byte@
+@receiver_18_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -29832,7 +31319,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_6_51_byte_7_undefined1@
+@receiver_18_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -29853,7 +31340,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_6_51_address_7@
+@receiver_18_w_6_51_address_7@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -29874,7 +31361,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_6_51_store_7@
+@receiver_18_w_6_51_store_7@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -29896,7 +31383,7 @@ R F(...) {
 }
 
 
-@receiver_17_w_6_51_byte_7_char@
+@receiver_18_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -29917,7 +31404,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_0_0_pair_char_char@
+@receiver_19_w_0_0_pair_char_char@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -29932,7 +31419,7 @@ R F(...) {
 ...>
 }
 
-@receiver_18_w_0_0_pair_char_byte@
+@receiver_19_w_0_0_pair_char_byte@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -29947,7 +31434,7 @@ R F(...) {
 ...>
 }
 
-@receiver_18_w_0_0_pair_byte_char@
+@receiver_19_w_0_0_pair_byte_char@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -29962,7 +31449,7 @@ R F(...) {
 ...>
 }
 
-@receiver_18_w_0_0_pair_byte_byte@
+@receiver_19_w_0_0_pair_byte_byte@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -29977,7 +31464,7 @@ R F(...) {
 ...>
 }
 
-@receiver_18_w_0_0_word_ushort@
+@receiver_19_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -30010,7 +31497,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_0_0_word_undefined2@
+@receiver_19_w_0_0_word_undefined2@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -30043,7 +31530,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_0_0_word_short@
+@receiver_19_w_0_0_word_short@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -30070,7 +31557,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_0_0_byte_0_byte@
+@receiver_19_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -30106,7 +31593,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_0_0_byte_0_undefined1@
+@receiver_19_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -30142,7 +31629,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_0_0_address_0@
+@receiver_19_w_0_0_address_0@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -30172,7 +31659,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_0_0_store_0@
+@receiver_19_w_0_0_store_0@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -30203,7 +31690,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_0_0_byte_0_char@
+@receiver_19_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -30239,7 +31726,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_0_0_byte_1_byte@
+@receiver_19_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -30260,7 +31747,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_0_0_byte_1_undefined1@
+@receiver_19_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -30281,7 +31768,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_0_0_address_1@
+@receiver_19_w_0_0_address_1@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -30302,7 +31789,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_0_0_store_1@
+@receiver_19_w_0_0_store_1@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -30324,7 +31811,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_0_0_byte_1_char@
+@receiver_19_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -30345,7 +31832,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_2_17_pair_char_char@
+@receiver_19_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -30360,7 +31847,7 @@ R F(...) {
 ...>
 }
 
-@receiver_18_w_2_17_pair_char_byte@
+@receiver_19_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -30375,7 +31862,7 @@ R F(...) {
 ...>
 }
 
-@receiver_18_w_2_17_pair_byte_char@
+@receiver_19_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -30390,7 +31877,7 @@ R F(...) {
 ...>
 }
 
-@receiver_18_w_2_17_pair_byte_byte@
+@receiver_19_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -30405,7 +31892,7 @@ R F(...) {
 ...>
 }
 
-@receiver_18_w_2_17_word_ushort@
+@receiver_19_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -30435,7 +31922,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_2_17_word_undefined2@
+@receiver_19_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -30465,7 +31952,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_2_17_word_short@
+@receiver_19_w_2_17_word_short@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -30492,7 +31979,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_2_17_byte_2_byte@
+@receiver_19_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -30525,7 +32012,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_2_17_byte_2_undefined1@
+@receiver_19_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -30558,7 +32045,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_2_17_address_2@
+@receiver_19_w_2_17_address_2@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -30585,7 +32072,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_2_17_store_2@
+@receiver_19_w_2_17_store_2@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -30613,7 +32100,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_2_17_byte_2_char@
+@receiver_19_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -30646,7 +32133,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_2_17_byte_3_byte@
+@receiver_19_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -30667,7 +32154,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_2_17_byte_3_undefined1@
+@receiver_19_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -30688,7 +32175,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_2_17_address_3@
+@receiver_19_w_2_17_address_3@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -30709,7 +32196,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_2_17_store_3@
+@receiver_19_w_2_17_store_3@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -30731,7 +32218,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_2_17_byte_3_char@
+@receiver_19_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -30752,7 +32239,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_4_34_pair_char_char@
+@receiver_19_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -30767,7 +32254,7 @@ R F(...) {
 ...>
 }
 
-@receiver_18_w_4_34_pair_char_byte@
+@receiver_19_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -30782,7 +32269,7 @@ R F(...) {
 ...>
 }
 
-@receiver_18_w_4_34_pair_byte_char@
+@receiver_19_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -30797,7 +32284,7 @@ R F(...) {
 ...>
 }
 
-@receiver_18_w_4_34_pair_byte_byte@
+@receiver_19_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -30812,7 +32299,7 @@ R F(...) {
 ...>
 }
 
-@receiver_18_w_4_34_word_ushort@
+@receiver_19_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -30842,7 +32329,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_4_34_word_undefined2@
+@receiver_19_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -30872,7 +32359,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_4_34_word_short@
+@receiver_19_w_4_34_word_short@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -30899,7 +32386,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_4_34_byte_4_byte@
+@receiver_19_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -30932,7 +32419,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_4_34_byte_4_undefined1@
+@receiver_19_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -30965,7 +32452,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_4_34_address_4@
+@receiver_19_w_4_34_address_4@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -30992,7 +32479,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_4_34_store_4@
+@receiver_19_w_4_34_store_4@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -31020,7 +32507,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_4_34_byte_4_char@
+@receiver_19_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -31053,7 +32540,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_4_34_byte_5_byte@
+@receiver_19_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -31074,7 +32561,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_4_34_byte_5_undefined1@
+@receiver_19_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -31095,7 +32582,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_4_34_address_5@
+@receiver_19_w_4_34_address_5@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -31116,7 +32603,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_4_34_store_5@
+@receiver_19_w_4_34_store_5@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -31138,7 +32625,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_4_34_byte_5_char@
+@receiver_19_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -31159,7 +32646,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_6_51_pair_char_char@
+@receiver_19_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -31174,7 +32661,7 @@ R F(...) {
 ...>
 }
 
-@receiver_18_w_6_51_pair_char_byte@
+@receiver_19_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -31189,7 +32676,7 @@ R F(...) {
 ...>
 }
 
-@receiver_18_w_6_51_pair_byte_char@
+@receiver_19_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -31204,7 +32691,7 @@ R F(...) {
 ...>
 }
 
-@receiver_18_w_6_51_pair_byte_byte@
+@receiver_19_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -31219,7 +32706,7 @@ R F(...) {
 ...>
 }
 
-@receiver_18_w_6_51_word_ushort@
+@receiver_19_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -31249,7 +32736,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_6_51_word_undefined2@
+@receiver_19_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -31279,7 +32766,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_6_51_word_short@
+@receiver_19_w_6_51_word_short@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -31306,7 +32793,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_6_51_byte_6_byte@
+@receiver_19_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -31339,7 +32826,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_6_51_byte_6_undefined1@
+@receiver_19_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -31372,7 +32859,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_6_51_address_6@
+@receiver_19_w_6_51_address_6@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -31399,7 +32886,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_6_51_store_6@
+@receiver_19_w_6_51_store_6@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -31427,7 +32914,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_6_51_byte_6_char@
+@receiver_19_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -31460,7 +32947,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_6_51_byte_7_byte@
+@receiver_19_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -31481,7 +32968,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_6_51_byte_7_undefined1@
+@receiver_19_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -31502,7 +32989,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_6_51_address_7@
+@receiver_19_w_6_51_address_7@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -31523,7 +33010,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_6_51_store_7@
+@receiver_19_w_6_51_store_7@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -31545,7 +33032,7 @@ R F(...) {
 }
 
 
-@receiver_18_w_6_51_byte_7_char@
+@receiver_19_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -31566,7 +33053,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_0_0_pair_char_char@
+@receiver_20_w_0_0_pair_char_char@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -31581,7 +33068,7 @@ R F(...) {
 ...>
 }
 
-@receiver_19_w_0_0_pair_char_byte@
+@receiver_20_w_0_0_pair_char_byte@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -31596,7 +33083,7 @@ R F(...) {
 ...>
 }
 
-@receiver_19_w_0_0_pair_byte_char@
+@receiver_20_w_0_0_pair_byte_char@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -31611,7 +33098,7 @@ R F(...) {
 ...>
 }
 
-@receiver_19_w_0_0_pair_byte_byte@
+@receiver_20_w_0_0_pair_byte_byte@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -31626,7 +33113,7 @@ R F(...) {
 ...>
 }
 
-@receiver_19_w_0_0_word_ushort@
+@receiver_20_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -31659,7 +33146,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_0_0_word_undefined2@
+@receiver_20_w_0_0_word_undefined2@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -31692,7 +33179,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_0_0_word_short@
+@receiver_20_w_0_0_word_short@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -31719,7 +33206,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_0_0_byte_0_byte@
+@receiver_20_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -31755,7 +33242,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_0_0_byte_0_undefined1@
+@receiver_20_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -31791,7 +33278,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_0_0_address_0@
+@receiver_20_w_0_0_address_0@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -31821,7 +33308,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_0_0_store_0@
+@receiver_20_w_0_0_store_0@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -31852,7 +33339,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_0_0_byte_0_char@
+@receiver_20_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -31888,7 +33375,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_0_0_byte_1_byte@
+@receiver_20_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -31909,7 +33396,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_0_0_byte_1_undefined1@
+@receiver_20_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -31930,7 +33417,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_0_0_address_1@
+@receiver_20_w_0_0_address_1@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -31951,7 +33438,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_0_0_store_1@
+@receiver_20_w_0_0_store_1@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -31973,7 +33460,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_0_0_byte_1_char@
+@receiver_20_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -31994,7 +33481,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_2_17_pair_char_char@
+@receiver_20_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -32009,7 +33496,7 @@ R F(...) {
 ...>
 }
 
-@receiver_19_w_2_17_pair_char_byte@
+@receiver_20_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -32024,7 +33511,7 @@ R F(...) {
 ...>
 }
 
-@receiver_19_w_2_17_pair_byte_char@
+@receiver_20_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -32039,7 +33526,7 @@ R F(...) {
 ...>
 }
 
-@receiver_19_w_2_17_pair_byte_byte@
+@receiver_20_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -32054,7 +33541,7 @@ R F(...) {
 ...>
 }
 
-@receiver_19_w_2_17_word_ushort@
+@receiver_20_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -32084,7 +33571,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_2_17_word_undefined2@
+@receiver_20_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -32114,7 +33601,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_2_17_word_short@
+@receiver_20_w_2_17_word_short@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -32141,7 +33628,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_2_17_byte_2_byte@
+@receiver_20_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -32174,7 +33661,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_2_17_byte_2_undefined1@
+@receiver_20_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -32207,7 +33694,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_2_17_address_2@
+@receiver_20_w_2_17_address_2@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -32234,7 +33721,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_2_17_store_2@
+@receiver_20_w_2_17_store_2@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -32262,7 +33749,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_2_17_byte_2_char@
+@receiver_20_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -32295,7 +33782,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_2_17_byte_3_byte@
+@receiver_20_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -32316,7 +33803,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_2_17_byte_3_undefined1@
+@receiver_20_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -32337,7 +33824,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_2_17_address_3@
+@receiver_20_w_2_17_address_3@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -32358,7 +33845,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_2_17_store_3@
+@receiver_20_w_2_17_store_3@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -32380,7 +33867,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_2_17_byte_3_char@
+@receiver_20_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -32401,7 +33888,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_4_34_pair_char_char@
+@receiver_20_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -32416,7 +33903,7 @@ R F(...) {
 ...>
 }
 
-@receiver_19_w_4_34_pair_char_byte@
+@receiver_20_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -32431,7 +33918,7 @@ R F(...) {
 ...>
 }
 
-@receiver_19_w_4_34_pair_byte_char@
+@receiver_20_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -32446,7 +33933,7 @@ R F(...) {
 ...>
 }
 
-@receiver_19_w_4_34_pair_byte_byte@
+@receiver_20_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -32461,7 +33948,7 @@ R F(...) {
 ...>
 }
 
-@receiver_19_w_4_34_word_ushort@
+@receiver_20_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -32491,7 +33978,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_4_34_word_undefined2@
+@receiver_20_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -32521,7 +34008,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_4_34_word_short@
+@receiver_20_w_4_34_word_short@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -32548,7 +34035,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_4_34_byte_4_byte@
+@receiver_20_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -32581,7 +34068,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_4_34_byte_4_undefined1@
+@receiver_20_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -32614,7 +34101,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_4_34_address_4@
+@receiver_20_w_4_34_address_4@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -32641,7 +34128,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_4_34_store_4@
+@receiver_20_w_4_34_store_4@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -32669,7 +34156,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_4_34_byte_4_char@
+@receiver_20_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -32702,7 +34189,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_4_34_byte_5_byte@
+@receiver_20_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -32723,7 +34210,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_4_34_byte_5_undefined1@
+@receiver_20_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -32744,7 +34231,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_4_34_address_5@
+@receiver_20_w_4_34_address_5@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -32765,7 +34252,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_4_34_store_5@
+@receiver_20_w_4_34_store_5@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -32787,7 +34274,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_4_34_byte_5_char@
+@receiver_20_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -32808,7 +34295,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_6_51_pair_char_char@
+@receiver_20_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -32823,7 +34310,7 @@ R F(...) {
 ...>
 }
 
-@receiver_19_w_6_51_pair_char_byte@
+@receiver_20_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -32838,7 +34325,7 @@ R F(...) {
 ...>
 }
 
-@receiver_19_w_6_51_pair_byte_char@
+@receiver_20_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -32853,7 +34340,7 @@ R F(...) {
 ...>
 }
 
-@receiver_19_w_6_51_pair_byte_byte@
+@receiver_20_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -32868,7 +34355,7 @@ R F(...) {
 ...>
 }
 
-@receiver_19_w_6_51_word_ushort@
+@receiver_20_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -32898,7 +34385,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_6_51_word_undefined2@
+@receiver_20_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -32928,7 +34415,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_6_51_word_short@
+@receiver_20_w_6_51_word_short@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -32955,7 +34442,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_6_51_byte_6_byte@
+@receiver_20_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -32988,7 +34475,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_6_51_byte_6_undefined1@
+@receiver_20_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -33021,7 +34508,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_6_51_address_6@
+@receiver_20_w_6_51_address_6@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -33048,7 +34535,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_6_51_store_6@
+@receiver_20_w_6_51_store_6@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -33076,7 +34563,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_6_51_byte_6_char@
+@receiver_20_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -33109,7 +34596,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_6_51_byte_7_byte@
+@receiver_20_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -33130,7 +34617,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_6_51_byte_7_undefined1@
+@receiver_20_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -33151,7 +34638,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_6_51_address_7@
+@receiver_20_w_6_51_address_7@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -33172,7 +34659,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_6_51_store_7@
+@receiver_20_w_6_51_store_7@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -33194,7 +34681,7 @@ R F(...) {
 }
 
 
-@receiver_19_w_6_51_byte_7_char@
+@receiver_20_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -33215,7 +34702,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_0_0_pair_char_char@
+@receiver_21_w_0_0_pair_char_char@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -33230,7 +34717,7 @@ R F(...) {
 ...>
 }
 
-@receiver_20_w_0_0_pair_char_byte@
+@receiver_21_w_0_0_pair_char_byte@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -33245,7 +34732,7 @@ R F(...) {
 ...>
 }
 
-@receiver_20_w_0_0_pair_byte_char@
+@receiver_21_w_0_0_pair_byte_char@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -33260,7 +34747,7 @@ R F(...) {
 ...>
 }
 
-@receiver_20_w_0_0_pair_byte_byte@
+@receiver_21_w_0_0_pair_byte_byte@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -33275,7 +34762,7 @@ R F(...) {
 ...>
 }
 
-@receiver_20_w_0_0_word_ushort@
+@receiver_21_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -33302,7 +34789,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_0_0_word_undefined2@
+@receiver_21_w_0_0_word_undefined2@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -33329,7 +34816,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_0_0_word_short@
+@receiver_21_w_0_0_word_short@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -33356,7 +34843,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_0_0_byte_0_byte@
+@receiver_21_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -33389,7 +34876,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_0_0_byte_0_undefined1@
+@receiver_21_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -33422,7 +34909,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_0_0_address_0@
+@receiver_21_w_0_0_address_0@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -33458,7 +34945,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_0_0_store_0@
+@receiver_21_w_0_0_store_0@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -33495,7 +34982,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_0_0_byte_0_char@
+@receiver_21_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -33534,7 +35021,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_0_0_byte_1_byte@
+@receiver_21_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -33558,7 +35045,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_0_0_byte_1_undefined1@
+@receiver_21_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -33582,7 +35069,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_0_0_address_1@
+@receiver_21_w_0_0_address_1@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -33609,7 +35096,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_0_0_store_1@
+@receiver_21_w_0_0_store_1@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -33637,7 +35124,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_0_0_byte_1_char@
+@receiver_21_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -33664,7 +35151,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_2_17_pair_char_char@
+@receiver_21_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -33679,7 +35166,7 @@ R F(...) {
 ...>
 }
 
-@receiver_20_w_2_17_pair_char_byte@
+@receiver_21_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -33694,7 +35181,7 @@ R F(...) {
 ...>
 }
 
-@receiver_20_w_2_17_pair_byte_char@
+@receiver_21_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -33709,7 +35196,7 @@ R F(...) {
 ...>
 }
 
-@receiver_20_w_2_17_pair_byte_byte@
+@receiver_21_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -33724,7 +35211,7 @@ R F(...) {
 ...>
 }
 
-@receiver_20_w_2_17_word_ushort@
+@receiver_21_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -33751,7 +35238,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_2_17_word_undefined2@
+@receiver_21_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -33778,7 +35265,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_2_17_word_short@
+@receiver_21_w_2_17_word_short@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -33805,7 +35292,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_2_17_byte_2_byte@
+@receiver_21_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -33835,7 +35322,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_2_17_byte_2_undefined1@
+@receiver_21_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -33865,7 +35352,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_2_17_address_2@
+@receiver_21_w_2_17_address_2@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -33895,7 +35382,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_2_17_store_2@
+@receiver_21_w_2_17_store_2@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -33926,7 +35413,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_2_17_byte_2_char@
+@receiver_21_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -33959,7 +35446,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_2_17_byte_3_byte@
+@receiver_21_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -33983,7 +35470,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_2_17_byte_3_undefined1@
+@receiver_21_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -34007,7 +35494,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_2_17_address_3@
+@receiver_21_w_2_17_address_3@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -34034,7 +35521,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_2_17_store_3@
+@receiver_21_w_2_17_store_3@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -34062,7 +35549,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_2_17_byte_3_char@
+@receiver_21_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -34089,7 +35576,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_4_34_pair_char_char@
+@receiver_21_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -34104,7 +35591,7 @@ R F(...) {
 ...>
 }
 
-@receiver_20_w_4_34_pair_char_byte@
+@receiver_21_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -34119,7 +35606,7 @@ R F(...) {
 ...>
 }
 
-@receiver_20_w_4_34_pair_byte_char@
+@receiver_21_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -34134,7 +35621,7 @@ R F(...) {
 ...>
 }
 
-@receiver_20_w_4_34_pair_byte_byte@
+@receiver_21_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -34149,7 +35636,7 @@ R F(...) {
 ...>
 }
 
-@receiver_20_w_4_34_word_ushort@
+@receiver_21_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -34176,7 +35663,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_4_34_word_undefined2@
+@receiver_21_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -34203,7 +35690,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_4_34_word_short@
+@receiver_21_w_4_34_word_short@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -34230,7 +35717,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_4_34_byte_4_byte@
+@receiver_21_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -34260,7 +35747,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_4_34_byte_4_undefined1@
+@receiver_21_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -34290,7 +35777,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_4_34_address_4@
+@receiver_21_w_4_34_address_4@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -34320,7 +35807,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_4_34_store_4@
+@receiver_21_w_4_34_store_4@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -34351,7 +35838,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_4_34_byte_4_char@
+@receiver_21_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -34384,7 +35871,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_4_34_byte_5_byte@
+@receiver_21_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -34408,7 +35895,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_4_34_byte_5_undefined1@
+@receiver_21_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -34432,7 +35919,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_4_34_address_5@
+@receiver_21_w_4_34_address_5@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -34459,7 +35946,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_4_34_store_5@
+@receiver_21_w_4_34_store_5@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -34487,7 +35974,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_4_34_byte_5_char@
+@receiver_21_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -34514,7 +36001,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_6_51_pair_char_char@
+@receiver_21_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -34529,7 +36016,7 @@ R F(...) {
 ...>
 }
 
-@receiver_20_w_6_51_pair_char_byte@
+@receiver_21_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -34544,7 +36031,7 @@ R F(...) {
 ...>
 }
 
-@receiver_20_w_6_51_pair_byte_char@
+@receiver_21_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -34559,7 +36046,7 @@ R F(...) {
 ...>
 }
 
-@receiver_20_w_6_51_pair_byte_byte@
+@receiver_21_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -34574,7 +36061,7 @@ R F(...) {
 ...>
 }
 
-@receiver_20_w_6_51_word_ushort@
+@receiver_21_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -34601,7 +36088,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_6_51_word_undefined2@
+@receiver_21_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -34628,7 +36115,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_6_51_word_short@
+@receiver_21_w_6_51_word_short@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -34655,7 +36142,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_6_51_byte_6_byte@
+@receiver_21_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -34685,7 +36172,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_6_51_byte_6_undefined1@
+@receiver_21_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -34715,7 +36202,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_6_51_address_6@
+@receiver_21_w_6_51_address_6@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -34745,7 +36232,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_6_51_store_6@
+@receiver_21_w_6_51_store_6@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -34776,7 +36263,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_6_51_byte_6_char@
+@receiver_21_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -34809,7 +36296,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_6_51_byte_7_byte@
+@receiver_21_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -34833,7 +36320,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_6_51_byte_7_undefined1@
+@receiver_21_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -34857,7 +36344,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_6_51_address_7@
+@receiver_21_w_6_51_address_7@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -34884,7 +36371,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_6_51_store_7@
+@receiver_21_w_6_51_store_7@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -34912,7 +36399,7 @@ R F(...) {
 }
 
 
-@receiver_20_w_6_51_byte_7_char@
+@receiver_21_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -34939,7 +36426,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_0_0_pair_char_char@
+@receiver_22_w_0_0_pair_char_char@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -34954,7 +36441,7 @@ R F(...) {
 ...>
 }
 
-@receiver_21_w_0_0_pair_char_byte@
+@receiver_22_w_0_0_pair_char_byte@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -34969,7 +36456,7 @@ R F(...) {
 ...>
 }
 
-@receiver_21_w_0_0_pair_byte_char@
+@receiver_22_w_0_0_pair_byte_char@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -34984,7 +36471,7 @@ R F(...) {
 ...>
 }
 
-@receiver_21_w_0_0_pair_byte_byte@
+@receiver_22_w_0_0_pair_byte_byte@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -34999,7 +36486,7 @@ R F(...) {
 ...>
 }
 
-@receiver_21_w_0_0_word_ushort@
+@receiver_22_w_0_0_word_ushort@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -35026,7 +36513,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_0_0_word_undefined2@
+@receiver_22_w_0_0_word_undefined2@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -35053,7 +36540,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_0_0_word_short@
+@receiver_22_w_0_0_word_short@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -35080,7 +36567,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_0_0_byte_0_byte@
+@receiver_22_w_0_0_byte_0_byte@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -35113,7 +36600,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_0_0_byte_0_undefined1@
+@receiver_22_w_0_0_byte_0_undefined1@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -35146,7 +36633,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_0_0_address_0@
+@receiver_22_w_0_0_address_0@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -35182,7 +36669,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_0_0_store_0@
+@receiver_22_w_0_0_store_0@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -35219,7 +36706,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_0_0_byte_0_char@
+@receiver_22_w_0_0_byte_0_char@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -35258,7 +36745,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_0_0_byte_1_byte@
+@receiver_22_w_0_0_byte_1_byte@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -35282,7 +36769,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_0_0_byte_1_undefined1@
+@receiver_22_w_0_0_byte_1_undefined1@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -35306,7 +36793,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_0_0_address_1@
+@receiver_22_w_0_0_address_1@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -35333,7 +36820,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_0_0_store_1@
+@receiver_22_w_0_0_store_1@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -35361,7 +36848,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_0_0_byte_1_char@
+@receiver_22_w_0_0_byte_1_char@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -35388,7 +36875,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_2_17_pair_char_char@
+@receiver_22_w_2_17_pair_char_char@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -35403,7 +36890,7 @@ R F(...) {
 ...>
 }
 
-@receiver_21_w_2_17_pair_char_byte@
+@receiver_22_w_2_17_pair_char_byte@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -35418,7 +36905,7 @@ R F(...) {
 ...>
 }
 
-@receiver_21_w_2_17_pair_byte_char@
+@receiver_22_w_2_17_pair_byte_char@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -35433,7 +36920,7 @@ R F(...) {
 ...>
 }
 
-@receiver_21_w_2_17_pair_byte_byte@
+@receiver_22_w_2_17_pair_byte_byte@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -35448,7 +36935,7 @@ R F(...) {
 ...>
 }
 
-@receiver_21_w_2_17_word_ushort@
+@receiver_22_w_2_17_word_ushort@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -35475,7 +36962,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_2_17_word_undefined2@
+@receiver_22_w_2_17_word_undefined2@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -35502,7 +36989,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_2_17_word_short@
+@receiver_22_w_2_17_word_short@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -35529,7 +37016,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_2_17_byte_2_byte@
+@receiver_22_w_2_17_byte_2_byte@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -35559,7 +37046,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_2_17_byte_2_undefined1@
+@receiver_22_w_2_17_byte_2_undefined1@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -35589,7 +37076,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_2_17_address_2@
+@receiver_22_w_2_17_address_2@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -35619,7 +37106,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_2_17_store_2@
+@receiver_22_w_2_17_store_2@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -35650,7 +37137,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_2_17_byte_2_char@
+@receiver_22_w_2_17_byte_2_char@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -35683,7 +37170,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_2_17_byte_3_byte@
+@receiver_22_w_2_17_byte_3_byte@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -35707,7 +37194,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_2_17_byte_3_undefined1@
+@receiver_22_w_2_17_byte_3_undefined1@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -35731,7 +37218,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_2_17_address_3@
+@receiver_22_w_2_17_address_3@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -35758,7 +37245,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_2_17_store_3@
+@receiver_22_w_2_17_store_3@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -35786,7 +37273,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_2_17_byte_3_char@
+@receiver_22_w_2_17_byte_3_char@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -35813,7 +37300,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_4_34_pair_char_char@
+@receiver_22_w_4_34_pair_char_char@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -35828,7 +37315,7 @@ R F(...) {
 ...>
 }
 
-@receiver_21_w_4_34_pair_char_byte@
+@receiver_22_w_4_34_pair_char_byte@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -35843,7 +37330,7 @@ R F(...) {
 ...>
 }
 
-@receiver_21_w_4_34_pair_byte_char@
+@receiver_22_w_4_34_pair_byte_char@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -35858,7 +37345,7 @@ R F(...) {
 ...>
 }
 
-@receiver_21_w_4_34_pair_byte_byte@
+@receiver_22_w_4_34_pair_byte_byte@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -35873,7 +37360,7 @@ R F(...) {
 ...>
 }
 
-@receiver_21_w_4_34_word_ushort@
+@receiver_22_w_4_34_word_ushort@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -35900,7 +37387,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_4_34_word_undefined2@
+@receiver_22_w_4_34_word_undefined2@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -35927,7 +37414,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_4_34_word_short@
+@receiver_22_w_4_34_word_short@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -35954,7 +37441,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_4_34_byte_4_byte@
+@receiver_22_w_4_34_byte_4_byte@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -35984,7 +37471,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_4_34_byte_4_undefined1@
+@receiver_22_w_4_34_byte_4_undefined1@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -36014,7 +37501,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_4_34_address_4@
+@receiver_22_w_4_34_address_4@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -36044,7 +37531,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_4_34_store_4@
+@receiver_22_w_4_34_store_4@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -36075,7 +37562,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_4_34_byte_4_char@
+@receiver_22_w_4_34_byte_4_char@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -36108,7 +37595,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_4_34_byte_5_byte@
+@receiver_22_w_4_34_byte_5_byte@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -36132,7 +37619,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_4_34_byte_5_undefined1@
+@receiver_22_w_4_34_byte_5_undefined1@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -36156,7 +37643,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_4_34_address_5@
+@receiver_22_w_4_34_address_5@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -36183,7 +37670,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_4_34_store_5@
+@receiver_22_w_4_34_store_5@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -36211,7 +37698,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_4_34_byte_5_char@
+@receiver_22_w_4_34_byte_5_char@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -36238,7 +37725,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_6_51_pair_char_char@
+@receiver_22_w_6_51_pair_char_char@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -36253,7 +37740,7 @@ R F(...) {
 ...>
 }
 
-@receiver_21_w_6_51_pair_char_byte@
+@receiver_22_w_6_51_pair_char_byte@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -36268,7 +37755,7 @@ R F(...) {
 ...>
 }
 
-@receiver_21_w_6_51_pair_byte_char@
+@receiver_22_w_6_51_pair_byte_char@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -36283,7 +37770,7 @@ R F(...) {
 ...>
 }
 
-@receiver_21_w_6_51_pair_byte_byte@
+@receiver_22_w_6_51_pair_byte_byte@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -36298,7 +37785,7 @@ R F(...) {
 ...>
 }
 
-@receiver_21_w_6_51_word_ushort@
+@receiver_22_w_6_51_word_ushort@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -36325,7 +37812,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_6_51_word_undefined2@
+@receiver_22_w_6_51_word_undefined2@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -36352,7 +37839,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_6_51_word_short@
+@receiver_22_w_6_51_word_short@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef ushort, undefined2, byte, uw_object_hdr_t;
@@ -36379,7 +37866,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_6_51_byte_6_byte@
+@receiver_22_w_6_51_byte_6_byte@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -36409,7 +37896,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_6_51_byte_6_undefined1@
+@receiver_22_w_6_51_byte_6_undefined1@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -36439,7 +37926,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_6_51_address_6@
+@receiver_22_w_6_51_address_6@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -36469,7 +37956,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_6_51_store_6@
+@receiver_22_w_6_51_store_6@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -36500,7 +37987,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_6_51_byte_6_char@
+@receiver_22_w_6_51_byte_6_char@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -36533,7 +38020,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_6_51_byte_7_byte@
+@receiver_22_w_6_51_byte_7_byte@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -36557,7 +38044,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_6_51_byte_7_undefined1@
+@receiver_22_w_6_51_byte_7_undefined1@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;
@@ -36581,7 +38068,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_6_51_address_7@
+@receiver_22_w_6_51_address_7@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -36608,7 +38095,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_6_51_store_7@
+@receiver_22_w_6_51_store_7@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, ushort, uw_object_hdr_t;
@@ -36636,7 +38123,7 @@ R F(...) {
 }
 
 
-@receiver_21_w_6_51_byte_7_char@
+@receiver_22_w_6_51_byte_7_char@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef byte, undefined1, ushort, uw_object_hdr_t;

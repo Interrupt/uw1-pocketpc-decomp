@@ -421,6 +421,77 @@ R F(...) {
 
 @word_5_0@
 type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)projectile + 0)
++ ((uw_object_hdr_t *)projectile)->type_flags
+|
+- ((ushort *)projectile)[0]
++ ((uw_object_hdr_t *)projectile)->type_flags
+|
+- *(ushort *)projectile
++ ((uw_object_hdr_t *)projectile)->type_flags
+)
+...>
+}
+
+@word_5_1@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)projectile + 2)
++ ((uw_object_hdr_t *)projectile)->position_word
+|
+- ((ushort *)projectile)[1]
++ ((uw_object_hdr_t *)projectile)->position_word
+)
+...>
+}
+
+@word_5_2@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)projectile + 4)
++ ((uw_object_hdr_t *)projectile)->chain_word
+|
+- ((ushort *)projectile)[2]
++ ((uw_object_hdr_t *)projectile)->chain_word
+)
+...>
+}
+
+@word_5_3@
+type R;
+identifier F =~ "^\(sync_object_tile_position\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)projectile + 6)
++ ((uw_object_hdr_t *)projectile)->link_word
+|
+- ((ushort *)projectile)[3]
++ ((uw_object_hdr_t *)projectile)->link_word
+)
+...>
+}
+
+@word_6_0@
+type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef ushort, uw_object_hdr_t;
 @@
@@ -445,7 +516,7 @@ R F(...) {
 ...>
 }
 
-@word_5_1@
+@word_6_1@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef ushort, uw_object_hdr_t;
@@ -465,7 +536,7 @@ R F(...) {
 ...>
 }
 
-@word_5_2@
+@word_6_2@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef ushort, uw_object_hdr_t;
@@ -485,7 +556,7 @@ R F(...) {
 ...>
 }
 
-@word_5_3@
+@word_6_3@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef ushort, uw_object_hdr_t;
@@ -505,7 +576,7 @@ R F(...) {
 ...>
 }
 
-@word_6_0@
+@word_7_0@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef ushort, uw_object_hdr_t;
@@ -528,7 +599,7 @@ R F(...) {
 ...>
 }
 
-@word_6_1@
+@word_7_1@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef ushort, uw_object_hdr_t;
@@ -548,7 +619,7 @@ R F(...) {
 ...>
 }
 
-@word_6_2@
+@word_7_2@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef ushort, uw_object_hdr_t;
@@ -568,7 +639,7 @@ R F(...) {
 ...>
 }
 
-@word_6_3@
+@word_7_3@
 type R;
 identifier F =~ "^\(spawn_creature_special_item_drop\|spawn_creature_treasure_drop\)$";
 typedef ushort, uw_object_hdr_t;
@@ -588,7 +659,7 @@ R F(...) {
 ...>
 }
 
-@word_7_0@
+@word_8_0@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef ushort, uw_object_hdr_t;
@@ -611,7 +682,7 @@ R F(...) {
 ...>
 }
 
-@word_7_1@
+@word_8_1@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef ushort, uw_object_hdr_t;
@@ -631,7 +702,7 @@ R F(...) {
 ...>
 }
 
-@word_7_2@
+@word_8_2@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef ushort, uw_object_hdr_t;
@@ -651,7 +722,7 @@ R F(...) {
 ...>
 }
 
-@word_7_3@
+@word_8_3@
 type R;
 identifier F =~ "^\(spawn_creature_equipment_drop\)$";
 typedef ushort, uw_object_hdr_t;
@@ -671,7 +742,7 @@ R F(...) {
 ...>
 }
 
-@word_8_0@
+@word_9_0@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef ushort, uw_object_hdr_t;
@@ -694,7 +765,7 @@ R F(...) {
 ...>
 }
 
-@word_8_1@
+@word_9_1@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef ushort, uw_object_hdr_t;
@@ -714,7 +785,7 @@ R F(...) {
 ...>
 }
 
-@word_8_2@
+@word_9_2@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef ushort, uw_object_hdr_t;
@@ -734,7 +805,7 @@ R F(...) {
 ...>
 }
 
-@word_8_3@
+@word_9_3@
 type R;
 identifier F =~ "^\(spawn_creature_misc_item_drop\)$";
 typedef ushort, uw_object_hdr_t;
@@ -754,7 +825,7 @@ R F(...) {
 ...>
 }
 
-@word_9_0@
+@word_10_0@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -777,7 +848,7 @@ R F(...) {
 ...>
 }
 
-@word_9_1@
+@word_10_1@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -797,7 +868,7 @@ R F(...) {
 ...>
 }
 
-@word_9_2@
+@word_10_2@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -817,7 +888,7 @@ R F(...) {
 ...>
 }
 
-@word_9_3@
+@word_10_3@
 type R;
 identifier F =~ "^\(drop_monster_loot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -837,7 +908,7 @@ R F(...) {
 ...>
 }
 
-@word_10_0@
+@word_11_0@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef ushort, uw_object_hdr_t;
@@ -860,7 +931,7 @@ R F(...) {
 ...>
 }
 
-@word_10_1@
+@word_11_1@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef ushort, uw_object_hdr_t;
@@ -880,7 +951,7 @@ R F(...) {
 ...>
 }
 
-@word_10_2@
+@word_11_2@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef ushort, uw_object_hdr_t;
@@ -900,7 +971,7 @@ R F(...) {
 ...>
 }
 
-@word_10_3@
+@word_11_3@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef ushort, uw_object_hdr_t;
@@ -920,7 +991,7 @@ R F(...) {
 ...>
 }
 
-@word_11_0@
+@word_12_0@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef ushort, uw_object_hdr_t;
@@ -946,7 +1017,7 @@ R F(...) {
 ...>
 }
 
-@word_11_1@
+@word_12_1@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef ushort, uw_object_hdr_t;
@@ -966,7 +1037,7 @@ R F(...) {
 ...>
 }
 
-@word_11_2@
+@word_12_2@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef ushort, uw_object_hdr_t;
@@ -986,7 +1057,7 @@ R F(...) {
 ...>
 }
 
-@word_11_3@
+@word_12_3@
 type R;
 identifier F =~ "^\(detect_npc_wander_proximity\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1006,7 +1077,7 @@ R F(...) {
 ...>
 }
 
-@word_12_0@
+@word_13_0@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1026,7 +1097,7 @@ R F(...) {
 ...>
 }
 
-@word_12_1@
+@word_13_1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1043,7 +1114,7 @@ R F(...) {
 ...>
 }
 
-@word_12_2@
+@word_13_2@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1060,7 +1131,7 @@ R F(...) {
 ...>
 }
 
-@word_12_3@
+@word_13_3@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\|setup_npc_ai_tick_state\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1077,7 +1148,7 @@ R F(...) {
 ...>
 }
 
-@word_13_0@
+@word_14_0@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1100,7 +1171,7 @@ R F(...) {
 ...>
 }
 
-@word_13_1@
+@word_14_1@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1120,7 +1191,7 @@ R F(...) {
 ...>
 }
 
-@word_13_2@
+@word_14_2@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1140,7 +1211,7 @@ R F(...) {
 ...>
 }
 
-@word_13_3@
+@word_14_3@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1160,7 +1231,7 @@ R F(...) {
 ...>
 }
 
-@word_14_0@
+@word_15_0@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1183,7 +1254,7 @@ R F(...) {
 ...>
 }
 
-@word_14_1@
+@word_15_1@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1203,7 +1274,7 @@ R F(...) {
 ...>
 }
 
-@word_14_2@
+@word_15_2@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1223,7 +1294,7 @@ R F(...) {
 ...>
 }
 
-@word_14_3@
+@word_15_3@
 type R;
 identifier F =~ "^\(initiate_npc_death\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1243,7 +1314,7 @@ R F(...) {
 ...>
 }
 
-@word_15_0@
+@word_16_0@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1263,7 +1334,7 @@ R F(...) {
 ...>
 }
 
-@word_15_1@
+@word_16_1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1280,7 +1351,7 @@ R F(...) {
 ...>
 }
 
-@word_15_2@
+@word_16_2@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1297,7 +1368,7 @@ R F(...) {
 ...>
 }
 
-@word_15_3@
+@word_16_3@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1314,7 +1385,7 @@ R F(...) {
 ...>
 }
 
-@word_16_0@
+@word_17_0@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1334,7 +1405,7 @@ R F(...) {
 ...>
 }
 
-@word_16_1@
+@word_17_1@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1351,7 +1422,7 @@ R F(...) {
 ...>
 }
 
-@word_16_2@
+@word_17_2@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1368,7 +1439,7 @@ R F(...) {
 ...>
 }
 
-@word_16_3@
+@word_17_3@
 type R;
 identifier F =~ "^\(npc_set_goal_for_object\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1385,7 +1456,7 @@ R F(...) {
 ...>
 }
 
-@word_17_0@
+@word_18_0@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1411,7 +1482,7 @@ R F(...) {
 ...>
 }
 
-@word_17_1@
+@word_18_1@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1431,7 +1502,7 @@ R F(...) {
 ...>
 }
 
-@word_17_2@
+@word_18_2@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1451,7 +1522,7 @@ R F(...) {
 ...>
 }
 
-@word_17_3@
+@word_18_3@
 type R;
 identifier F =~ "^\(spawn_rest_interrupt_monster_callback\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1471,7 +1542,7 @@ R F(...) {
 ...>
 }
 
-@word_18_0@
+@word_19_0@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1497,7 +1568,7 @@ R F(...) {
 ...>
 }
 
-@word_18_1@
+@word_19_1@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1517,7 +1588,7 @@ R F(...) {
 ...>
 }
 
-@word_18_2@
+@word_19_2@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1537,7 +1608,7 @@ R F(...) {
 ...>
 }
 
-@word_18_3@
+@word_19_3@
 type R;
 identifier F =~ "^\(alert_npc_to_noise_callback\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1557,7 +1628,7 @@ R F(...) {
 ...>
 }
 
-@word_19_0@
+@word_20_0@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1583,7 +1654,7 @@ R F(...) {
 ...>
 }
 
-@word_19_1@
+@word_20_1@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1603,7 +1674,7 @@ R F(...) {
 ...>
 }
 
-@word_19_2@
+@word_20_2@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1623,7 +1694,7 @@ R F(...) {
 ...>
 }
 
-@word_19_3@
+@word_20_3@
 type R;
 identifier F =~ "^\(emit_noise_alert\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1643,7 +1714,7 @@ R F(...) {
 ...>
 }
 
-@word_20_0@
+@word_21_0@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1666,7 +1737,7 @@ R F(...) {
 ...>
 }
 
-@word_20_1@
+@word_21_1@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1686,7 +1757,7 @@ R F(...) {
 ...>
 }
 
-@word_20_2@
+@word_21_2@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1706,7 +1777,7 @@ R F(...) {
 ...>
 }
 
-@word_20_3@
+@word_21_3@
 type R;
 identifier F =~ "^\(npc_idle_behavior_tick\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1726,7 +1797,7 @@ R F(...) {
 ...>
 }
 
-@word_21_0@
+@word_22_0@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1749,7 +1820,7 @@ R F(...) {
 ...>
 }
 
-@word_21_1@
+@word_22_1@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1769,7 +1840,7 @@ R F(...) {
 ...>
 }
 
-@word_21_2@
+@word_22_2@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1789,7 +1860,7 @@ R F(...) {
 ...>
 }
 
-@word_21_3@
+@word_22_3@
 type R;
 identifier F =~ "^\(npc_notice_and_idle_tick\|npc_wander_return_home_exact_tick\)$";
 typedef ushort, uw_object_hdr_t;

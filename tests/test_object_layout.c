@@ -56,6 +56,7 @@ static void test_uw1_word_byte_views(void)
     VERIFY_WORD(uw_object_hdr_t, position_word, 2);
     VERIFY_WORD(uw_object_hdr_t, chain_word, 4);
     VERIFY_WORD(uw_object_hdr_t, link_word, 6);
+    VERIFY_WORD(uw_mobile_object_t, tile_position, 22);
     VERIFY_WORD(uw_mobile_object_t, goal_word, 11);
     VERIFY_WORD(uw_mobile_object_t, status_word, 13);
     VERIFY_WORD(uw_mobile_object_t, target_word, 15);
@@ -206,6 +207,13 @@ static void test_uw1_header_fields(void)
 static void test_uw1_mobile_fields(void)
 {
     VERIFY_FIELD(uw_mobile_object_t, tick_phase, 10, 0, 0xf);
+    VERIFY_FIELD(uw_mobile_object_t, hit_points, 8, 0, 0xff);
+    VERIFY_FIELD(uw_mobile_object_t, movement_mode, 10, 4, 7);
+    VERIFY_FIELD(uw_mobile_object_t, speed, 19, 0, 0x7f);
+    VERIFY_FIELD(uw_mobile_object_t, gravity_flag, 19, 7, 1);
+    VERIFY_FIELD(uw_mobile_object_t, pitch, 20, 3, 0x1f);
+    VERIFY_FIELD(uw_mobile_object_t, tile_x, 22, 10, 0x3f);
+    VERIFY_FIELD(uw_mobile_object_t, tile_y, 22, 4, 0x3f);
     VERIFY_FIELD(uw_mobile_object_t,npc_path_slot,22,0,15);
     VERIFY_FIELD(uw_mobile_object_t,npc_goal,0xb,0,0xf);
     VERIFY_FIELD(uw_mobile_object_t,npc_gtarg,0xb,4,0xff);

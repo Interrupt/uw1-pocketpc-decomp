@@ -1579,6 +1579,13 @@
               "parameter": true,
               "evidence": "UW1 object struct member access",
               "current_mobile_alias": false
+            },
+            {
+              "name": "projectile",
+              "type": "uw_projectile_object_t *",
+              "parameter": false,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []

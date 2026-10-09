@@ -257,12 +257,45 @@ the repair leaves unrelated functions untouched.
 
 No game function is moved to a different source file during this work.
 
-Checkpoint validation: game build, all 53 C unit suites, and all eleven conversion
+Checkpoint validation: game build, all 53 C unit suites, and all twelve conversion
 tool suites pass. The latest
 AddressSanitizer pass covers 19 consumers: babl_objects/throw/throw_cursor/npc_state/npc_combat/npc_ai/creatures/
 combat/object_layout/object_core/movement/scheduler/spells/chargen/inventory/
 lighting/sleep/teleport/babl_vm. This is a checkpoint for continuing the full
 migration, not a completion claim.
+
+## Shared mobile position synchronization
+
+`generate_position_sync_rules.py` emits `position-sync-accesses.cocci` and
+`position-sync-updates.cocci` for `sync_object_tile_position`. Apply the access
+patch first, then the update patch, with the usual header/type include options.
+The arena test proves 27-byte mobile storage before extended fields are used.
+The snapshot builder and synchronizer establish shared health/lifetime,
+collision-state mode, speed, gravity, pitch and tile-coordinate views. These
+aliases preserve existing NPC and projectile layouts; NPC goal/status/target
+words retain their distinct meaning. Only the explicit non-NPC branch uses
+`uw_projectile_object_t::precise_x/y/z`.
+
+Header position and static quality writes use individual properties. Shared
+tile updates preserve the reserved low nibble, and movement-mode writes retain
+the tick phase and upper flag. Speed preserves the gravity value installed
+earlier in this function; the intervening division does not access the record.
+All original scalar snapshots and formulas remain, including full packed
+temporary values even when the record update uses a single property.
+Callers supply separate stack/global placement snapshots; their raw buffer
+offsets remain additional migration work, rather than object properties.
+
+`position_sync_fields` extracts the actual game function and checks 524,288
+NPC/projectile/static cases against independent byte expectations, including
+all surrounding storage. `--asan` enables direct sanitizer checks. For a batch
+review, `--reference PATH` additionally compares a saved original source with
+the current function, including memory at service calls, return values,
+snapshot mutations and tile globals. The original and converted functions
+agree over 4,194,304 cases spanning relocation, landing failures, off-map
+tiles and damage callbacks. The same run checks complete conversion and
+idempotence against the saved original. The object-layout suite checks every
+new alias and property against byte offsets and masks. This pass removes all
+23 raw audited accesses in synchronization; 115 remain elsewhere.
 
 ## Packed-byte reassembly
 

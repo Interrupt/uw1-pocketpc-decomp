@@ -147,13 +147,17 @@ typedef struct __attribute__((packed)) {
 typedef struct __attribute__((packed)) {
     uw_object_hdr_t hdr;            /* 8 bytes, offset 0x00 */
 
-    unsigned char  npc_hp;          /* offset 0x08 */
+    union {
+        byte npc_hp;               /* offset 0x08: NPC health */
+        byte hit_points;           /* shared mobile snapshot health/lifetime byte */
+    };
     unsigned char  full_heading;    /* offset 0x09: 256-direction motion heading */
     union {
         byte movement_flags;       /* offset 0x0a: motion/refresh state */
         struct __attribute__((packed)) {
             byte tick_phase : 4;   /* modulo-16 schedule; tick_mobile_objects/npc_ai_tick */
-            byte _movement_bits : 4;
+            byte movement_mode : 3; /* bits 4-6: placement collision-state code */
+            byte _movement_bit7 : 1;
         };
     };
 
@@ -195,14 +199,34 @@ typedef struct __attribute__((packed)) {
 
     byte recent_damage;           /* 0x11: damage accumulated during this tick */
     byte damage_source;           /* 0x12: last attacker / projectile source slot */
-    byte motion_flags;            /* 0x13: speed and vertical-motion control */
-    byte attack_pitch;            /* 0x14: NPC attack state / projectile pitch */
+    union {
+        byte motion_flags;        /* 0x13: speed and vertical-motion control */
+        struct __attribute__((packed)) {
+            byte speed : 7;
+            byte gravity_flag : 1;
+        };
+    };
+    union {
+        byte attack_pitch;        /* 0x14: NPC attack state / shared placement pitch */
+        struct __attribute__((packed)) {
+            byte _attack_pitch_lo : 3;
+            byte pitch : 5;       /* placement vertical offset: (pitch - 16) * 64 */
+        };
+    };
     byte animation_flags;         /* 0x15: animation and path state */
 
     union {
         ushort tile_word;
+        ushort tile_position;     /* shared mobile tile coordinates */
         short tile_word_signed;
+        short tile_position_signed;
         struct __attribute__((packed)) { byte tile_word_low, tile_word_high; };
+        struct __attribute__((packed)) { byte tile_position_low, tile_position_high; };
+        struct __attribute__((packed)) {
+            ushort _tile_position_lo : 4;
+            ushort tile_y : 6;
+            ushort tile_x : 6;
+        };
         struct __attribute__((packed)) {
             unsigned short npc_path_slot : 4; /* offset 0x16: cached walk-path slot */
             unsigned short npc_yhome  : 6;  /* bits 4-9 */

@@ -1105,23 +1105,17 @@ int sync_object_tile_position(ushort *object, void *position_ptr)
   }
   uVar7 = (uint)((uw_object_hdr_t *)object)->position_word;
   bVar9 = (byte)((int)(((int)(short)position[2] & 0x3f8U) << 0x10) >> 0x13);
-  ((uw_object_hdr_t *)object)->position_word_low = (byte)(uVar7 & 0xff80) | bVar9;
-  ((uw_object_hdr_t *)object)->position_word_high = (byte)(char)((uVar7 & 0xff80) >> 8);
+  ((uw_object_hdr_t *)object)->zpos = bVar9;
   bVar3 = (byte)((uint)(((int)(short)(*position & 0xe0) >> 5) << 0xd) >> 8);
-  ((uw_object_hdr_t *)object)->position_word_low = (byte)(uVar7 & 0x1f80) | bVar9;
-  ((uw_object_hdr_t *)object)->position_word_high = (byte)((uVar7 & 0x1f80) >> 8) | bVar3;
+  ((uw_object_hdr_t *)object)->xpos = (bVar3 >> 5) & 7;
   uVar1 = position[1];
-  ((uw_object_hdr_t *)object)->position_word_low = (byte)(uVar7 & 0x380) | bVar9;
-  ((uw_object_hdr_t *)object)->position_word_high =
-      (byte)((uVar7 & 0x380) >> 8) | bVar3 |
-     (byte)((uint)(((int)(short)(uVar1 & 0xe0) >> 5) << 10) >> 8);
+  ((uw_object_hdr_t *)object)->ypos = (uVar1 >> 5) & 7;
   if ((char *)object < DAT_002046c4) {
-    *(byte *)(object + 4) = (byte)position[0xf];
+    ((uw_mobile_object_t *)object)->hit_points = (byte)position[0xf];
   }
   else {
     uVar1 = ((uw_object_hdr_t *)object)->chain_word;
-    ((uw_object_hdr_t *)object)->chain_word_low = (byte)position[0xf] & 0x3f | (byte)(uVar1 & 0xffc0);
-    ((uw_object_hdr_t *)object)->chain_word_high = (byte)(char)((uVar1 & 0xffc0) >> 8);
+    ((uw_object_hdr_t *)object)->quality = position[0xf] & 0x3f;
   }
   uVar1 = *(ushort *)((char *)position + 0x29);
   if (0x100 < uVar1) {
@@ -1134,12 +1128,11 @@ int sync_object_tile_position(ushort *object, void *position_ptr)
     apply_typed_damage_to_object(object,0,(int)(short)DAT_0010144c,(int)DAT_00101454,(char)(uVar1 >> 8),0);
   }
   if ((char *)object < DAT_002046c4) {
-    *(byte *)(object + 4) = (byte)position[0xf];
+    ((uw_mobile_object_t *)object)->hit_points = (byte)position[0xf];
   }
   else {
     uVar1 = ((uw_object_hdr_t *)object)->chain_word;
-    ((uw_object_hdr_t *)object)->chain_word_low = (byte)position[0xf] & 0x3f | (byte)(uVar1 & 0xffc0);
-    ((uw_object_hdr_t *)object)->chain_word_high = (byte)(char)((uVar1 & 0xffc0) >> 8);
+    ((uw_object_hdr_t *)object)->quality = position[0xf] & 0x3f;
   }
   if ((position[0x14] & 4) != 0) {
     uVar6 = ce_rand();
@@ -1155,8 +1148,7 @@ int sync_object_tile_position(ushort *object, void *position_ptr)
       }
     }
     else if ((position[10] == 0 && position[8] == 0) && position[5] == 0) {
-      *(byte *)(object + 5) =
-           (byte)object[5] & 0x8f | ((&DAT_000868c0)[(byte)position[0x14]] & 7) << 4;
+      ((uw_mobile_object_t *)object)->movement_mode = (&DAT_000868c0)[(byte)position[0x14]] & 7;
       settled = settle_mobile_to_immobile(object);
       if (settled == 0) {
         return 0;
@@ -1170,18 +1162,16 @@ int sync_object_tile_position(ushort *object, void *position_ptr)
     }
   }
   if ((char *)object < DAT_002046c4) {
-    uVar1 = object[0xb];
-    *(char *)((char *)object + 9) = (char)((ushort)*(undefined2 *)((char *)position + 0x21) >> 8);
+    uVar1 = ((uw_mobile_object_t *)object)->tile_position;
+    ((uw_mobile_object_t *)object)->full_heading = (byte)(char)((ushort)*(undefined2 *)((char *)position + 0x21) >> 8);
     uVar8 = uVar1 & 0x3ff;
     uVar7 = (DAT_0010144c & 0x3f) << 10;
-    *(char *)(object + 0xb) = (char)uVar8;
-    *(byte *)((char *)object + 0x17) = (byte)(uVar8 >> 8) | (byte)(uVar7 >> 8);
+    ((uw_mobile_object_t *)object)->tile_x = (uVar7 >> 10) & 0x3f;
     uVar7 = uVar1 & 0xf | uVar7 | ((int)DAT_00101454 & 0x3fU) << 4;
-    *(char *)(object + 0xb) = (char)uVar7;
-    *(char *)((char *)object + 0x17) = (char)(uVar7 >> 8);
+    ((uw_mobile_object_t *)object)->tile_y = (uVar7 >> 4) & 0x3f;
     bVar11 = SBORROW4((int)(short)position[8],-4);
-    bVar9 = ((short)position[8] == -4) << 7 | *(byte *)((char *)object + 0x13) & 0x7f;
-    *(byte *)((char *)object + 0x13) = bVar9;
+    bVar9 = ((short)position[8] == -4) << 7 | ((uw_mobile_object_t *)object)->motion_flags & 0x7f;
+    ((uw_mobile_object_t *)object)->gravity_flag = bVar9 >> 7;
     iVar5 = (int)(short)position[5];
     if (iVar5 < 0) {
       iVar5 = iVar5 + 0x3f;
@@ -1200,28 +1190,25 @@ int sync_object_tile_position(ushort *object, void *position_ptr)
     if (!bVar10 && (iVar5 < 0 || iVar5 + -0x1f < 0) == bVar11) {
       sVar4 = 0x1f;
     }
-    *(byte *)(object + 10) = (byte)((int)sVar4 << 3) | (byte)object[10] & 7;
+    ((uw_mobile_object_t *)object)->pitch = (byte)sVar4 & 0x1f;
     bVar3 = ordint_divmod(0x2f,(int)(short)position[10]).quot;
-    *(byte *)((char *)object + 0x13) = (bVar3 ^ bVar9) & 0x7f ^ bVar9;
-    *(byte *)(object + 5) =
-         (byte)object[5] & 0x8f | ((&DAT_000868c0)[(byte)position[0x14]] & 7) << 4;
+    ((uw_mobile_object_t *)object)->speed = bVar3 & 0x7f;
+    ((uw_mobile_object_t *)object)->movement_mode = (&DAT_000868c0)[(byte)position[0x14]] & 7;
     if ((((uw_object_hdr_t *)object)->item_id & 0x1c0) != 0x40) {
+      uw_projectile_object_t *projectile = (uw_projectile_object_t *)object;
       uVar1 = *position;
-      *(char *)((char *)object + 0xb) = (char)uVar1;
-      *(char *)(object + 6) = (char)(uVar1 >> 8);
+      projectile->precise_x = uVar1;
       uVar1 = position[1];
-      *(char *)((char *)object + 0xd) = (char)uVar1;
-      *(char *)(object + 7) = (char)(uVar1 >> 8);
+      projectile->precise_y = uVar1;
       uVar1 = position[2];
-      *(char *)((char *)object + 0xf) = (char)uVar1;
-      *(char *)(object + 8) = (char)(uVar1 >> 8);
+      projectile->precise_z = uVar1;
     }
     return 1;
   }
 LAB_0005559c:
   if ((((uw_object_hdr_t *)object)->item_id & 0x1c0) == 0x140) {
     uVar7 = ((uw_object_hdr_t *)object)->position_word & 0xfc7f | ((int)*(short *)((char *)position + 0x21) >> 0xd & 7U) << 7;
-    ((uw_object_hdr_t *)object)->position_word = (ushort)uVar7;
+    ((uw_object_hdr_t *)object)->heading = (uVar7 >> 7) & 7;
   }
   return 0;
 }

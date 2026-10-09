@@ -16,7 +16,8 @@ from struct_field_catalog import WORDS
 
 FUNCTION = re.compile(r'^\w[^\n;{}]*?\b(\w+)\([^;{}]*?\)\s*\{', re.M)
 NONCODE = re.compile(r'/\*[\s\S]*?\*/|//[^\n]*|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'')
-MEMBER = re.compile(r'(?:->|\.)\s*(' + '|'.join(WORDS) + r')(_low|_high|_signed)?\b')
+PACKED_VIEWS = set(WORDS) | {'tile_position'}  # shared mobile/projectile alias
+MEMBER = re.compile(r'(?:->|\.)\s*(' + '|'.join(sorted(PACKED_VIEWS)) + r')(_low|_high|_signed)?\b')
 
 
 def inventory():
