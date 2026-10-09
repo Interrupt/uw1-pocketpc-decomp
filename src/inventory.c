@@ -611,6 +611,32 @@ joined_r0x00048308:
 
 
 
+// HACK: not in the ARM executable. Redraws every inventory-panel icon holding a lit light source
+// (object ids 0x94-0x97, the lit states decay_equipped_light_sources tests for): their sprites use
+// the fire colours (palette 0x10-0x17) that dungeon_palette_cycle_tick rotates, and an icon already
+// in the framebuffer keeps its old colours until redrawn. Does nothing unless the inventory panel is
+// showing (redraw_inventory_widget checks that itself).
+void redraw_lit_light_source_widgets()
+{
+  int widget;
+
+  if (g_active_hud_panel != '\0') return;
+  for (widget = 6; widget <= 0x14; widget++) {
+    int slot = widget == 0x14 ? (int)(unsigned char)DAT_00085c4c : (int)(char)(&g_backpack_widget_to_slot)[widget];
+    ushort *link = (ushort *)(&g_equipped_items + slot * 2);
+    ushort *object;
+    uint id;
+
+    if ((*link & 0xffc0) == 0) continue;
+    object = (ushort *)resolve_object_link(link);
+    if (object == 0) continue;
+    id = *object & 0x1ff;
+    if ((id & 0x1f0) == 0x90 && (id & 0xf) >= 4 && (id & 0xf) < 8) redraw_inventory_widget(widget);
+  }
+}
+
+
+
 // was FUN_000485f4
 int hit_test_inventory_widget(short x, short y)
 {

@@ -266,7 +266,7 @@ add_fixture_game_unit_test(inventory
   src/item_use.c:complete_use_item_on_player
   src/game.c:handle_game_view_click
   src/containers.c:open_backpack_container src/containers.c:refresh_container_view
-  src/containers.c:sum_container_weight)
+  src/containers.c:sum_container_weight src/inventory.c:redraw_lit_light_source_widgets)
 
 add_fixture_game_unit_test(geometry
   src/3d.c:@DAT_000bc038_backing

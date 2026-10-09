@@ -499,4 +499,5 @@ void poll_input_bindings(void *input_state)
     }
 }
 
-void dungeon_palette_cycle_tick() {}
+int dungeon_palette_cycle_tick() { return 0; }
+void redraw_lit_light_source_widgets() {}

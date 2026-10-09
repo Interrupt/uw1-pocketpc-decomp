@@ -266,8 +266,10 @@ void redraw_inventory_widget_range(int first, short last)
     if (first == 12 && last == 19) container_grid_redraws++;
     else { TEST_ASSERT_EQUAL_INT(20, first); TEST_ASSERT_EQUAL_INT(20, last); }
 }
+int lit_widget_redraws[0x16];
 void redraw_inventory_widget(int widget)
 {
+    if (widget >= 0 && widget < 0x16) lit_widget_redraws[widget]++;
     if (widget == 21 || widget == 22) container_arrow_redraws++;
     else TEST_ASSERT_LESS_THAN_INT(11, widget);
 }
@@ -302,5 +304,6 @@ static void reset_container_services(void)
     g_open_container_list = NULL;
     g_backpack_widget_to_slot_backing[20] = 19;
     container_grid_redraws = container_arrow_redraws = 0;
+    memset(lit_widget_redraws, 0, sizeof lit_widget_redraws);
     cursor_hide_calls = cursor_show_calls = 0;
 }

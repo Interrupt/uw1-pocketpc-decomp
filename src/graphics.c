@@ -1098,8 +1098,9 @@ int blit_framebuffer_to_gx_display()
 // stays inside the 0x30-0x3f groups, fire maps to itself), so rotating the palette animates every
 // light level without touching the shade tables. The port re-rasterises the 3D view every main-loop
 // pass, so a rotate + palette rebuild is all that is needed. The DOS clock rate is not known here:
-// one rotation step every UW_PALETTE_CYCLE_MS milliseconds (default 250; 0 disables).
-void dungeon_palette_cycle_tick()
+// one rotation step every UW_PALETTE_CYCLE_MS milliseconds (default 250; 0 disables). Returns 1 when
+// it rotated, so the caller can redraw already-drawn HUD pixels that use the cycled colours.
+int dungeon_palette_cycle_tick()
 {
   static int interval_units = -1;
   static uint last_units;
@@ -1110,9 +1111,9 @@ void dungeon_palette_cycle_tick()
     int ms = value ? atoi(value) : 250;
     interval_units = ms <= 0 ? 0 : (ms + 3) / 4; /* read_realtime_clock_units() counts 4ms units */
   }
-  if (interval_units == 0) return;
+  if (interval_units == 0) return 0;
   now = read_realtime_clock_units();
-  if ((int)(now - last_units) < interval_units) return;
+  if ((int)(now - last_units) < interval_units) return 0;
   last_units = now;
   if (getenv("UW_DEBUG_PALCYCLE"))
     fprintf(stderr, "[palcycle] dungeon step: 0x30=%02x%02x%02x 0x10=%02x%02x%02x\n",
@@ -1125,6 +1126,7 @@ void dungeon_palette_cycle_tick()
   palette_cycle_range(0x10,5,1);
   palette_cycle_range(0x15,3,1);
   reinstall_active_palette(0x100,0,0);
+  return 1;
 }
 
 
