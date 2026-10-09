@@ -971,3 +971,32 @@ and counts are compared. Use `--reference-dir DIR` with original `doors.c`
 and `scheduler.c`, and `--asan` to run the same oracle with AddressSanitizer.
 The refreshed worklist contains 218 byte views (15 fewer); remaining packed
 captures still require their own review.
+
+`generate_item_scatter_rules.py` / `item-scatter-fields.cocci` convert
+`complete_use_item_scatter_spawn`'s common-header clone copies to four direct
+word assignments, type/quantity writes to `object_id`, `is_quant`, and `link`,
+and placement arguments to named x/y/z fields. The allocated clone uses a
+typed header pointer. The active target and fresh stationary slots are whole,
+distinct records; partially overlapping byte-copy behavior does not apply.
+Only the eight-byte common header is copied, with destination extension/guard
+bytes preserved. The target's ID and position reads now use named header
+members and the pointer audit recognizes that object role.
+
+The complete original body must match. Callback order, captured IDs/words,
+random calls, failed allocations, cursor reset, final discard and update
+flags remain intact. All scalar snapshots (`uVar1`, `bVar2`, `uVar3`, `uVar10`)
+retain their original values; full-word captures and packed expressions that
+compute those values are intentional. Added callbacks, volatile captures,
+changed arithmetic and escaping/observed locals reject conversion. Functions
+and comments stay in place.
+
+`test_item_scatter_fields.py` verifies patch generation, exact conversion,
+idempotence and callback/capture/scope guards. Its real before/after oracle
+runs 1,441,792 cases over all 16-bit header patterns, eligible target types,
+cursor gates, already-held targets, allocation failures at every clone slot,
+callback-modified source/clone fields, quantity conversion and placement
+arguments. Every record/guard/tile/player byte, callback event/count, cursor
+state and pending flag is compared. Use `--reference PATH` with the saved
+original `item_use.c`, and `--asan` for AddressSanitizer. The refreshed
+worklist contains 204 byte views (14 fewer); full-word copies and retained
+snapshots account for the additional packed-word entries.

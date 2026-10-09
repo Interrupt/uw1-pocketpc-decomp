@@ -2574,10 +2574,17 @@
           "function": "complete_use_item_scatter_spawn",
           "roles": [
             {
-              "name": "puVar8",
-              "type": "ushort *",
-              "parameter": false,
+              "name": "target",
+              "type": "short *",
+              "parameter": true,
               "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "puVar8",
+              "type": "uw_object_hdr_t *",
+              "parameter": false,
+              "evidence": "typed UW1 object pointer declaration",
               "current_mobile_alias": false
             },
             {
