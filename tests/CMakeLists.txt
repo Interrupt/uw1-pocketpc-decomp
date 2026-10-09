@@ -139,8 +139,7 @@ add_library(uw_test_dosmidi STATIC
   "${PROJECT_SOURCE_DIR}/third_party/openabyss/uw_adlib.c"
   "${PROJECT_SOURCE_DIR}/third_party/openabyss/uw_ail.c"
   "${PROJECT_SOURCE_DIR}/third_party/openabyss/uw_sound.c"
-  "${PROJECT_SOURCE_DIR}/third_party/openabyss/uw_blob.c"
-  "${PROJECT_SOURCE_DIR}/src/file_io.c")
+  "${PROJECT_SOURCE_DIR}/third_party/openabyss/uw_blob.c")
 uw_configure_test_target(uw_test_dosmidi)
 target_include_directories(uw_test_dosmidi PUBLIC
   "${PROJECT_SOURCE_DIR}/src"

@@ -43,13 +43,6 @@ int platform_dos_audio_enabled(void);
  * 2's, so hybrid is deliberately a mix rather than either original. */
 int platform_dos_prefer_wav_effects(void);
 
-/* Does the music come from the DOS XMI scores (dos, hybrid), or stay on
- * this port's own converted .MOD files (basicmidi)? basicmidi carries no
- * scores -- the XMI files are not ours to ship -- so it changes only the
- * effects, and platform_music.c keeps hxcmod driving the music while
- * mixing this backend's effect output on top. */
-int platform_dosmidi_music_from_xmi(void);
-
 /* Loads SOUND/ADLIB.ADV (the driver's own tables), SOUND/UW.AD (the
  * timbres) and SOUND/SOUNDS.DAT (the effect table) from UW_DOS_DATA_DIR,
  * and starts the driver. out_rate is the rate render() will be asked for.

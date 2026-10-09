@@ -184,38 +184,6 @@ static void test_music_volume_is_clamped_to_a_percentage(void)
     TEST_ASSERT_FALSE(platform_dos_audio_enabled());
 }
 
-/* basicmidi is the effects-only mode: it leaves music on the converted
-   .MOD path, because the XMI scores are not ours to ship. It still needs
-   SOUND/ADLIB.ADV, whose tables the OPL driver model reads out of the
-   binary -- and specifically the build the game shipped, so a data dir
-   without it must degrade rather than half-enable. */
-static void test_basicmidi_still_needs_the_driver(void)
-{
-    setenv("UW_AUDIO_MODE", "basicmidi", 1);
-    setenv("UW_DOS_DATA_DIR", "/tmp", 1);
-    TEST_ASSERT_EQUAL_INT(0, platform_dosmidi_init(44100));
-    TEST_ASSERT_FALSE(platform_dos_audio_enabled());
-    TEST_ASSERT_FALSE(platform_dosmidi_music_from_xmi());
-}
-
-/* basicmidi never claims the music: that stays with hxcmod. */
-static void test_basicmidi_leaves_music_on_the_mod_path(void)
-{
-    setenv("UW_AUDIO_MODE", "basicmidi", 1);
-    TEST_ASSERT_FALSE(platform_dosmidi_music_from_xmi());
-    TEST_ASSERT_FALSE(platform_dos_prefer_wav_effects());
-}
-
-/* An unknown mode engages nothing, and neither does the default. */
-static void test_unknown_mode_engages_nothing(void)
-{
-    setenv("UW_AUDIO_MODE", "bogus", 1);
-    setenv("UW_DOS_DATA_DIR", "/tmp", 1);
-    TEST_ASSERT_EQUAL_INT(0, platform_dosmidi_init(44100));
-    TEST_ASSERT_FALSE(platform_dos_audio_enabled());
-    TEST_ASSERT_FALSE(platform_dosmidi_music_from_xmi());
-}
-
 int main(void)
 {
     UNITY_BEGIN();
@@ -233,8 +201,5 @@ int main(void)
     RUN_TEST(test_play_effect_is_safe_when_dos_mode_is_off);
     RUN_TEST(test_stop_effect_is_safe_when_dos_mode_is_off);
     RUN_TEST(test_music_volume_is_clamped_to_a_percentage);
-    RUN_TEST(test_basicmidi_still_needs_the_driver);
-    RUN_TEST(test_basicmidi_leaves_music_on_the_mod_path);
-    RUN_TEST(test_unknown_mode_engages_nothing);
     return UNITY_END();
 }

@@ -12,7 +12,6 @@
 #include "headers/platform_dosmidi.h"
 #include "headers/debug.h"
 #include "headers/audio.h"
-#include "headers/file_io.h"
 #include "uw_ail.h"
 #include "uw_adlib.h"
 #include "uw_opl.h"
@@ -41,8 +40,6 @@ static struct {
 
   int seq;                  /* the registered sequence handle, -1 for none */
   int prefer_wav;           /* UW_AUDIO_MODE=hybrid: sample where we have one */
-  int music_from_xmi;       /* dos/hybrid; basicmidi leaves music on .MOD */
-  int generic_timbres;      /* basicmidi: no UW.AD, so use the built-in patch */
   int music_volume;         /* percent, applied to the sequence only */
 
   /* One tick's worth of chip output, consumed by the resampler below. */
@@ -65,25 +62,18 @@ static struct {
   struct { int channel, note, ticks_left, id; } sfx[4];
 } g;
 
-/* The three modes that run the OPL driver at all:
- *
- *   dos       DOS music and DOS effects -- needs a DOS install.
- *   hybrid    DOS music, sampled effects where the port has one.
- *   basicmidi effects only, as plain notes, with NO DOS install: the
- *             driver is compiled in and SOUNDS.DAT ships with the port.
- *             Music stays on the normal .MOD path, since the XMI scores
- *             are not ours to carry.
- */
-static const char *audio_mode(void)
-{
-  const char *mode = getenv("UW_AUDIO_MODE");
-  return mode ? mode : "";
-}
-static int mode_is(const char *name) { return strcasecmp(audio_mode(), name) == 0; }
-
+/* Both modes run the DOS driver; they differ only in where effects come
+   from (see platform_dos_prefer_wav_effects). */
 static int dos_mode_requested(void)
 {
-  return mode_is("dos") || mode_is("hybrid") || mode_is("basicmidi");
+  const char *mode = getenv("UW_AUDIO_MODE");
+  return (mode && (strcasecmp(mode, "dos") == 0 || strcasecmp(mode, "hybrid") == 0)) ? 1 : 0;
+}
+
+static int hybrid_mode_requested(void)
+{
+  const char *mode = getenv("UW_AUDIO_MODE");
+  return (mode && strcasecmp(mode, "hybrid") == 0) ? 1 : 0;
 }
 
 int platform_dos_prefer_wav_effects(void)
@@ -127,56 +117,18 @@ int platform_dosmidi_init(int out_rate)
   }
 
   const char *root = getenv("UW_DOS_DATA_DIR");
-  char path[1024];
-
-  /* basicmidi is the no-DOS-install mode: music stays on the .MOD path and
-   * the timbres are the built-in patch. dos and hybrid need a real install
-   * for the XMI scores and UW.AD. */
-  g.music_from_xmi = !mode_is("basicmidi");
-  g.generic_timbres = mode_is("basicmidi");
-
-  if (g.music_from_xmi && (!root || !*root)) {
-    DEBUG(WARN, "[audio] UW_AUDIO_MODE=%s needs UW_DOS_DATA_DIR for the XMI scores and "
-                "UW.AD -- falling back to the converted .MOD music. (UW_AUDIO_MODE=basicmidi "
-                "plays the effects as notes with no DOS install.)\n", audio_mode());
-    goto fail;
-  }
-
-  /* The effect table ships with the port: data/SOUND/SOUNDS.DAT is
-   * byte-identical to the DOS original, which the Pocket PC build carried
-   * and never used (its effects were WAVE resources). Prefer that copy in
-   * every mode so only the scores and timbres need a DOS install, and fall
-   * back to the DOS directory if the port's own data is missing it. */
-  int have_sounds = 0;
-  if (uw_resolve_win_path("\\SOUND\\SOUNDS.DAT", path, sizeof(path))) {
-    have_sounds = uw_sounds_open(&g.sounds, path);
-  }
-  if (!have_sounds && root && *root) {
-    snprintf(path, sizeof(path), "%s/SOUND/SOUNDS.DAT", root);
-    have_sounds = uw_sounds_open(&g.sounds, path);
-  }
-  if (!have_sounds) {
-    DEBUG(WARN, "[audio] DOS audio: no readable SOUNDS.DAT in the game data or "
-                "UW_DOS_DATA_DIR -- falling back\n");
-    goto fail;
-  }
-
-  /* The driver's own tables -- the F-numbers, blocks, velocity scale,
-   * operator slots and the chip's reset registers -- are read out of an
-   * ADLIB.ADV binary rather than hardcoded, so one is needed even by
-   * basicmidi, which otherwise wants nothing from a DOS install.
-   *
-   * It must be the build the game shipped. Miles released AIL 2.14 as
-   * freeware and that package's own ADLIB.ADV is freely redistributable,
-   * but it does NOT serve: uw_adlib_init reads the tables at offsets fixed
-   * to the game's 16276-byte build, and from the release's 14775-byte one
-   * every table reads as zero -- init still reports success and the result
-   * plays in silence. The check after init catches exactly that. */
   if (!root || !*root) {
-    DEBUG(WARN, "[audio] UW_AUDIO_MODE=%s needs UW_DOS_DATA_DIR for SOUND/ADLIB.ADV, "
-                "whose tables the OPL driver model reads -- falling back\n", audio_mode());
-    goto fail;
+    DEBUG(WARN, "[audio] UW_AUDIO_MODE=dos but UW_DOS_DATA_DIR is unset -- "
+                "falling back to the converted .MOD music\n");
+    return 0;
   }
+
+  char path[1024];
+  uw_ail_synth synth;
+
+  /* The driver file is not optional: uw_adlib_init reads the F-number,
+   * block, velocity and operator-slot tables, and the chip's reset
+   * registers, out of ADLIB.ADV itself rather than hardcoding them. */
   snprintf(path, sizeof(path), "%s/SOUND/ADLIB.ADV", root);
   g.adlib_file = uw_read_file(path);
   if (!g.adlib_file.data) {
@@ -184,44 +136,25 @@ int platform_dosmidi_init(int out_rate)
           path, g.adlib_file.why ? g.adlib_file.why : "?");
     goto fail;
   }
-  const unsigned char *driver = g.adlib_file.data;
-  size_t driver_len = g.adlib_file.size;
-  const char *driver_source = path;
 
-  if (g.generic_timbres) {
-    g.timbres.count = 0; /* no bank; timbre_ready uses the built-in patch */
-  } else {
-    snprintf(path, sizeof(path), "%s/SOUND/UW.AD", root);
-    if (!uw_bank_open(&g.timbres, path)) {
-      DEBUG(WARN, "[audio] DOS audio: cannot read the timbre bank %s -- falling back\n", path);
-      goto fail;
-    }
+  snprintf(path, sizeof(path), "%s/SOUND/UW.AD", root);
+  if (!uw_bank_open(&g.timbres, path)) {
+    DEBUG(WARN, "[audio] DOS audio: cannot read the timbre bank %s -- falling back\n", path);
+    goto fail;
+  }
+
+  snprintf(path, sizeof(path), "%s/SOUND/SOUNDS.DAT", root);
+  if (!uw_sounds_open(&g.sounds, path)) {
+    DEBUG(WARN, "[audio] DOS audio: cannot read the effect table %s -- falling back\n", path);
+    goto fail;
   }
 
   uw_opl_reset(&g.opl);
-  if (!uw_adlib_init(&g.adlib, driver, driver_len, chip_write, NULL)) {
-    DEBUG(WARN, "[audio] DOS audio: %s is not an AdLib driver -- falling back\n", driver_source);
-    goto fail;
-  }
-  /* uw_adlib_init reads its tables at offsets fixed to the exact ADLIB.ADV
-   * build the game shipped, and validates almost nothing -- a length check
-   * and that the operator slots are under 18. A different build of the same
-   * driver therefore passes and yields tables of zeros, which init reports
-   * as success and which play in perfect silence. Confirmed: the AIL 2.14
-   * public release (14775 bytes) gives fnum all-zero where the game's
-   * 16276-byte build gives 690, 692, 695... So check the tables really
-   * arrived, and say so plainly rather than leaving the player with a mode
-   * that is on and mute. */
-  if (g.adlib.fnum[0] == 0 || g.adlib.vel[15] == 0 ||
-      g.adlib.slot_c[0] == g.adlib.slot_m[0]) {
-    DEBUG(WARN, "[audio] DOS audio: %s loaded but its tables are not where this "
-                "driver model expects them (F-number table reads as zero), so it "
-                "would play silently -- falling back. A different ADLIB.ADV build "
-                "than the one the game shipped will do this.\n", driver_source);
+  if (!uw_adlib_init(&g.adlib, g.adlib_file.data, g.adlib_file.size, chip_write, NULL)) {
+    DEBUG(WARN, "[audio] DOS audio: %s/SOUND/ADLIB.ADV is not the AdLib driver -- falling back\n", root);
     goto fail;
   }
 
-  uw_ail_synth synth;
   synth.user = NULL;
   synth.message = synth_message;
   synth.timbre = synth_timbre;
@@ -230,7 +163,7 @@ int platform_dosmidi_init(int out_rate)
 
   g.out_rate = out_rate > 0 ? out_rate : UW_OPL_RATE;
   g.seq = -1;
-  g.prefer_wav = mode_is("hybrid");
+  g.prefer_wav = hybrid_mode_requested();
   /* BUG FIX (confirmed live: the music drowned the effects). At their own
    * settings the OPL music peaks about 7x an effect, so the default trims
    * the music -- never the effects, which stay at the velocities
@@ -249,7 +182,6 @@ int platform_dosmidi_init(int out_rate)
   for (int i = 0; i < (int)(sizeof(g.sfx) / sizeof(g.sfx[0])); i++) {
     g.sfx[i].channel = 0;
   }
-
   /* Hand audio.c the per-id base volumes its decompile lost, so
    * play_positional_sound_effect's existing `vol * (0x30 - dist) / 0x28`
    * -- the same curve the DOS engine uses -- has a real base to scale
@@ -262,12 +194,9 @@ int platform_dosmidi_init(int out_rate)
   }
 
   g.live = 1;
-  DEBUG(INFO, "[audio] DOS audio mode ready (%s): OPL2 at %dHz -> %dHz, %d effects, "
-              "%d timbres, driver from %s\n",
-        mode_is("basicmidi") ? "basicmidi: effects as plain notes, music stays on .MOD"
-          : g.prefer_wav ? "hybrid: sampled effects where available"
-          : "dos: every effect a DOS note",
-        UW_OPL_RATE, g.out_rate, g.sounds.count, g.timbres.count, driver_source);
+  DEBUG(INFO, "[audio] DOS audio mode ready (%s): OPL2 at %dHz -> %dHz, %d effects, %d timbres\n",
+        g.prefer_wav ? "hybrid: sampled effects where available" : "dos: every effect a DOS note",
+        UW_OPL_RATE, g.out_rate, g.sounds.count, g.timbres.count);
   return 1;
 
 fail:
@@ -276,13 +205,6 @@ fail:
   uw_free(&g.adlib_file);
   memset(&g, 0, sizeof(g));
   return 0;
-}
-
-/* Does the music come from the DOS XMI scores, or stay on the port's own
- * converted .MOD files? False for basicmidi, which carries no scores. */
-int platform_dosmidi_music_from_xmi(void)
-{
-  return g.live && g.music_from_xmi;
 }
 
 int platform_dosmidi_xmi_path(const char *win_mod_path, char *out, unsigned int out_sz)
@@ -322,37 +244,11 @@ int platform_dosmidi_xmi_path(const char *win_mod_path, char *out, unsigned int 
   return (n > 0 && (unsigned int)n < out_sz) ? 1 : 0;
 }
 
-/* A plain two-operator patch, in the AIL timbre layout the driver expects:
- * a length word that includes itself, a transpose byte, the modulator's
- * five registers, the feedback/connection byte, then the carrier's five.
- * See third_party/openabyss's uw_adlib.h and Miles' own AILBANK format.
- *
- * This is the basicmidi path's stand-in for UW.AD, which is Origin's game
- * data and not in this repository. It is one generic FM voice used for
- * every program, so effects come out as notes at the right pitch, velocity
- * and duration rather than as the custom bank-1 time-variant timbres --
- * those cannot be approximated, they are little command streams. Values
- * chosen for a short percussive blip that carries at any pitch: fast
- * attack, moderate decay, no sustain, quick release, sine on both
- * operators, light feedback. */
-static const unsigned char k_generic_timbre[14] = {
-  14, 0,        /* length, including these two bytes */
-  0,            /* transpose */
-  0x01, 0x10, 0xf2, 0x53, 0x00,  /* modulator: mult 1, some attenuation */
-  0x06,                          /* feedback 3, FM (not additive) */
-  0x01, 0x00, 0xf2, 0x53, 0x00   /* carrier: mult 1, full level */
-};
-
 /* The patch for (bank, program) out of UW.AD, installed in the driver's
  * cache if it isn't already there. */
 static int timbre_ready(uint8_t bank, uint8_t program)
 {
   if (uw_ail_timbre_installed(&g.ail, bank, program)) {
-    return 1;
-  }
-  if (g.generic_timbres) {
-    /* No timbre bank: every program gets the built-in patch above. */
-    uw_ail_install_timbre(&g.ail, bank, program, k_generic_timbre, sizeof(k_generic_timbre));
     return 1;
   }
   size_t len = 0;
