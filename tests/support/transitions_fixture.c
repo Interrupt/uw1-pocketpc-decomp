@@ -498,3 +498,5 @@ void poll_input_bindings(void *input_state)
         TEST_ASSERT_EQUAL_INT(0, g_force_flush);
     }
 }
+
+void dungeon_palette_cycle_tick() {}

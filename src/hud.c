@@ -957,6 +957,7 @@ void main_loop_hud_flush()
     if (_force && DAT_00201b64 == 0 && DAT_00201c90 == 0 &&
         (DAT_00201c84 & 1) == 0) {
       _did_force_redraw = 1;
+      dungeon_palette_cycle_tick();
       /* Rebuild AND re-rasterise the 3D dungeon view every main-loop iteration. */
       render_dungeon_frame_timed();
       /* UW_DEBUG_PICK_VIEW: run a pick-mode render pass to fill the pick
