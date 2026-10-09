@@ -260,6 +260,45 @@ static void test_play_weapon_impact_sound_plays_a_sound_for_a_real_attacker(void
     TEST_ASSERT_EQUAL_INT(1, audio_fixture_positional_sfx_call_count());
 }
 
+/* BUG FIX regression (confirmed live): allocate_and_play_sound_channel's
+   id whitelist admits only {3,4,7,8,0x10,0x15,0x16}, which is authentic
+   WinCE behavior -- the port only shipped WAVE resources for those -- and
+   is why footsteps (0/2) and doors (0xb/0x14) are silent there. It must
+   stay the default. */
+static void test_sfx_id_whitelist_still_rejects_other_ids_by_default(void)
+{
+    audio_fixture_set_dos_audio_enabled(0);
+    TEST_ASSERT_EQUAL_UINT(0xff, allocate_and_play_sound_channel(0, 0, 0, 0x40, 0, 0));
+    TEST_ASSERT_EQUAL_UINT(0xff, allocate_and_play_sound_channel(2, 0, 0, 0x40, 0, 0));
+    TEST_ASSERT_EQUAL_UINT(0xff, allocate_and_play_sound_channel(0xb, 0, 0, 0x40, 0, 0));
+    TEST_ASSERT_EQUAL_UINT(0xff, allocate_and_play_sound_channel(0x14, 0, 0, 0x40, 0, 0));
+    TEST_ASSERT_EQUAL_INT(0, audio_fixture_sfx_play_call_count());
+}
+
+/* The DOS game has no such limitation: SOUNDS.DAT defines all 24 effect
+   ids and UW.AD carries a timbre for each, so in DOS mode every id must
+   reach the backend -- this is what makes footsteps and doors audible. */
+static void test_dos_audio_mode_plays_ids_the_whitelist_rejects(void)
+{
+    audio_fixture_set_dos_audio_enabled(1);
+    TEST_ASSERT_NOT_EQUAL_UINT(0xff, allocate_and_play_sound_channel(0, 0, 0, 0x40, 0, 0));
+    TEST_ASSERT_EQUAL_INT(1, audio_fixture_sfx_play_call_count());
+    TEST_ASSERT_EQUAL_INT(800, audio_fixture_last_sfx_resource_id());
+
+    TEST_ASSERT_NOT_EQUAL_UINT(0xff, allocate_and_play_sound_channel(0xb, 0, 0, 0x40, 0, 0));
+    TEST_ASSERT_EQUAL_INT(2, audio_fixture_sfx_play_call_count());
+    TEST_ASSERT_EQUAL_INT(800 + 0xb, audio_fixture_last_sfx_resource_id());
+}
+
+/* The whitelisted ids must behave identically either way -- the DOS escape
+   is additive, not a rewrite of the mapping. */
+static void test_dos_audio_mode_leaves_whitelisted_ids_alone(void)
+{
+    audio_fixture_set_dos_audio_enabled(1);
+    TEST_ASSERT_NOT_EQUAL_UINT(0xff, allocate_and_play_sound_channel(3, 0, 0, 0x40, 0, 0));
+    TEST_ASSERT_EQUAL_INT(803, audio_fixture_last_sfx_resource_id());
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -276,5 +315,8 @@ int main(void)
     RUN_TEST(test_play_sound_effect_at_object_does_not_truncate_the_object_pointer);
     RUN_TEST(test_play_weapon_impact_sound_does_not_crash_on_null_attacker);
     RUN_TEST(test_play_weapon_impact_sound_plays_a_sound_for_a_real_attacker);
+    RUN_TEST(test_sfx_id_whitelist_still_rejects_other_ids_by_default);
+    RUN_TEST(test_dos_audio_mode_plays_ids_the_whitelist_rejects);
+    RUN_TEST(test_dos_audio_mode_leaves_whitelisted_ids_alone);
     return UNITY_END();
 }

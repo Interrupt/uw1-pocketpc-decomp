@@ -74,16 +74,19 @@ static void uwmod_audio_callback(void *userdata, Uint8 *stream, int len)
 {
   (void)userdata;
   memset(stream, 0, (size_t)len);
-  if (!g_uwmod_playing) {
-    return;
-  }
   if (g_dos_mode) {
     /* The DOS driver model and its OPL2, resampled to this device's rate.
-     * Renders nothing (leaving the zeroed buffer) when DOS mode is not
-     * live, so a track that failed to load is silent rather than fatal. */
+     *
+     * BUG FIX (confirmed live): deliberately NOT gated on g_uwmod_playing.
+     * In DOS mode one chip carries both the music and the sound effects, so
+     * a "music stopped" gate here silenced the effects too -- turning the
+     * music off turned everything off. Music is stopped where it should be,
+     * at the sequencer (platform_dosmidi_stop), which leaves the driver
+     * running for effects. Renders nothing when DOS mode has no track and
+     * no effect sounding, so this costs nothing while idle. */
     platform_dosmidi_render((short *)stream, len / 4);
   } else {
-    if (!g_uwmod_loaded) {
+    if (!g_uwmod_playing || !g_uwmod_loaded) {
       return;
     }
     hxcmod_fillbuffer(&g_uwmod_ctx, (msample *)stream, (mssize)(len / 4), NULL);

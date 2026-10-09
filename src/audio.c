@@ -5,6 +5,7 @@
 #include "headers/platform_music.h"
 #include "headers/platform_sfx.h"
 #include "headers/platform_voice.h"
+#include "headers/platform_dosmidi.h"
 #include "headers/debug.h"
 #include "headers/file_io.h"
 #include <stdio.h>
@@ -931,13 +932,36 @@ LAB_000730fc:
   }
   else {
     if (sound_id < 7) {
-      return 0xff;
+      /* DOS audio mode plays every effect the table has (see below). */
+      if (!platform_dos_audio_enabled()) {
+        return 0xff;
+      }
+      uVar3 = 8;
+      goto LAB_00073108;
     }
     if (8 < sound_id) {
       if (sound_id == 0x10) goto LAB_000730fc;
       if (sound_id != 0x15) {
         if (sound_id != 0x16) {
-          return 0xff;
+          /* BUG FIX (DOS audio mode, confirmed live): this id-whitelist is
+           * authentic WinCE behavior and stays the default -- only ids
+           * {3,4,7,8,0x10,0x15,0x16} ever pass, which is why footsteps
+           * (0/2, movement.c) and doors (0xb/0x14, doors.c) are silent in
+           * the shipped port. The reason is the port's own asset set: it
+           * only ever had WAVE resources for the handful of ids this list
+           * admits.
+           *
+           * The DOS game has no such limitation -- SOUNDS.DAT defines all
+           * 24 effect ids and UW.AD carries a timbre for each -- so in DOS
+           * mode the rejection is skipped and the effect plays. The group
+           * value substituted here is this function's own default; it only
+           * ever reaches g_sound_channel_group, which nothing reads back
+           * (see that array's declaration comment). */
+          if (!platform_dos_audio_enabled()) {
+            return 0xff;
+          }
+          uVar3 = 8;
+          goto LAB_00073108;
         }
         goto LAB_00073104;
       }

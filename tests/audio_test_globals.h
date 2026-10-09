@@ -64,3 +64,10 @@ extern undefined2 DAT_00100624;
    would be a genuine (fixture-only) out-of-bounds read under ASan. */
 #define DAT_001007e0 DAT_001007d0_backing[0x10]
 extern undefined1 DAT_001007d0_backing[3072];
+
+/* allocate_and_play_sound_channel asks whether DOS audio mode is live
+   before rejecting an id its whitelist does not admit. Defined by
+   support/audio_fixture.c (controllable via
+   audio_fixture_set_dos_audio_enabled); the real one is in
+   platform_dosmidi.c, which this suite does not link. */
+int platform_dos_audio_enabled(void);

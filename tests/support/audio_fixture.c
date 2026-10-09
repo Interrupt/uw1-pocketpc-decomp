@@ -62,6 +62,7 @@ static int last_positional_sfx_id;
 static int last_positional_sfx_pan;
 static int last_positional_sfx_volume;
 static void *next_object_record;
+static int dos_audio_enabled;
 
 void audio_fixture_reset(void)
 {
@@ -89,6 +90,7 @@ void audio_fixture_reset(void)
     DAT_00100624 = 0;
     memset(DAT_001007d0_backing, 0, sizeof DAT_001007d0_backing);
     next_object_record = 0;
+    dos_audio_enabled = 0; /* the default path: the id whitelist applies */
     fake_clock = 0;
     next_random = 0;
     load_track_calls = 0;
@@ -120,6 +122,13 @@ int audio_fixture_last_positional_sfx_id(void) { return last_positional_sfx_id; 
 int audio_fixture_last_positional_sfx_pan(void) { return last_positional_sfx_pan; }
 int audio_fixture_last_positional_sfx_volume(void) { return last_positional_sfx_volume; }
 void audio_fixture_set_next_object_record(void *record) { next_object_record = record; }
+void audio_fixture_set_dos_audio_enabled(int on) { dos_audio_enabled = on; }
+
+/* allocate_and_play_sound_channel asks this before rejecting an id its
+   whitelist does not admit -- DOS audio mode plays every effect
+   SOUNDS.DAT defines. The real one lives in platform_dosmidi.c, which this
+   suite does not link. */
+int platform_dos_audio_enabled(void) { return dos_audio_enabled; }
 
 uint read_realtime_clock_units(void) { return fake_clock; }
 long ce_rand(void) { return next_random; }
