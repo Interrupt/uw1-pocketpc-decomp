@@ -311,12 +311,18 @@ void platform_dosmidi_play_effect(int id)
     return;
   }
 
-  /* Retriggering an id that is still sounding replaces it rather than
-   * stacking a second voice on it. The engine retriggers the long movement
-   * sound on a timer (movement.c around DAT_00086e84), so stacking would
-   * pile up voices that each outlive the next retrigger. */
-  platform_dosmidi_stop_effect(id);
-
+  /* First free of four slots, and drop the effect when all four are busy
+   * -- the original's own policy (sound_effect_start returns 0xff there).
+   *
+   * Deliberately does NOT stop a sounding voice to make room. An earlier
+   * version replaced a retriggered id instead, out of a worry that the long
+   * movement sound would stack; it cannot. movement.c only starts that
+   * sound when its handle is -1, i.e. when it is not already playing (see
+   * the DAT_00086e84 guard there), so the game never asks twice. What the
+   * replace did cause was an audible click: stopping a voice and
+   * immediately relocking the channel churns through a note-off, CC 123,
+   * a channel release that resends nine cached controllers, and then the
+   * whole setup sequence again, all inside one driver tick. */
   int slot = -1;
   for (int i = 0; i < (int)(sizeof(g.sfx) / sizeof(g.sfx[0])); i++) {
     if (!g.sfx[i].channel) { slot = i; break; }
