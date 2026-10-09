@@ -5,6 +5,7 @@
 #include "headers/platform_music.h"
 #include "headers/platform_sfx.h"
 #include "headers/platform_voice.h"
+#include "headers/platform_dosmidi.h"
 #include "headers/debug.h"
 #include "headers/file_io.h"
 #include <stdio.h>
@@ -189,6 +190,20 @@ int DAT_0008744c;
 /* Sizing-audit pass: max real index is 0xff*5+4=1279 (confirmed by
    the comment below, an 8-bit id field * 5-byte stride) -- a HARD
    bound. Sized all 4 siblings to 1280; down from 8192. */
+/* BUG FIX (DOS audio mode): these four per-sound-id bytes are a five-byte
+   record per id, and the decompile never recovered their contents -- the
+   backing array is zero-filled. DAT_0023c2b2 is the record's base VOLUME,
+   so with it at zero play_positional_sound_effect/play_sound_effect_with_pan
+   compute `volume_bias + 0` and many call sites pass a bias of 0, which
+   would make the sound silent if the value were ever actually used. In the
+   shipped port it never was (see trigger_sound_sample_note's comment: the
+   volume is computed, forwarded two levels and then provably discarded).
+
+   DOS mode does use it, and the DOS game's equivalent base is SOUNDS.DAT's
+   own per-effect velocity -- real data we have. audio_set_effect_base_volume
+   below lets platform_dosmidi_init fill these in from it, which makes the
+   port's existing attenuation math (the same `vol * (0x30 - dist) / 0x28`
+   the DOS engine uses) produce the right answer instead of zero. */
 static undefined DAT_0023c2b0_backing[1280];
 #define DAT_0023c2b0 DAT_0023c2b0_backing[0]
 /* Same per-sound-effect-id table shape as DAT_0023c2b0 just above (all four indexed by
@@ -602,6 +617,19 @@ void stop_current_audio_handle()
 // allocate_and_play_sound_channel/trigger_sound_sample_note/
 // platform_sfx_play for the first time. No change was needed here
 // beyond the global's own default-value fix.
+/* Fills in one sound id's base volume -- the byte the decompile lost. See
+   DAT_0023c2b0_backing's comment. Bounded by the real backing array. */
+void audio_set_effect_base_volume(int sound_id, int velocity)
+{
+  unsigned index = (unsigned)sound_id * 5 + 2;
+  if (sound_id < 0 || index >= sizeof(DAT_0023c2b0_backing)) {
+    return;
+  }
+  if (velocity < 0) velocity = 0;
+  if (velocity > 0x7f) velocity = 0x7f;
+  ((unsigned char *)DAT_0023c2b0_backing)[index] = (unsigned char)velocity;
+}
+
 int play_positional_sound_effect(uint sound_id, short world_x, short world_y, uint volume_bias)
 {
   short sVar1;
@@ -677,7 +705,16 @@ LAB_00072f24:
       if (iVar6 < 0) {
         uVar7 = 0;
       }
-      if (0x30 < uVar3) goto LAB_00072f24;
+      /* Out of earshot. Traced because this gate applies ONLY to the
+       * positional entry point -- play_sound_effect_with_pan has no
+       * distance check at all -- so it is the one thing that can silence
+       * landing and door sounds while footsteps keep working. uVar3 is the
+       * distance from the player in the same units as the x/y passed in. */
+      if (0x30 < uVar3) {
+        DEBUG(INFO, "[audio] positional effect %u dropped: distance %u exceeds the 0x30 range "
+                    "(at %d,%d)\n", sound_id & 0xff, uVar3, (int)world_x, (int)world_y);
+        goto LAB_00072f24;
+      }
       if (7 < uVar3) {
         iVar5 = ordint_divmod(0x28,(0x30 - uVar3) * (int)(short)((uint)iVar5 >> 0x10)).quot;
         iVar5 = iVar5 << 0x10;
@@ -836,6 +873,21 @@ int play_sound_effect_at_object(int sound_id, ushort *object, int volume_bias)
 void stop_movement_sound_handle()
 
 {
+  /* BUG FIX (DOS audio mode, confirmed live: falling in water started a
+   * sound that never stopped). The empty body above is what the WinCE
+   * binary really has, and it was harmless there for one reason only: the
+   * movement sound is id 0, which allocate_and_play_sound_channel's
+   * whitelist rejected, so there was never a voice for this to stop.
+   *
+   * DOS mode plays every id, and id 0 is 25 seconds long where every
+   * other effect is under 1.5 (SOUNDS.DAT's own durations), so without a
+   * real stop it reads as stuck. movement.c already does the right thing
+   * around DAT_00086e84 -- it calls this and clears the handle when the
+   * player leaves the water, and again on a timer -- so honouring that
+   * call is all this needs. The default path keeps the original no-op. */
+  if (platform_dos_audio_enabled()) {
+    platform_dosmidi_stop_effect(0);
+  }
   return;
 }
 
@@ -932,13 +984,40 @@ LAB_000730fc:
   }
   else {
     if (sound_id < 7) {
-      return 0xff;
+      /* No longer rejected -- see the note at the second escape below. */
+      uVar3 = 8;
+      goto LAB_00073108;
     }
     if (8 < sound_id) {
       if (sound_id == 0x10) goto LAB_000730fc;
       if (sound_id != 0x15) {
         if (sound_id != 0x16) {
-          return 0xff;
+          /* BUG FIX (confirmed live, both audio paths): the original
+           * whitelist here passed only ids {3,4,7,8,0x10,0x15,0x16} and
+           * returned 0xff for the rest, which is why footsteps (1/2,
+           * movement.c) and doors (0xb/0x14, doors.c) were silent.
+           *
+           * It is not a filter that matches either platform's assets. The
+           * port's own WAVE resources cover effect ids 1-12, 16-18 and 20,
+           * so ELEVEN ids it ships sounds for were blocked here (1, 2, 5,
+           * 6, 9, 10, 11, 12, 17, 18, 20) -- while two ids the list does
+           * admit, 0x15 and 0x16, have no resource at all. That mismatch
+           * fits those resources having come from Ultima Underworld 2
+           * rather than this game. The DOS side has no limitation either:
+           * SOUNDS.DAT defines all 24 ids and UW.AD carries a timbre for
+           * each.
+           *
+           * So every id is now dispatched and the backend decides. An id
+           * with no asset costs nothing: platform_sfx_play bounds-checks
+           * the resource range and warns once per missing resource, and
+           * platform_dosmidi_play_effect does the same for ids outside
+           * SOUNDS.DAT -- both stay silent rather than failing.
+           *
+           * The group value substituted here is this function's own
+           * default; it only ever reaches g_sound_channel_group, which
+           * nothing reads back (see that array's declaration comment). */
+          uVar3 = 8;
+          goto LAB_00073108;
         }
         goto LAB_00073104;
       }
@@ -949,7 +1028,25 @@ LAB_00073108:
   DAT_0023c39c = DAT_0023c39c | bVar1;
   g_sound_channel_state[uVar2] = 2;
   g_sound_channel_group[uVar2] = uVar3;
-  trigger_sound_sample_note(sound_id,note);
+  /* The one place an effect's backend is chosen.
+   *
+   * UW_AUDIO_MODE=dos sends everything to the DOS driver -- a note on
+   * UW.AD's bank-1 timbres -- with both the distance-attenuated volume
+   * (`note`) and the pan (`flags`) the callers computed. Deliberately not
+   * via trigger_sound_sample_note: the real FUN_00073140 takes one
+   * argument, so that route structurally cannot carry a pan, and it is
+   * where the shipped port discarded the volume.
+   *
+   * UW_AUDIO_MODE=hybrid prefers this port's sampled WAVE resource where
+   * one exists and uses the DOS note only for the ids it lacks (0, 13, 14,
+   * 15, 19, 21-23). Anything else -- including no DOS mode at all -- takes
+   * the sampled path, which is silent for those same ids. */
+  if (platform_dos_audio_enabled() &&
+      !(platform_dos_prefer_wav_effects() && platform_sfx_has_resource(sound_id + 800))) {
+    platform_dosmidi_play_effect(sound_id, note, (int)flags);
+  } else {
+    trigger_sound_sample_note(sound_id,note);
+  }
   return uVar2;
 }
 

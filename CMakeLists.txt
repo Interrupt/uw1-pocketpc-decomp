@@ -56,6 +56,7 @@ set(UW_SOURCES
   src/platform_music.c
   src/platform_sfx.c
   src/platform_voice.c
+  src/platform_dosmidi.c
   src/main.c
   src/gx_stub.c
   src/ordinal_stubs.c
@@ -65,12 +66,20 @@ set(UW_SOURCES
   src/debug.c
   src/debug_ui.c
   third_party/hxcmod/hxcmod.c
+  # The authentic DOS audio path (UW_AUDIO_MODE=dos): OpenAbyss's
+  # reverse-engineered ADLIB.ADV driver model, its voice layer and its OPL2.
+  # MIT -- see third_party/openabyss/VENDORING.md.
+  third_party/openabyss/uw_opl.c
+  third_party/openabyss/uw_adlib.c
+  third_party/openabyss/uw_ail.c
+  third_party/openabyss/uw_sound.c
+  third_party/openabyss/uw_blob.c
   src/debug_shim.c
 )
 
 add_executable(uw_dbg ${UW_SOURCES})
 
-target_include_directories(uw_dbg PRIVATE ${SDL2_INCLUDE_DIRS} third_party/hxcmod)
+target_include_directories(uw_dbg PRIVATE ${SDL2_INCLUDE_DIRS} third_party/hxcmod third_party/openabyss)
 target_link_directories(uw_dbg PRIVATE ${SDL2_LIBRARY_DIRS})
 target_link_libraries(uw_dbg PRIVATE ${SDL2_LIBRARIES})
 target_compile_options(uw_dbg PRIVATE
@@ -92,7 +101,7 @@ set_target_properties(uw_dbg PROPERTIES
 # ASan's overhead.
 add_executable(uw_asan ${UW_SOURCES})
 
-target_include_directories(uw_asan PRIVATE ${SDL2_INCLUDE_DIRS} third_party/hxcmod)
+target_include_directories(uw_asan PRIVATE ${SDL2_INCLUDE_DIRS} third_party/hxcmod third_party/openabyss)
 target_link_directories(uw_asan PRIVATE ${SDL2_LIBRARY_DIRS})
 target_link_libraries(uw_asan PRIVATE ${SDL2_LIBRARIES})
 target_compile_options(uw_asan PRIVATE

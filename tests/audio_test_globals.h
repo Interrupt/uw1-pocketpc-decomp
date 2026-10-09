@@ -62,4 +62,24 @@ extern undefined2 DAT_00100624;
 /* Real size (ai.c's own DAT_001007d0_backing[3072]) -- play_weapon_impact_sound
    indexes up to (0x3f*0x30)+0x10 == 3040 bytes in, so a smaller stub
    would be a genuine (fixture-only) out-of-bounds read under ASan. */
+#define DAT_001007e0 DAT_001007d0_backing[0x10]
+extern undefined1 DAT_001007d0_backing[3072];
+
+/* allocate_and_play_sound_channel asks whether DOS audio mode is live
+   before rejecting an id its whitelist does not admit. Defined by
+   support/audio_fixture.c (controllable via
+   audio_fixture_set_dos_audio_enabled); the real one is in
+   platform_dosmidi.c, which this suite does not link. */
+int platform_dos_audio_enabled(void);
+
+/* allocate_and_play_sound_channel hands DOS audio mode the attenuated
+   volume and the pan directly, since trigger_sound_sample_note cannot
+   carry a pan. Recorded by support/audio_fixture.c. */
+void platform_dosmidi_play_effect(int id, int velocity, int pan);
+
+/* The hybrid-mode decision in allocate_and_play_sound_channel: prefer a
+   sampled WAVE resource where the port has one, else the DOS note. Both
+   are controllable from support/audio_fixture.c. */
+int platform_dos_prefer_wav_effects(void);
+int platform_sfx_has_resource(int resource_id);
 extern uw_monster_type_props_t g_monster_type_props[64];

@@ -115,31 +115,34 @@ static void test_stop_voice_sample_stops_the_real_backend(void)
     TEST_ASSERT_EQUAL_INT(1, audio_fixture_voice_stop_call_count());
 }
 
-/* allocate_and_play_sound_channel's id-whitelist (see its own
-   "INVESTIGATED" comment in audio.c, confirmed via a live Ghidra
-   decompile of the real FUN_00073064): only ids {3,4,7,8,0x10,0x15,
-   0x16} ever reach trigger_sound_sample_note/platform_sfx_play --
-   everything else returns 0xff without ever triggering a sample. */
-static void test_allocate_and_play_sound_channel_id_whitelist(void)
+/* allocate_and_play_sound_channel used to admit only ids
+   {3,4,7,8,0x10,0x15,0x16} and return 0xff for the rest -- authentic
+   FUN_00073064 behavior, confirmed via Ghidra, and the reason footsteps
+   and doors were silent. That filter matched neither platform's assets
+   (the port ships WAVE resources for ids 1-12, 16-18 and 20, while
+   0x15/0x16 have none), so every id now dispatches and the backend
+   decides -- see that function's own "BUG FIX" comment in audio.c. */
+static void test_allocate_and_play_sound_channel_dispatches_every_id(void)
 {
-    /* A valid id reaches platform_sfx_play with resource id+800. */
+    /* A once-whitelisted id still reaches platform_sfx_play at id+800. */
     uint result = allocate_and_play_sound_channel(3, 0, 0, 0x40, 0, 0);
     TEST_ASSERT_EQUAL_INT(1, audio_fixture_sfx_play_call_count());
     TEST_ASSERT_EQUAL_INT(803, audio_fixture_last_sfx_resource_id());
     TEST_ASSERT_NOT_EQUAL(0xff, result);
 
-    /* An id below the whitelist's floor (e.g. a footstep id, 0 or 2 --
-       see movement.c's own play_sound_effect_with_pan(0/2,...) calls)
-       fails outright and never reaches platform_sfx_play. */
+    /* A footstep id (movement.c's play_sound_effect_with_pan(1/2,...)),
+       below the old floor, now dispatches too -- the port has 801/802. */
     result = allocate_and_play_sound_channel(2, 0, 0, 0x40, 0, 0);
-    TEST_ASSERT_EQUAL_UINT(0xff, result);
-    TEST_ASSERT_EQUAL_INT(1, audio_fixture_sfx_play_call_count()); /* unchanged */
+    TEST_ASSERT_NOT_EQUAL(0xff, result);
+    TEST_ASSERT_EQUAL_INT(2, audio_fixture_sfx_play_call_count());
+    TEST_ASSERT_EQUAL_INT(802, audio_fixture_last_sfx_resource_id());
 
-    /* An id above the whitelist with no special-case match (e.g. a
-       door id, 0xb/0x14 -- see doors.c) also fails outright. */
+    /* A door id (0x14, doors.c), above the old list with no special case,
+       likewise -- the port has 820. */
     result = allocate_and_play_sound_channel(0x14, 0, 0, 0x40, 0, 0);
-    TEST_ASSERT_EQUAL_UINT(0xff, result);
-    TEST_ASSERT_EQUAL_INT(1, audio_fixture_sfx_play_call_count()); /* unchanged */
+    TEST_ASSERT_NOT_EQUAL(0xff, result);
+    TEST_ASSERT_EQUAL_INT(3, audio_fixture_sfx_play_call_count());
+    TEST_ASSERT_EQUAL_INT(820, audio_fixture_last_sfx_resource_id());
 }
 
 /* Sizing-audit regression: g_sound_channel_state/g_sound_channel_group
@@ -260,6 +263,116 @@ static void test_play_weapon_impact_sound_plays_a_sound_for_a_real_attacker(void
     TEST_ASSERT_EQUAL_INT(1, audio_fixture_positional_sfx_call_count());
 }
 
+/* The ids the port ships WAVE resources for but the old whitelist
+   blocked -- footsteps and doors among them -- must reach the WAVE
+   backend on the default path, with the +800 resource offset applied. */
+static void test_default_path_dispatches_the_formerly_blocked_ids(void)
+{
+    audio_fixture_set_dos_audio_enabled(0);
+    const int ids[] = { 1, 2, 5, 6, 9, 10, 11, 12, 17, 18, 20 };
+    for (unsigned i = 0; i < sizeof ids / sizeof ids[0]; i++) {
+        TEST_ASSERT_NOT_EQUAL_UINT(0xff,
+            allocate_and_play_sound_channel((byte)ids[i], 0, 0, 0x40, 0, 0));
+        TEST_ASSERT_EQUAL_INT(800 + ids[i], audio_fixture_last_sfx_resource_id());
+    }
+    TEST_ASSERT_EQUAL_INT((int)(sizeof ids / sizeof ids[0]),
+                          audio_fixture_sfx_play_call_count());
+    TEST_ASSERT_EQUAL_INT(0, audio_fixture_dos_effect_call_count());
+}
+
+/* The DOS game has no such limitation: SOUNDS.DAT defines all 24 effect
+   ids and UW.AD carries a timbre for each, so in DOS mode every id must
+   reach the backend -- this is what makes footsteps and doors audible. */
+static void test_dos_audio_mode_dispatches_the_same_ids(void)
+{
+    audio_fixture_set_dos_audio_enabled(1);
+    TEST_ASSERT_NOT_EQUAL_UINT(0xff, allocate_and_play_sound_channel(0, 0, 0, 0x40, 0, 0));
+    TEST_ASSERT_EQUAL_INT(1, audio_fixture_dos_effect_call_count());
+    TEST_ASSERT_EQUAL_INT(0, audio_fixture_last_dos_effect_id());
+
+    TEST_ASSERT_NOT_EQUAL_UINT(0xff, allocate_and_play_sound_channel(0xb, 0, 0, 0x40, 0, 0));
+    TEST_ASSERT_EQUAL_INT(2, audio_fixture_dos_effect_call_count());
+    TEST_ASSERT_EQUAL_INT(0xb, audio_fixture_last_dos_effect_id());
+}
+
+/* The whitelisted ids must behave identically either way -- the DOS escape
+   is additive, not a rewrite of the mapping. */
+static void test_dos_audio_mode_leaves_whitelisted_ids_alone(void)
+{
+    audio_fixture_set_dos_audio_enabled(1);
+    TEST_ASSERT_NOT_EQUAL_UINT(0xff, allocate_and_play_sound_channel(3, 0, 0, 0x40, 0, 0));
+    TEST_ASSERT_EQUAL_INT(1, audio_fixture_dos_effect_call_count());
+    TEST_ASSERT_EQUAL_INT(3, audio_fixture_last_dos_effect_id());
+}
+
+/* The shipped WinCE chain computes a distance-attenuated volume and a pan
+   and then discards both -- allocate_and_play_sound_channel never reads
+   the pan, and trigger_sound_sample_note (one formal parameter in the real
+   binary) drops the volume. DOS mode must get them, because its effects
+   are notes whose velocity and CC 10 are exactly those values. */
+static void test_dos_audio_mode_forwards_the_volume_and_pan(void)
+{
+    audio_fixture_set_dos_audio_enabled(1);
+    allocate_and_play_sound_channel(3, 0, 0, 0x5a, 0x20, 0);
+    TEST_ASSERT_EQUAL_INT(1, audio_fixture_dos_effect_call_count());
+    TEST_ASSERT_EQUAL_INT(3, audio_fixture_last_dos_effect_id());
+    TEST_ASSERT_EQUAL_INT(0x5a, audio_fixture_last_dos_effect_velocity());
+    TEST_ASSERT_EQUAL_INT(0x20, audio_fixture_last_dos_effect_pan());
+    /* and it must not also go the WAVE route -- that would double-play */
+    TEST_ASSERT_EQUAL_INT(0, audio_fixture_sfx_play_call_count());
+}
+
+/* The default path is unchanged: still the WAVE backend, via
+   trigger_sound_sample_note, with no DOS dispatch at all. */
+static void test_default_path_does_not_reach_the_dos_backend(void)
+{
+    audio_fixture_set_dos_audio_enabled(0);
+    allocate_and_play_sound_channel(3, 0, 0, 0x5a, 0x20, 0);
+    TEST_ASSERT_EQUAL_INT(0, audio_fixture_dos_effect_call_count());
+    TEST_ASSERT_EQUAL_INT(1, audio_fixture_sfx_play_call_count());
+    TEST_ASSERT_EQUAL_INT(803, audio_fixture_last_sfx_resource_id());
+}
+
+/* UW_AUDIO_MODE=hybrid: the sampled resource wins where the port has one,
+   so the id goes to the WAVE backend at id+800 and not to the DOS one. */
+static void test_hybrid_mode_prefers_the_sampled_resource(void)
+{
+    audio_fixture_set_dos_audio_enabled(1);
+    audio_fixture_set_dos_prefer_wav(1);
+    allocate_and_play_sound_channel(3, 0, 0, 0x40, 0, 0);
+    TEST_ASSERT_EQUAL_INT(1, audio_fixture_sfx_play_call_count());
+    TEST_ASSERT_EQUAL_INT(803, audio_fixture_last_sfx_resource_id());
+    TEST_ASSERT_EQUAL_INT(0, audio_fixture_dos_effect_call_count());
+}
+
+/* ...and falls back to the DOS note for the ids with no resource (0, 13,
+   14, 15, 19, 21-23 in the shipped set), which is the whole point of the
+   mode: coverage the sampled set alone cannot give. */
+static void test_hybrid_mode_falls_back_to_the_dos_note(void)
+{
+    audio_fixture_set_dos_audio_enabled(1);
+    audio_fixture_set_dos_prefer_wav(1);
+    audio_fixture_set_missing_sfx_resource(815); /* effect id 15 */
+    allocate_and_play_sound_channel(15, 0, 0, 0x40, 0x30, 0);
+    TEST_ASSERT_EQUAL_INT(0, audio_fixture_sfx_play_call_count());
+    TEST_ASSERT_EQUAL_INT(1, audio_fixture_dos_effect_call_count());
+    TEST_ASSERT_EQUAL_INT(15, audio_fixture_last_dos_effect_id());
+    /* the volume and pan still come through on the fallback */
+    TEST_ASSERT_EQUAL_INT(0x40, audio_fixture_last_dos_effect_velocity());
+    TEST_ASSERT_EQUAL_INT(0x30, audio_fixture_last_dos_effect_pan());
+}
+
+/* Plain dos mode ignores the sampled set entirely, even where one exists --
+   that is the faithful setting. */
+static void test_dos_mode_ignores_the_sampled_resource(void)
+{
+    audio_fixture_set_dos_audio_enabled(1);
+    audio_fixture_set_dos_prefer_wav(0);
+    allocate_and_play_sound_channel(3, 0, 0, 0x40, 0, 0);
+    TEST_ASSERT_EQUAL_INT(0, audio_fixture_sfx_play_call_count());
+    TEST_ASSERT_EQUAL_INT(1, audio_fixture_dos_effect_call_count());
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -269,12 +382,20 @@ int main(void)
     RUN_TEST(test_play_numbered_voice_sample_plays_the_given_id);
     RUN_TEST(test_is_voice_sample_finished_reflects_the_real_backend);
     RUN_TEST(test_stop_voice_sample_stops_the_real_backend);
-    RUN_TEST(test_allocate_and_play_sound_channel_id_whitelist);
+    RUN_TEST(test_allocate_and_play_sound_channel_dispatches_every_id);
     RUN_TEST(test_allocate_and_play_sound_channel_survives_channel_exhaustion);
     RUN_TEST(test_stop_current_audio_handle_dup_does_not_crash_on_null_handle);
     RUN_TEST(test_play_sound_effect_at_object_does_not_crash_on_null_object);
     RUN_TEST(test_play_sound_effect_at_object_does_not_truncate_the_object_pointer);
     RUN_TEST(test_play_weapon_impact_sound_does_not_crash_on_null_attacker);
     RUN_TEST(test_play_weapon_impact_sound_plays_a_sound_for_a_real_attacker);
+    RUN_TEST(test_default_path_dispatches_the_formerly_blocked_ids);
+    RUN_TEST(test_dos_audio_mode_dispatches_the_same_ids);
+    RUN_TEST(test_dos_audio_mode_leaves_whitelisted_ids_alone);
+    RUN_TEST(test_dos_audio_mode_forwards_the_volume_and_pan);
+    RUN_TEST(test_default_path_does_not_reach_the_dos_backend);
+    RUN_TEST(test_hybrid_mode_prefers_the_sampled_resource);
+    RUN_TEST(test_hybrid_mode_falls_back_to_the_dos_note);
+    RUN_TEST(test_dos_mode_ignores_the_sampled_resource);
     return UNITY_END();
 }

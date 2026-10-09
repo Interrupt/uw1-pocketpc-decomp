@@ -33,4 +33,12 @@ void platform_music_stop(void);
  * shutdown. Safe to call even if platform_music_init never succeeded. */
 void platform_music_shutdown(void);
 
+/* The audio device's lock, for callers that must mutate state the audio
+ * callback also touches. platform_music.c owns the device, so it owns the
+ * lock; the DOS audio backend is shared between this file's callback and
+ * platform_sfx.c's effect trigger, which runs on the game thread. Both are
+ * no-ops when no device is open. */
+void platform_music_lock(void);
+void platform_music_unlock(void);
+
 #endif

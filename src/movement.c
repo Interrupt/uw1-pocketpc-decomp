@@ -942,6 +942,18 @@ void sweep_land_on_surface()
   *(short *)((char *)g_sweep_foot_pos + 4) = _DAT_0008699b;
   psVar9 = (short *)DAT_00204874;
   DAT_00086984 = 0;
+  // BUG FIX (confirmed live: landing in water made no splash). Both landing
+  // sounds below test this word -- the object's downward velocity -- and the
+  // no-bounce workaround immediately after this line zeroes it for exactly
+  // the case that matters, a falling player. With it zeroed, `[5] < 0` is
+  // false, the water-landing branch (sound 5) is skipped, and the fall
+  // reaches the hard-landing sound 15 instead -- which has no WAVE resource
+  // in this port (the 813-815 gap), so the player simply got silence.
+  //
+  // Captured here, before the workaround, and used by both triggers below.
+  // That restores what the original ARM code saw, since the original never
+  // zeroed it: the workaround is this port's own addition.
+  short landing_velocity = *(short *)((char *)DAT_00204874 + 10);
 // HACK: The player-only landing workaround is enabled by default; UW_PLAYER_NO_BOUNCE=0 disables
 // it. It is absent from the original ARM code. Clear downward velocity, gravity, and airborne state
 // before restitution so the player stops on landing. Mobile items retain their normal bounce.
@@ -958,14 +970,14 @@ void sweep_land_on_surface()
   }
   if ((((DAT_00086998 == -1) && ((DAT_002049d4 & 1) != 0)) &&
       ((int)*(short *)((char *)g_sweep_foot_pos + 4) <= (int)((uint)DAT_002049d0 + (uint)DAT_002049d8))) &&
-     (((short *)DAT_00204874)[5] < 0)) {
+     (landing_velocity < 0)) {
     sweep_kill_velocity();
     *(undefined1 *)(DAT_00204874 + 0x28) = 2;
     uVar3 = ordint_divmod(0x32,(short)(uVar2 >> 4) + -600).quot;
     play_positional_sound_effect(5,(int)*(short *)DAT_00204874 >> 5,(int)((short *)DAT_00204874)[1] >> 5,uVar3);
     return;
   }
-  sVar4 = ((short *)DAT_00204874)[5];
+  sVar4 = landing_velocity; /* see landing_velocity's comment above */
   uVar8 = (int)sVar4 >> 0x1f;
   uVar11 = ordint_divmod(0x32,(short)(uVar2 >> 4) + -600).quot;
   uVar8 = ordint_divmod(10,((int)sVar4 ^ uVar8) - uVar8).quot;
