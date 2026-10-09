@@ -1,4 +1,5 @@
 #include "headers/file_io.h"
+#include "headers/options.h"
 
 #include "headers/debug.h"
 #include <stdio.h>
@@ -14,15 +15,14 @@
 static FILE *g_handles[MAX_HANDLES];
 
 static const char *data_dir(void) {
-    static const char *dir = NULL;
-    static int looked_up = 0;
-    if (!looked_up) {
-        dir = getenv("UW_DATA_DIR");
-        looked_up = 1;
+    static int logged = 0;
+    const char *dir = g_opts.data_dir;
+    if (!logged) {
+        logged = 1;
         if (dir) {
-            DEBUG(INFO, "[fileio] UW_DATA_DIR = %s\n", dir);
+            DEBUG(INFO, "[fileio] data dir = %s\n", dir);
         } else {
-            DEBUG(ERR, "[fileio] UW_DATA_DIR not set -- game data file "
+            DEBUG(ERR, "[fileio] --data-dir not set -- game data file "
                             "loads will fail\n");
         }
     }
@@ -194,7 +194,7 @@ int uw_file_write(int handle, const void *buf, unsigned int size) {
     fseek(f, 0, SEEK_CUR);
     errno = 0;
     int n = (int)fwrite(buf, 1, size, f);
-    if (getenv("UW_DEBUG_INPUTEVENT"))
+    if (g_opts.debug_inputevent)
         fprintf(stderr, "[fileio] write: handle %d requested=%u wrote=%d errno=%d(%s) ferror=%d feof=%d\n",
                 handle, size, n, errno, strerror(errno), ferror(f), feof(f));
     return n;

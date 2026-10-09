@@ -2,6 +2,7 @@
    sources, food, and combine/stow-into- container logic. Split out of uw.c (the original monolithic
    decompile) once these functions' real roles were confirmed. */
 #include "headers/item_use.h"
+#include "headers/options.h"
 #include <math.h>
 #include "headers/debug.h"
 #include <stdio.h>
@@ -162,7 +163,7 @@ void attach_picked_up_object_to_cursor(ushort *object)
   if ((local_14 != 0) && (wait_for_click_release(1), g_selected_object != (char *)0x0)) {
     get_mouse_position(local_10,&local_12);
     sVar2 = hit_test_inventory_widget((int)local_10[0],(int)local_12);
-    if (getenv("UW_DEBUG_INV"))
+    if (g_opts.debug_inv)
       fprintf(stderr, "[inv] attach_picked_up_object_to_cursor click test: gx=%d gy=%d -> widget_id=%d\n",
               (int)local_10[0], (int)local_12, (int)sVar2);
     iVar1 = (int)sVar2;
@@ -221,13 +222,13 @@ int drop_held_object_near_player(void *held_object_ptr, int force)
   
   DAT_00202a4c = (ushort)(g_player_object->npc_xhome);
   DAT_00202a50 = (short)(g_player_object->npc_yhome);
-  if (getenv("UW_DEBUG_THROW") && (*held_object & 0x1ff) == 0x80)
+  if (g_opts.debug_throw && (*held_object & 0x1ff) == 0x80)
     fprintf(stderr, "[throw-playertile] player tile=(%d,%d) fine_pos(DAT_00204880/2/4)=(%d,%d,%d) = world(%g,%g) tile-frac(%g,%g)\n",
             (int)DAT_00202a4c, (int)DAT_00202a50,
             (int)DAT_00204880, (int)DAT_00204882, (int)DAT_00204884,
             (double)DAT_00204880 / 256.0, (double)DAT_00204882 / 256.0,
             fmod((double)DAT_00204880 / 256.0, 1.0), fmod((double)DAT_00204882 / 256.0, 1.0));
-  if (getenv("UW_DEBUG_THROW"))
+  if (g_opts.debug_throw)
     fprintf(stderr, "[branch-gate] game_mode=%d\n", (int)*(short *)(DAT_00085a6c + 8));
   if ((*(short *)(DAT_00085a6c + 8) == 1) && (iVar4 = compute_drop_aim_from_cursor(), iVar4 != 0)) {
     DAT_00202a54 = 1;
@@ -265,7 +266,7 @@ int drop_held_object_near_player(void *held_object_ptr, int force)
     *(byte *)(held_object + 1) = ((byte) g_player_object->hdr.position_word ^ (byte)held_object[1]) & 0x7f ^ (byte)held_object[1];
     *(byte *)((char *)held_object + 3) = *(byte *)((char *)held_object + 3);
     cVar9 = (g_object_type_props[((ushort)*held_object & 0x1ff)].collision_radius) + (g_object_type_props[(g_player_object->hdr.object_id)].collision_radius) + '\x01';
-    if (getenv("UW_DEBUG_THROW"))
+    if (g_opts.debug_throw)
       fprintf(stderr, "[throw-heading] facing_byte(g_player_object+0x18)&0x1f=%d fine_aim((g_player_object[1]&0x380)>>2)=%d heading=%d dist(cVar9)=%d start=(%d,%d)\n",
               (int)(g_player_object->npc_heading),
               (int)((g_player_object->hdr.heading << 7) >> 2),
@@ -274,12 +275,12 @@ int drop_held_object_near_player(void *held_object_ptr, int force)
     project_position_by_heading((g_player_object->npc_heading) + ((g_player_object->hdr.heading << 7) >> 2),
                                 cVar9,&local_28
                                 ,&local_26);
-    if (getenv("UW_DEBUG_THROW"))
+    if (g_opts.debug_throw)
       fprintf(stderr, "[throw-heading] after 1st project_position_by_heading: local_28(X)=%d local_26(Y)=%d\n",
               (int)local_28, (int)local_26);
     iVar4 = check_object_placement_clearance(*held_object & 0x1ff,0,(int)(short)local_28,(int)(short)local_26,
                          g_player_object->hdr.zpos,1,cVar9);
-    if (getenv("UW_DEBUG_THROW"))
+    if (g_opts.debug_throw)
       fprintf(stderr, "[throw-heading] 1st check_object_placement_clearance iVar4=%d\n", iVar4);
     if (iVar4 == 0) {
       bVar3 = true;
@@ -288,13 +289,13 @@ int drop_held_object_near_player(void *held_object_ptr, int force)
       project_position_by_heading((g_player_object->npc_heading) + ((g_player_object->hdr.heading << 7) >> 2),
                                   3,&local_28,
                                   &local_26);
-      if (getenv("UW_DEBUG_THROW"))
+      if (g_opts.debug_throw)
         fprintf(stderr, "[throw-heading] after 2nd(retry) project_position_by_heading: local_28(X)=%d local_26(Y)=%d\n",
                 (int)local_28, (int)local_26);
       iVar4 = check_object_placement_clearance(*held_object & 0x1ff,0,(int)(short)local_28,(int)(short)local_26,
                            g_player_object->hdr.zpos,1,
                            cVar9);
-      if (getenv("UW_DEBUG_THROW"))
+      if (g_opts.debug_throw)
         fprintf(stderr, "[throw-heading] 2nd check_object_placement_clearance iVar4=%d\n", iVar4);
       bVar3 = true;
       if (iVar4 != 0) {
@@ -303,16 +304,16 @@ int drop_held_object_near_player(void *held_object_ptr, int force)
     }
     iVar7 = (int)(short)local_28;
     iVar8 = (int)(short)local_26;
-    if (getenv("UW_DEBUG_THROW"))
+    if (g_opts.debug_throw)
       fprintf(stderr, "[throw-fallback] dropping via trajectory path: tile=(%d,%d)\n", iVar7 >> 3, iVar8 >> 3);
     pDropTile = (char *)tilemap_lookup(iVar7 >> 3,iVar8 >> 3);
     /* tilemap_lookup returns NULL for any tile coordinate outside 0-63 (see its own bounds check)
        -- confirmed live: dragging an item out of an open backpack slot and dropping it back into
        the 3D view crashed in object_list_append_tail(pDropTile+2, ...)... */
-    if (getenv("UW_DEBUG_THROW"))
+    if (g_opts.debug_throw)
       fprintf(stderr, "[throw-fallback] bVar3(no-room)=%d pDropTile=%p\n", (int)bVar3, (void *)pDropTile);
     if ((bVar3) || (pDropTile == NULL)) {
-      if (getenv("UW_DEBUG_THROW"))
+      if (g_opts.debug_throw)
         fprintf(stderr, "[throw-fallback] -> BAILED, item never inserted anywhere\n");
       if (force != 0) {
         print_scroll_message_by_id(0xfd);
@@ -325,7 +326,7 @@ int drop_held_object_near_player(void *held_object_ptr, int force)
     *(byte *)((char *)held_object + 3) =
          (byte)((uVar2 & 0x3ff) >> 8) |
          (byte)(((local_26 & 7 | (local_28 & 0x1fff) << 3) << 10) >> 8);
-    if (getenv("UW_DEBUG_THROW"))
+    if (g_opts.debug_throw)
       fprintf(stderr, "[throw-fallback] inserting held_object=%p type=0x%x at pDropTile+2=%p heightfield(held_object[7]/8)=%d\n",
               (void *)held_object, (unsigned)(*held_object & 0x1ff), (void *)(pDropTile + 2),
               (int)*(short *)((char *)held_object + 0xe));
@@ -721,7 +722,7 @@ void try_combine_or_stow_object(void *actor_ptr, ushort *object, int stow)
        comment and open_backpack_container's declared `short actor`.
        find_or_assign_object_widget(object) finds (or allocates) the grid widget currently... */
     int _widget = find_or_assign_object_widget(object);
-    if (getenv("UW_DEBUG_INV"))
+    if (g_opts.debug_inv)
       fprintf(stderr, "[inv] try_combine_or_stow_object open: object=%p find_or_assign_object_widget returned widget=%d\n",
               (void *)object, _widget);
     if (-1 < _widget) {
@@ -764,7 +765,7 @@ ushort *use_object_on_target(ushort *actor, ushort *used_object, int flag)
   }
   uVar3 = uVar2 >> 6 & 7;
   uVar1 = (ushort)((uVar7 & 0x30) >> 4);
-  if (getenv("UW_DEBUG_DOOR"))
+  if (g_opts.debug_door)
     fprintf(stderr, "[door] use_object_on_target: obj0=0x%04x class(uVar3)=%d family(uVar1)=%d ptr=%p\n",
             (unsigned)uVar2, (int)uVar3, (int)uVar1, (void *)used_object);
   if ((uVar2 >> 6 & 7) == 0) {
@@ -1741,7 +1742,7 @@ void dispatch_world_object_interaction_by_family(ushort *actor, ushort *object)
   
   uVar5 = *object;
   uVar4 = uVar5 >> 4 & 3;
-  if (getenv("UW_DEBUG_DOOR"))
+  if (g_opts.debug_door)
     fprintf(stderr, "[door] dispatch_world_object_interaction_by_family: obj0=0x%04x family=%d low_nibble=%d\n",
             (unsigned)uVar5, (int)uVar4, (int)(uVar5 & 0xf));
   if ((uVar5 >> 4 & 3) == 0) {
@@ -2822,7 +2823,7 @@ void swap_cursor_and_slot_item(int slot, int mode)
   if (g_selected_object != (char *)0x0) {
     if (mode != 0) {
       iVar1 = (int)(short)slot;
-      if (getenv("UW_DEBUG_INV"))
+      if (g_opts.debug_inv)
         fprintf(stderr, "[inv] swap_cursor_and_slot_item writing arr_idx=%d objid=0x%03x\n", iVar1, uVar2 & 0x1ff);
       (&g_equipped_items)[iVar1 * 2] = (&g_equipped_items)[iVar1 * 2] & 0x3f | (byte)((uVar2 & 0x3ff) << 6);
       (&DAT_00202951)[iVar1 * 2] = (char)((uVar2 << 0x16) >> 0x18);
@@ -3476,7 +3477,7 @@ void handle_object_drop_target(short widget)
 
   bVar4 = g_selected_object != 0;
   iVar2 = (int)widget;
-  if (getenv("UW_DEBUG_INV"))
+  if (g_opts.debug_inv)
     fprintf(stderr, "[inv] handle_object_drop_target entry: widget=%d g_selected_object=%p\n", (int)widget, (void *)g_selected_object);
   if (7 < iVar2) {
     if (iVar2 < 10) {
@@ -3504,7 +3505,7 @@ void handle_object_drop_target(short widget)
             pop_cursor_icon(3);
           }
           refresh_player_equipment_effects();
-          if (getenv("UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT")) {
+          if (g_opts.container_autoclose_on_drag_out) {
             leave_nested_container_level();
           }
           else {
@@ -3613,7 +3614,7 @@ bool compute_drop_aim_from_cursor()
      npc_height), positive when the target is above. */
   sVar4 = -ordint_divmod(0x300,(int)DAT_0023beb4).quot;
   DAT_00202a3c = sVar3 + sVar4;
-  if (getenv("UW_DEBUG_THROW"))
+  if (g_opts.debug_throw)
     fprintf(stderr, "[dropaim] cursor(local_10,local_e)=(%d,%d) sVar5=%d result(0x24<sVar5)=%d\n",
             (int)local_10, (int)local_e, (int)sVar5, (int)(0x24 < sVar5));
   return 0x24 < sVar5;

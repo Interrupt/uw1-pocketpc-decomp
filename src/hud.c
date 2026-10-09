@@ -2,6 +2,7 @@
    draw/tick dispatch (vitals bar, dragon reaction, compass needle, panel transitions), and the
    message scroll panel (word-wrap, line-by-line scroll, draw). */
 #include "headers/hud.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 #include "headers/debug_ui.h"
 #include "headers/models.h"
@@ -533,7 +534,7 @@ void flush_dirty_rect_to_display(int unused_flag)
   }
   iVar10 = 0x140 - DAT_00088958;
   iVar11 = 0x140 - DAT_00088950;
-  if (getenv("UW_DEBUG_FLUSHGATE")) {
+  if (g_opts.debug_flushgate) {
     int willflush = ((uw_always_show_cursor() || 0 < DAT_00084f10) ||
       (((g_selected_object == 0 || (g_force_flush != 0)) && ((DAT_0023c63c == 0 || (g_force_flush != 0))))));
     fprintf(stderr, "[flushgate] willflush=%d selected=%p force=%d rect=(%d,%d,%d,%d)\n",
@@ -581,7 +582,7 @@ void flush_dirty_rect_to_display(int unused_flag)
         puVar4 = puVar4 + -1;
       } while (iVar11 != 0);
     }
-    if (getenv("UW_DEBUG_FLUSHCALLER")) {
+    if (g_opts.debug_flushcaller) {
       void *caller = __builtin_return_address(0);
       Dl_info info;
       const char *name = (dladdr(caller, &info) && info.dli_sname) ? info.dli_sname : "?";
@@ -735,7 +736,7 @@ void mode_icon_highlight_on(int icon_index)
   /* Confirmed via real ARM disassembly (0x3f99c: `mov r0,#0x2000; orr r0,r0,#0xb; sub r0,r0,r4,lsl
      #0x1`) that `(icon_index-1)*-2 + 0x200b` is exactly what the original compiled code computes --
      NOT a decompile artifact. */
-  if (getenv("UW_DEBUG_MODEICON"))
+  if (g_opts.debug_modeicon)
     fprintf(stderr, "[modeicon] mode_icon_highlight_on (highlight ON) icon_index=%d iVar1=%d id=0x%x x=%d y=%d\n",
             icon_index, iVar1, (icon_index + -1) * -2 + 0x200b, (int)sVar2, (int)sVar3);
   draw_sprite_by_id((icon_index + -1) * -2 + 0x200b,(int)sVar2,(int)sVar3,1,1);
@@ -762,7 +763,7 @@ void mode_icon_highlight_off(int icon_index)
   /* Confirmed via real ARM disassembly (0x3fa1c: `mov r0,#0x1000; orr r0,r0,#0x5; sub r0,r0,r4; mov
      r0,r0,lsl #0x1`) that `(0x1005-(icon_index-1))*2` is exactly what the original compiled code
      computes -- NOT a decompile artifact. */
-  if (getenv("UW_DEBUG_MODEICON"))
+  if (g_opts.debug_modeicon)
     fprintf(stderr, "[modeicon] mode_icon_highlight_off (highlight OFF) icon_index=%d iVar1=%d id=0x%x x=%d y=%d\n",
             icon_index, iVar1, (0x1005 - (icon_index + -1)) * 2, (int)sVar2, (int)sVar3);
   draw_sprite_by_id((0x1005 - (icon_index + -1)) * 2,(int)sVar2,(int)sVar3,1,1);
@@ -780,7 +781,7 @@ void cursor_mode_button_click(short button_y)
   byte bVar3;
   char cVar4;
   short sVar5;
-  if (getenv("UW_DEBUG_MODEBTN"))
+  if (g_opts.debug_modebtn)
     fprintf(stderr, "[modebtn] cursor_mode_button_click in: button_y=%d rel_y=%d cursor_mode=%d\n",
             (int)button_y, (int)DAT_00085a6c[1], (int)g_cursor_mode);
   uint uVar6;
@@ -792,7 +793,7 @@ void cursor_mode_button_click(short button_y)
       if (DAT_000868d8 == 0) {
         sVar5 = ordint_divmod(0x12,DAT_00085a6c[1] + 2).quot;
         iVar7 = (int)sVar5;
-        if (getenv("UW_DEBUG_MODEBTN"))
+        if (g_opts.debug_modebtn)
           fprintf(stderr, "[modebtn] resolved iVar7=%d\n", iVar7);
         if (5 < iVar7) {
           return;
@@ -827,7 +828,7 @@ void cursor_mode_button_click(short button_y)
           mode_icon_highlight_off(g_cursor_mode);
         }
         g_cursor_mode = (short)((uint)iVar7 >> 0x10);
-        if (getenv("UW_DEBUG_MODEBTN"))
+        if (g_opts.debug_modebtn)
           fprintf(stderr, "[modebtn] resulting g_cursor_mode=%d\n", (int)g_cursor_mode);
         if (iVar1 == 2) {
           if ((*(byte *)(DAT_00086df8 + 0xb8) & 1) == 0) {
@@ -934,15 +935,15 @@ void main_loop_hud_flush()
 {
   uw_begin_present_batch();
   unsigned int _dbg_hf_t0 = 0;
-  int _dbg_hf = getenv("UW_DEBUG_HUDSPLIT") != NULL;
+  int _dbg_hf = g_opts.debug_hudsplit;
   if (_dbg_hf) _dbg_hf_t0 = read_realtime_clock_units() * 4;
   dirty_rect_set(100,100,100,100);
   /* HACK: redraw the 3D dungeon view on every main-loop iteration. */
   int _did_force_redraw = 0;
   {
     static int _force = -1;
-    if (_force < 0) _force = (getenv("UW_NO_FORCE_3D_REDRAW") == NULL);
-    if (getenv("UW_DEBUG_DOOR")) {
+    if (_force < 0) _force = (!g_opts.no_force_3d_redraw);
+    if (g_opts.debug_door) {
       static int _last_b64 = -1, _last_c90 = -1;
       if ((int)DAT_00201b64 != _last_b64 || (int)DAT_00201c90 != _last_c90) {
         fprintf(stderr, "[door] main_loop_hud_flush: DAT_00201b64=%d DAT_00201c90=%d\n",
@@ -968,7 +969,7 @@ void main_loop_hud_flush()
          buffer, then paint it over the viewport (see
          uw_debug_blit_pick_buffer). */
       { static int _pv = -1;
-        if (_pv < 0) _pv = (getenv("UW_DEBUG_PICK_VIEW") != NULL);
+        if (_pv < 0) _pv = (g_opts.debug_pick_view);
         if (_pv) { render_dungeon_view_frame(); uw_debug_blit_pick_buffer(); }
       }
     }
@@ -980,7 +981,7 @@ void main_loop_hud_flush()
   }
   /* HACK: drive the attack-swing state machine (tick_weapon_swing_state) every main-loop tick. */
   { static int _swing_tick = -1;
-    if (_swing_tick < 0) _swing_tick = (getenv("UW_NO_FORCE_SWING_TICK") == NULL);
+    if (_swing_tick < 0) _swing_tick = (!g_opts.no_force_swing_tick);
     if (_swing_tick) tick_weapon_swing_state(0);
   }
   { unsigned int _t1 = 0, _t2 = 0;
@@ -996,14 +997,14 @@ void main_loop_hud_flush()
     }
   }
   { static int _div = -1;
-    if (_div < 0) _div = (getenv("UW_DEBUG_DRAW_INV_POSITIONS") != NULL);
+    if (_div < 0) _div = (g_opts.debug_draw_inv_positions);
     if (_div) uw_debug_draw_inv_hotspot_positions();
   }
   /* HACK: re-run the per-tick mouse/cursor refresh (update_mouse_state) unconditionally every
      main-loop iteration, not just when this tick happens to dequeue a real OS input message.
      update_mouse_state's own cursor-draw (draw_idle_mouse_cursor) is reached only through... */
   { static int _force_cursor = -1;
-    if (_force_cursor < 0) _force_cursor = (getenv("UW_NO_FORCE_CURSOR_REDRAW") == NULL);
+    if (_force_cursor < 0) _force_cursor = (!g_opts.no_force_cursor_redraw);
     if (_force_cursor) update_mouse_state();
   }
   populate_debug_panel();
@@ -1207,7 +1208,7 @@ void redraw_hud_panels()
     sprite_list_set_rect(uVar1,0x70,0x84,0x38,0x20);
     uVar1 = sprite_list_alloc_entry(0);
     DAT_0023c22c = (undefined2)uVar1;
-    if (getenv("UW_DEBUG_COMPASS")) {
+    if (g_opts.debug_compass) {
       fprintf(stderr, "[compass] redraw_hud_panels init: sprite_handle=%d x=%d y=%d\n",
               (int)uVar1, (int)DAT_00087130, (int)DAT_00087150);
     }
@@ -1426,11 +1427,11 @@ void hud_panel_redraw_dispatch()
     }
     iVar7 = 1;
     iVar9 = 0;
-    if (getenv("UW_DEBUG_CLICKREGION") && DAT_0023c1d8 != 0)
+    if (g_opts.debug_clickregion && DAT_0023c1d8 != 0)
       fprintf(stderr, "[stats] hud_panel_redraw_dispatch: DAT_0023c1d8=0x%x clock-gate open, scanning\n", (unsigned)DAT_0023c1d8);
     do {
       if (((ushort)iVar7 & DAT_0023c1d8) != 0) {
-        if (getenv("UW_DEBUG_CLICKREGION"))
+        if (g_opts.debug_clickregion)
           fprintf(stderr, "[stats] hud_panel_redraw_dispatch: dispatching g_hud_panel_ticker_handlers[%d] (table index %d)\n", iVar9, iVar9 + 4);
         (*(void (*)(int))(&g_hud_panel_ticker_handlers)[iVar9])(iVar9);
       }
@@ -1621,12 +1622,12 @@ void hud_dragon_reaction_tick(int elapsed)
     }
   }
   psVar7 = &DAT_0023c1e4 + iVar6;
-  if (getenv("UW_DEBUG_DRAGON"))
+  if (g_opts.debug_dragon)
     fprintf(stderr, "[dragon] tick elapsed=%d iVar6=%d target=%d playing=%d\n", elapsed, iVar6, (int)(&DAT_0023c11c)[iVar6], (int)(&DAT_0023c12c)[iVar6]);
   if ((*psVar7 == 0) && ((&DAT_0023c11c)[iVar6] != '\0')) {
     (&DAT_0023c12c)[iVar6] = (&DAT_0023c11c)[iVar6];
     *psVar7 = 1;
-    if (getenv("UW_DEBUG_DRAGON"))
+    if (g_opts.debug_dragon)
       fprintf(stderr, "[dragon] STARTED animation iVar6=%d playing=%d\n", iVar6, (int)(&DAT_0023c12c)[iVar6]);
   }
   cVar3 = (&DAT_0023c12c)[iVar6];
@@ -1659,7 +1660,7 @@ LAB_0006dec8:
         *psVar9 = local_40[iVar6 * 3];
         *(short *)(&DAT_0023c124 + iVar1) = *(short *)(&DAT_0023c124 + iVar1) + -1;
       }
-      sprite_list_set_frame_id((int)sVar4,*psVar9); if (getenv("UW_DEBUG_DRAGON")) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
+      sprite_list_set_frame_id((int)sVar4,*psVar9); if (g_opts.debug_dragon) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
       if ((&DAT_0023c11c)[iVar6] == '\0') {
         sVar4 = *(short *)(&DAT_0023c124 + iVar1);
 LAB_0006df34:
@@ -1691,7 +1692,7 @@ LAB_0006de00:
       if (local_30[iVar6 * 3] < *psVar9) {
         goto LAB_0006de54;
       }
-      sprite_list_set_frame_id((int)sVar4,*psVar9); if (getenv("UW_DEBUG_DRAGON")) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
+      sprite_list_set_frame_id((int)sVar4,*psVar9); if (g_opts.debug_dragon) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
       return;
 LAB_0006de54:
       sVar4 = 5;
@@ -1708,7 +1709,7 @@ LAB_0006de54:
           psVar9 = (short *)(&DAT_0023c24c + iVar1);
           sVar4 = *psVar11;
           *psVar9 = *psVar9 + -1;
-          sprite_list_set_frame_id((int)sVar4,*psVar9); if (getenv("UW_DEBUG_DRAGON")) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
+          sprite_list_set_frame_id((int)sVar4,*psVar9); if (g_opts.debug_dragon) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
           if (local_40[iVar6 * 3 + 1] <= *psVar9) {
             return;
           }
@@ -1717,7 +1718,7 @@ LAB_0006de54:
         psVar9 = (short *)(&DAT_0023c24c + iVar1);
         sVar4 = *psVar11;
         *psVar9 = *psVar9 + 1;
-        sprite_list_set_frame_id((int)sVar4,*psVar9); if (getenv("UW_DEBUG_DRAGON")) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
+        sprite_list_set_frame_id((int)sVar4,*psVar9); if (g_opts.debug_dragon) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
         iVar5 = iVar6 * 3 + 1;
         if (local_30[iVar5] < *psVar9) {
           *psVar9 = local_40[iVar5] + 2;
@@ -1744,7 +1745,7 @@ LAB_0006dd88:
       psVar9 = (short *)(&DAT_0023c24c + iVar1);
       sVar4 = *psVar11;
       *psVar9 = *psVar9 + 1;
-      sprite_list_set_frame_id((int)sVar4,*psVar9); if (getenv("UW_DEBUG_DRAGON")) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
+      sprite_list_set_frame_id((int)sVar4,*psVar9); if (g_opts.debug_dragon) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
       if ((int)*psVar9 <= local_40[iVar6 * 3 + 1] + 1) {
         return;
       }
@@ -1788,7 +1789,7 @@ LAB_0006dd88:
         psVar9 = (short *)(&DAT_0023c24c + iVar1);
         sVar4 = *psVar11;
         *psVar9 = *psVar9 + -1;
-        sprite_list_set_frame_id((int)sVar4,*psVar9); if (getenv("UW_DEBUG_DRAGON")) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
+        sprite_list_set_frame_id((int)sVar4,*psVar9); if (g_opts.debug_dragon) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
         if (*psVar9 != local_40[iVar6 * 3 + 2]) {
           return;
         }
@@ -1797,7 +1798,7 @@ LAB_0006dd88:
       psVar9 = (short *)(&DAT_0023c24c + iVar1);
       sVar4 = *psVar11;
       *psVar9 = *psVar9 + 1;
-      sprite_list_set_frame_id((int)sVar4,*psVar9); if (getenv("UW_DEBUG_DRAGON")) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
+      sprite_list_set_frame_id((int)sVar4,*psVar9); if (g_opts.debug_dragon) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
       if ((int)*psVar9 <= (int)local_30[iVar6 * 3 + 2]) {
         return;
       }
@@ -1836,7 +1837,7 @@ void hud_compass_needle_tick()
     }
     uVar4 = uVar3 & 0xf;
     sprite_list_set_frame_id((int)DAT_0023c228,(uVar3 & 3) + 0x2059);
-    if (getenv("UW_DEBUG_COMPASS")) {
+    if (g_opts.debug_compass) {
       fprintf(stderr, "[compass] heading=%u x=%d y=%d frame_id=0x%x\n", uVar4,
               (int)(short)(&DAT_00087130)[(short)uVar4], (int)(short)(&DAT_00087150)[(short)uVar4],
               (unsigned)uVar4 + 0x205d);
@@ -1858,7 +1859,7 @@ void tick_hud_panel_transition()
 {
   int iVar1;
 
-  if (getenv("UW_DEBUG_CLICKREGION"))
+  if (g_opts.debug_clickregion)
     fprintf(stderr, "[stats] tick_hud_panel_transition tick: current=%d target=%d in_progress=%d\n",
             (int)g_committed_hud_panel, (int)g_target_hud_panel, (int)DAT_0023c20c);
   if (g_committed_hud_panel != g_target_hud_panel) {
@@ -1868,14 +1869,14 @@ void tick_hud_panel_transition()
       g_active_hud_panel = '\x04';
     }
     iVar1 = advance_hud_panel_flip();
-    if (getenv("UW_DEBUG_CLICKREGION"))
+    if (g_opts.debug_clickregion)
       fprintf(stderr, "[stats] tick_hud_panel_transition: advance_hud_panel_flip() -> %d\n", iVar1);
     if (iVar1 == 1) {
       g_committed_hud_panel = g_target_hud_panel;
       g_active_hud_panel = g_target_hud_panel;
       DAT_0023c20c = 0;
       DAT_0023c1d8 = DAT_0023c1d8 & 0xffbf;
-      if (getenv("UW_DEBUG_CLICKREGION"))
+      if (g_opts.debug_clickregion)
         fprintf(stderr, "[stats] tick_hud_panel_transition: transition COMPLETE, now showing panel %d\n", (int)g_active_hud_panel);
     }
   }
@@ -2633,7 +2634,7 @@ void begin_hud_panel_flip(int target_panel, short rect_x, short rect_y, short re
     }
     DAT_0023c278 = 1;
   }
-  if (getenv("UW_DEBUG_CLICKREGION"))
+  if (g_opts.debug_clickregion)
     fprintf(stderr, "[stats] begin_hud_panel_flip entry: target_panel(target)=%d g_flip_grtile_cache_ready=0x%x DAT_0023c278=%d uVar6=%d\n",
             (int)target_panel, (unsigned)g_flip_grtile_cache_ready, (int)DAT_0023c278, (int)uVar6);
   if ((g_flip_grtile_cache_ready & 1) != 0) {
@@ -2641,11 +2642,11 @@ void begin_hud_panel_flip(int target_panel, short rect_x, short rect_y, short re
     uVar2 = decode_gr_entry_to_buffer(s_panels_00087260,target_panel,uVar4);
     iVar5 = (intptr_t)resolve_flip_grtile_slot(DAT_0023c200);
     uVar3 = decode_gr_entry_to_buffer(s_panels_00087260,3,(void *)(intptr_t)(iVar5 + 0x2800));
-    if (getenv("UW_DEBUG_CLICKREGION"))
+    if (g_opts.debug_clickregion)
       fprintf(stderr, "[stats] begin_hud_panel_flip: uVar4(dst202)=%u uVar2(decode1 ok)=%u iVar5(dst200)=%d uVar3(decode2 ok)=%u\n",
               (unsigned)(uintptr_t)uVar4, (unsigned)uVar2, (int)iVar5, (unsigned)uVar3);
     if ((uVar2 & uVar3 & uVar6) == 0) {
-      if (getenv("UW_DEBUG_CLICKREGION"))
+      if (g_opts.debug_clickregion)
         fprintf(stderr, "[stats] begin_hud_panel_flip: DECODE FAILED, calling report_fatal_error_and_exit(0x300e)\n");
       report_fatal_error_and_exit(0x300e);
     }
@@ -2655,7 +2656,7 @@ void begin_hud_panel_flip(int target_panel, short rect_x, short rect_y, short re
     uVar4 = resolve_flip_grtile_slot(DAT_0023c200);
     capture_framebuffer_rect_to_grtile_paletted(uVar4,0xec,8,0x53,0x72);
     uVar4 = resolve_flip_grtile_slot(DAT_0023c202);
-    if (getenv("UW_DEBUG_CLICKREGION"))
+    if (g_opts.debug_clickregion)
       fprintf(stderr, "[stats] begin_hud_panel_flip: pre-draw blit source uVar4(dst202)=%u\n", (unsigned)(uintptr_t)uVar4);
     bitmap_blit_to_framebuffer(0xec,8,uVar4,0x72,0x53,0,0,1);
     uVar1 = g_active_hud_panel;
@@ -3348,7 +3349,7 @@ void flush_sprite_list_compositor()
               /* UW_DIAG_SPRLIST: one line per sprite the HUD sprite-list compositor draws -- id / x
                  / y / w / h -- handy for filling in the still-zero compass/dragon layout tables
                  (see the FIXME[hud-*-layout] blocks). */
-              if (getenv("UW_DIAG_SPRLIST"))
+              if (g_opts.diag_sprlist)
                 fprintf(stderr, "[sprlist] slot=%u id=0x%x x=%d y=%d w=%d h=%d path=%s\n",
                         (unsigned)*puVar7, (unsigned)(short)puVar4[7],
                         (int)(short)(ushort)puVar4[1],
@@ -4074,7 +4075,7 @@ void show_flask_value_tooltip()
   char local_84 [120];
 
   sVar2 = *DAT_00085a6c;
-  if (getenv("UW_DEBUG_CLICKREGION"))
+  if (g_opts.debug_clickregion)
     fprintf(stderr, "[flask] show_flask_value_tooltip entry: xoff=%d yoff=%d\n", (int)sVar2, (int)DAT_00085a6c[1]);
   if ((sVar2 < 0x1a) || (0x27 < sVar2)) {
     if (DAT_00085a6c[1] < 0x1f) {
@@ -4644,7 +4645,7 @@ void run_pause_menu_modal_loop(short fresh_open)
       advance_menu_music_track();
       flush_dirty_rect_to_display(1);
     }
-    if (getenv("UW_DEBUG_PAUSEMENU"))
+    if (g_opts.debug_pausemenu)
       fprintf(stderr, "[pausemenu] loop event=0x%x\n", (int)sVar1);
     if (sVar1 < 0x8e) {
       if (sVar1 == 0x8d) {
@@ -4659,7 +4660,7 @@ LAB_00056638:
           iVar4 = (int)local_a;
           local_c = (short)(iVar3 + -4);
           local_a = (short)(0x76 - iVar4);
-          if (getenv("UW_DEBUG_PAUSEMENU"))
+          if (g_opts.debug_pausemenu)
             fprintf(stderr, "[pausemenu] click event=%d raw=(%d,%d) rel=(%d,%d)\n",
                     (int)sVar1, iVar3, iVar4, (int)local_c, (int)local_a);
           iVar3 = (iVar3 + -4) * 0x10000 >> 0x10;
@@ -5082,7 +5083,7 @@ void handle_quit_confirm_click(short row)
 void enter_pause_menu_state(short new_state)
 {
   DAT_000868dc = new_state;
-  if (getenv("UW_DEBUG_PAUSEMENU"))
+  if (g_opts.debug_pausemenu)
     fprintf(stderr, "[pausemenu] enter_pause_menu_state: entering state=%d\n", (int)new_state);
   if ((uint)new_state < 8 && PTR_FUN_000868e0_table[new_state] != 0) {
     PTR_FUN_000868e0_table[new_state]();
@@ -5097,7 +5098,7 @@ void enter_pause_menu_state(short new_state)
 void dispatch_pause_menu_click(int row)
 {
   decrement_cursor_hide_depth();
-  if (getenv("UW_DEBUG_PAUSEMENU"))
+  if (g_opts.debug_pausemenu)
     fprintf(stderr, "[pausemenu] dispatch_pause_menu_click: state=%d clicked_index=%d\n",
             (int)DAT_000868dc, (int)row);
   if ((uint)DAT_000868dc < 8 && PTR_FUN_00086900_table[DAT_000868dc] != 0) {
@@ -5268,7 +5269,7 @@ int erase_cursor_icon()
   int iVar1;
 
   iVar1 = 0;
-  if (getenv("UW_DEBUG_CURSORERASE")) {
+  if (g_opts.debug_cursorerase) {
     fprintf(stderr, "[cursorerase] entry DAT_00204844=%d will_erase=%d depth=%d mouse=(%d,%d)\n",
             (int)DAT_00204844, DAT_00204844 != 0, (int)DAT_00204840, (int)g_mouse_x, (int)g_mouse_y);
   }
@@ -5295,15 +5296,10 @@ int erase_cursor_icon()
 
 
 /* Desktop deviation: present the game cursor as an overlay by default.
-   UW_ALWAYS_SHOW_CURSOR=0 restores the Pocket PC stylus visibility rules. */
+   --always-show-cursor=0 restores the Pocket PC stylus visibility rules. */
 int uw_always_show_cursor()
 {
-  static int cached = -1;
-  if (cached < 0) {
-    const char *setting = getenv("UW_ALWAYS_SHOW_CURSOR");
-    cached = setting == NULL || strcmp(setting, "0") != 0;
-  }
-  return cached;
+  return g_opts.always_show_cursor;
 }
 
 
@@ -5907,7 +5903,7 @@ void save_cursor_background()
 
 {
   if (uw_always_show_cursor()) return;
-  if (getenv("UW_DEBUG_CURSORSHOW")) {
+  if (g_opts.debug_cursorshow) {
     fprintf(stderr, "[cursorsave] entry DAT_00204844=%d sprite=%d mouse=(%d,%d) size=(%d,%d)\n",
             (int)DAT_00204844, (int)DAT_00204788, (int)g_mouse_x, (int)g_mouse_y,
             (int)DAT_00204784, (int)DAT_002047a4);
@@ -5929,7 +5925,7 @@ void draw_idle_mouse_cursor()
 {
   /* The desktop overlay is drawn by GXEndDraw, outside game storage. */
   if (uw_always_show_cursor()) return;
-  int _dbg_show = getenv("UW_DEBUG_CURSORSHOW") != NULL;
+  int _dbg_show = g_opts.debug_cursorshow;
   if (_dbg_show) {
     fprintf(stderr, "[cursorshow] entry selected=%p mode=%d holdstate=%d DAT_00204844=%d depth=%d mouse=(%d,%d)\n",
             (void *)g_selected_object, (int)g_cursor_mode, (int)g_cursor_holding_state,
@@ -6028,7 +6024,7 @@ void toggle_stats_panel(int target_panel)
 {
   undefined4 uVar1;
 
-  if (getenv("UW_DEBUG_CLICKREGION"))
+  if (g_opts.debug_clickregion)
     fprintf(stderr, "[stats] toggle_stats_panel (toggle stats panel) entry: g_active_hud_panel=%d\n", (int)g_active_hud_panel);
   if (g_active_hud_panel == '\0') {
     uVar1 = 2;
@@ -6039,7 +6035,7 @@ void toggle_stats_panel(int target_panel)
     }
     uVar1 = 0;
   }
-  if (getenv("UW_DEBUG_CLICKREGION"))
+  if (g_opts.debug_clickregion)
     fprintf(stderr, "[stats] toggle_stats_panel -> set_hud_status_value(6,%d)\n", (int)uVar1);
   set_hud_status_value(6,uVar1);
 }
@@ -6063,7 +6059,7 @@ void reset_cursor_confine_rect()
     DAT_0020483c = DAT_00204748 + 0x12;
     DAT_002047d8 = 0x87 - DAT_00204748;
   }
-  if (getenv("UW_DEBUG_CURSORSHOW")) {
+  if (g_opts.debug_cursorshow) {
     fprintf(stderr, "[cursorbounds] reset_cursor_confine_rect() DAT_00201b60=0x%x narrowed=%d rect=(%d,%d)-(%d,%d)\n",
             (int)(ushort)DAT_00201b60, (((ushort)DAT_00201b60 & 0xc9) != 0),
             (int)DAT_00204838, (int)DAT_0020483c, (int)DAT_002047dc, (int)DAT_002047d8);
@@ -6075,7 +6071,7 @@ void reset_cursor_confine_rect()
 // was FUN_00057788
 void set_cursor_confine_rect(short x1, short y1, short x2, short y2)
 {
-  if (getenv("UW_DEBUG_CURSORSHOW")) {
+  if (g_opts.debug_cursorshow) {
     fprintf(stderr, "[cursorbounds] set_cursor_confine_rect(%d,%d,%d,%d)\n",
             (int)x1, (int)y1, (int)x2, (int)y2);
   }

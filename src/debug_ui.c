@@ -1,5 +1,6 @@
 /* Minimal immediate-mode debug GUI -- see headers/debug_ui.h for the usage contract. */
 #include "headers/debug_ui.h"
+#include "headers/options.h"
 #include "headers/uw.h"
 #include <stdio.h>
 #include <string.h>
@@ -273,7 +274,7 @@ void dbgui_draw()
   int x1 = x0 + DBGUI_PANEL_W, y1 = y0 + panel_h;
   g_last_rows = g_field_count;
 
-  if (getenv("UW_DEBUG_DBGUI"))
+  if (g_opts.debug_dbgui)
     fprintf(stderr, "[dbgui] draw field_count=%d panel y0=%d y1=%d clip=(%d,%d)-(%d,%d)\n",
             g_field_count, y0, y1,
             (int)(short)DAT_000a85c4, (int)(short)DAT_000a85c8,
@@ -369,7 +370,7 @@ void dbgui_feed_mouse_down(int lx, int ly)
 {
   if (!g_visible) return;
   int i;
-  if (getenv("UW_DEBUG_DBGUI")) {
+  if (g_opts.debug_dbgui) {
     fprintf(stderr, "[dbgui] feed_mouse_down lx=%d ly=%d field_count=%d\n", lx, ly, g_field_count);
     for (i = 0; i < g_field_count; i++)
       fprintf(stderr, "[dbgui]   field[%d] name=%s row_y=%d\n", i, g_fields[i].name, g_fields[i].row_y);
@@ -386,7 +387,7 @@ void dbgui_feed_mouse_down(int lx, int ly)
       if (f->is_text) return;
       if (f->is_toggle) {
         *f->ival = !*f->ival;
-        if (getenv("UW_DEBUG_DBGUI"))
+        if (g_opts.debug_dbgui)
           fprintf(stderr, "[dbgui]   toggled field[%d] %s -> %d\n", i, f->name, *f->ival);
         return;
       }
@@ -422,12 +423,12 @@ void dbgui_feed_key(int sdl_keycode)
   if (sdl_keycode == DBGUI_KEY_UP) {
     int before = g_selected;
     g_selected = (g_selected - 1 + g_field_count) % g_field_count;
-    if (getenv("UW_DEBUG_DBGUI"))
+    if (g_opts.debug_dbgui)
       fprintf(stderr, "[dbgui] key UP field_count=%d selected %d -> %d\n", g_field_count, before, g_selected);
   } else if (sdl_keycode == DBGUI_KEY_DOWN) {
     int before = g_selected;
     g_selected = (g_selected + 1) % g_field_count;
-    if (getenv("UW_DEBUG_DBGUI"))
+    if (g_opts.debug_dbgui)
       fprintf(stderr, "[dbgui] key DOWN field_count=%d selected %d -> %d\n", g_field_count, before, g_selected);
   } else if (f->is_button) {
     if (sdl_keycode == DBGUI_KEY_RETURN && f->on_press) f->on_press();

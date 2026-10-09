@@ -2,6 +2,7 @@
    blitting into the game's internal software framebuffer, the whole-screen backup/restore save
    state used by transient panels, palette fade in/out... */
 #include "headers/graphics.h"
+#include "headers/options.h"
 #include "headers/gx_stub.h"
 #include "headers/debug.h"
 #include <stdio.h>
@@ -164,7 +165,7 @@ void rect_fill_or_save_restore(ushort left, uint top, short right, short bottom)
   
   DEBUG(TRACE, "[graphics] rect_fill_or_save_restore(%u,%u,%u,%u)", left, top, right, bottom);
 
-  if (DAT_00204848 != 0 && getenv("UW_DEBUG_CURSORCLIP")) {
+  if (DAT_00204848 != 0 && g_opts.debug_cursorclip) {
     fprintf(stderr, "[cursorclip] request color=%d rect=(%d,%d,%d,%d) clip=(%d,%d,%d,%d)\n",
             (int)DAT_000a85c0, (int)(short)left, (int)(short)top, (int)right, (int)bottom,
             (int)(short)DAT_000a85c4, (int)(short)DAT_000a85c8,
@@ -206,7 +207,7 @@ void rect_fill_or_save_restore(ushort left, uint top, short right, short bottom)
           uVar9 = iVar12 + (top & 0xffff);
           iVar13 = 0;
           // DAT_00204848 is only ever set by the mouse-cursor code (save_cursor_background sets it to 1 right before deliberately drawing with color 0x14, to save what's under the cursor), so colors 0x14/0x15 only mean save/restore during that specific sequence -- with DAT_00204848 at its default 0 (every other caller), they're ordinary palette colors and this whole block is skipped in favor of the flat fill below. There are 256 real palette entries (0x100, see the palette-conversion loop), so 20/21 aren't reserved from the palette's own perspective either.
-          if (DAT_00204848 != 0 && getenv("UW_DEBUG_CURSORCLIP")) {
+          if (DAT_00204848 != 0 && g_opts.debug_cursorclip) {
             fprintf(stderr, "[cursorclip] PROCEEDING color=%d clipped_rect=(%u,%u)-(%u,%u)\n",
                     (int)DAT_000a85c0, uVar2, uVar5, (uint)left, uVar9);
           }
@@ -223,7 +224,7 @@ void rect_fill_or_save_restore(ushort left, uint top, short right, short bottom)
                   /* Sizing-pass instrumentation (NEEDS_LIVE_INSTRUMENTATION): reusing hud.c's
                      save_cursor_background env var -- logs the real pixel count (= elements of
                      DAT_000879b8) written this call... */
-                  if (getenv("UW_DEBUG_CURSORSHOW")) {
+                  if (g_opts.debug_cursorshow) {
                     fprintf(stderr, "[cursorshow] DAT_000879b8 pixels_written=%d\n", iVar13);
                   }
                   return;
@@ -243,7 +244,7 @@ void rect_fill_or_save_restore(ushort left, uint top, short right, short bottom)
                 uVar5 = uVar5 + 1;
                 iVar15 = iVar15 + 0x140;
                 if ((int)(uVar9 & 0xffff) <= (int)uVar5) {
-                  if (getenv("UW_DEBUG_CURSORSHOW")) {
+                  if (g_opts.debug_cursorshow) {
                     fprintf(stderr, "[cursorshow] DAT_000879b8 pixels_written=%d\n", iVar13);
                   }
                   return;
@@ -367,7 +368,7 @@ void bitmap_blit_to_framebuffer(ushort x, ushort y, char *pixels, short height, 
   }
   /* Was a 3-argument call to a K&R-style `dirty_rect_union()` (no prototype, so this compiles
      without error) -- missing its 4th ("right" bound) argument entirely. */
-  if (getenv("UW_DEBUG_BLITRAW")) {
+  if (g_opts.debug_blitraw) {
     fprintf(stderr, "[blitfb] dstX=%d dstY=%d w=%d h=%d -> dirty top=%d bottom=%d left=%d right=%d\n",
             (int)x, (int)y, (int)iVar9, (int)iVar2,
             iVar7, iVar7 + iVar2, iVar8, iVar8 + iVar9);
@@ -733,8 +734,7 @@ void build_shade_lut()
 static int get_ambient_bias_reduction()
 {
   int reduction = g_ambient_bias_reduction;
-  const char *value = getenv("UW_AMBIENT_BIAS_REDUCTION");
-  if (value) reduction = atoi(value);
+  if (UW_OPT_ISSET(g_opts.ambient_bias_reduction)) reduction = g_opts.ambient_bias_reduction;
   return reduction;
 }
 
@@ -746,7 +746,7 @@ static int get_ambient_bias_reduction()
 void set_ambient_bias_with_light(char light_level)
 {
   DAT_000842b0 = -0x20 - light_level + get_ambient_bias_reduction();
-  if (getenv("UW_DEBUG_AMBIENT"))
+  if (g_opts.debug_ambient)
     fprintf(stderr, "[ambient] set_ambient_bias_with_light(%d) -> DAT_000842b0=%d\n", (int)light_level, (int)DAT_000842b0);
 }
 
@@ -756,7 +756,7 @@ void set_ambient_bias_with_light(char light_level)
 void set_ambient_bias_without_light(char light_level)
 {
   DAT_000842b0 = '\b' - light_level + get_ambient_bias_reduction();
-  if (getenv("UW_DEBUG_AMBIENT"))
+  if (g_opts.debug_ambient)
     fprintf(stderr, "[ambient] set_ambient_bias_without_light(%d) -> DAT_000842b0=%d\n", (int)light_level, (int)DAT_000842b0);
 }
 
@@ -810,12 +810,8 @@ void expand_pals_bytes(char *out_rgb8, char *pals_6bit, int copy_unscaled)
 unsigned int get_palette_brightness_bits()
 {
   float brightness = 1.0f;
-  const char *value = getenv("UW_BRIGHTNESS");
   unsigned int bits;
-  if (value && *value) {
-    float parsed = (float)atof(value);
-    if (parsed >= 0.0f) brightness = parsed;
-  }
+  if (g_opts.brightness >= 0.0f) brightness = g_opts.brightness;
   memcpy(&bits, &brightness, sizeof bits);
   return bits;
 }
@@ -1123,20 +1119,16 @@ int blit_framebuffer_to_gx_display()
 // it rotated, so the caller can redraw already-drawn HUD pixels that use the cycled colours.
 int dungeon_palette_cycle_tick()
 {
-  static int interval_units = -1;
   static uint last_units;
+  int ms = g_opts.palette_cycle_ms;
+  int interval_units = ms <= 0 ? 0 : (ms + 3) / 4; /* read_realtime_clock_units() counts 4ms units */
   uint now;
 
-  if (interval_units < 0) {
-    const char *value = getenv("UW_PALETTE_CYCLE_MS");
-    int ms = value ? atoi(value) : 250;
-    interval_units = ms <= 0 ? 0 : (ms + 3) / 4; /* read_realtime_clock_units() counts 4ms units */
-  }
   if (interval_units == 0) return 0;
   now = read_realtime_clock_units();
   if ((int)(now - last_units) < interval_units) return 0;
   last_units = now;
-  if (getenv("UW_DEBUG_PALCYCLE"))
+  if (g_opts.debug_palcycle)
     fprintf(stderr, "[palcycle] dungeon step: 0x30=%02x%02x%02x 0x10=%02x%02x%02x\n",
             (&DAT_00088d98)[0x90], (&DAT_00088d98)[0x91], (&DAT_00088d98)[0x92],
             (&DAT_00088d98)[0x30], (&DAT_00088d98)[0x31], (&DAT_00088d98)[0x32]);
@@ -1445,7 +1437,7 @@ void tick_book_illustration_palette_cycles(ushort *cycle_record)
   
   iVar4 = 0x10;
   do {
-    if (getenv("UW_DEBUG_PALCYCLE_RECORDS") && cycle_record[1] != 0) {
+    if (g_opts.debug_palcycle_records && cycle_record[1] != 0) {
       fprintf(stderr, "[palcycle] slot=%d last=%u rate=%u start=%d end=%d\n",
               0x10 - iVar4, (unsigned)*cycle_record, (unsigned)cycle_record[1],
               (int)(byte)cycle_record[3], (int)*(byte *)((char *)cycle_record + 7));

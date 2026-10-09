@@ -5,6 +5,10 @@ add_link_options(-Wl,-no_warn_duplicate_libraries)
 add_custom_target(unit_tests)
 add_library(unity STATIC "${PROJECT_SOURCE_DIR}/third_party/unity/src/unity.c")
 target_include_directories(unity PUBLIC "${PROJECT_SOURCE_DIR}/third_party/unity/src")
+# The runtime options struct (g_opts) is used by most of the game code the suites extract.
+add_library(uw_options STATIC "${PROJECT_SOURCE_DIR}/src/options.c")
+target_include_directories(uw_options PUBLIC "${PROJECT_SOURCE_DIR}")
+target_link_libraries(unity PUBLIC uw_options)
 
 # Generate isolated test units from the original function bodies. Game
 # functions stay in their existing files, and tests never keep code copies.
@@ -389,6 +393,7 @@ add_library(uw_test_static_strings STATIC "${static_strings_source}")
 uw_configure_test_target(uw_test_static_strings)
 target_include_directories(uw_test_static_strings PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/support")
 add_supported_game_unit_test(static_strings uw_test_static_strings)
+add_supported_game_unit_test(options)
 
 add_fixture_game_unit_test(scroll_messages
   src/hud.c:@s_Not_a_spell_00085a80 src/item_use.c:@DAT_000878ec_backing

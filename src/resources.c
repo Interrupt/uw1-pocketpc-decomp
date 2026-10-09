@@ -2,6 +2,7 @@
    capture slots, and door-frame loading. Split out of uw.c (the original monolithic decompile) once
    these functions' real roles were confirmed. */
 #include "headers/resources.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -179,11 +180,11 @@ int open_gr_resource_file(char *path, char flag)
     }
   }
   DAT_00202514 = open_file_for_read(local_114);
-  if (getenv("UW_DEBUG_DOOR"))
+  if (g_opts.debug_door)
     fprintf(stderr, "[door] open_gr_resource_file: path='%s' flag=%d open_handle=%d\n", local_114, (int)flag, (int)DAT_00202514);
   if (DAT_00202514 != -1) {
     iVar3 = read_file_handle(DAT_00202514,local_11c,1);
-    if (getenv("UW_DEBUG_DOOR"))
+    if (g_opts.debug_door)
       fprintf(stderr, "[door] open_gr_resource_file: header_read=%d header_byte=%d expected=%d\n", iVar3, (int)local_11c[0], (int)uVar1);
     if (((((iVar3 == 1) && (local_11c[0] == uVar1)) &&
          ((uVar1 != 2 || (iVar3 = read_file_handle(DAT_00202514,&DAT_00202518,1), iVar3 == 1)))) &&
@@ -224,7 +225,7 @@ void load_door_frames()
        even a successful allocate+read never stores the decoded buffer into lookup_grtile_by_id's
        DAT_0024e090[] pointer table... */
     uint _ok = load_gr_resource_entries(s_doors_00085a64,(&DAT_0023b840)[iVar3],1,&alloc_door_frame_buffer,&register_gr_group_entry);
-    if (getenv("UW_DEBUG_DOOR"))
+    if (g_opts.debug_door)
       fprintf(stderr, "[door] load_door_frames: loading doors[%d] slot=%d -> DAT_00202744=%d ok=%u\n",
               iVar3, (int)(&DAT_0023b840)[iVar3], (int)DAT_00202744, _ok);
     iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
@@ -708,7 +709,7 @@ int register_interned_string(char *string, int page)
     } while (iVar4 < 0x200);
     sVar5 = DAT_0024cfc0;
     DAT_0024cfc0 = (short)((uint)((iVar2 + 1) * 0x10000) >> 0x10);
-    if (getenv("UW_DEBUG_STRING_CACHE")) {
+    if (g_opts.debug_string_cache) {
       static int hwm_pages = -1;
       if (DAT_0024cfc0 > hwm_pages) {
         hwm_pages = DAT_0024cfc0;
@@ -727,7 +728,7 @@ int register_interned_string(char *string, int page)
   (&DAT_0024bfa3)[iVar2] = (char)((uintptr_t)string >> 8);
   (&DAT_0024bfa4)[iVar2] = (char)((uintptr_t)string >> 0x10);
   (&DAT_0024bfa5)[iVar2] = (char)((uintptr_t)string >> 0x18);
-  if (getenv("UW_DEBUG_STRING_CACHE")) {
+  if (g_opts.debug_string_cache) {
     static int hwm_slot = -1;
     int slot = sVar5 * 0x201 + (int)(short)uVar3;
     if (slot > hwm_slot) {
@@ -1684,7 +1685,7 @@ int load_gr_resource_group(char *path)
   _dbg_before = DAT_00202744;
   uVar1 = load_gr_resource_entries(path,0,-1,&gr_resource_bump_alloc_entry,&register_gr_group_entry);
   DAT_00202744 = (short)DAT_00202728 + DAT_00202744;
-  if (getenv("UW_DEBUG_DUMP_GR")) {
+  if (g_opts.debug_dump_gr) {
     fprintf(stderr, "[dumpgr] load_gr_resource_group(\"%s\") frames [%d, %d) count=%d ok=%d\n",
             path, (int)_dbg_before, (int)DAT_00202744, (int)DAT_00202728, (int)uVar1);
   }
@@ -1724,7 +1725,7 @@ int load_hud_icon_gr(char *path)
   _dbg_before = DAT_00202744;
   uVar1 = load_gr_resource_entries(path,0,-1,&hud_icon_gr_bump_alloc_entry,register_grtile_entry);
   DAT_00202744 = (short)DAT_00202728 + DAT_00202744;
-  if (getenv("UW_DEBUG_DUMP_GR")) {
+  if (g_opts.debug_dump_gr) {
     fprintf(stderr, "[dumpgr] load_hud_icon_gr(\"%s\") frames [%d, %d) count=%d ok=%d\n",
             path, (int)_dbg_before, (int)DAT_00202744, (int)DAT_00202728, (int)uVar1);
   }
@@ -1876,7 +1877,7 @@ void load_armor_variant_tables(int file_handle)
   read_file_handle(file_handle, g_ranged_type_props,
                    sizeof g_ranged_type_props);
   read_file_handle(file_handle, g_armor_type_props, sizeof g_armor_type_props);
-  if (getenv("UW_DEBUG_ARMOR_TABLES")) {
+  if (g_opts.debug_armor_tables) {
     int _i;
     for (_i = 0; _i < 32; _i++)
       fprintf(stderr, "[armor] DAT_00202750[%d] (family%d nibble%d): %02x %02x %02x %02x\n",
@@ -1976,7 +1977,7 @@ byte *uw_load_critter_page_cached(int param_1, int param_2) {
     } while (cVar2 != '\0');
     ce_strcat(stack0xffdc3238_buf, &DAT_00085920);
     iVar5 = open_file_for_read(stack0xffdc3238_buf);
-    if (getenv("UW_DEBUG_CRITTER"))
+    if (g_opts.debug_critter)
       fprintf(stderr, "[critter] load_critter_page_cached: cache-miss page[%d] type=%d tier=%d file=\"%s\" open=%s\n",
               iVar1, param_1, param_2, stack0xffdc3238_buf, iVar5 == -1 ? "FAIL" : "ok");
     if (iVar5 == -1) {
@@ -1990,7 +1991,7 @@ byte *uw_load_critter_page_cached(int param_1, int param_2) {
     read_file_handle(iVar5,pbVar11,0x7fff);
     CloseHandle(iVar5);
   }
-  if (getenv("UW_DEBUG_CRITTER_TABLESPAN")) {
+  if (g_opts.debug_critter_tablespan) {
     static int seen[256 * 4];
     static int seen_n = 0;
     int key = param_1 * 4 + param_2;

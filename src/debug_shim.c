@@ -3,6 +3,7 @@
    handful of call sites main_loop_hud_flush needs -- none of this is reachable from normal
    gameplay, so it doesn't belong mixed in with the real HUD logic. */
 #include "headers/debug_shim.h"
+#include "headers/options.h"
 #include "headers/debug_ui.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -197,7 +198,7 @@ void populate_debug_panel(void)
   }
   dbgui_begin("Debug Panel");
   dbgui_field_toggle("hide_walls", &g_uw_hide_walls);
-  if (g_uw_3d_objects_enabled < 0) g_uw_3d_objects_enabled = (getenv("UW_DISABLE_3D_OBJECTS") == NULL);
+  if (g_uw_3d_objects_enabled < 0) g_uw_3d_objects_enabled = (!g_opts.disable_3d_objects);
   /* Field names kept short (DBGUI_PANEL_W, debug_ui.c, is a fixed 140
      logical px, sized for the panel's small top-left corner of free
      screen real estate -- a longer name runs into neighboring HUD
@@ -302,8 +303,7 @@ static void _uw_dump_sprite_to_file(int is_frame, int id, const char *dir) {
   uw_save_rgb565_region_bmp(path, fb + oy * 0x140 + ox, cw, ch, 0x140);
 }
 
-static void _uw_dump_sprite_ids_from_env(const char *envname, int is_frame, const char *dir) {
-  const char *spec = getenv(envname);
+static void _uw_dump_sprite_ids_from_spec(const char *spec, int is_frame, const char *dir) {
   if (!spec || !spec[0]) return;
   uw_debug_mkdir_p(dir);
   const char *p = spec;
@@ -335,7 +335,7 @@ static void _uw_dump_sprite_ids_from_env(const char *envname, int is_frame, cons
 void uw_debug_force_item_id_once(void) {
   static int done = 0;
   if (done) return;
-  const char *idstr = getenv("UW_DEBUG_FORCE_ITEM_ID");
+  const char *idstr = g_opts.debug_force_item_id;
   if (!idstr) return;
   ushort *obj = (ushort *)get_equipped_item_at_slot(12);
   if (!obj) return;
@@ -351,11 +351,11 @@ void uw_debug_dump_sprite_frames_once(void) {
   static int done = 0;
   if (done) return;
   done = 1;
-  if (!getenv("UW_DUMP_SPRITE_FRAMES") && !getenv("UW_DUMP_SPRITE_IDS")) return;
-  const char *dir = getenv("UW_DUMP_SPRITE_DIR");
+  if (!g_opts.dump_sprite_frames && !g_opts.dump_sprite_ids) return;
+  const char *dir = g_opts.dump_sprite_dir;
   if (!dir || !dir[0]) dir = "debug/sprites";
-  _uw_dump_sprite_ids_from_env("UW_DUMP_SPRITE_FRAMES", 1, dir);
-  _uw_dump_sprite_ids_from_env("UW_DUMP_SPRITE_IDS", 0, dir);
+  _uw_dump_sprite_ids_from_spec(g_opts.dump_sprite_frames, 1, dir);
+  _uw_dump_sprite_ids_from_spec(g_opts.dump_sprite_ids, 0, dir);
 }
 
 /* Debug tool (UW_DUMP_CRITTER_SHEET): systematically drive decode_critter_sprite_page across every
@@ -365,15 +365,13 @@ void uw_debug_dump_critter_sheet_once(void) {
   static int done = 0;
   if (done) return;
   done = 1;
-  const char *spec = getenv("UW_DUMP_CRITTER_SHEET");
+  const char *spec = g_opts.dump_critter_sheet;
   if (!spec || !spec[0]) return;
-  setenv("UW_DEBUG_DUMP_CRIT", "1", 0);
+  g_opts.debug_dump_crit = 1;
   /* default maxdir kept conservative (63, not the full 0-255 clamp resolve_critter_sprite_tier
      allows): sweeping direction values past a creature's real per-page table found a separate,
      unfixed bug... */
-  int maxdir = 63, maxframe = 15;
-  { const char *e = getenv("UW_DUMP_CRITTER_SHEET_MAXDIR"); if (e) maxdir = atoi(e); }
-  { const char *e = getenv("UW_DUMP_CRITTER_SHEET_MAXFRAME"); if (e) maxframe = atoi(e); }
+  int maxdir = g_opts.dump_critter_sheet_maxdir, maxframe = g_opts.dump_critter_sheet_maxframe;
   const char *p = spec;
   while (*p) {
     char *end;

@@ -1,6 +1,7 @@
 /* GAPI (Windows CE "GX*" Game API) stub, backed by real SDL2 so the game
  * gets an actual window instead of a headless no-op. */
 #include "headers/gx_stub.h"
+#include "headers/options.h"
 #include "headers/ordinal_stubs.h"
 #include "headers/uw.h"
 #include "headers/demomode.h"
@@ -218,9 +219,7 @@ static void poll_dungeon_movement_keys(int game_frame_due)
         if (walk_slow) {
             /* keep S's forward rate below decode_movement_command's per-tick
                step clamp so it is a genuine slow walk, not a clamped run. */
-            static int _wa = -1;
-            if (_wa < 0) { const char *e = getenv("UW_WALK_ACCEL"); _wa = e ? atoi(e) : 0x30; }
-            DAT_0024af6c = (short)_wa;
+            DAT_0024af6c = (short)g_opts.walk_accel;
         }
         DAT_000876c8 = 0;
         if (turning && forward) {
@@ -537,7 +536,7 @@ void uw_pump_events(void) {
                 landscape_y = SDL_clamp(landscape_y, 0, g_display_height - 1);
                 if (dbgui_visible()) {
                     if (ev.type == SDL_MOUSEBUTTONDOWN && ev.button.button == SDL_BUTTON_LEFT) {
-                        if (getenv("UW_DEBUG_DBGUI"))
+                        if (g_opts.debug_dbgui)
                             fprintf(stderr, "[dbgui] click win=(%d,%d) landscape=(%d,%d)\n", win_x, win_y, landscape_x, landscape_y);
                         /* A click inside the 3D viewport's own registered
                            rect (the exact bounds pick_object_under_cursor
@@ -634,9 +633,7 @@ void uw_pump_events(void) {
 int GXOpenDisplay(void *hwnd, unsigned int flags) {
     (void)hwnd;
     (void)flags;
-    const char *touchscreen = getenv("UW_TOUCHSCREEN");
-    g_display_height = (touchscreen && touchscreen[0] && strcmp(touchscreen, "0") != 0)
-                       ? GX_H : 200;
+    g_display_height = g_opts.touchscreen ? GX_H : 200;
     uw_reset_frame_pacing();
     fprintf(stderr, "[gx] GXOpenDisplay: opening %dx%d SDL window (game's GAPI display init)\n",
             GX_W, g_display_height);
@@ -948,8 +945,7 @@ void uw_debug_dump_gr_entry(const char *gr_name, int entry_index,
                              const unsigned char *entry_data, int entry_size) {
     static int enabled = -1;
     if (enabled < 0) {
-        const char *env = getenv("UW_DEBUG_DUMP_GR");
-        enabled = (env && env[0] && strcmp(env, "0") != 0);
+        enabled = g_opts.debug_dump_gr != 0;
     }
     if (!enabled) return;
 
@@ -1003,8 +999,7 @@ void uw_debug_dump_critter_sprite(int type, int tier, int direction, int frame,
                                    const unsigned char *pixels, int width, int height) {
     static int enabled = -1;
     if (enabled < 0) {
-        const char *env = getenv("UW_DEBUG_DUMP_CRIT");
-        enabled = (env && env[0] && strcmp(env, "0") != 0);
+        enabled = g_opts.debug_dump_crit != 0;
     }
     if (!enabled) return;
     if (width <= 0 || height <= 0 || !pixels) return;
@@ -1015,7 +1010,7 @@ void uw_debug_dump_critter_sprite(int type, int tier, int direction, int frame,
     static int seen_keys[4096];
     static int seen_count = 0;
     int key = ((type & 0xff) << 24) ^ ((tier & 0xff) << 16) ^ ((direction & 0xff) << 8) ^ (frame & 0xff);
-    if (!getenv("UW_DEBUG_DUMP_CRIT_ALL")) {
+    if (!g_opts.debug_dump_crit_all) {
         for (int i = 0; i < seen_count; i++) {
             if (seen_keys[i] == key) return;
         }
@@ -1038,7 +1033,7 @@ void uw_debug_dump_critter_sprite(int type, int tier, int direction, int frame,
     }
 
     unsigned char *pal = uw_get_default_palette("crit");
-    if (getenv("UW_DEBUG_DUMP_CRIT_PAL")) {
+    if (g_opts.debug_dump_crit_pal) {
         int idxs[] = {0,1,131,133,148,152,154,156,158,169,171,187,229,233};
         fprintf(stderr, "[crit-dump] palette sample:");
         for (size_t i = 0; i < sizeof(idxs)/sizeof(idxs[0]); i++) {
@@ -1071,8 +1066,7 @@ void uw_debug_dump_critter_sprite(int type, int tier, int direction, int frame,
 void uw_debug_dump_tmap(int level, const unsigned char *tile_data) {
     static int enabled = -1;
     if (enabled < 0) {
-        const char *env = getenv("UW_DEBUG_DUMP_TMAP");
-        enabled = (env && env[0] && strcmp(env, "0") != 0);
+        enabled = g_opts.debug_dump_tmap != 0;
     }
     if (!enabled) return;
 
@@ -1128,8 +1122,7 @@ void uw_debug_dump_tmap(int level, const unsigned char *tile_data) {
 void uw_debug_dump_revealmap(const unsigned char *reveal_data) {
     static int enabled = -1;
     if (enabled < 0) {
-        const char *env = getenv("UW_DEBUG_DUMP_REVEALMAP");
-        enabled = (env && env[0] && strcmp(env, "0") != 0);
+        enabled = g_opts.debug_dump_revealmap != 0;
     }
     if (!enabled) return;
 
@@ -1196,16 +1189,11 @@ void debug_framebuffer_dump(const char *tag) {
     static int enabled = -1;
     static unsigned int every = 1;
     if (enabled < 0) {
-        const char *env = getenv("UW_DEBUG_DRAW");
-        enabled = (env && env[0] && strcmp(env, "0") != 0);
+        enabled = g_opts.debug_draw != 0;
         /* UW_DEBUG_DRAW_EVERY=N: only actually write every Nth dump (still counting all of them, so
            filenames stay a stable stride). Lets a huge sequence -- e.g. a full-level automap fill,
            ~30k pixel ops -- be sampled down to a manageable number of BMPs. */
-        const char *ev = getenv("UW_DEBUG_DRAW_EVERY");
-        if (ev && ev[0]) {
-            long n = strtol(ev, NULL, 10);
-            if (n > 1) every = (unsigned int)n;
-        }
+        if (g_opts.debug_draw_every > 1) every = (unsigned int)g_opts.debug_draw_every;
     }
     if (!enabled) return;
 
@@ -1395,7 +1383,7 @@ int GXEndDraw(void) {
        actual SDL_RenderPresent, the true screen-present) with its
        immediate caller's symbol. Early flushes return above without
        presenting or waiting on another vsync. */
-    if (getenv("UW_DEBUG_ENDDRAW")) {
+    if (g_opts.debug_enddraw) {
         void *caller = __builtin_return_address(0);
         Dl_info info;
         const char *name = (dladdr(caller, &info) && info.dli_sname) ? info.dli_sname : "?";
@@ -1427,10 +1415,8 @@ int GXEndDraw(void) {
         static char tl_dir[300];
         static unsigned tl_n = 0;
         if (tl_ms < 0) {
-            const char *e = getenv("UW_DEBUG_TIMELAPSE");
-            if (e && e[0] && strcmp(e, "0") != 0) {
-                long v = strtol(e, NULL, 10);
-                tl_ms = (v > 1) ? (int)v : 250;
+            if (g_opts.debug_timelapse != 0) {
+                tl_ms = (g_opts.debug_timelapse > 1) ? g_opts.debug_timelapse : 250;
                 time_t now = time(NULL);
                 struct tm tm_now;
                 localtime_r(&now, &tm_now);

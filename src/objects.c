@@ -2,6 +2,7 @@
    (insert/append/unlink/resolve), and object spawning. Split out of uw.c (the original monolithic
    decompile) once these functions' real roles were confirmed. */
 #include "headers/objects.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -106,11 +107,11 @@ LAB_0004b06c:
       uVar9 = ((uw_projectile_object_t *)DAT_00202a44)->fine_heading;
     }
     DAT_00202a54 = (((uw_object_hdr_t *)DAT_00202a44)->heading << 5) + DAT_00202a40 + uVar9 & 0xff;
-    if (getenv("UW_DEBUG_THROW"))
+    if (g_opts.debug_throw)
       fprintf(stderr, "[throw-pos] DAT_00202a4c(tilex_in)=%d DAT_00202a50(tiley_in)=%d\n",
               (int)DAT_00202a4c, (int)DAT_00202a50);
     compute_object_placement_fields(puVar6,(int)DAT_00202a4c,(int)DAT_00202a50);
-    if (getenv("UW_DEBUG_THROW"))
+    if (g_opts.debug_throw)
       fprintf(stderr, "[throw-pos] after compute_object_placement_fields: tile_position=0x%x tilex_out=%d tiley_out=%d\n",
               (unsigned) puVar6->tile_position, (int)(puVar6->tile_x),
               (int)(puVar6->tile_y));
@@ -142,7 +143,7 @@ LAB_0004b06c:
         goto LAB_0004b06c;
       }
     }
-    if (getenv("UW_DEBUG_THROW"))
+    if (g_opts.debug_throw)
       fprintf(stderr, "[throw-spawn] type_flags=0x%x (&0x1c0=0x%x) tile_position_before=0x%x DAT_00202a44_type=0x%x\n",
               (unsigned) puVar6->hdr.type_flags,
               (unsigned)(puVar6->hdr.object_id & 0x1c0),
@@ -162,7 +163,7 @@ LAB_0004b06c:
       puVar6->source_slot = (byte)(char)sVar5;
       puVar6->animation_flags = puVar6->animation_flags & 0x7f;
     }
-    if (getenv("UW_DEBUG_THROW"))
+    if (g_opts.debug_throw)
       fprintf(stderr, "[throw-spawn] tile_position_after=0x%x tilex=%d tiley=%d\n",
               (unsigned) puVar6->tile_position, (int)(puVar6->tile_x),
               (int)(puVar6->tile_y));
@@ -1526,12 +1527,12 @@ uw_object_hdr_t *settle_dropped_object(void *object_ptr, short tile_x,
   DAT_00202c6c[0xb] = (char)((ushort)uVar6 >> 8);
   iVar12 = (*object & 0x1ff) * 0xd;
   bVar5 = g_object_type_props[iVar12 / 0xd].flags;
-  if (getenv("UW_DEBUG_THROW") && (*object & 0x1ff) == 0x80)
+  if (g_opts.debug_throw && (*object & 0x1ff) == 0x80)
     fprintf(stderr, "[f98] ENTER object=%p type=0x%x tile=(%d,%d) flags-byte=0x%x\n",
             (void *)object, (unsigned)(*object & 0x1ff), (int)tile_x, (int)tile_y, (unsigned)bVar5);
   do {
     if ((bVar5 & 8) != 0) {
-      if (getenv("UW_DEBUG_THROW") && (*object & 0x1ff) == 0x80)
+      if (g_opts.debug_throw && (*object & 0x1ff) == 0x80)
         fprintf(stderr, "[f98] BAIL: flag8 set on class table, returning object unchanged\n");
       return object;
     }
@@ -1579,7 +1580,7 @@ uw_object_hdr_t *settle_dropped_object(void *object_ptr, short tile_x,
     uVar3 = DAT_00101454;
     uVar6 = DAT_0010144c;
     uVar2 = *(ushort *)(DAT_00202c6c + 0xc);
-    if (getenv("UW_DEBUG_THROW") && (*object & 0x1ff) == 0x80)
+    if (g_opts.debug_throw && (*object & 0x1ff) == 0x80)
       fprintf(stderr, "[f98] uVar2(local_4c+0xc)=0x%x local_4c+0xe=0x%x local_4c[0x15]=%d iVar12=%d\n",
               (unsigned)uVar2, (unsigned)*(ushort *)(DAT_00202c6c + 0xe),
               (int)DAT_00202c6c[0x15], iVar12);
@@ -1588,12 +1589,12 @@ uw_object_hdr_t *settle_dropped_object(void *object_ptr, short tile_x,
       cVar4 = '\x01';
 LAB_000564d0:
       if (cVar4 == '\0') {
-        if (getenv("UW_DEBUG_THROW") && (*object & 0x1ff) == 0x80)
+        if (g_opts.debug_throw && (*object & 0x1ff) == 0x80)
           fprintf(stderr, "[f98] BAIL at LAB_000564d0 (cVar4==0), returning object unchanged\n");
         return object;
       }
 LAB_000564d8:
-      if (getenv("UW_DEBUG_THROW") && (*object & 0x1ff) == 0x80)
+      if (g_opts.debug_throw && (*object & 0x1ff) == 0x80)
         fprintf(stderr, "[f98] -> discard_misplaced_object fallback path (not reallocate_object_to_arena replace)\n");
       pDropTile = (char *)tilemap_lookup((int)tile_x,(int)tile_y);
       puVar9 = (ushort *)discard_misplaced_object(pDropTile + 2,object,0);
@@ -1602,7 +1603,7 @@ LAB_000564d8:
     if ((uVar2 & 7) == 5) goto LAB_000564d8;
     if ((uVar2 & 7) == 6) {
       if ((g_object_type_props[(*object & 0x1ff)].quality_flags & 0xc) == 0xc) {
-        if (getenv("UW_DEBUG_THROW") && (*object & 0x1ff) == 0x80)
+        if (g_opts.debug_throw && (*object & 0x1ff) == 0x80)
           fprintf(stderr, "[f98] BAIL: (uVar2&7)==6 class-table gate, returning object unchanged\n");
         return object;
       }
@@ -1610,17 +1611,17 @@ LAB_000564d8:
       goto LAB_000564d0;
     }
     if ((uVar2 & 8) != 0) {
-      if (getenv("UW_DEBUG_THROW") && (*object & 0x1ff) == 0x80)
+      if (g_opts.debug_throw && (*object & 0x1ff) == 0x80)
         fprintf(stderr, "[f98] BAIL: (uVar2&8)!=0, returning object unchanged\n");
       return object;
     }
     if (DAT_002046ec != 0) {
-      if (getenv("UW_DEBUG_THROW") && (*object & 0x1ff) == 0x80)
+      if (g_opts.debug_throw && (*object & 0x1ff) == 0x80)
         fprintf(stderr, "[f98] BAIL: DAT_002046ec!=0, returning object unchanged\n");
       return object;
     }
     if (iVar12 == 0) {
-      if (getenv("UW_DEBUG_THROW") && (*object & 0x1ff) == 0x80)
+      if (g_opts.debug_throw && (*object & 0x1ff) == 0x80)
         fprintf(stderr, "[f98] -> reallocate_object_to_arena replace path, coords=(%d,%d)\n", (int)tile_x, (int)tile_y);
       DAT_0010144c = tile_x;
       DAT_00101454 = tile_y;
@@ -1802,7 +1803,7 @@ void compute_object_placement_fields(void *object_ptr, uint tile_x, uint tile_y)
   uint uVar7;
   
   uVar7 = (uint)*(ushort *)(object + 2);
-  if (getenv("UW_DEBUG_THROW"))
+  if (g_opts.debug_throw)
     fprintf(stderr, "[throw-height] raw object[2..3](uVar7 src)=0x%x -> height_field=(uVar7&0x7f)<<3=%d\n",
             (unsigned)uVar7, (int)((uVar7 & 0x7f) << 3));
   object[9] = (byte)(*(ushort *)(object + 2) >> 2) & 0xe0;
@@ -1846,7 +1847,7 @@ uw_object_hdr_t *reallocate_object_to_arena(ushort *object)
   ushort *puVar2;
 
   iVar1 = (char *)tilemap_lookup((int)DAT_0010144c,(int)DAT_00101454);
-  if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)object)->object_id) == 0x80) {
+  if (g_opts.debug_throw && (((uw_object_hdr_t *)object)->object_id) == 0x80) {
     ushort *pWalk;
     int n = 0;
     fprintf(stderr, "[replace] ENTER type=0x%x object=%p tile=(%d,%d) tilerec=%p\n",
@@ -1880,7 +1881,7 @@ uw_object_hdr_t *reallocate_object_to_arena(ushort *object)
     if ((((uw_object_hdr_t *)puVar2)->object_id & 0x1c0) == 0x1c0) {
       scheduler_relink_entry(puVar2,object);
     }
-    if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)object)->object_id) == 0x80)
+    if (g_opts.debug_throw && (((uw_object_hdr_t *)object)->object_id) == 0x80)
       fprintf(stderr, "[replace] new copy puVar2=%p type=0x%x height(f/10)=%d in_arena=%d\n",
               (void *)puVar2,
               (unsigned)(((uw_object_hdr_t *)puVar2)->object_id),
@@ -1889,7 +1890,7 @@ uw_object_hdr_t *reallocate_object_to_arena(ushort *object)
     object_list_unlink(iVar1 + 2,object);
     free_object_slot(object);
     object_list_insert_head(iVar1 + 2,puVar2);
-    if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)puVar2)->object_id) == 0x80) {
+    if (g_opts.debug_throw && (((uw_object_hdr_t *)puVar2)->object_id) == 0x80) {
       ushort *pWalk;
       int n = 0;
       int found = 0;

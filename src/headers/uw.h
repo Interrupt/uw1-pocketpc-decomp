@@ -742,6 +742,7 @@ void emit_object_billboard();
    split out into their own topic .c files this session... */
 #include "helpers.h"
 #include "graphics.h"
+#include "options.h"
 #include "babl.h"
 #include "automap.h"
 #include "inventory.h"

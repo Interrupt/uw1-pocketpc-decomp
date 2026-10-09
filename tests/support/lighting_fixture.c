@@ -70,12 +70,12 @@ void *ce_memset(void *p, int value, unsigned n) { return memset(p, value, n); }
 char *ce_strcat(char *p, char *s) { return strcat(p, s); }
 void lighting_fixture_reset(void)
 {
-    setenv("UW_DATA_DIR", UW_TEST_DATA_DIR, 1);
-    unsetenv("UW_LIGHT_MODE");
-    unsetenv("UW_FULLBRIGHT");
+    options_set("data-dir", UW_TEST_DATA_DIR);
+    options_unset("light-mode");
+    options_unset("fullbright");
     lighting_span_shade = 88;
-    setenv("UW_DITHER", "0", 1); /* Isolate undithered falloff assertions. */
-    unsetenv("UW_AMBIENT_BIAS_REDUCTION");
+    options_set("dither", "0"); /* Isolate undithered falloff assertions. */
+    options_unset("ambient-bias-reduction");
     g_ambient_bias_reduction = 0;
     memset(player, 0, sizeof player); memset(stats, 0, sizeof stats);
     memset(slots, 0, sizeof slots); memset(lights, 0, sizeof lights);
@@ -98,10 +98,10 @@ void lighting_fixture_reset(void)
 }
 void lighting_fixture_dispose(void)
 {
-    unsetenv("UW_LIGHT_MODE");
-    unsetenv("UW_DITHER");
-    unsetenv("UW_AMBIENT_BIAS_REDUCTION");
-    unsetenv("UW_FULLBRIGHT");
+    options_unset("light-mode");
+    options_unset("dither");
+    options_unset("ambient-bias-reduction");
+    options_unset("fullbright");
 }
 void assert_mode(int mode, int falloff, int initial, int offset)
 {

@@ -1,4 +1,5 @@
 #include "game_fixture.h"
+#include "src/headers/options.h"
 #include "new_game_fixture.h"
 
 /* Local service declarations; game function bodies link these mocks. */
@@ -291,7 +292,7 @@ void new_game_fixture_begin(void)
     snprintf(archive_path, sizeof(archive_path), "%s/lev.ark", save_path);
     TEST_ASSERT_EQUAL_INT(0, symlink(UW_TEST_DATA_DIR "/DATA", data_link));
     TEST_ASSERT_EQUAL_INT(0, mkdir(save_path, 0700));
-    TEST_ASSERT_EQUAL_INT(0, setenv("UW_DATA_DIR", workspace, 1));
+    TEST_ASSERT_EQUAL_INT(0, options_set("data-dir", workspace));
 }
 
 void new_game_fixture_end(void)

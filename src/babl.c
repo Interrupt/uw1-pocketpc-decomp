@@ -2,6 +2,7 @@
    intrinsics (babl_builtin_*), the named script-variable bridge
    (babl_register_builtin/babl_set_variable/ babl_get_variable)... */
 #include "headers/babl.h"
+#include "headers/options.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -806,7 +807,7 @@ void babl_builtin_set_quest(char *args)
   
   sVar1 = babl_read_var_word((int)*(short *)(args + -4));
   sVar2 = babl_read_var_word((int)*(short *)(args + -2));
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_builtin_set_quest: idx=%d value=%d\n", (int)sVar1, (int)sVar2);
+  if (g_opts.debug_babl) fprintf(stderr, "[babl] babl_builtin_set_quest: idx=%d value=%d\n", (int)sVar1, (int)sVar2);
   uVar3 = (uint)sVar1;
   if (-1 < (int)uVar3) {
     if ((int)uVar3 < 0x20) {
@@ -840,19 +841,19 @@ byte babl_builtin_get_quest(char *args)
   if (-1 < iVar1) {
     if (0x1f < iVar1) {
       if (0x23 < iVar1) {
-        if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_builtin_get_quest: idx=%d -> %d (clamp-high)\n", iVar1, (int)*(undefined1 *)(DAT_00086df8 + 0x6d));
+        if (g_opts.debug_babl) fprintf(stderr, "[babl] babl_builtin_get_quest: idx=%d -> %d (clamp-high)\n", iVar1, (int)*(undefined1 *)(DAT_00086df8 + 0x6d));
         return *(undefined1 *)(DAT_00086df8 + 0x6d);
       }
-      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_builtin_get_quest: idx=%d -> %d (byte-value slot)\n", iVar1, (int)*(undefined1 *)(iVar1 + DAT_00086df8 + 0x49));
+      if (g_opts.debug_babl) fprintf(stderr, "[babl] babl_builtin_get_quest: idx=%d -> %d (byte-value slot)\n", iVar1, (int)*(undefined1 *)(iVar1 + DAT_00086df8 + 0x49));
       return *(undefined1 *)(iVar1 + DAT_00086df8 + 0x49);
     }
     sVar2 = babl_read_var_word((int)*(short *)(args + -2));
     if ((*(uint *)(DAT_00086df8 + 0x65) & 1U << ((int)sVar2 & 0xffU)) != 0) {
-      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_builtin_get_quest: idx=%d -> 1 (flag bit set)\n", iVar1);
+      if (g_opts.debug_babl) fprintf(stderr, "[babl] babl_builtin_get_quest: idx=%d -> 1 (flag bit set)\n", iVar1);
       return 1;
     }
   }
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_builtin_get_quest: idx=%d -> 0\n", iVar1);
+  if (g_opts.debug_babl) fprintf(stderr, "[babl] babl_builtin_get_quest: idx=%d -> 0\n", iVar1);
   return 0;
 }
 
@@ -885,7 +886,7 @@ int babl_builtin_gronk_door(char *args)
     DAT_002020a0 = babl_read_var_word((int)*(short *)(args + -6));
     DAT_002020a4 = babl_read_var_word((int)*(short *)(args + -4));
     sVar3 = babl_read_var_word((int)*(short *)(args + -2));
-    if (getenv("UW_DEBUG_DOOR"))
+    if (g_opts.debug_door)
       fprintf(stderr, "[door] babl_builtin_gronk_door: sVar3(action)=%d obj0=0x%04x\n",
               (int)sVar3, (unsigned)((uw_object_hdr_t *)iVar6)->type_flags);
     if (sVar3 == 0) {
@@ -1122,13 +1123,13 @@ void load_npc_conversation_variables(void *buffer, short conversation_id)
   } while (cVar1 != '\0');
   ce_strcat(acStack_11c,s__SAVE0_bglobals_dat_00084538);
   iVar4 = open_file_for_read(acStack_11c);
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] load_npc_conversation_variables: open %s -> handle=%d, wanted conv-id(DAT_001007c4)=%d, want %d shorts\n", acStack_11c, iVar4, (int)DAT_001007c4, (int)conversation_id);
+  if (g_opts.debug_babl) fprintf(stderr, "[babl] load_npc_conversation_variables: open %s -> handle=%d, wanted conv-id(DAT_001007c4)=%d, want %d shorts\n", acStack_11c, iVar4, (int)DAT_001007c4, (int)conversation_id);
   if (iVar4 != -1) {
     bVar2 = false;
     do {
       uVar5 = read_file_handle(iVar4,local_124_backing,4);
       if ((uVar5 < 4) || ((int)(uint)DAT_001007c4 < (int)local_124)) {
-        if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] load_npc_conversation_variables: scan stopped, uVar5=%u local_124=%d (no matching record found)\n", uVar5, (int)local_124);
+        if (g_opts.debug_babl) fprintf(stderr, "[babl] load_npc_conversation_variables: scan stopped, uVar5=%u local_124=%d (no matching record found)\n", uVar5, (int)local_124);
         break;
       }
       if ((int)local_124 == (uint)DAT_001007c4) {
@@ -1139,7 +1140,7 @@ void load_npc_conversation_variables(void *buffer, short conversation_id)
         if (uVar5 < (uint)((int)local_122 << 1)) {
           bVar2 = true;
         }
-        if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] load_npc_conversation_variables: MATCH id=%d, restored %u bytes (wanted %d), first 10 shorts: %d %d %d %d %d %d %d %d %d %d\n",
+        if (g_opts.debug_babl) fprintf(stderr, "[babl] load_npc_conversation_variables: MATCH id=%d, restored %u bytes (wanted %d), first 10 shorts: %d %d %d %d %d %d %d %d %d %d\n",
                 (int)local_124, uVar5, (int)local_122 << 1,
                 (int)((short*)buffer)[0], (int)((short*)buffer)[1], (int)((short*)buffer)[2], (int)((short*)buffer)[3], (int)((short*)buffer)[4],
                 (int)((short*)buffer)[5], (int)((short*)buffer)[6], (int)((short*)buffer)[7], (int)((short*)buffer)[8], (int)((short*)buffer)[9]);
@@ -1419,7 +1420,7 @@ char *babl_expand_string_refs(char *text)
      NULL regardless of what this function actually computed. */
   char *pcVar_result;
 
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] expand_string_refs(\"%s\")\n", text ? text : "(null)");
+  if (g_opts.debug_babl) fprintf(stderr, "[babl] expand_string_refs(\"%s\")\n", text ? text : "(null)");
   pcVar_result = text;
   if (ce_strchr(text,0x40) != 0) {
     iVar6 = ce_strlen(text);
@@ -1599,7 +1600,7 @@ int build_babl_symbol_table()
       *(char *)(iVar7 + 0x1e) = (char)((uint)iVar2 >> 0x10);
       *(char *)(iVar7 + 0x1f) = (char)((uint)iVar2 >> 0x18);
       bVar12 = (short)((uint)iVar2 >> 0x10) == 0x111;
-      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] symbol table entry %d: name=\"%s\" type=0x%x isvar=%d\n", (int)iVar5, local_64, (unsigned)((uint)iVar2 >> 0x10), (int)bVar12);
+      if (g_opts.debug_babl) fprintf(stderr, "[babl] symbol table entry %d: name=\"%s\" type=0x%x isvar=%d\n", (int)iVar5, local_64, (unsigned)((uint)iVar2 >> 0x10), (int)bVar12);
       if (bVar12) {
         iVar6 = (int)DAT_000bbf24;
       }
@@ -1661,7 +1662,7 @@ int run_babl_bytecode_interpreter()
       /* Was `DAT_000bbf80 + DAT_000bbf74` (byte offset) -- DAT_000bbf74 is the babl VM's own
          instruction pointer, counted in 16-bit WORDS... */
       psVar7 = (short *)(DAT_000bbf80 + DAT_000bbf74 * 2);
-      if (getenv("UW_DEBUG_OPCODE_TRACE")) fprintf(stderr, "[babl-op] ip=%d opcode=%d operand=%d stack_depth=%d top=%d\n", (int)DAT_000bbf74, (int)*psVar7, (int)psVar7[1], (int)DAT_000bbf78, (int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
+      if (g_opts.debug_opcode_trace) fprintf(stderr, "[babl-op] ip=%d opcode=%d operand=%d stack_depth=%d top=%d\n", (int)DAT_000bbf74, (int)*psVar7, (int)psVar7[1], (int)DAT_000bbf78, (int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
       switch(*psVar7) {
       case 0:
         goto LAB_0001a2d8;
@@ -1844,7 +1845,7 @@ void babl_register_builtin(char *name, void *handler)
     pcVar4 = (char *)DAT_000bbf70;
     do {
       if ((cVar2 == *pcVar4) && (iVar3 = ce_strcmp(name,pcVar4), iVar3 == 0)) {
-        if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] register_builtin: \"%s\" -> table idx %d\n", name, (int)*(short *)(pcVar4 + 0x1a));
+        if (g_opts.debug_babl) fprintf(stderr, "[babl] register_builtin: \"%s\" -> table idx %d\n", name, (int)*(short *)(pcVar4 + 0x1a));
         *(intptr_t *)(DAT_000bbf00 + *(short *)(pcVar4 + 0x1a) * 8) = (intptr_t)handler; // was `undefined4 ... * 4` -- DAT_000bbf00's own comment (uw.c ~11468)
         return;
       }
@@ -1869,7 +1870,7 @@ void babl_set_variable(char *name, short *value_array, short count)
   short sVar6;
   undefined1 local_34 [28];
 
-  if (getenv("UW_DEBUG_BABL") && name && strcmp(name, "npc_talkedto") == 0) {
+  if (g_opts.debug_babl && name && strcmp(name, "npc_talkedto") == 0) {
     fprintf(stderr, "[babl] babl_set_variable(\"npc_talkedto\", %d)\n", (int)*(short *)value_array);
   }
   sVar6 = 0;
@@ -1899,7 +1900,7 @@ void babl_set_variable(char *name, short *value_array, short count)
   if (count < 1) {
     return;
   }
-  if (getenv("UW_DEBUG_BABL") && name && strcmp(name, "npc_talkedto") == 0) {
+  if (g_opts.debug_babl && name && strcmp(name, "npc_talkedto") == 0) {
     fprintf(stderr, "[babl] babl_set_variable(\"npc_talkedto\"): resolved DAT_000bbf14 slot base=%d\n", (int)*(short *)(iVar2 + 0x1a));
   }
   iVar4 = 0;
@@ -1946,7 +1947,7 @@ void babl_get_variable(char *name, short *value_array, short count)
          *(undefined2 *)(DAT_000bbf14 + (iVar1 + *(short *)(iVar2 + 0x1a)) * 2);
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar1 < count);
-  if (getenv("UW_DEBUG_BABL") && name && strcmp(name, "npc_talkedto") == 0) {
+  if (g_opts.debug_babl && name && strcmp(name, "npc_talkedto") == 0) {
     fprintf(stderr, "[babl] babl_get_variable(\"npc_talkedto\") -> %d\n", (int)*(short *)value_array);
   }
 }
@@ -2328,7 +2329,7 @@ void start_npc_conversation(int conversation_id, int npc_type)
     }
     /* Debug-only static dump of every string in this NPC's own compiled conversation, independent
        of which branches a live playthrough happens to reach -- see bragit-talk-again-investigation. */
-    if (getenv("UW_DEBUG_DUMP_CONV_STRINGS")) {
+    if (g_opts.debug_dump_conv_strings) {
       int _dump_i;
       for (_dump_i = 0; _dump_i < 0x200; _dump_i++) {
         char *_dump_s = get_message_string((ushort)_dump_i);
@@ -2337,9 +2338,9 @@ void start_npc_conversation(int conversation_id, int npc_type)
         }
       }
     }
-    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] start_npc_conversation: about to call run_babl_bytecode_interpreter()\n");
+    if (g_opts.debug_babl) fprintf(stderr, "[babl] start_npc_conversation: about to call run_babl_bytecode_interpreter()\n");
     run_babl_bytecode_interpreter();
-    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] start_npc_conversation: run_babl_bytecode_interpreter() returned\n");
+    if (g_opts.debug_babl) fprintf(stderr, "[babl] start_npc_conversation: run_babl_bytecode_interpreter() returned\n");
     uVar3 = 500;
     iVar2 = sync_conv_vars_to_npc((char *)DAT_00100674);
     if ((iVar2 != 0) || (DAT_001007b4 == '\0')) {
@@ -2348,14 +2349,14 @@ void start_npc_conversation(int conversation_id, int npc_type)
     /* Debug-only re-seed, no UI involved: directly proves out the npc_talkedto persistence fix
        (bglobals-dat-readonly-handle-fix) end-to-end without needing to click the NPC a second time
        through a fragile, animation-position-dependent screen coordinate. */
-    if (getenv("UW_DEBUG_TALK_TWICE")) {
+    if (g_opts.debug_talk_twice) {
       fprintf(stderr, "[babl] UW_DEBUG_TALK_TWICE: re-seeding from the same object right after natural conversation end\n");
       sync_conv_vars_from_npc(DAT_00100674);
     }
     /* Debug-only: re-runs the exact same object-pick the mouse position already used to start this
        conversation would produce, RIGHT as the conversation ends -- same frame, same
        g_mouse_x/g_mouse_y, no real click or screen coordinate involved at all. */
-    if (getenv("UW_DEBUG_PICK_TWICE")) {
+    if (g_opts.debug_pick_twice) {
       ushort *_pick2 = pick_object_under_cursor(2);
       if (_pick2) {
         fprintf(stderr, "[pick-twice] re-pick at same mouse=(%d,%d) right after conversation end -> objid=0x%03x\n",
@@ -2400,7 +2401,7 @@ int babl_menu(char *args)
   DAT_00100794 = 1;
   sVar2 = *(short *)(args + -2);
   uVar6 = babl_read_var_word((int)sVar2);
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_menu entry: args=%p sVar2(local-slot-idx)=%d DAT_000bbf78(stack-depth)=%d uVar6(first-msgid)=%u\n", (void *)args, (int)sVar2, (int)DAT_000bbf78, (unsigned)uVar6);
+  if (g_opts.debug_babl) fprintf(stderr, "[babl] babl_menu entry: args=%p sVar2(local-slot-idx)=%d DAT_000bbf78(stack-depth)=%d uVar6(first-msgid)=%u\n", (void *)args, (int)sVar2, (int)DAT_000bbf78, (unsigned)uVar6);
   iVar12 = 1;
   sVar5 = (short)uVar6;
   while (sVar5 != 0) {
@@ -2439,7 +2440,7 @@ int babl_menu(char *args)
     iVar12 = ((int)iVar12 + 1) * 0x10000 >> 0x10;
   } while (iVar12 < 10);
   iVar12 = 1;
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_menu print-loop: DAT_00100794(item_count)=%d\n", (int)DAT_00100794);
+  if (g_opts.debug_babl) fprintf(stderr, "[babl] babl_menu print-loop: DAT_00100794(item_count)=%d\n", (int)DAT_00100794);
   if (1 < DAT_00100794) {
     do {
       pcVar10 = *(char **)(&DAT_00100680 + iVar12 * 8);
@@ -2453,7 +2454,7 @@ int babl_menu(char *args)
         *pcVar11 = cVar1;
         pcVar11 = pcVar11 + 1;
       } while (cVar1 != '\0');
-      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_menu item %d text: \"%s\"\n", iVar12, local_c4);
+      if (g_opts.debug_babl) fprintf(stderr, "[babl] babl_menu item %d text: \"%s\"\n", iVar12, local_c4);
       ce_strcat(local_c4,&s_scroll_newline_0008522c);
       sVar5 = message_scroll_print_wrapped(local_c4);
       debug_noop_checkpoint();
@@ -2467,15 +2468,14 @@ int babl_menu(char *args)
   /* Debug-only regression-test aid: end-to-end verifying npc_talkedto persistence (see
      bglobals-dat-readonly-handle-fix) needs driving a conversation all the way to a real
      "Farewell"/"Bye" exit... */
-  if (getenv("UW_DEBUG_AUTO_FAREWELL") && (1 < DAT_00100794)) {
+  if (g_opts.debug_auto_farewell && (1 < DAT_00100794)) {
     int _far_i;
     int _far_pick = 1; /* no farewell offered this turn -- keep the conversation moving */
     /* UW_DEBUG_AUTO_PICK=N overrides the "no farewell offered" default away from item 1, to explore
        branches a rigid "always pick 1" playthrough never reaches (e.g. hunting for where a script
        might call get_quest/set_quest) -- clamped into range... */
-    { const char *_pick_env = getenv("UW_DEBUG_AUTO_PICK");
-      if (_pick_env) {
-        int _pick_n = atoi(_pick_env);
+    { if (UW_OPT_ISSET(g_opts.debug_auto_pick)) {
+        int _pick_n = g_opts.debug_auto_pick;
         if (_pick_n >= 1 && _pick_n < DAT_00100794) _far_pick = _pick_n;
       }
     }
@@ -2486,7 +2486,7 @@ int babl_menu(char *args)
         break;
       }
     }
-    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] UW_DEBUG_AUTO_FAREWELL: auto-selecting item %d (\"%s\")\n", _far_pick, *(char **)(&DAT_00100680 + _far_pick * 8));
+    if (g_opts.debug_babl) fprintf(stderr, "[babl] UW_DEBUG_AUTO_FAREWELL: auto-selecting item %d (\"%s\")\n", _far_pick, *(char **)(&DAT_00100680 + _far_pick * 8));
     select_babl_menu_response((short)_far_pick);
     return (int)*(short *)(&DAT_001007a0 + DAT_00100788 * 2);
   }
@@ -2972,7 +2972,7 @@ void sync_conv_vars_from_npc(ushort *npc)
   local_20[0] = (ushort)((*(ushort *)((char *)npc + 0xb) & 0xff0) >> 4);
   babl_set_variable(s_npc_gtarg_00085350,local_20,1);
   local_20[0] = (ushort)(((byte)npc[7] & 0x20) >> 5);
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] sync_conv_vars_from_npc: seeding npc_talkedto=%d from object byte@0xe=0x%02x (obj=%p)\n", (int)local_20[0], (unsigned)(byte)npc[7], (void *)npc);
+  if (g_opts.debug_babl) fprintf(stderr, "[babl] sync_conv_vars_from_npc: seeding npc_talkedto=%d from object byte@0xe=0x%02x (obj=%p)\n", (int)local_20[0], (unsigned)(byte)npc[7], (void *)npc);
   babl_set_variable(s_npc_talkedto_00085340,local_20,1);
   local_20[0] = (byte) g_monster_type_props[(iVar3) / 0x30].trade_level & 0xf;
   babl_set_variable(s_npc_level_00085334,local_20,1);
@@ -3062,7 +3062,7 @@ bool sync_conv_vars_to_npc(char *npc)
   ushort local_10;
   undefined2 local_e;
 
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] sync_conv_vars_to_npc: ENTRY npc=%p\n", (void *)npc);
+  if (g_opts.debug_babl) fprintf(stderr, "[babl] sync_conv_vars_to_npc: ENTRY npc=%p\n", (void *)npc);
   babl_get_variable(s_npc_hunger_00085394,&local_10,1);
   *(byte *)(npc + 0x19) = ((short)local_10 < 0x20) << 7 | *(byte *)(npc + 0x19) & 0x7f;
   babl_get_variable(s_npc_hp_00085380,&local_10,1);
@@ -3099,7 +3099,7 @@ bool sync_conv_vars_to_npc(char *npc)
   uVar1 = *(undefined2 *)(npc + 0xd);
   *(char *)(npc + 0xd) = (char)uVar1;
   *(byte *)(npc + 0xe) = (byte)((ushort)uVar1 >> 8) | 0x20;
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] sync_conv_vars_to_npc: wrote npc_talkedto bit into object byte@0xe=0x%02x (obj=%p), attitude==0?%d\n", (unsigned)*(byte *)(npc + 0xe), (void *)npc, (int)bVar4);
+  if (g_opts.debug_babl) fprintf(stderr, "[babl] sync_conv_vars_to_npc: wrote npc_talkedto bit into object byte@0xe=0x%02x (obj=%p), attitude==0?%d\n", (unsigned)*(byte *)(npc + 0xe), (void *)npc, (int)bVar4);
   babl_get_variable(s_play_hunger_00085304,&local_10,1);
   *(char *)(DAT_00086df8 + 0x39) = (char)local_10;
   babl_get_variable(s_play_hp_000852f0,&local_10,1);
@@ -3220,7 +3220,7 @@ void save_npc_conversation_variables()
   } while (cVar1 != '\0');
   ce_strcat(acStack_118,s__SAVE0_bglobals_dat_00084538);
   iVar5 = open_existing_file_rw_alt(acStack_118);
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] save_npc_conversation_variables: open %s -> handle=%d, wanted conv-id(DAT_001007c4)=%d, sVar2(DAT_000bbf7c)=%d, buf(DAT_000bbf14)=%p first10=%d %d %d %d %d %d %d %d %d %d\n",
+  if (g_opts.debug_babl) fprintf(stderr, "[babl] save_npc_conversation_variables: open %s -> handle=%d, wanted conv-id(DAT_001007c4)=%d, sVar2(DAT_000bbf7c)=%d, buf(DAT_000bbf14)=%p first10=%d %d %d %d %d %d %d %d %d %d\n",
           acStack_118, iVar5, (int)DAT_001007c4, (int)sVar2, (void*)uVar3,
           (int)((short*)uVar3)[0], (int)((short*)uVar3)[1], (int)((short*)uVar3)[2], (int)((short*)uVar3)[3], (int)((short*)uVar3)[4],
           (int)((short*)uVar3)[5], (int)((short*)uVar3)[6], (int)((short*)uVar3)[7], (int)((short*)uVar3)[8], (int)((short*)uVar3)[9]);
@@ -3230,7 +3230,7 @@ void save_npc_conversation_variables()
       if ((uVar6 < 4) ||
          (uVar7 = (uint)local_120, uVar6 = (uint)DAT_001007c4,
          uVar7 != uVar6 && (int)uVar6 <= (int)uVar7)) {
-        if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] save_npc_conversation_variables: scan gave up, uVar6=%u local_120=%d (no matching record -- write SKIPPED entirely)\n", uVar6, (int)local_120);
+        if (g_opts.debug_babl) fprintf(stderr, "[babl] save_npc_conversation_variables: scan gave up, uVar6=%u local_120=%d (no matching record -- write SKIPPED entirely)\n", uVar6, (int)local_120);
         goto LAB_00019460;
       }
       if (uVar7 == uVar6) break;
@@ -3239,7 +3239,7 @@ void save_npc_conversation_variables()
     if (sVar2 < local_11e) {
       local_11e = sVar2;
     }
-    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] save_npc_conversation_variables: MATCH id=%d, writing %d bytes\n", (int)local_120, (int)local_11e << 1);
+    if (g_opts.debug_babl) fprintf(stderr, "[babl] save_npc_conversation_variables: MATCH id=%d, writing %d bytes\n", (int)local_120, (int)local_11e << 1);
     write_file_handle(iVar5,(const void *)(intptr_t)(uVar3),(int)local_11e << 1);
 LAB_00019460:
     CloseHandle(iVar5);
@@ -5021,7 +5021,7 @@ void babl_op_push_var_raw()
   /* Raw "push variable value" VM opcode: indexes DAT_000bbf14 directly by the symbol's compiled-in
      slot number, bypassing babl_get_variable's name-based lookup entirely -- this is the actual
      path a script's own `if npc_talkedto ...` check would read through... */
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] push-var (raw opcode): slot=%d value=%d\n", (int)*psVar1, (int)*(short *)(DAT_000bbf14 + *psVar1 * 2));
+  if (g_opts.debug_babl) fprintf(stderr, "[babl] push-var (raw opcode): slot=%d value=%d\n", (int)*psVar1, (int)*(short *)(DAT_000bbf14 + *psVar1 * 2));
   *psVar1 = *(short *)(DAT_000bbf14 + *psVar1 * 2);
   return;
 }
@@ -5070,7 +5070,7 @@ void babl_op_call_builtin()
   undefined2 uVar1;
   
   DAT_000bbf08 = *(short *)(DAT_000bbf80 + DAT_000bbf74 * 2 + 2);
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] call builtin idx=%d stack_depth(DAT_000bbf78)=%d arg_slot=%p\n", (int)DAT_000bbf08, (int)DAT_000bbf78, (void *)(DAT_000bbf0c + DAT_000bbf78 * 2));
+  if (g_opts.debug_babl) fprintf(stderr, "[babl] call builtin idx=%d stack_depth(DAT_000bbf78)=%d arg_slot=%p\n", (int)DAT_000bbf08, (int)DAT_000bbf78, (void *)(DAT_000bbf0c + DAT_000bbf78 * 2));
   uVar1 = (**(babl_builtin_fn *)(DAT_000bbf00 + DAT_000bbf08 * 8))((void *)(DAT_000bbf0c + DAT_000bbf78 * 2)); // was `* 4` -- DAT_000bbf00's own comment (uw.c ~11468)
   *(undefined2 *)(DAT_000bbf0c + DAT_000bbf78 * 2) = uVar1;
   DAT_000bbf1c = *(undefined2 *)(DAT_000bbf0c + DAT_000bbf78 * 2);
@@ -5137,13 +5137,13 @@ void babl_op_say()
   iVar2 = (intptr_t)babl_expand_string_refs((char *)iVar1);
   DAT_000bbf78 = DAT_000bbf78 + -1;
   iVar4 = DAT_000bbf70;
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_op_say entry: looking for symbol \"%s\" text=\"%s\"\n", (char *)DAT_000845a8, (char *)iVar2);
+  if (g_opts.debug_babl) fprintf(stderr, "[babl] babl_op_say entry: looking for symbol \"%s\" text=\"%s\"\n", (char *)DAT_000845a8, (char *)iVar2);
   do {
     /* Same DAT_000bbf70-uninitialized guard as babl_register_builtin's own
        comment (uw.c ~12260) -- every reader of this babl-symbol table
        shares the same crash when no conversation record was loaded. */
     if (iVar4 == 0 || *(short *)(iVar4 + 0x18) == 0) {
-      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_op_say: NO symbol match, text discarded\n");
+      if (g_opts.debug_babl) fprintf(stderr, "[babl] babl_op_say: NO symbol match, text discarded\n");
 LAB_0001ace8:
       if (iVar2 != iVar1) {
         babl_free((void *)(intptr_t)(iVar2));
@@ -5152,7 +5152,7 @@ LAB_0001ace8:
     }
     iVar3 = ce_strcmp(DAT_000845a8,(const char *)(intptr_t)(iVar4));
     if (iVar3 == 0) {
-      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_op_say: matched symbol \"%s\", calling its bound fn idx=%d\n", (char *)iVar4, (int)*(short *)(iVar4 + 0x1a));
+      if (g_opts.debug_babl) fprintf(stderr, "[babl] babl_op_say: matched symbol \"%s\", calling its bound fn idx=%d\n", (char *)iVar4, (int)*(short *)(iVar4 + 0x1a));
       (**(babl_builtin_fn *)(DAT_000bbf00 + *(short *)(iVar4 + 0x1a) * 8))((void *)iVar2); // was `* 4` -- DAT_000bbf00's own comment (uw.c ~11468)
       goto LAB_0001ace8;
     }
@@ -5180,12 +5180,12 @@ void babl_op_respond()
   iVar2 = (intptr_t)babl_expand_string_refs((char *)iVar1);
   DAT_000bbf78 = DAT_000bbf78 + -1;
   iVar4 = DAT_000bbf70;
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_op_respond entry: looking for symbol \"respond\" text=\"%s\"\n", (char *)iVar2);
+  if (g_opts.debug_babl) fprintf(stderr, "[babl] babl_op_respond entry: looking for symbol \"respond\" text=\"%s\"\n", (char *)iVar2);
   do {
     /* Same DAT_000bbf70-uninitialized guard as babl_register_builtin's own
        comment (uw.c ~12260). */
     if (iVar4 == 0 || *(short *)(iVar4 + 0x18) == 0) {
-      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_op_respond: NO symbol match, text discarded\n");
+      if (g_opts.debug_babl) fprintf(stderr, "[babl] babl_op_respond: NO symbol match, text discarded\n");
 LAB_0001ad98:
       if (iVar2 != iVar1) {
         babl_free((void *)(intptr_t)(iVar2));
@@ -5194,7 +5194,7 @@ LAB_0001ad98:
     }
     iVar3 = ce_strcmp(s_respond_000845ac,(const char *)(intptr_t)(iVar4));
     if (iVar3 == 0) {
-      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_op_respond: matched symbol \"%s\", calling its bound fn idx=%d\n", (char *)iVar4, (int)*(short *)(iVar4 + 0x1a));
+      if (g_opts.debug_babl) fprintf(stderr, "[babl] babl_op_respond: matched symbol \"%s\", calling its bound fn idx=%d\n", (char *)iVar4, (int)*(short *)(iVar4 + 0x1a));
       (**(babl_builtin_fn *)(DAT_000bbf00 + *(short *)(iVar4 + 0x1a) * 8))((void *)iVar2); // was `* 4` -- DAT_000bbf00's own comment (uw.c ~11468)
       goto LAB_0001ad98;
     }

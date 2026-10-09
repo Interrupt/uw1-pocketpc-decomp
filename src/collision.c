@@ -2,6 +2,7 @@
    the height envelope query used by movement/pathing. Split out of uw.c (the original monolithic
    decompile) once these functions' real roles were confirmed. */
 #include "headers/collision.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -93,7 +94,7 @@ bool collision_corner_flags(uint step_limit)
   sampled_height = collision_sample_floor_height(4,&sample_blocked);
   *(undefined1 *)(DAT_00202c6c + 0x10) = sampled_height;
   sampled_height_wide = (uint)*(byte *)(DAT_00202c6c + 0x10);
-  if (getenv("UW_DEBUG_RAMP"))
+  if (g_opts.debug_ramp)
     fprintf(stderr, "[ramp-corner-flags] DAT_00202c78=0x%x shape=%d sampled_height_wide(sampled)=%d off4=%d step_limit(steplim)=%d\n",
             (unsigned)DAT_00202c78, (int)(DAT_00202c78 & 0xf), (int)sampled_height_wide,
             (int)*(short *)(DAT_00202c6c + 4), (int)step_limit);
@@ -181,7 +182,7 @@ void collision_build_height_field(uint step_limit)
   DAT_00202c6c[0xe] = (byte)*(undefined2 *)flags_ptr;
   DAT_00202c6c[0xf] = (byte)((ushort)*(undefined2 *)flags_ptr >> 8);
   DAT_00202c6c[0x11] = DAT_00202c6c[0x10];
-  if (getenv("UW_DEBUG_RAMP"))
+  if (g_opts.debug_ramp)
     fprintf(stderr, "[ramp-inside-bhf] after-copy d8=%d d9=%d tile_word(DAT_00202c6c[8])=%d\n",
             (int)DAT_00202c6c[0x10], (int)DAT_00202c6c[0x11], (int)(uint)(ushort)DAT_00202c6c[8]);
   tile_ptr = _DAT_00202c34;
@@ -281,7 +282,7 @@ void collision_build_height_field(uint step_limit)
       corner = (corner + 1) * 0x1000000 >> 0x18;
     } while (corner < 4);
   }
-  if (getenv("UW_DEBUG_RAMP"))
+  if (g_opts.debug_ramp)
     fprintf(stderr, "[ramp-bhf-end] d8=%d d9=%d macro_d8=%d macro_d9=%d\n",
             (int)DAT_00202c6c[0x10], (int)DAT_00202c6c[0x11],
             (int)DAT_002049d8, (int)DAT_002049d9);
@@ -736,12 +737,12 @@ int check_object_placement_clearance(short catalog_type, short ignore_slot, shor
     local_3c = position_x;
     local_3a = position_y;
     local_32 = ignore_slot;
-    if (getenv("UW_DEBUG_STEPHEIGHT"))
+    if (g_opts.debug_stepheight)
       fprintf(stderr, "[fa0-params] p1=%d p2=%d p3=%d p4=%d p5=%u p6=%d p7=%u local33=%d local34=%d\n",
               (int)catalog_type, (int)ignore_slot, (int)(short)position_x, (int)(short)position_y,
               (unsigned)height, (int)check_mode, (unsigned)step_limit, (int)local_33, (int)local_34);
     collision_build_height_field(uVar8);
-    if (getenv("UW_DEBUG_STEPHEIGHT")) {
+    if (g_opts.debug_stepheight) {
       int _i;
       fprintf(stderr, "[fa0-struct]");
       for (_i = 0; _i < 0x14; _i++) fprintf(stderr, " [%x]=%d", _i, (int)(unsigned char)DAT_00202c6c[_i]);
@@ -749,7 +750,7 @@ int check_object_placement_clearance(short catalog_type, short ignore_slot, shor
     }
     /* HACK: every offset below this point (0xc, 0xe, 0x10, 0x14, 0x15, 0x16) was wrong --
        DAT_00202c6c is a real `byte *`... */
-    if (getenv("UW_DEBUG_DOOR"))
+    if (g_opts.debug_door)
       fprintf(stderr, "[fa0-check] off0xc_0xe=0x%x off0x14=%d ignore_slot(slot)=%d\n",
               (unsigned)(*(ushort *)(DAT_00202c6c + 0xc) | *(ushort *)(DAT_00202c6c + 0xe)),
               (int)(unsigned char)DAT_00202c6c[0x14], (int)ignore_slot);
@@ -758,7 +759,7 @@ int check_object_placement_clearance(short catalog_type, short ignore_slot, shor
       if ((int)(uVar8 + (int)*(short *)(DAT_00202c6c + 4)) < (int)(uint)bVar1) {
         bVar1 = *(byte *)(DAT_00202c6c + 0x10);
       }
-      if (getenv("UW_DEBUG_STEPHEIGHT"))
+      if (g_opts.debug_stepheight)
         fprintf(stderr, "[stepheight] uVar8=%u c6c4=%d c6c10=%d c6c11=%d c6c0xc=%d -> DAT_00202c30=%d cur_z=%d\n",
                 uVar8, (int)*(short *)(DAT_00202c6c + 4), (int)*(byte *)(DAT_00202c6c + 0x10),
                 (int)*(byte *)(DAT_00202c6c + 0x11), (int)*(short *)(DAT_00202c6c + 0xc),
@@ -779,7 +780,7 @@ int check_object_placement_clearance(short catalog_type, short ignore_slot, shor
         uVar3 = 0;
       }
       collision_height_envelope(uVar3,1);
-      if (getenv("UW_DEBUG_DOOR"))
+      if (g_opts.debug_door)
         fprintf(stderr, "[fa0-check2] after collision_height_envelope: off0x14=%d off0x15=%d off0x16=%d uVar3(envelope_arg)=%d\n",
                 (int)(unsigned char)DAT_00202c6c[0x14], (int)(unsigned char)DAT_00202c6c[0x15],
                 (int)(unsigned char)DAT_00202c6c[0x16], (int)uVar3);

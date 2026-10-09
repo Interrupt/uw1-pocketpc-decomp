@@ -2,6 +2,7 @@
    close_door_object/open_door_object/toggle_door_object were originally
    FUN_0007c580/FUN_0007c708/FUN_0007c814... */
 #include "headers/doors.h"
+#include "headers/options.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -30,7 +31,7 @@ void close_door_object(void *actor_ptr, ushort *door)
   byte low_byte;
   undefined4 sound_id;
 
-  if (getenv("UW_DEBUG_DOOR"))
+  if (g_opts.debug_door)
     fprintf(stderr, "[door] close_door_object (close) called: obj0=0x%04x dirbit=%d openbits=%d quality_low4=%d\n",
             (unsigned)*door, (int)((*door & 0x1000) != 0), (int)((*door >> 9) & 7), (int)(door[3] & 0xf));
   if ((*door & 0x1ff) == 0x1cf) {
@@ -78,7 +79,7 @@ void open_door_object(void *door_ptr)
   ushort quality_word;
   undefined4 sound_id;
 
-  if (getenv("UW_DEBUG_DOOR"))
+  if (g_opts.debug_door)
     fprintf(stderr, "[door] open_door_object called: obj0=0x%04x already_1cf=%d quality_low4=%d\n",
             (unsigned)*door, (int)((*door & 0x1ff) == 0x1cf), (int)(door[3] & 0xf));
   if ((*door & 0x1ff) == 0x1cf) {
@@ -270,7 +271,7 @@ void schedule_door_open_animation(ushort *door)
      scheduler_tick's own `scheduler_finish_entry();` fix just above (see its comment).
      encode_object_slot_index's real signature takes the object pointer it encodes... */
   slot_index = encode_object_slot_index((char *)door);
-  if (getenv("UW_DEBUG_DOOR"))
+  if (g_opts.debug_door)
     fprintf(stderr, "[door] schedule_door_open_animation: obj0(before)=0x%04x obj0(after)=0x%04x quality(after)=%d uVar6(anim_type)=%d slot=%d ptr=%p tilefield16=0x%04x doortile_x=%d doortile_y=%d cur_a0=%d cur_a4=%d player_x=%d player_y=%d\n",
             (unsigned)original_word, (unsigned)updated_word, (int)(((byte)original_word ^ quality_low_byte) & 0x3f ^ quality_low_byte), (int)animation_type, (int)slot_index, (void *)door,
             (unsigned)*(ushort *)((char *)door + 0x16), (int)(*(ushort *)((char *)door + 0x16) >> 10),

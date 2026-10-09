@@ -2,6 +2,7 @@
    redraw. Split out of uw.c (the original monolithic decompile) once these functions' real roles
    were confirmed. */
 #include "headers/weapon_swing.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -73,7 +74,7 @@ void *weapon_swing_frame_alloc(unsigned int byte_count)
 // item's melee-weapon-stats byte 6, or 3 for empty-handed/fist)...
 void request_weapon_swing_graphic(char category)
 {
-  if (getenv("UW_DEBUG_COMBAT")) {
+  if (g_opts.debug_combat) {
     fprintf(stderr, "[weapon-gfx] request_weapon_swing_graphic(category=%d) DAT_000870dc(loaded)=%d\n", (int)category, (int)DAT_000870dc);
   }
   DAT_000870d8 = category;
@@ -102,7 +103,7 @@ byte load_weapon_swing_sprites()
   int iVar8;
   char acStack_118 [260];
   
-  if (getenv("UW_DEBUG_COMBAT")) {
+  if (g_opts.debug_combat) {
     fprintf(stderr, "[weapon-gfx] load_weapon_swing_sprites ENTRY: DAT_000870dc(loaded)=%d DAT_000870d8(requested)=%d\n",
             (int)DAT_000870dc, (int)DAT_000870d8);
   }
@@ -144,7 +145,7 @@ byte load_weapon_swing_sprites()
       bVar2 = 0;
     }
   }
-  if (getenv("UW_DEBUG_COMBAT")) {
+  if (g_opts.debug_combat) {
     fprintf(stderr, "[weapon-gfx] load_weapon_swing_sprites RESULT: bVar2=%d\n", (int)bVar2);
   }
   return bVar2;
@@ -192,7 +193,7 @@ void weapon_swing_draw_tick()
        literal recompile" idiom as every other dropped-argument bug in this file).
        decode_gr_entry_bitmap needs the raw entry buffer just resolved above; without it... */
     uVar2 = (g_weapon_swing_current_frame == 0) ? 0 : decode_gr_entry_bitmap(g_weapon_swing_current_frame);
-    if (getenv("UW_DEBUG_COMBAT")) {
+    if (g_opts.debug_combat) {
       fprintf(stderr, "[wswing] DAT_0023c130=%d DAT_000870e4=%d sVar1=%d frame=%p drawn=%d\n",
               (int)DAT_0023c130, (int)DAT_000870e4, (int)sVar1, (void *)g_weapon_swing_current_frame,
               uVar2 != 0);
@@ -202,7 +203,7 @@ void weapon_swing_draw_tick()
                    0x83 - (uint)(byte)(&g_weapon_swing_frame_y_offset)[sVar1],uVar2,*(undefined1 *)(g_weapon_swing_current_frame + 2),
                    *(undefined1 *)(g_weapon_swing_current_frame + 1),0,0,1);
     }
-  } else if (getenv("UW_DEBUG_COMBAT")) {
+  } else if (g_opts.debug_combat) {
     fprintf(stderr, "[wswing] SKIPPED: DAT_0023c130=%d DAT_000870e4=%d DAT_000870dc=%d g_weapon_overlay_enabled=%d\n",
             (int)DAT_0023c130, (int)DAT_000870e4, (int)DAT_000870dc, (int)g_weapon_overlay_enabled);
   }
@@ -561,7 +562,7 @@ void tick_weapon_swing_state(short attack_direction)
   bVar2 = true;
 LAB_00027754:
   pRecord = DAT_001005e4;
-  if (getenv("UW_DEBUG_COMBAT") && (attack_direction != 0 || DAT_000870e4 != -1 || DAT_0010062c != 0)) {
+  if (g_opts.debug_combat && (attack_direction != 0 || DAT_000870e4 != -1 || DAT_0010062c != 0)) {
     fprintf(stderr, "[swing] attack_direction=%d flags5f=0x%x DAT_000870e4=%d DAT_0010062c=%d bVar2=%d pRecord=%p DAT_00100618=%d DAT_001005ec=%u DAT_001005e8=%d\n",
             (int)attack_direction, (unsigned)*(byte *)(DAT_00086df8 + 0x5f), (int)DAT_000870e4,
             (int)DAT_0010062c, (int)bVar2, (void *)pRecord, (int)DAT_00100618, DAT_001005ec, (int)DAT_001005e8);

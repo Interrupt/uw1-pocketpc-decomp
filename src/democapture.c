@@ -1,6 +1,7 @@
 /* Records real (non-synthetic) input events to a demo-format file as they happen during a live
    session -- see democapture.h. */
 #include "headers/democapture.h"
+#include "headers/options.h"
 #include "headers/gx_stub.h"
 #include "headers/demomode.h"
 
@@ -28,13 +29,12 @@ static int env_is_boolean_truthy(const char *v) {
    -- case-insensitive -- all mean off; anything else, including the empty string from a bare
    `VAR=`, means on). */
 static int keep_running_requested(void) {
-    const char *v = getenv("UW_DEMO_KEEP_RUNNING");
-    return v && *v != '\0' && strcmp(v, "0") != 0 && strcasecmp(v, "false") != 0;
+    return g_opts.demo_keep_running;
 }
 
 void democapture_init(void) {
-    const char *rec = getenv("UW_RECORD_DEMOFILE");
-    const char *demo_file = getenv("UW_DEMO_FILE");
+    const char *rec = g_opts.record_demofile;
+    const char *demo_file = g_opts.demo_file;
 
     if (rec) {
         if (env_is_falsy(rec)) return;
@@ -50,9 +50,8 @@ void democapture_init(void) {
         path = rec;
     }
 
-    const char *delay_env = getenv("UW_RECORD_DELAY_MS");
-    if (delay_env) {
-        int v = atoi(delay_env);
+    if (UW_OPT_ISSET(g_opts.record_delay_ms)) {
+        int v = g_opts.record_delay_ms;
         if (v > 0) g_rec_delay_ms = v; /* overrides only the written DELAY line -- see top comment */
     }
 
@@ -111,7 +110,7 @@ static Uint32 g_rec_debug_start;
 void democapture_tick(void) {
     if (!g_rec_file) return;
     if (demomode_active()) return; /* see democapture_record_event's own comment */
-    if (getenv("UW_DEBUG_RECORDTICK")) {
+    if (g_opts.debug_recordtick) {
         if (g_rec_debug_start == 0) g_rec_debug_start = SDL_GetTicks();
         Uint32 elapsed = SDL_GetTicks() - g_rec_debug_start;
         fprintf(stderr, "[recordtick] idle_ticks=%d elapsed_ms=%u\n", g_rec_idle_ticks + 1, elapsed);

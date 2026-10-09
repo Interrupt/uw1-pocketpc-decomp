@@ -2,6 +2,7 @@
    the title/main menu loop. Split out of uw.c (the original monolithic decompile) once these
    functions' real roles were confirmed. */
 #include "headers/game.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 #include <stdarg.h>
 #include <stdio.h>
@@ -326,7 +327,7 @@ int app_main_loop(int instance, int prev_instance, int command_line, int show_co
         }
         {
           static unsigned int _dbg_t0 = 0, _dbg_t1 = 0;
-          int _dbg = getenv("UW_DEBUG_ITERSPLIT") != NULL;
+          int _dbg = g_opts.debug_itersplit;
           if (_dbg) _dbg_t0 = read_realtime_clock_units() * 4;
           iVar2 = PeekMessageW(auStack_40,0,0,0,1);
           if (iVar2 != 0) {
@@ -488,7 +489,7 @@ void main_menu_loop(int is_first_entry)
     }
     sVar3 = menu_button_list_navigate(uVar8,DAT_0023bf6c,0,uVar2);
     local_838 = (int)sVar3;
-    if (getenv("UW_DEBUG_TITLEMENU")) fprintf(stderr, "[titlemenu] uVar8=%d uVar2=%d navigate->%d\n", (int)uVar8, (int)uVar2, local_838);
+    if (g_opts.debug_titlemenu) fprintf(stderr, "[titlemenu] uVar8=%d uVar2=%d navigate->%d\n", (int)uVar8, (int)uVar2, local_838);
     if (local_838 == -1) {
       run_game_shutdown_sequence(0);
       terminate_process(1);
@@ -1173,7 +1174,7 @@ void draw_menu_item_list(short item_count, char *rects, char use_text, short sel
         *DAT_00084298 = uVar3;
         ppcVar5 = (char **)(rects + iVar4 * 8);
         pcVar_str = *ppcVar5;
-        if (getenv("UW_DEBUG_TITLEMENU"))
+        if (g_opts.debug_titlemenu)
           fprintf(stderr, "[titlemenu] draw_menu_item_list text branch: item=%d/%d ptr=%p str='%s'\n",
                   iVar4, (int)item_count, (void *)pcVar_str, pcVar_str ? pcVar_str : "(null)");
         while (sVar1 = measure_text_width(pcVar_str), 0x13e < sVar1) {
@@ -1332,7 +1333,7 @@ int menu_button_list_navigate(int item_count, void *rects_ptr, byte use_text, in
       advance_menu_music_track();
       animate_title_palette_cycle();
     }
-    if (getenv("UW_DEBUG_TITLEMENU")) fprintf(stderr, "[titlemenu] menu_button_list_navigate: raw event=0x%x selected=%d\n", (int)sVar2, (int)selected);
+    if (g_opts.debug_titlemenu) fprintf(stderr, "[titlemenu] menu_button_list_navigate: raw event=0x%x selected=%d\n", (int)sVar2, (int)selected);
     sVar1 = (short)item_count;
     iVar3 = selected;
     iVar5 = iVar4;
@@ -1744,8 +1745,7 @@ void debug_print_init()
 void debug_print(char *param_1, ...)
 
 {
-  const char *diag = getenv("UW_DEBUG_PRINT");
-  if ((param_1 != (char *)0x0) && (diag == (char *)0x0 || diag[0] != '0')) {
+  if ((param_1 != (char *)0x0) && g_opts.debug_print) {
     va_list ap;
     fprintf(stderr, "[dbg] ");
     va_start(ap, param_1);
@@ -2177,7 +2177,7 @@ void handle_game_view_click()
 {
   int iVar1;
   uint uVar2;
-  if (getenv("UW_DEBUG_COMBAT")) {
+  if (g_opts.debug_combat) {
     fprintf(stderr, "[combat] handle_game_view_click entry: mode=%d btnstate=0x%x\n",
             (int)*(short *)(DAT_00085a6c + 8), (unsigned)*(ushort *)(DAT_00085a6c + 6));
   }
@@ -2195,13 +2195,13 @@ void handle_game_view_click()
     if (g_interact_target == 0) {
       return;
     }
-    if (getenv("UW_DEBUG_DOOR"))
+    if (g_opts.debug_door)
       fprintf(stderr, "[door] handle_game_view_click -> interact_use\n");
     interact_use();
     return;
   }
   g_interact_target = 0;
-  if (getenv("UW_DEBUG_COMBAT")) {
+  if (g_opts.debug_combat) {
     fprintf(stderr, "[combat] handle_game_view_click past mode gate: DAT_00085a6c[6]=0x%x g_cursor_mode=%d g_cursor_holding_state=%d\n",
             (unsigned)*(ushort *)(DAT_00085a6c + 6), (int)g_cursor_mode, (int)g_cursor_holding_state);
   }
@@ -2217,7 +2217,7 @@ void handle_game_view_click()
     else {
       uVar2 = ((int)g_cursor_mode & 0xffU) - 1;
     }
-    if (getenv("UW_DEBUG_COMBAT")) {
+    if (g_opts.debug_combat) {
       fprintf(stderr, "[combat] uVar2=%u bit1=0x%x\n", uVar2, (unsigned)(*(ushort *)(DAT_00085a6c + 6) & 1));
     }
     /* Was `(g_cursor_mode == 0) ? 0 : uVar2` -- a forced index-0 override for the no-mode-selected
@@ -2237,7 +2237,7 @@ void handle_game_view_click()
         goto LAB_0003f584;
       }
     }
-    if (getenv("UW_DEBUG_DOOR"))
+    if (g_opts.debug_door)
       fprintf(stderr, "[door] handle_game_view_click: about to dispatch table[%u], btnstate=0x%x mode=%d\n",
               _dispatch & 0xff, (unsigned)*(ushort *)(DAT_00085a6c + 6), (int)*(short *)(DAT_00085a6c + 8));
     if ((_dispatch & 0xff) < 5 && PTR_FUN_000858c8_table[_dispatch & 0xff] != 0) {

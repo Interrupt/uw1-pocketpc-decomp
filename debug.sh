@@ -18,4 +18,4 @@ cmake --build build -j --target uw_asan
 # with "AddressSanitizer: detect_leaks is not supported on this
 # platform" before running anything). Not tuning out noise from known
 # benign leaks; ASan simply refuses to start otherwise here.
-UW_DATA_DIR="$(pwd)/data" UW_DEBUG_LEVEL=INFO ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=0}" ./build/uw_asan
+ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=0}" ./build/uw_asan --data-dir="$(pwd)/data" --debug-level=INFO "$@"

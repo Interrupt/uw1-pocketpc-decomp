@@ -2,6 +2,7 @@
    vectors, directional step, analog turn), mouse state, and click/event waiting. Split out of uw.c
    (the original monolithic decompile) once these functions' real roles were confirmed. */
 #include "headers/input.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -104,7 +105,7 @@ void set_locomotion_state(ushort collision_mask, int mode_flag)
   int iVar3;
   
   uVar1 = (uint)(short)collision_mask;
-  if (getenv("UW_DEBUG_LOCO"))
+  if (g_opts.debug_loco)
     fprintf(stderr, "[loco] collision_mask=0x%x mode_flag=%d DAT_00202084(old)=0x%x fallflag=%d vvel=%d\n",
             (unsigned)collision_mask, mode_flag, (unsigned)DAT_00202084,
             (int)g_fall_accel, (int)g_vertical_velocity);
@@ -140,7 +141,7 @@ void set_locomotion_state(ushort collision_mask, int mode_flag)
       iVar3 = apply_swim_wade_pose(collision_mask);
       uVar2 = 1;
     }
-    if (getenv("UW_DEBUG_LOCO"))
+    if (g_opts.debug_loco)
       fprintf(stderr, "[loco] -> uVar2(anim mode)=%d iVar3=%d DAT_0020208c=0x%x\n",
               (int)uVar2, iVar3, (unsigned)DAT_0020208c);
     apply_movement_mode_profile(uVar2);
@@ -512,9 +513,9 @@ void poll_input_bindings(void *input_state_ptr)
   short local_28;
   short local_26;
 
-  if (getenv("UW_DEBUG_AUTOMAP_CURSOR")) fprintf(stderr, "[automap-cursor] poll_input_bindings ENTRY DAT_00201b60=%d\n", (int)DAT_00201b60);
+  if (g_opts.debug_automap_cursor) fprintf(stderr, "[automap-cursor] poll_input_bindings ENTRY DAT_00201b60=%d\n", (int)DAT_00201b60);
   uVar1 = peek_input_event();
-  if (getenv("UW_DEBUG_AUTOMAP_CURSOR")) fprintf(stderr, "[automap-cursor] poll_input_bindings: peek_input_event=%d\n", (int)(short)uVar1);
+  if (g_opts.debug_automap_cursor) fprintf(stderr, "[automap-cursor] poll_input_bindings: peek_input_event=%d\n", (int)(short)uVar1);
   if (-1 < (short)uVar1) {
     if ((short)uVar1 < 4) {
       get_click_position(&local_28,&local_26);
@@ -530,12 +531,12 @@ void poll_input_bindings(void *input_state_ptr)
       input_state[5] = 0;
       iVar4 = DAT_00202898 + -1;
       iVar3 = iVar4 * 0x10000 >> 0x10;
-      if (getenv("UW_DEBUG_CLICKREGION"))
+      if (g_opts.debug_clickregion)
         fprintf(stderr, "[clickregion] click at (%d,%d), scanning %d regions\n", (int)local_28, (int)local_26, (int)DAT_00202898);
       if (-1 < iVar3) {
         do {
           pcVar2 = (char *)DAT_00202890 + iVar3 * 0x12;
-          if (getenv("UW_DEBUG_CLICKREGION"))
+          if (g_opts.debug_clickregion)
             fprintf(stderr, "[clickregion]   region %d: x1=%d y2=%d x2=%d y1=%d mask=0x%x active_mask=0x%x handler_flag=%d\n",
                     (int)iVar3, (int)*(short *)(pcVar2 + 6), (int)*(short *)(pcVar2 + 4),
                     (int)*(short *)(pcVar2 + 2), (int)*(short *)(pcVar2 + 8),
@@ -555,7 +556,7 @@ void poll_input_bindings(void *input_state_ptr)
               iVar4 = (int)*(short *)((char *)DAT_00202890 + iVar3 + 8) - (int)local_26;
               input_state[2] = (char)iVar4;
               input_state[3] = (char)((uint)iVar4 >> 8);
-              if (getenv("UW_DEBUG_CLICKREGION"))
+              if (g_opts.debug_clickregion)
                 fprintf(stderr, "[clickregion]   MATCHED region %d -> handler=%p local_offset=(%d,%d)\n",
                         _cri, (void *)(_cri < 128 ? g_click_region_handler[_cri] : 0),
                         (int)(char)*input_state, (int)(char)input_state[2]);
@@ -1003,7 +1004,7 @@ int handle_keyboard_message(int window, int message, uint wparam)
     return 0;
   }
   uVar1 = (ushort)wparam;
-  if (getenv("UW_DEBUG_INPUTEVENT"))
+  if (g_opts.debug_inputevent)
     fprintf(stderr, "[keymsg] msg=0x%x wparam=0x%x DAT_0023c448_before=0x%x\n", (unsigned int)message, (unsigned int)wparam, (unsigned int)DAT_0023c448);
   if (message != 0x100) {
     if (message == 0x101) {
@@ -1132,7 +1133,7 @@ int handle_mouse_message(int window, uint message, uint wparam, int lparam)
       }
     }
     else {
-      if (getenv("UW_DEBUG_CURSORCLICK")) {
+      if (g_opts.debug_cursorclick) {
         fprintf(stderr, "[cursorclick] WM_LBUTTONDOWN before DAT_00204844=%d selected=%p holdstate=%d\n",
                 (int)DAT_00204844, (void *)g_selected_object, (int)g_cursor_holding_state);
       }
@@ -1150,7 +1151,7 @@ int handle_mouse_message(int window, uint message, uint wparam, int lparam)
     /* An EARLIER attempt at this exact fix (erase before clearing DAT_00204844) was reverted as "no
        measurable effect" -- that test apparently didn't hit the actual failure window. */
     erase_cursor_icon();
-    if (getenv("UW_DEBUG_CURSORCLICK")) {
+    if (g_opts.debug_cursorclick) {
       fprintf(stderr, "[cursorclick] WM_LBUTTONUP before DAT_00204844=%d selected=%p mouse=(%d,%d)\n",
               (int)DAT_00204844, (void *)g_selected_object, (int)g_mouse_x, (int)g_mouse_y);
     }
@@ -1310,11 +1311,11 @@ uint poll_input_event(int peek_only)
     DAT_0023c448 = 0;
   }
   iVar1 = PeekMessageW(auStack_24,0,0,0,1);
-  if (getenv("UW_DEBUG_AUTOMAP_CURSOR")) fprintf(stderr, "[automap-cursor] poll_input_event: PeekMessageW=%d DAT_0023c448=0x%x\n", iVar1, (unsigned)DAT_0023c448);
-  if (getenv("UW_DEBUG_DOOR"))
+  if (g_opts.debug_automap_cursor) fprintf(stderr, "[automap-cursor] poll_input_event: PeekMessageW=%d DAT_0023c448=0x%x\n", iVar1, (unsigned)DAT_0023c448);
+  if (g_opts.debug_door)
     fprintf(stderr, "[door] poll_input_event(peek=%d): new_os_event(iVar1)=%d DAT_0023c448(before)=0x%x\n",
             peek_only, iVar1, (unsigned)DAT_0023c448);
-  if (getenv("UW_DEBUG_INPUTEVENT2")) fprintf(stderr, "[inputevent2] poll_input_event(%d): PeekMessageW=%d DAT_00201b60=%d DAT_002506ab=%d\n", peek_only, iVar1, (int)(short)DAT_00201b60, (int)DAT_002506ab);
+  if (g_opts.debug_inputevent2) fprintf(stderr, "[inputevent2] poll_input_event(%d): PeekMessageW=%d DAT_00201b60=%d DAT_002506ab=%d\n", peek_only, iVar1, (int)(short)DAT_00201b60, (int)DAT_002506ab);
   if (iVar1 == 0) {
     uVar2 = 0xffffffff;
   }
@@ -1322,14 +1323,14 @@ uint poll_input_event(int peek_only)
     TranslateMessage(auStack_24);
     DispatchMessageW(auStack_24);
     uVar2 = (uint)DAT_0023c448;
-    if (getenv("UW_DEBUG_INPUTEVENT"))
+    if (g_opts.debug_inputevent)
       fprintf(stderr, "[inputevent] DAT_0023c448=0x%x\n", (unsigned int)DAT_0023c448);
     if (uVar2 == 0) {
       uVar2 = poll_mouse_event();
-      if (getenv("UW_DEBUG_DOOR"))
+      if (g_opts.debug_door)
         fprintf(stderr, "[door] poll_input_event: fell through to poll_mouse_event() = %u\n", uVar2);
     }
-    if (getenv("UW_DEBUG_DOOR"))
+    if (g_opts.debug_door)
       fprintf(stderr, "[door] poll_input_event: resolved event code uVar2=%u (0x%x)\n", uVar2, uVar2);
   }
   return uVar2;
@@ -1399,7 +1400,7 @@ int begin_directional_move(short direction)
 #define local_33 (*(undefined1 *)(local_24 + 7))
 #define local_32 (*(undefined2 *)(local_24 + 8))
   
-  if (getenv("UW_DEBUG_STEPHEIGHT"))
+  if (g_opts.debug_stepheight)
     fprintf(stderr, "[bdm-entry] direction=%d g_fall_accel=%d g_jump_ascent_timer=%d DAT_00085890=%d z=%d guard=%d\n",
             (int)direction, (int)g_fall_accel, (int)g_jump_ascent_timer, (int)DAT_00085890, (int)DAT_00204884,
             (g_fall_accel == 0) && (g_jump_ascent_timer < DAT_00085890));
@@ -1454,7 +1455,7 @@ LAB_0003c940:
       uVar6 = DAT_00204882 & 0xe0;
       uVar3 = g_player_object->hdr.position_word & 0xe3ff;
       g_player_object->hdr.ypos = (uVar6 >> 5) & 7;
-      if (getenv("UW_DEBUG_STEPHEIGHT"))
+      if (g_opts.debug_stepheight)
         fprintf(stderr, "[stepsnap] uVar10=%u uVar5=%u cur_z=%d DAT_00202c30=%d snap=%d\n",
                 uVar10, uVar5, (int)DAT_00204884, (int)DAT_00202c30,
                 (((uVar10 == 0) && (uVar5 == 0)) || (((int)DAT_00204884 >> 3) + -8 <= (int)DAT_00202c30)));
@@ -1538,7 +1539,7 @@ LAB_0003c920:
 LAB_0003cdf8:
     uVar4 = 0;
   }
-  if (getenv("UW_DEBUG_STEPHEIGHT"))
+  if (g_opts.debug_stepheight)
     fprintf(stderr, "[bdm-exit] moved=%d z=%d g_fall_accel=%d bea8=%d be98=%d\n",
             (int)uVar4, (int)DAT_00204884, (int)g_fall_accel, (int)DAT_0023bea8, (int)DAT_0023be98);
   return uVar4;
@@ -1711,7 +1712,7 @@ int poll_mouse_event()
 {
   short sVar1;
 
-  if (getenv("UW_DEBUG_AUTOMAP_CURSOR")) fprintf(stderr, "[automap-cursor] poll_mouse_event ENTRY\n");
+  if (g_opts.debug_automap_cursor) fprintf(stderr, "[automap-cursor] poll_mouse_event ENTRY\n");
   update_mouse_state();
   if (DAT_00086968 == -1) {
     DAT_0020484c = 0;

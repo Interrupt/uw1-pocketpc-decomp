@@ -1,5 +1,6 @@
 /* See debug.h. */
 #include "headers/debug.h"
+#include "headers/options.h"
 
 #include <dlfcn.h>
 #include <stdarg.h>
@@ -23,7 +24,7 @@ static const char *level_name(DebugLevel level) {
 
 static void read_min_level_once(void) {
     g_min_level_read = 1;
-    const char *env = getenv("UW_DEBUG_LEVEL");
+    const char *env = g_opts.debug_level;
     if (!env) return;
     if (strcasecmp(env, "TRACE") == 0) g_min_level = TRACE;
     else if (strcasecmp(env, "INFO") == 0) g_min_level = INFO;

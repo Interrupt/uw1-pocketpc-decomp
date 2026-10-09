@@ -2,6 +2,7 @@
    portrait, difficulty, name, confirm), its resource-loading setup, and the critical-section entry
    wrapper. */
 #include "headers/chargen.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 
 #define DAT_000fb860 DAT_000fb860_backing[0]
@@ -570,7 +571,7 @@ void init_new_character_record(int mode)
   *(undefined1 *)(DAT_00086df8 + 0x66) = 0;
   *(undefined1 *)(DAT_00086df8 + 0x67) = 0;
   *(undefined1 *)(DAT_00086df8 + 0x68) = 0;
-  if (getenv("UW_DEBUG_FORCE_QUEST_TEST")) {
+  if (g_opts.debug_force_quest_test) {
     *(unsigned int *)(DAT_00086df8 + 0x65) = 0x12345678;
     fprintf(stderr, "[quest-persist] forced test quest_bits=0x%x at new-game init\n", *(unsigned int *)(DAT_00086df8 + 0x65));
   }
@@ -1344,7 +1345,7 @@ LAB_00024dd4:
         sVar5 = field[5];
         uVar14 = CONCAT44(iVar7,(int)sVar5);
         if (iVar7 < sVar5) {
-          if (getenv("UW_DIAG_TEXT")) {
+          if (g_opts.diag_text) {
             fprintf(stderr, "[diagnav] key=0x%x uVar10(new)=%u uVar12(old)=%u itemcount=%d\n", uVar6, uVar10, uVar12, sVar5);
           }
           uVar14 = draw_chargen_field_options(field,uVar10 & 0xff,uVar12 & 0xff);

@@ -2,6 +2,7 @@
    walls/doors, edges) into the automap view. Split out of uw.c (the original monolithic decompile)
    once these functions' real roles were confirmed. */
 #include "headers/automap.h"
+#include "headers/options.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -688,9 +689,9 @@ void handle_automap_note_click()
   *DAT_00084298 = 0x2d;
   local_5e = *DAT_00085a6c;
   local_60 = 200 - DAT_00085a6c[1];
-  if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] handle_automap_note_click entry: local_5e=%d local_60=%d DAT_00085a6c[3]=%d\n", (int)local_5e, (int)local_60, (int)DAT_00085a6c[3]);
+  if (g_opts.debug_automap_note) fprintf(stderr, "[map-note] handle_automap_note_click entry: local_5e=%d local_60=%d DAT_00085a6c[3]=%d\n", (int)local_5e, (int)local_60, (int)DAT_00085a6c[3]);
   if (3 < DAT_00085a6c[3]) {
-    if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] handle_automap_note_click: early return (DAT_00085a6c[3] > 3)\n");
+    if (g_opts.debug_automap_note) fprintf(stderr, "[map-note] handle_automap_note_click: early return (DAT_00085a6c[3] > 3)\n");
     return;
   }
   wait_for_click_release(1);
@@ -724,7 +725,7 @@ LAB_000170bc:
     sVar2 = 0xff;
     change_game_mode(1);
   }
-  if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] handle_automap_note_click: branch sVar2=0x%x DAT_000bbef0(count)=%d\n", (unsigned)sVar2, (int)DAT_000bbef0);
+  if (g_opts.debug_automap_note) fprintf(stderr, "[map-note] handle_automap_note_click: branch sVar2=0x%x DAT_000bbef0(count)=%d\n", (unsigned)sVar2, (int)DAT_000bbef0);
   if (sVar2 == 0xfb) {
     if (0x62 < DAT_000ba9d0) goto LAB_0001764c;
     iVar10 = DAT_000ba9d0 + 1;
@@ -821,10 +822,10 @@ LAB_0001764c:
   return;
 LAB_000171a4:
   sVar2 = poll_keyboard_char_input(&local_5a);
-  if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] key-poll: poll_keyboard_char_input returned %d local_5a=%d\n", (int)sVar2, (int)local_5a);
+  if (g_opts.debug_automap_note) fprintf(stderr, "[map-note] key-poll: poll_keyboard_char_input returned %d local_5a=%d\n", (int)sVar2, (int)local_5a);
   if (0 < sVar2) {
 LAB_000171d0:
-    if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] key-loop: sVar2=%d local_58=\"%s\"\n", (int)sVar2, local_58);
+    if (g_opts.debug_automap_note) fprintf(stderr, "[map-note] key-loop: sVar2=%d local_58=\"%s\"\n", (int)sVar2, local_58);
     if (((sVar2 == 0xd) || (sVar2 == 0x1b)) || (sVar2 < 4)) goto LAB_0001739c;
     if ((sVar2 < 0x20) || (0x7a < sVar2)) {
       if (sVar2 == 8) {
@@ -878,7 +879,7 @@ LAB_000171d0:
 LAB_0001739c:
   g_text_input_active = 0;
   select_active_font(s_font5x6p_sys_0008430c);
-  if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] COMMIT: local_58=\"%s\" (empty=%d)\n", local_58, local_58[0]=='\0');
+  if (g_opts.debug_automap_note) fprintf(stderr, "[map-note] COMMIT: local_58=\"%s\" (empty=%d)\n", local_58, local_58[0]=='\0');
   if (local_58[0] != '\0') {
     DAT_000b99c4 = 1;
     pcVar5 = local_58;
@@ -888,7 +889,7 @@ LAB_0001739c:
       pcVar5 = pcVar5 + 1;
     } while (cVar1 != '\0');
     DAT_000bbef0 = DAT_000bbef0 + 1;
-    if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] COMMIT: stored, new count=%d\n", (int)DAT_000bbef0);
+    if (g_opts.debug_automap_note) fprintf(stderr, "[map-note] COMMIT: stored, new count=%d\n", (int)DAT_000bbef0);
   }
   flush_dirty_rect_to_display(1);
 LAB_00017404:
@@ -1057,7 +1058,7 @@ int debug_noop_overflow_hook(int limit, int word_count)
    record. */
 byte automap_reveal_byte(byte *tile_rec)
 {
-  if (getenv("UW_DEBUG_AUTOMAP_REVEAL")) {
+  if (g_opts.debug_automap_reveal) {
     intptr_t idx = (tile_rec - (byte *)DAT_002029cc) / 4;
     ushort *pp = (ushort *)g_player_object;
     fprintf(stderr, "[automap-reveal] tile_rec=%p idx=%ld tile=(%ld,%ld) player_tile=(%u,%u) heading=0x%x\n",

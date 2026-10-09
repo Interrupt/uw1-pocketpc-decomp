@@ -8,6 +8,7 @@
  * functions declared in platform_music.h and nothing else.
  */
 #include "headers/platform_music.h"
+#include "headers/options.h"
 #include "headers/audio.h"
 #include "headers/debug.h"
 #include "headers/file_io.h"
@@ -97,7 +98,7 @@ static void uwmod_audio_callback(void *userdata, Uint8 *stream, int len)
    * actually being produced -- same ad-hoc getenv()-gated tracing
    * convention used throughout this codebase (see e.g. 3d.c's
    * UW_DEBUG_RASTER). */
-  if (getenv("UW_DEBUG_AUDIO")) {
+  if (g_opts.debug_audio) {
     short *samples = (short *)stream;
     int n = len / 2;
     int nonzero = 0;

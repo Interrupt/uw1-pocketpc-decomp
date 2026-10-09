@@ -1,4 +1,5 @@
 #include "headers/ordinal_stubs.h"
+#include "headers/options.h"
 #include "headers/file_io.h"
 #include "headers/debug.h"
 #include <ctype.h>
@@ -354,7 +355,7 @@ long Sleep(unsigned int ms)
        automated/demo-driven test runs reach gameplay quickly. */
     static int fast = -1;
     if (fast < 0) {
-        fast = getenv("UW_FAST_SLEEP") != NULL;
+        fast = g_opts.fast_sleep;
     }
     if (fast) {
         SDL_PumpEvents();

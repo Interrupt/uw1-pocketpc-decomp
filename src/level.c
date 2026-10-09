@@ -2,6 +2,7 @@
    "enter dungeon view"/"load level" entry points. Split out of uw.c (the original monolithic
    decompile) once these functions' real roles were confirmed. */
 #include "headers/level.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -142,7 +143,7 @@ int load_level_object_table(byte *archive_handle, int level_number)
     /* Diagnostic (UW_DEBUG_BAG_TRACE): scan for a type-0x8f (rune bag) object's tile linkage
        IMMEDIATELY after the raw level block lands in the arena, before any other code
        (chargen-completion, HUD init, etc.) gets a chance to touch it... */
-    if (getenv("UW_DEBUG_BAG_TRACE")) {
+    if (g_opts.debug_bag_trace) {
       int _found = 0;
       for (int _i = 0x100; _i < 0x100 + 1064; _i++) {
         unsigned char *_rec = (unsigned char *)DAT_002046c4 + (_i - 0x100) * 8;

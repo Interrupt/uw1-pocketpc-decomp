@@ -2,6 +2,7 @@
    resolution, and the reticle object pick. Split out of uw.c (the original monolithic decompile)
    once these functions' real roles were confirmed. */
 #include "headers/movement.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -334,7 +335,7 @@ void reticle_object_pick(int mode)
     }
     else {
       _DAT_0008699b = (ushort)DAT_002049d9;
-      if (getenv("UW_DEBUG_WALL"))
+      if (g_opts.debug_wall)
         fprintf(stderr, "[reticle-falling] DAT_002049d9=%d DAT_002049de=%d DAT_002049dc=%d foot_z=%d vvel=%d\n",
                 (int)DAT_002049d9, (int)(char)DAT_002049de, (int)DAT_002049dc,
                 (int)*(short *)((char *)g_sweep_foot_pos + 4), (int)*(short *)(DAT_00204874 + 10));
@@ -415,7 +416,7 @@ int movement_sweep_setup(int is_initial, int use_remaining)
   short local_20;
   short local_1e;
   
-  if (getenv("UW_DEBUG_WALL"))
+  if (g_opts.debug_wall)
     fprintf(stderr, "[sweepsetup-wall] off0c=%d off0e=%d off14=%d off12(speed)=%d x_before=%d y_before=%d\n",
             (int)*(short *)(DAT_00204874 + 0xc), (int)*(short *)(DAT_00204874 + 0xe),
             (int)*(short *)(DAT_00204874 + 0x14), (int)*(short *)(DAT_00204874 + 0x12),
@@ -431,14 +432,14 @@ int movement_sweep_setup(int is_initial, int use_remaining)
   g_sweep_velocity[1] =
        g_sweep_velocity[1] + *(short *)(DAT_00204874 + 0x12) * *(short *)(DAT_00204874 + 0xe);
   psVar11 = g_sweep_velocity;
-  if (getenv("UW_DEBUG_STEPHEIGHT"))
+  if (g_opts.debug_stepheight)
     fprintf(stderr, "[sweepsetup] speed(0x12)=%d fallflag(0x10)=%d vvel_before=%d -> delta=%d\n",
             (int)*(short *)(DAT_00204874 + 0x12), (int)*(short *)(DAT_00204874 + 0x10),
             (int)g_sweep_velocity[2],
             (int)(*(short *)(DAT_00204874 + 0x12) * *(short *)(DAT_00204874 + 0x10)));
   g_sweep_velocity[2] =
        g_sweep_velocity[2] + *(short *)(DAT_00204874 + 0x12) * *(short *)(DAT_00204874 + 0x10);
-  if (getenv("UW_DEBUG_NPC_SPEED"))
+  if (g_opts.debug_npc_speed)
     fprintf(stderr, "[npc-velocity] obj=%p speed(0x14)=%d local_20=%d local_1e=%d dir(0xc,0xe,0x10)=(%d,%d,%d) speed2(0x12)=%d -> vel=(%d,%d,%d)\n",
             (void *)DAT_00204874, (int)*(short *)(DAT_00204874 + 0x14), (int)local_20, (int)local_1e,
             (int)*(short *)(DAT_00204874 + 0xc), (int)*(short *)(DAT_00204874 + 0xe), (int)*(short *)(DAT_00204874 + 0x10),
@@ -609,7 +610,7 @@ void sweep_writeback_position()
        (short)(g_sweep_foot_pos[1] * 0x20 + (((int)DAT_00086982 << 0x10) >> 0x18));
   *(short *)(DAT_00204874 + 4) =
        (short)(g_sweep_foot_pos[2] * 8 + (((int)DAT_00086984 << 0x10) >> 0x18));
-  if (getenv("UW_DEBUG_JUMP"))
+  if (g_opts.debug_jump)
     fprintf(stderr, "[writeback] z_after_commit=%d sweep_z=%d d49d4=0x%x d49d8=%d d49d2=%d byte5=%d fallflag=%d vvel=%d\n",
             (int)*(short *)(DAT_00204874 + 4), (int)g_sweep_foot_pos[2], (unsigned)DAT_002049d4,
             (int)DAT_002049d8, (int)DAT_002049d2, (int)*(char *)(DAT_00204874 + 5),
@@ -623,7 +624,7 @@ void sweep_writeback_position()
        tile X and Y as halfwords; Ghidra rendered the args as X's two bytes
        and stored the result's low byte to +2 (Y-low) instead of +4. */
     uVar2 = compute_floor_height_at_position(*(short *)(DAT_00204874 + 0),*(short *)(DAT_00204874 + 2));
-    if (getenv("UW_DEBUG_JUMP"))
+    if (g_opts.debug_jump)
       fprintf(stderr, "[writeback] *** RE-SNAP FIRED *** new_z=%d\n", (int)(short)uVar2);
     *(short *)(DAT_00204874 + 4) = (short)uVar2;
   }
@@ -826,10 +827,10 @@ void sweep_slide_along_wall(int attempt)
   int iVar1;
   ushort uVar2;
 
-  if (getenv("UW_DEBUG_WALL"))
+  if (g_opts.debug_wall)
     fprintf(stderr, "[wall-slide] enter attempt=%d DAT_002049bc=%d\n", attempt, (int)DAT_002049bc);
   if ('\0' < DAT_002049bc) {
-    if (getenv("UW_DEBUG_WALL"))
+    if (g_opts.debug_wall)
       fprintf(stderr, "[wall-slide] -> already-slid guard, revert+end sweep\n");
     sweep_step(0xffffffff);
     DAT_00086996 = DAT_00086990 + 1;
@@ -837,22 +838,22 @@ void sweep_slide_along_wall(int attempt)
   }
   if (attempt != 0) {
     resolve_wall_slide_corner();
-    if (getenv("UW_DEBUG_WALL"))
+    if (g_opts.debug_wall)
       fprintf(stderr, "[wall-slide] after resolve_wall_slide_corner: DAT_002049da=%d DAT_0008698c=%d\n",
               (int)DAT_002049da, (int)DAT_0008698c);
     uVar2 = (ushort)DAT_002049da;
     if (DAT_002049da != 9) goto LAB_00059be4;
-  } else if (getenv("UW_DEBUG_WALL")) {
+  } else if (g_opts.debug_wall) {
     fprintf(stderr, "[wall-slide] attempt==0 path, DAT_0008698c=%d\n", (int)DAT_0008698c);
   }
   uVar2 = DAT_0008698c << 1;
 LAB_00059be4:
   sweep_step(0xffffffff);
-  if (getenv("UW_DEBUG_WALL"))
+  if (g_opts.debug_wall)
     fprintf(stderr, "[wall-slide] uVar2=%d candidate_heading=%d DAT_002049ce(cur_heading)=%d\n",
             (int)uVar2, (int)*(short *)(&DAT_000869a8 + (short)uVar2 * 2), (int)DAT_002049ce);
   iVar1 = sweep_deflect_heading(*(undefined2 *)(&DAT_000869a8 + (short)uVar2 * 2));
-  if (getenv("UW_DEBUG_WALL"))
+  if (g_opts.debug_wall)
     fprintf(stderr, "[wall-slide] sweep_deflect_heading returned %d\n", iVar1);
   if (iVar1 == 0) {
     DAT_00086996 = DAT_00086990 + 1;
@@ -954,13 +955,12 @@ void sweep_land_on_surface()
   // That restores what the original ARM code saw, since the original never
   // zeroed it: the workaround is this port's own addition.
   short landing_velocity = *(short *)((char *)DAT_00204874 + 10);
-// HACK: The player-only landing workaround is enabled by default; UW_PLAYER_NO_BOUNCE=0 disables
+// HACK: The player-only landing workaround is enabled by default; --player-no-bounce=0 disables
 // it. It is absent from the original ARM code. Clear downward velocity, gravity, and airborne state
 // before restitution so the player stops on landing. Mobile items retain their normal bounce.
   {
-    const char *player_no_bounce = getenv("UW_PLAYER_NO_BOUNCE");
     if ((puVar7 == g_player_object) && (*(short *)(DAT_00204874 + 10) < 0) &&
-        ((player_no_bounce == NULL) || (atoi(player_no_bounce) != 0))) {
+        g_opts.player_no_bounce) {
       *(short *)(DAT_00204874 + 10) = 0;
       *(short *)(DAT_00204874 + 0x10) = 0;
       if (*(byte *)(DAT_00204874 + 0x28) == 0x10) {
@@ -1131,7 +1131,7 @@ int sweep_step_vertical(int unused, short step)
     sVar4 = (short)((int)uVar5 >> 0xb);
   }
   DAT_00086984 = (ushort)(uVar3 * 0x10000 >> 0x10) & 0x7ff;
-  if (getenv("UW_DEBUG_JUMP2"))
+  if (g_opts.debug_jump2)
     fprintf(stderr, "[jump-vert] dat8698a=%d rate(869a1)=%d iVar6=%d uVar3=%u sVar4=%d frac(86984)=%u foot_z_before=%d\n",
             (int)DAT_0008698a, (int)_DAT_000869a1, iVar6, uVar3, (int)sVar4,
             (unsigned)DAT_00086984, (int)*(short *)((char *)g_sweep_foot_pos + 4));
@@ -1224,7 +1224,7 @@ void sweep_apply_collision()
   
   // PHYSICS: collide this sub-step and act on the result flags
   local_14[0] = sweep_collision_flags();
-  if (getenv("UW_DEBUG_JUMP"))
+  if (g_opts.debug_jump)
     fprintf(stderr, "[apply-collision] raw_flags=0x%x masked=0x%x mask(DAT_002048bc)=0x%x\n",
             (unsigned)local_14[0], (unsigned)(local_14[0] & ~*DAT_002048bc),
             (unsigned)(unsigned char)*DAT_002048bc);
@@ -1237,7 +1237,7 @@ void sweep_apply_collision()
   if ((local_14[0] & 0xc000) == 0) {
     local_14[0] = local_14[0] & ~*(ushort *)DAT_002048bc;
     if (local_14[0] == 0) {
-      if (getenv("UW_DEBUG_JUMP"))
+      if (g_opts.debug_jump)
         fprintf(stderr, "[apply-collision] -> clean resolve (no flags after mask)\n");
       return;
     }
@@ -1249,7 +1249,7 @@ void sweep_apply_collision()
       else if (DAT_002048bc == (char *)&DAT_00204990) _cb = DAT_00204998;
       else if (DAT_002048bc == (char *)&DAT_002049a0) _cb = DAT_002049a8;
       else if (DAT_002048bc == (char *)&DAT_002049b0) _cb = DAT_002049b8;
-      if (getenv("UW_DEBUG_JUMP"))
+      if (g_opts.debug_jump)
         fprintf(stderr, "[apply-collision] cond1(local_14&callback_mask==0)=%d callback_mask=0x%x cb=%p\n",
                 (int)((local_14[0] & *(ushort *)(DAT_002048bc + 2)) == 0), (unsigned)*(ushort *)(DAT_002048bc + 2),
                 (void *)_cb);
@@ -1268,12 +1268,12 @@ void sweep_apply_collision()
       }
       // PHYSICS: wall collision -- 0x1000 = fully blocked: end the sub-tile sweep
       if ((local_14[0] & 0x1000) == 0) {
-        if (getenv("UW_DEBUG_JUMP"))
+        if (g_opts.debug_jump)
           fprintf(stderr, "[apply-collision] -> slide/no-block, return (0x1000 not set)\n");
         return;
       }
       if (*(short *)(DAT_00204874 + 0x10) != 0) {
-        if (getenv("UW_DEBUG_JUMP"))
+        if (g_opts.debug_jump)
           fprintf(stderr, "[apply-collision] -> fully blocked, g_fall_accel already active, return\n");
         return;
       }
@@ -1281,20 +1281,20 @@ void sweep_apply_collision()
       // hand off to sweep_restart_remaining to finish/redirect the blocked move
       *(undefined1 *)(DAT_00204874 + 0x10) = 0xfc;
       *(undefined1 *)(DAT_00204874 + 0x11) = 0xff;
-      if (getenv("UW_DEBUG_JUMP"))
+      if (g_opts.debug_jump)
         fprintf(stderr, "[apply-collision] -> fully blocked, arming g_fall_accel=0xfc and restarting\n");
       sweep_restart_remaining(bVar3);
       return;
     }
     }
     // PHYSICS: soft block resolved -- back the sub-step out (sweep_step(-1))
-    if (getenv("UW_DEBUG_JUMP"))
+    if (g_opts.debug_jump)
       fprintf(stderr, "[apply-collision] -> SOFT BLOCK: reverting this sub-step (sweep_step(-1))\n");
     sweep_step(0xffffffff);
   }
   else {
     // PHYSICS: hard block (0xc000) -- revert the sub-step and, on 0x4000, kill velocity
-    if (getenv("UW_DEBUG_JUMP"))
+    if (g_opts.debug_jump)
       fprintf(stderr, "[apply-collision] -> HARD BLOCK (0x%x): reverting%s\n",
               (unsigned)local_14[0], (local_14[0] & 0x4000) != 0 ? " + killing velocity" : "");
     sweep_step(0xffffffff);
@@ -1313,12 +1313,7 @@ void sweep_apply_collision()
    function's own comment for why turning was decoupled from DAT_0024af6c (the held-key ramp, still
    used as-is for forward/back). */
 int uw_turn_rate_accel(void) {
-  static int v = -1;
-  if (v < 0) {
-    const char *e = getenv("UW_TURN_ACCEL");
-    v = e ? atoi(e) : 0x60;
-  }
-  return v;
+  return g_opts.turn_accel;
 }
 
 // was FUN_000685e8 -- turn the latched input code (DAT_0023c448) into the analog forward rate
@@ -1464,7 +1459,7 @@ void movement_pacing_handler()
   /* The original reads read_realtime_clock_units() four times. The port uses the latest GX
      elapsed-time sample in the same 4ms-per-unit scale (see g_uw_frame_clock_units). */
   uVar_now = uw_frame_clock_ms();
-  if (getenv("UW_DEBUG_MOVEPACE")) {
+  if (g_opts.debug_movepace) {
     static unsigned int call_count = 0;
     static unsigned int last_real_ms = 0;
     unsigned int real_ms = read_realtime_clock_units() * 4; /* back to real ms -- see its own comment */
@@ -1546,7 +1541,7 @@ void movement_tick(int elapsed, int tick_flags, int skip_npc_tick)
       ) && (skip_npc_tick == 0)) {
     apply_movement_tick(elapsed);
   }
-  if (getenv("UW_DEBUG_NPC_GATE")) {
+  if (g_opts.debug_npc_gate) {
     static unsigned callnum = 0;
     callnum++;
     if (callnum % 60 == 1)
@@ -2211,17 +2206,17 @@ uint sweep_collision_flags()
        collision_build_height_field dereferencing a NULL tile pointer.) */
     return 0xffff8000;
   }
-  if (getenv("UW_DEBUG_RAMP"))
+  if (g_opts.debug_ramp)
     fprintf(stderr, "[ramp-ptr-check] DAT_00202c6c=%p &DAT_002049c8=%p match=%d\n",
             (void *)DAT_00202c6c, (void *)&DAT_002049c8, (int)(DAT_00202c6c == (byte *)&DAT_002049c8));
   collision_build_height_field(*(undefined1 *)(DAT_00204874 + 0x27));
-  if (getenv("UW_DEBUG_RAMP"))
+  if (g_opts.debug_ramp)
     fprintf(stderr, "[ramp-post-buildheight] d8=%d d9=%d\n", (int)DAT_002049d8, (int)DAT_002049d9);
   collision_height_envelope(0,0);
-  if (getenv("UW_DEBUG_RAMP"))
+  if (g_opts.debug_ramp)
     fprintf(stderr, "[ramp-post-envelope] d8=%d d9=%d\n", (int)DAT_002049d8, (int)DAT_002049d9);
   reticle_object_pick(0);
-  if (getenv("UW_DEBUG_RAMP"))
+  if (g_opts.debug_ramp)
     fprintf(stderr, "[ramp-post-reticle] d8=%d d9=%d\n", (int)DAT_002049d8, (int)DAT_002049d9);
   local_3c = DAT_002049d6 | DAT_002049d4;
   /* ARM 0x5a758..0x5a774 reads the geometry mask as a short at +4. */
@@ -2247,7 +2242,7 @@ uint sweep_collision_flags()
   iVar4 = (int)*(short *)((char *)g_sweep_foot_pos + 4);
   iVar6 = (int)_DAT_0008699b;
   iVar5 = (int)DAT_00086998;
-  if (getenv("UW_DEBUG_JUMP"))
+  if (g_opts.debug_jump)
     fprintf(stderr, "[collision-flags] iVar4(footz)=%d iVar6(floorz)=%d iVar5(slot)=%d bVar7=%d bVar8=%d local_3c=0x%x DAT_00086990=%d DAT_00086996=%d\n",
             iVar4, iVar6, iVar5, (int)bVar7, (int)bVar8, (unsigned)local_3c,
             (int)DAT_00086990, (int)DAT_00086996);
@@ -2262,7 +2257,7 @@ uint sweep_collision_flags()
       // tile is a walkable auto-stick floor (DAT_002049d4 & 4) and no vertical motion is active,
       // snap straight to it instead of falling.
       uVar3 = (iVar4 - iVar6) >> 0x1f;
-      if (getenv("UW_DEBUG_JUMP"))
+      if (g_opts.debug_jump)
         fprintf(stderr, "[jump-collision] foot_z=%d floor_z=%d diff=%d step_limit=%d fallflag(0x10)=%d vvel(0xa)=%d\n",
                 iVar4, iVar6, iVar4 - iVar6, (int)(uint)*(byte *)(DAT_00204874 + 0x27),
                 (int)*(short *)(DAT_00204874 + 0x10), (int)*(short *)(DAT_00204874 + 0xa));
@@ -2349,7 +2344,7 @@ LAB_0005abe4:
     local_3c = local_3c & 0xf7ff;
   }
   uVar1 = local_3c;
-  if (getenv("UW_DEBUG_RAMP"))
+  if (g_opts.debug_ramp)
     fprintf(stderr, "[ramp-pre-fallback] iVar4=%d iVar6=%d local_3c=0x%x DAT_002049d6=0x%x DAT_002049d4=0x%x DAT_002049d8=%d DAT_002049d9=%d bVar7=%d bVar8=%d DAT_00204878=%d vvel=%d fallaccel=%d\n",
             iVar4, iVar6, (unsigned)local_3c, (unsigned)DAT_002049d6, (unsigned)DAT_002049d4,
             (int)DAT_002049d8, (int)DAT_002049d9,
