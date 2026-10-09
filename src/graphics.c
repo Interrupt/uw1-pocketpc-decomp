@@ -6,6 +6,7 @@
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /* Ghidra modeled a single 32-bit pointer, stored straddling the byte ranges of two
    separately-declared globals (_DAT_0023c5ac's upper 16 bits + DAT_0023c5b0's lower 16 bits)... */
@@ -801,6 +802,24 @@ void expand_pals_bytes(char *out_rgb8, char *pals_6bit, int copy_unscaled)
 
 
 
+/* The original Pocket PC build multiplies every palette channel by 1.5 (clamped at 255) before
+   packing it to RGB565 (ARM 0x22b90/0x22bd8/0x22c20: `mov r1, #0x3fc00000`), presumably to
+   compensate for the handheld LCD; the DOS palettes are shown as-is. HACK: UW_BRIGHTNESS selects the
+   multiplier (e.g. UW_BRIGHTNESS=1.5 restores the Pocket PC look); default 1.0 matches DOS. Returns
+   the multiplier as IEEE-754 float bits, the form ordfloat_mul takes. */
+unsigned int get_palette_brightness_bits()
+{
+  float brightness = 1.0f;
+  const char *value = getenv("UW_BRIGHTNESS");
+  unsigned int bits;
+  if (value && *value) {
+    float parsed = (float)atof(value);
+    if (parsed >= 0.0f) brightness = parsed;
+  }
+  memcpy(&bits, &brightness, sizeof bits);
+  return bits;
+}
+
 // was build_rgb565_palette -- build g_palette_rgb565 from an RGB buffer (param_1; NULL =
 // built-in default). param_2==0 also builds the 21-level shade ramp DAT_00248418.
 // was FUN_00022b54
@@ -828,6 +847,8 @@ void build_rgb565_palette(byte *rgb_buffer, short mode)
   ushort *puVar20;
   int iVar21;
 
+  unsigned int brightness_bits = get_palette_brightness_bits();
+
   DEBUG(TRACE, "[palette] build_rgb565_palette installing g_palette_rgb565, rgb_buffer=%s mode=%d",
         rgb_buffer ? "buffer" : "NULL(default)", mode);
   if (rgb_buffer == (undefined1 *)0x0) {
@@ -848,21 +869,21 @@ void build_rgb565_palette(byte *rgb_buffer, short mode)
     iVar21 = 0;
     do {
       uVar7 = ordfloat_int_to_float2(*rgb_buffer);
-      uVar7 = ordfloat_mul(uVar7,0x3fc00000);
+      uVar7 = ordfloat_mul(uVar7,brightness_bits);
       /* ordfloat_uint_to_float(); -- Ghidra dropped the preceding return value. */
       iVar8 = ordfloat_uint_to_float(uVar7);
       if (0xff < iVar8) {
         iVar8 = 0xff;
       }
       uVar7 = ordfloat_int_to_float2(rgb_buffer[1]);
-      uVar7 = ordfloat_mul(uVar7,0x3fc00000);
+      uVar7 = ordfloat_mul(uVar7,brightness_bits);
       /* ordfloat_uint_to_float(); */
       iVar9 = ordfloat_uint_to_float(uVar7);
       if (0xff < iVar9) {
         iVar9 = 0xff;
       }
       uVar7 = ordfloat_int_to_float2(rgb_buffer[2]);
-      uVar7 = ordfloat_mul(uVar7,0x3fc00000);
+      uVar7 = ordfloat_mul(uVar7,brightness_bits);
       /* ordfloat_uint_to_float(); */
       iVar10 = ordfloat_uint_to_float(uVar7);
       if (0xff < iVar10) {
