@@ -1716,8 +1716,7 @@ void complete_pending_player_command_target(ushort *target)
     if (((uVar4 != 0x140) && (uVar4 != 0x40)) &&
        ((g_object_type_props[(((uw_object_hdr_t *)target)->item_id)].class_flags & 3) != 2)) {
       uVar1 = ((uw_object_hdr_t *)target)->position_word;
-      ((uw_object_hdr_t *)target)->position_word_low = (byte)(char)(uVar1 | 0x380);
-      ((uw_object_hdr_t *)target)->position_word_high = (byte)(char)((uVar1 | 0x380) >> 8);
+      ((uw_object_hdr_t *)target)->position_word = (ushort)(uVar1 | 0x380);
     }
   }
   else if ((short)DAT_00202094 == 5) {

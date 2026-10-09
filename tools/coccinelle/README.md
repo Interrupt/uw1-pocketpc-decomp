@@ -415,6 +415,20 @@ exclusions, and idempotence. Twenty paired copies across four game sources
 are now whole-word assignments. Mixed-value byte updates remain for a later
 property-write pass.
 
+The scalar `packed-stores.cocci` rules also combine paired stores of the same
+identifier masked, OR'd or XOR'd with a numeric literal. Limiting the operand
+to a literal avoids ambiguous identifier matches in Coccinelle and excludes
+memory reads or side effects inside the repeated expression. Distinct masks,
+values, destination members and intervening writes stay separate. Five more
+pairs in game reset, save preparation and object callbacks now assign the
+complete word; their old scalar snapshots remain unchanged.
+
+`packed_struct_stores` verifies 936 scalar/cast/receiver forms over all 65,536
+words with positive and negative inputs, checking neighboring bytes, exclusion
+cases and idempotence. Pass `--asan` after the `spatch` argument for sanitizer
+coverage. These packed assignments preserve the original mask expressions;
+mapping those updates to individual documented properties remains further work.
+
 ## Projectile spawn fields
 
 `generate_projectile_spawn_rules.py` emits `projectile-spawn-fields.cocci` for

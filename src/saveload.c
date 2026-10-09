@@ -963,8 +963,7 @@ int commit_level_to_save_slot(int level_number)
   }
   DAT_00202080 = 0xffff;
   uVar1 = g_player_object->hdr.type_flags;
-  g_player_object->hdr.type_flags_low = (byte)(char)(uVar1 & 0xfe3f);
-  g_player_object->hdr.type_flags_high = (byte)(char)((uVar1 & 0xfe3f) >> 8);
+  g_player_object->hdr.type_flags = (ushort)(uVar1 & 0xfe3f);
   iVar2 = open_level_archive(auStack_20,s__SAVE0_lev_ark_000842fc);
   if (getenv("UW_DEBUG_INPUTEVENT"))
     fprintf(stderr, "[0006bcd4] open_level_archive=%d\n", iVar2);

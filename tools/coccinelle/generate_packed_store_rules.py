@@ -11,6 +11,7 @@ HERE = Path(__file__).resolve().parent
 CASTS = [('(byte)', '(byte)'), ('(char)', '(char)'),
          ('(byte)(char)', '(byte)'), ('(byte)(char)', '(byte)(char)'),
          ('(char)', '(byte)'), ('(byte)', '(byte)(char)')]
+SCALAR_FORMS = ['V', '(V & C)', '(V | C)', '(V ^ C)']
 
 
 def generate():
@@ -19,12 +20,14 @@ def generate():
         for index, prefix in enumerate(receivers(word)):
             packed = prefix + word
             variants = []
-            for low, high in CASTS:
-                variants.append(f'''- {packed}_low = {low}V;
-- {packed}_high = {high}(V >> 8);
-+ {packed} = (ushort)V;''')
-            rules.append(f'''@store_{word}_{index}@
+            for value in SCALAR_FORMS:
+                for low, high in CASTS:
+                    variants.append(f'''- {packed}_low = {low}{value};
+- {packed}_high = {high}({value} >> 8);
++ {packed} = (ushort){value};''')
+            rules.append(f'''@store_{word}_{index} disable drop_cast, bitand_comm, bitor_comm@
 identifier P, V;
+constant C =~ "^[0-9]";
 typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;
 @@
 (

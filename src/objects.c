@@ -835,8 +835,7 @@ int clear_object_temp_flag_callback(ushort *object)
     if (((uVar3 != 0x140) && (uVar3 != 0x180)) &&
        ((g_object_type_props[(((uw_object_hdr_t *)object)->item_id)].class_flags & 3) != 2)) {
       uVar1 = ((uw_object_hdr_t *)object)->position_word;
-      ((uw_object_hdr_t *)object)->position_word_low = (byte)(char)(uVar1 & 0xfdff);
-      ((uw_object_hdr_t *)object)->position_word_high = (byte)(char)((uVar1 & 0xfdff) >> 8);
+      ((uw_object_hdr_t *)object)->position_word = (ushort)(uVar1 & 0xfdff);
     }
   }
   return 0;

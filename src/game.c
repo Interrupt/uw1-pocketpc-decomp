@@ -621,14 +621,12 @@ void reset_player_object_record()
   g_player_object->hdr.link_word_high = 0;
   g_player_object->status_word_low = 0xfd;
   uVar1 = g_player_object->hdr.type_flags;
-  g_player_object->hdr.type_flags_low = (byte)(char)(uVar1 & 0x7fff);
-  g_player_object->hdr.type_flags_high = (byte)(char)((uVar1 & 0x7fff) >> 8);
+  g_player_object->hdr.type_flags = (ushort)(uVar1 & 0x7fff);
   uVar1 = g_player_object->hdr.type_flags;
   g_player_object->hdr.type_flags_low = (byte)(char)uVar1;
   g_player_object->hdr.type_flags_high = (byte)(uVar1 >> 8) | 0x20;
   uVar1 = g_player_object->hdr.type_flags;
-  g_player_object->hdr.type_flags_low = (byte)(char)(uVar1 & 0xbfff);
-  g_player_object->hdr.type_flags_high = (byte)(char)((uVar1 & 0xbfff) >> 8);
+  g_player_object->hdr.type_flags = (ushort)(uVar1 & 0xbfff);
   uVar1 = g_player_object->hdr.position_word;
   g_player_object->hdr.type_flags_high = (byte)(char)(uVar1 & 0xfc7f);
   g_player_object->hdr.position_word_high = (byte)(char)((uVar1 & 0xfc7f) >> 8);
