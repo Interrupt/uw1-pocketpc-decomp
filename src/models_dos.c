@@ -417,7 +417,15 @@ static void walk(dos_model *m, unsigned int at, int depth)
       int ref = vertno(p);
       int dst = vertno(p + 4);
       const dos_vert *v = vert_get(m, ref);
-      vert_set(m, dst, v->x, DOS_CEILING_Y, v->z, 1);
+      /* Z is the vertical axis in the file, not Y. Proof rather than
+         assumption: the shrine matches its .E file vertex for vertex and has
+         no ceiling vertices at all, and its tall 0..221 range sits in the .E
+         point's MIDDLE column -- which is where this file emits the DOS z.
+         The pillar corroborates it from the other side: every one of its four
+         non-ceiling vertices is at z = 0, i.e. on the floor, with only the
+         ceiling ones meant to rise. Writing the ceiling height into y instead
+         made door frames and pillars extend sideways. */
+      vert_set(m, dst, v->x, v->y, DOS_CEILING_Y, 1);
       at = p + 6;
       break;
     }

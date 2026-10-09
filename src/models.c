@@ -1960,12 +1960,12 @@ void scale_model_part_offsets(void *model_block_ptr, int scale_x, int scale_y, i
    below is derived; see src/models_dos.c for the eight models whose geometry
    confirms the correspondence vertex for vertex.
  
-   flip_winding is NOT carried over to the DOS path. It is a per-model opt-in
-   added for three DATA3D files whose faces are wound opposite to the rest of
-   that art set; the bytecode in UW.EXE is one internally consistent corpus,
-   so inheriting a correction for someone else's authoring inconsistency would
-   be a guess. Face winding on the DOS path is the thing to eyeball first if
-   models render inside-out. */
+   The DOS path always flips, whatever the slot's own .E flag says. The
+   bytecode in UW.EXE is one internally consistent corpus wound opposite to
+   the .E art, so it needs one blanket correction rather than the per-model
+   opt-in those three DATA3D files need -- confirmed by looking: every DOS
+   model rendered inside out before this. Reusing parse_e_model_file's own
+   flip keeps the reversal in one place. */
 static void load_model_slot(int slot, char *e_path, byte *out_buffer, int flip_winding)
 {
   if (uw_dos_models_available()) {
@@ -1974,7 +1974,7 @@ static void load_model_slot(int slot, char *e_path, byte *out_buffer, int flip_w
        per slot at startup and the frame would otherwise be enormous. */
     static char script[64 * 1024];
     if (uw_dos_model_script(slot + 1, script, sizeof script) > 0) {
-      parse_e_model_script(script, out_buffer, 0);
+      parse_e_model_script(script, out_buffer, 1);
       return;
     }
     DEBUG(INFO, "[models] slot %d has no DOS model -- trying %s\n", slot, e_path);

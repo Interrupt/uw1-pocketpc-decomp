@@ -394,9 +394,11 @@ static void test_two_axis_relative_vertices(void)
 static void test_ceiling_vertices_use_the_ports_own_height(void)
 {
     TEST_ASSERT_TRUE(script_of(SLOT_CEIL) > 0);
-    /* base file (11,22,33) -> (11,33,22); the ceiling vertex keeps x and z
-       and takes y = 1024, emitted in the middle column. */
-    TEST_ASSERT_EQUAL_STRING("11,33,22;\n11,33,1024;\n19,33,22;\n", points_block());
+    /* Base file (11,22,33) emits as (11,33,22). Z is the vertical axis, and
+       it lands in the MIDDLE emitted column, so the ceiling vertex keeps file
+       x and y and takes z = 1024 -> (11,1024,22). Putting the height in y
+       instead is what made door frames extend sideways. */
+    TEST_ASSERT_EQUAL_STRING("11,33,22;\n11,1024,22;\n19,33,22;\n", points_block());
 }
 
 /* The regression that cost the small boulder 24 of its 33 faces: a sort node
