@@ -1000,3 +1000,41 @@ state and pending flag is compared. Use `--reference PATH` with the saved
 original `item_use.c`, and `--asan` for AddressSanitizer. The refreshed
 worklist contains 204 byte views (14 fewer); full-word copies and retained
 snapshots account for the additional packed-word entries.
+
+`generate_stack_split_rules.py` / `stack-split-fields.cocci` convert the common
+header accesses in `extract_matching_object_from_slot` and
+`reduce_object_count`. Extraction uses typed source/clone pointers, four
+header-word copies, named object-ID slices and quantity checks, and named
+`link` writes for both remaining and extracted counts. Reduction uses typed
+object pointers and the same named quantity writes. Chain-field addresses
+replace arithmetic on object-record pointers. Public argument/return types
+and all functions stay in place.
+
+The exact complete bodies retain captured counts before allocation, fresh
+header copies after allocation callbacks, full arithmetic intermediates,
+chain/list operations, inventory slot updates, UI refreshes and container
+weight bookkeeping. Word-copy sources and fresh stationary allocations are
+distinct whole records, so there is no partial overlap. Added callbacks,
+volatile captures, changed arithmetic and escaping/observed temporaries
+reject conversion. The generic role audit conservatively lists extraction's
+`puVar3` for review because `find_object_in_link_chain` returns `char *`;
+independent inspection confirms it returns the input object cursor or an
+object reached through `resolve_object_link`/recursive object-chain search.
+That contract justifies the local header type without widening automatic
+sweeps. Slot-table packing and legacy container metadata/previous-pointer
+walks retain their existing layout and behavior; they are outside these
+common-header rules and still need a separate layout audit.
+
+`test_stack_split_fields.py` checks generation, exact conversion, idempotence
+and callback/capture/scope rejection. Its 2,621,440 real before/after executions
+cover all 16-bit link-word patterns, matching and failing category/subcategory/
+quality filters, direct/nested/open-container routes, empty/not-found cases,
+non-quantity and special quantity kinds, zero/positive/signed/high-bit counts,
+allocator-mutated source words, borrowed-slot rewrites and container weights.
+All object/guard/player/slot/synthetic-container bytes, returns, carry weights,
+callback arguments/events/counts and allocation counts are compared. The
+well-formed synthetic container metadata exercises the existing walks; it
+does not establish a new layout for the real container-state allocation.
+Use `--reference PATH` with the original `item_use.c` and `--asan` for the
+same oracle under AddressSanitizer. The worklist now contains 190 byte views
+(14 fewer); named full-word copies and retained captures remain intentional.

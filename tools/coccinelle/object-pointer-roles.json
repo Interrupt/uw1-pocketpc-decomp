@@ -2688,16 +2688,16 @@
           "roles": [
             {
               "name": "puVar5",
-              "type": "undefined1 *",
+              "type": "uw_object_hdr_t *",
               "parameter": false,
-              "evidence": "UW1 object struct member access",
+              "evidence": "typed UW1 object pointer declaration",
               "current_mobile_alias": false
             },
             {
               "name": "puVar6",
-              "type": "undefined1 *",
+              "type": "uw_object_hdr_t *",
               "parameter": false,
-              "evidence": "UW1 object struct member access",
+              "evidence": "typed UW1 object pointer declaration",
               "current_mobile_alias": false
             }
           ],
@@ -2721,20 +2721,22 @@
           "roles": [
             {
               "name": "pbVar10",
-              "type": "byte *",
+              "type": "uw_object_hdr_t *",
               "parameter": false,
-              "evidence": "UW1 object struct member access",
+              "evidence": "typed UW1 object pointer declaration",
               "current_mobile_alias": false
             },
             {
               "name": "local_28",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias",
+              "evidence": "UW1 object struct member access",
               "current_mobile_alias": false
             }
           ],
-          "requires_review": []
+          "requires_review": [
+            "puVar3"
+          ]
         },
         {
           "function": "redraw_armor_overlay_widgets",

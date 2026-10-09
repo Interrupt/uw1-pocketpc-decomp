@@ -1077,6 +1077,10 @@ if(UW_SPATCH_EXECUTABLE)
     COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_item_scatter_fields.py"
       "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME stack_split_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_stack_split_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
   find_program(UW_CLANG_EXECUTABLE clang)
   if(UW_CLANG_EXECUTABLE)
     add_test(NAME current_object_aliases
