@@ -1860,7 +1860,6 @@ bool load_pals_bank(int bank, void *dest)
   char acStack_420 [264];
   undefined1 auStack_318 [768];
 
-  DEBUG(TRACE, "[palette] load_pals_bank loading pals.dat index=%u", bank);
   pcVar3 = &DAT_0023cca8;
     stack0xffdc2f38_ptr = acStack_420;
   do {

@@ -259,7 +259,6 @@ void render_visible_tile_list()
   local_68 = DAT_00084634;
   local_6c = DAT_00084630;
   local_64 = DAT_00084638;
-  DEBUG(TRACE, "[tmap-diag] render_visible_tile_list: DAT_000c8c98 (visible-tile count) = %d", DAT_000c8c98);
   if (0 < DAT_000c8c98) {
     local_98 = &DAT_000c4838;
     iVar15 = DAT_000c8c98;
@@ -271,7 +270,6 @@ void render_visible_tile_list()
       local_54 = ordfloat_int_to_float2(piVar14[0x10]);
       local_50 = ordfloat_int_to_float2(piVar14[0x11]);
       iVar16 = 1;
-      DEBUG(TRACE, "[tmap-diag] record %d: *piVar14 (point count) = %d", local_94, *piVar14);
       if (1 < *piVar14 + -1) {
         uVar6 = ordfloat_div(0x3f800000,iVar17);
         uVar7 = ordfloat_mul(iVar17,0x3a2ec33e);
@@ -315,8 +313,6 @@ void render_visible_tile_list()
           local_34 = ordfloat_sub(0x42a00000,uVar11);
           local_30 = ordfloat_mul(uVar5,0x3a2ec33e);
           DAT_000da47c = (undefined2)piVar14[0x1d];
-          DEBUG(TRACE, "[tmap-diag] raster_triangle call: tex=0x%x x=%.0f y=%.0f w(0x1c)=%d stride(0x1b)=%d",
-                piVar14[0x1e], ((float*)local_60_arr)[0], ((float*)local_60_arr)[1], piVar14[0x1c], piVar14[0x1b]);
           raster_triangle(0x140,g_uw_framebuffer,local_60_arr,piVar14[0x1e],
                        piVar14[0x1b],piVar14[0x1c] * piVar14[0x1b],
                        ((unsigned)local_94 < UW_MAX_VIS_TILES)

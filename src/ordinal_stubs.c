@@ -349,7 +349,6 @@ long RegSetValueExW(long key, const unsigned short *value_name, long reserved, l
    (run_game_startup_sequence) and app_main_loop's own startup 2000ms pause -- did nothing at all. */
 long Sleep(unsigned int ms)
 {
-    DEBUG(TRACE, "[sleep] Sleep requested ms=%u", ms);
     /* --fast-sleep: debug-only switch to skip the real delay below (splash dwells, app_main_loop's
        startup pause, etc. otherwise add up to real wall-clock seconds every run) so
        automated/demo-driven test runs reach gameplay quickly. */

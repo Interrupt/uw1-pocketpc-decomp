@@ -135,7 +135,6 @@ static undefined2 DAT_000879b8_backing[4096];
 // was FUN_00011694
 void set_draw_color(short color_index)
 {
-  DEBUG(TRACE, "[graphics] set draw color to %u", color_index);
   DAT_000a85c0 = color_index;
 }
 
@@ -163,7 +162,6 @@ void rect_fill_or_save_restore(ushort left, uint top, short right, short bottom)
   int iVar14;
   int iVar15;
   
-  DEBUG(TRACE, "[graphics] rect_fill_or_save_restore(%u,%u,%u,%u)", left, top, right, bottom);
 
 
   iVar14 = (int)(short)left;
@@ -316,7 +314,6 @@ void bitmap_blit_to_framebuffer(ushort x, ushort y, char *pixels, short height, 
      OPSCR.BYT load buffer). */
   intptr_t local_34;
   
-  DEBUG(TRACE, "[graphics] bitmap_blit_to_framebuffer(%u,%u,%p,%u,%u,%u,%u)", x, y, (void *)pixels, height, width, src_x, src_y);
 
   sVar13 = 0;
   iVar11 = (int)src_x;
@@ -529,8 +526,6 @@ void fade_in(ushort *framebuffer, char *palette, int palette_flag)
   if (palette != 0) apply_palette_buffer(palette,palette_flag);
   ce_memmove(puVar3,framebuffer,0x1f400);
   iVar9 = 1;
-  // HACK: diagnostic addition, not in the original decompile -- timestamps this fade for the TRACE log below.
-  uint diag_t0 = read_realtime_clock_units();
   /* Intentional deviation: hold each step for 40 ms instead of the
      original timed palette fade's 32 ms, making the transition slower. */
   uint fade_step_start = (uint)GetTickCount();
@@ -569,7 +564,6 @@ void fade_in(ushort *framebuffer, char *palette, int palette_flag)
     puVar6 = puVar6 + 1;
   } while (iVar9 != 0);
   flush_dirty_rect_to_display(1);
-  DEBUG(TRACE, "[fade] fade_in total elapsed=%ums", (read_realtime_clock_units() - diag_t0) * 4);
   LocalFree(puVar3);
   uw_end_modal_present();
 }
@@ -603,8 +597,6 @@ void fade_out(ushort *framebuffer, char *palette, int palette_flag)
   ce_memmove(puVar4,framebuffer,0x1f400);
   iVar11 = 7;
   iVar10 = 64000;
-  // HACK: diagnostic addition, not in the original decompile -- timestamps this fade for the TRACE log below.
-  uint diag_t0 = read_realtime_clock_units();
   /* Intentional deviation: use 40 ms per step, like fade_in, rather
      than the original timed palette fade's 32 ms interval. */
   uint fade_step_start = (uint)GetTickCount();
@@ -644,7 +636,6 @@ void fade_out(ushort *framebuffer, char *palette, int palette_flag)
   flush_dirty_rect_to_display(1);
   while ((fade_step_elapsed = (uint)GetTickCount() - fade_step_start) < 40)
     Sleep(40 - fade_step_elapsed);
-  DEBUG(TRACE, "[fade] fade_out total elapsed=%ums", (read_realtime_clock_units() - diag_t0) * 4);
   LocalFree(puVar4);
   uw_end_modal_present();
 }
@@ -814,8 +805,6 @@ void build_rgb565_palette(byte *rgb_buffer, short mode)
 
   unsigned int brightness_bits = get_palette_brightness_bits();
 
-  DEBUG(TRACE, "[palette] build_rgb565_palette installing g_palette_rgb565, rgb_buffer=%s mode=%d",
-        rgb_buffer ? "buffer" : "NULL(default)", mode);
   if (rgb_buffer == (undefined1 *)0x0) {
     puVar20 = &g_palette_rgb565;
     iVar21 = 0x100;

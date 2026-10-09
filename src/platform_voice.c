@@ -266,8 +266,6 @@ void platform_voice_play(int sample_id)
     SDL_free(old_pcm);
   }
 
-  DEBUG(TRACE, "[audio] platform_voice_play: sample %d (%s, %u bytes) -> playing\n",
-        sample_id, real_path, new_len);
 }
 
 int platform_voice_is_finished(void)

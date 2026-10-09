@@ -443,7 +443,6 @@ void main_menu_loop(int is_first_entry)
         pcVar5 = pcVar5 + 1;
       } while (cVar1 != '\0');
       ce_strcat(acStack_7ec,s__DATA_opscr_byt_00086eec);
-      DEBUG(TRACE, "blitting %s", s__DATA_opscr_byt_00086eec);
       read_buffer_from_file(acStack_7ec,pvVar_buf10000,64000);
       decrement_cursor_hide_depth();
       // HACK: deviation from the real binary -- was load_pals_bank(2, temp_buf),

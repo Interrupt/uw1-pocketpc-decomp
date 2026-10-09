@@ -336,8 +336,6 @@ int play_music_track(byte track_number, int flags)
 
   ce_memmove(auStack_130,s_uw00_mod_00087514,9);
   local_127 = 0;
-  DEBUG(TRACE, "[audio] play_music_track(track=%u, start=%d) gate: subsys=%d enabled=%d",
-        track_number, flags, DAT_00087454, DAT_00087448);
   if ((DAT_00087454 == 0) || (DAT_00087448 == 0)) {
     uVar4 = 0;
   }
@@ -498,7 +496,6 @@ void set_music_enabled(int enable)
 {
   uint uVar1;
 
-  DEBUG(TRACE, "[audio] set_music_enabled(enable=%d) subsys=%d enabled=%d", enable, DAT_00087454, DAT_00087448);
   if (DAT_00087454 != 0) {
     if (enable == 0) {
       uVar1 = 1;
@@ -527,7 +524,6 @@ void set_music_enabled(int enable)
 // stop_current_audio_handle_dup to clean up), enabled!=0 enables it.
 void set_sound_effects_enabled(int enabled)
 {
-  DEBUG(TRACE, "[audio] set_sound_effects_enabled(enabled=%d) subsys=%d enabled=%d", enabled, DAT_00087450, DAT_0008744c);
   if (DAT_00087450 != 0) {
     if (enabled == 0) {
       DAT_0008744c = 0;
@@ -645,8 +641,6 @@ int play_positional_sound_effect(uint sound_id, short world_x, short world_y, ui
   short local_28;
   short local_26;
 
-  DEBUG(TRACE, "[audio] play_positional_sound_effect(id=%u) gate: subsys=%d enabled=%d",
-        sound_id & 0xff, DAT_00087450, DAT_0008744c);
   if ((DAT_00087450 == 0) || (DAT_0008744c == 0)) {
 LAB_00072f24:
     uVar4 = 0xff;
