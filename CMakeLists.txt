@@ -49,6 +49,7 @@ set(UW_SOURCES
   src/level.c
   src/doors.c
   src/winfile_wrappers.c
+  src/models_dos.c
   src/models.c
   src/math.c
   src/registration.c

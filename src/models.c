@@ -2,6 +2,7 @@
    index to its real .E model geometry), emitting a catalog object (door, bridge, decal, sign) as
    textured model geometry, and door animation-frame emission. */
 #include "headers/models.h"
+#include "headers/models_dos.h"
 #include "headers/debug.h"
 #include "headers/debug_ui.h"
 #include <stdio.h>
@@ -1951,38 +1952,69 @@ void scale_model_part_offsets(void *model_block_ptr, int scale_x, int scale_y, i
 // was FUN_00038680 -- loads every catalog 3D object model (.E files: door frame, footbridge, bench,
 // lotus, rocks, arrow, beam, shrine, doors, tilemap decals, grave, gate, table, chest, nightstand,
 // barrel/closet, chair, bed) via parse_e_model_file into their respective geometry buffers...
-void load_3d_object_models()
-
+/* One model slot: from the DOS executable when the data directory is a DOS
+   install, else from the slot's own DATA3D/*.E file.
+ 
+   The port's slot order below is exactly DOS built-in model order shifted by
+   one -- slot 0 is the door frame, DOS model 1 -- which is how `slot + 1`
+   below is derived; see src/models_dos.c for the eight models whose geometry
+   confirms the correspondence vertex for vertex.
+ 
+   flip_winding is NOT carried over to the DOS path. It is a per-model opt-in
+   added for three DATA3D files whose faces are wound opposite to the rest of
+   that art set; the bytecode in UW.EXE is one internally consistent corpus,
+   so inheriting a correction for someone else's authoring inconsistency would
+   be a guess. Face winding on the DOS path is the thing to eyeball first if
+   models render inside-out. */
+static void load_model_slot(int slot, char *e_path, byte *out_buffer, int flip_winding)
 {
-  parse_e_model_file(s__DATA3D_DFRAME_E_00085620,&DAT_00114c1c,1);
-  parse_e_model_file(s__DATA3D_FBRIDGE_E_0008560c,&DAT_00118848,1);
-  parse_e_model_file(s__DATA3D_BENCH_E_000855fc,&DAT_0011c474,0);
-  parse_e_model_file(s__DATA3D_40LOTUS_E_000855e8,&DAT_001200a0,0);
-  parse_e_model_file(s__DATA3D_ROCKSMAL_E_000855d4,&DAT_00123ccc,0);
-  parse_e_model_file(s__DATA3D_ROCKMED_E_000855c0,&DAT_001278f8,0);
-  parse_e_model_file(s__DATA3D_ROCKBIG_E_000855ac,&DAT_0012b524,1);
-  parse_e_model_file(s__DATA3D_ARROW_E_0008559c,&DAT_0012f150,0);
-  parse_e_model_file(s__DATA3D_BEAM_E_0008558c,&DAT_00132d7c,0);
-  parse_e_model_file(s__DATA3D_NEWPILL_E_00085578,&DAT_001369a8,0);
-  parse_e_model_file(s__DATA3D_SHRINE_E_00085564,&DAT_0013a5d4,0);
-  parse_e_model_file(s__DATA3D_NEWPORT_E_00085550,&DAT_0013e200,0);
-  parse_e_model_file(s__DATA3D_NEWPORT_E_00085550,&DAT_00141e2c,0);
-  parse_e_model_file(s__DATA3D_DOOR_E_00085540,&DAT_00145a58,0);
-  parse_e_model_file(s__DATA3D_DOOR_E_00085540,&DAT_00149684,0);
-  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_0014d2b0,0);
-  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_00150edc,0);
-  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_00154b08,0);
-  parse_e_model_file(s__DATA3D_GRAVE_E_0008551c,&DAT_00158734,0);
-  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_0015c360,0);
-  parse_e_model_file(s__DATA3D_TMAP32X32_E_00085508,&DAT_0015ff8c,0);
-  parse_e_model_file(s__DATA3D_TMAP64X64_E_000854f4,&DAT_00163bb8,0);
-  parse_e_model_file(s__DATA3D_GATE_E_000854e4,&DAT_001677e4,0);
-  parse_e_model_file(s__DATA3D_TABLF3_E_000854d0,&DAT_0016b410,0);
-  parse_e_model_file(s__DATA3D_CHEST_E_000854c0,&DAT_0016f03c,0);
-  parse_e_model_file(s__DATA3D_NITESTAN_E_000854ac,&DAT_00172c68,0);
-  parse_e_model_file(s__DATA3D_BARRCLOS_E_00085498,&DAT_00176894,0);
-  parse_e_model_file(s__DATA3D_CHAIRSIM_E_00085484,&DAT_0017a4c0,0);
-  parse_e_model_file(s__DATA3D_BED2_E_00085474,&DAT_0017e0ec,0);
+  if (uw_dos_models_available()) {
+    /* Largest real model is the shrine, 80 vertices and 43 faces; 64KB is
+       ample for any of them as text. Static rather than stack: this runs once
+       per slot at startup and the frame would otherwise be enormous. */
+    static char script[64 * 1024];
+    if (uw_dos_model_script(slot + 1, script, sizeof script) > 0) {
+      parse_e_model_script(script, out_buffer, 0);
+      return;
+    }
+    DEBUG(INFO, "[models] slot %d has no DOS model -- trying %s\n", slot, e_path);
+  }
+  parse_e_model_file(e_path, out_buffer, flip_winding);
+}
+
+void load_3d_object_models()
+{
+  load_model_slot( 0, s__DATA3D_DFRAME_E_00085620, &DAT_00114c1c, 1);
+  load_model_slot( 1, s__DATA3D_FBRIDGE_E_0008560c, &DAT_00118848, 1);
+  load_model_slot( 2, s__DATA3D_BENCH_E_000855fc, &DAT_0011c474, 0);
+  load_model_slot( 3, s__DATA3D_40LOTUS_E_000855e8, &DAT_001200a0, 0);
+  load_model_slot( 4, s__DATA3D_ROCKSMAL_E_000855d4, &DAT_00123ccc, 0);
+  load_model_slot( 5, s__DATA3D_ROCKMED_E_000855c0, &DAT_001278f8, 0);
+  load_model_slot( 6, s__DATA3D_ROCKBIG_E_000855ac, &DAT_0012b524, 1);
+  load_model_slot( 7, s__DATA3D_ARROW_E_0008559c, &DAT_0012f150, 0);
+  load_model_slot( 8, s__DATA3D_BEAM_E_0008558c, &DAT_00132d7c, 0);
+  load_model_slot( 9, s__DATA3D_NEWPILL_E_00085578, &DAT_001369a8, 0);
+  load_model_slot(10, s__DATA3D_SHRINE_E_00085564, &DAT_0013a5d4, 0);
+  load_model_slot(11, s__DATA3D_NEWPORT_E_00085550, &DAT_0013e200, 0);
+  load_model_slot(12, s__DATA3D_NEWPORT_E_00085550, &DAT_00141e2c, 0);
+  load_model_slot(13, s__DATA3D_DOOR_E_00085540, &DAT_00145a58, 0);
+  load_model_slot(14, s__DATA3D_DOOR_E_00085540, &DAT_00149684, 0);
+  load_model_slot(15, s__DATA3D_TMAP16X16_E_0008552c, &DAT_0014d2b0, 0);
+  load_model_slot(16, s__DATA3D_TMAP16X16_E_0008552c, &DAT_00150edc, 0);
+  load_model_slot(17, s__DATA3D_TMAP16X16_E_0008552c, &DAT_00154b08, 0);
+  load_model_slot(18, s__DATA3D_GRAVE_E_0008551c, &DAT_00158734, 0);
+  load_model_slot(19, s__DATA3D_TMAP16X16_E_0008552c, &DAT_0015c360, 0);
+  load_model_slot(20, s__DATA3D_TMAP32X32_E_00085508, &DAT_0015ff8c, 0);
+  load_model_slot(21, s__DATA3D_TMAP64X64_E_000854f4, &DAT_00163bb8, 0);
+  load_model_slot(22, s__DATA3D_GATE_E_000854e4, &DAT_001677e4, 0);
+  load_model_slot(23, s__DATA3D_TABLF3_E_000854d0, &DAT_0016b410, 0);
+  load_model_slot(24, s__DATA3D_CHEST_E_000854c0, &DAT_0016f03c, 0);
+  load_model_slot(25, s__DATA3D_NITESTAN_E_000854ac, &DAT_00172c68, 0);
+  load_model_slot(26, s__DATA3D_BARRCLOS_E_00085498, &DAT_00176894, 0);
+  load_model_slot(27, s__DATA3D_CHAIRSIM_E_00085484, &DAT_0017a4c0, 0);
+  load_model_slot(28, s__DATA3D_BED2_E_00085474, &DAT_0017e0ec, 0);
+  /* UW.EXE is only needed while the models load. */
+  uw_dos_models_release();
   ce_memmove(&DAT_00189590,&DAT_00110ff0,0x78580);
   return;
 }
@@ -1991,6 +2023,25 @@ void load_3d_object_models()
 // was FUN_00020a74 -- parses one DATA3D/*.E text-format 3D model script (param_1 = file path,
 // param_2 = ~16KB per-model output buffer) into point positions and per-part (per-face)
 // vertex-index lists. Called 29 times from load_3d_object_models at startup, once per model file.
+/* Set by parse_e_model_script for exactly one following parse_e_model_file
+   call, which opens it instead of a file. This pair exists so the DOS asset
+   set -- whose models are bytecode inside UW.EXE, with no .E file anywhere
+   (see src/models_dos.c) -- can reuse every line of the parser below rather
+   than grow a second implementation of the output-buffer layout. Not
+   reentrant, and not meant to be: model loading is a single-threaded
+   startup step. */
+static const char *g_e_model_script;
+static unsigned int g_e_model_script_len;
+
+void parse_e_model_script(const char *script, byte *out_buffer, int flip_winding)
+{
+  if (!script || !script[0]) return;
+  g_e_model_script = script;
+  g_e_model_script_len = (unsigned int)strlen(script);
+  parse_e_model_file("<decoded from UW.EXE>", out_buffer, flip_winding);
+  g_e_model_script = NULL;
+}
+
 /* Every .E model file in data/DATA3D/ is CRLF-terminated (confirmed via `xxd` on ROCKBIG.E: the
    PARTS block's last entry ends "...8);\r\n}\r\n"). */
 static void *uw_e_model_strip_cr(void *raw_fh) {
@@ -2105,9 +2156,16 @@ void parse_e_model_file(char *path, byte *out_buffer, int flip_winding)
     *stack0xffdc3228_ptr = cVar18; stack0xffdc3228_ptr = stack0xffdc3228_ptr + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar18 != '\0');
-  ce_strcat(acStack_130,path);
-  pvVar_fh = ce_fopen(acStack_130,&DAT_00084a24);
-  pvVar_fh = uw_e_model_strip_cr(pvVar_fh);
+  if (g_e_model_script != 0) {
+    /* An in-memory script from the DOS decoder -- already LF-only, so it
+       skips uw_e_model_strip_cr. */
+    pvVar_fh = fmemopen((void *)g_e_model_script, g_e_model_script_len, "r");
+  }
+  else {
+    ce_strcat(acStack_130,path);
+    pvVar_fh = ce_fopen(acStack_130,&DAT_00084a24);
+    pvVar_fh = uw_e_model_strip_cr(pvVar_fh);
+  }
   local_25c = pvVar_fh;
   /* This whole function's 11 fatal-error checks (NKDbgPrintfW message + terminate_process, killing
      the entire process) originally treated any malformed/unparseable ".E" model script as

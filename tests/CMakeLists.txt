@@ -793,6 +793,15 @@ target_link_libraries(uw_test_voice PUBLIC ${SDL2_LIBRARIES})
 target_compile_definitions(uw_test_voice PRIVATE UW_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
 add_supported_game_unit_test(voice uw_test_voice)
 
+# models_dos.c decodes the DOS asset set's 3D models out of UW.EXE. The suite
+# assembles its own UW.EXE-shaped file, so it needs no DOS install -- just the
+# real models_dos.c, file_io.c and debug.c.
+add_library(uw_test_models_dos STATIC
+  "${PROJECT_SOURCE_DIR}/src/models_dos.c"
+  "${PROJECT_SOURCE_DIR}/src/file_io.c" "${PROJECT_SOURCE_DIR}/src/debug.c")
+uw_configure_test_target(uw_test_models_dos)
+add_supported_game_unit_test(models_dos uw_test_models_dos)
+
 add_library(uw_test_division STATIC support/division.c)
 uw_configure_test_target(uw_test_division)
 foreach(suite npc_ai throw throw_cursor lighting creatures stair_transition inventory_drag)
