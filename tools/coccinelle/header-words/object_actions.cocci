@@ -602,17 +602,17 @@ typedef ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(ushort *)((char *)pObj + 0)
-+ ((uw_object_hdr_t *)pObj)->type_flags
+- *(ushort *)((char *)caster + 0)
++ ((uw_object_hdr_t *)caster)->type_flags
 |
-- ((ushort *)pObj)[0]
-+ ((uw_object_hdr_t *)pObj)->type_flags
+- ((ushort *)caster)[0]
++ ((uw_object_hdr_t *)caster)->type_flags
 |
-- *(ushort *)pObj
-+ ((uw_object_hdr_t *)pObj)->type_flags
+- *(ushort *)caster
++ ((uw_object_hdr_t *)caster)->type_flags
 |
-- *(ushort *)(pObj + 0)
-+ ((uw_object_hdr_t *)pObj)->type_flags
+- *(ushort *)(caster + 0)
++ ((uw_object_hdr_t *)caster)->type_flags
 )
 ...>
 }
@@ -625,14 +625,14 @@ typedef ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(ushort *)((char *)pObj + 2)
-+ ((uw_object_hdr_t *)pObj)->position_word
+- *(ushort *)((char *)caster + 2)
++ ((uw_object_hdr_t *)caster)->position_word
 |
-- ((ushort *)pObj)[1]
-+ ((uw_object_hdr_t *)pObj)->position_word
+- ((ushort *)caster)[1]
++ ((uw_object_hdr_t *)caster)->position_word
 |
-- *(ushort *)(pObj + 2)
-+ ((uw_object_hdr_t *)pObj)->position_word
+- *(ushort *)(caster + 2)
++ ((uw_object_hdr_t *)caster)->position_word
 )
 ...>
 }
@@ -645,14 +645,14 @@ typedef ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(ushort *)((char *)pObj + 4)
-+ ((uw_object_hdr_t *)pObj)->chain_word
+- *(ushort *)((char *)caster + 4)
++ ((uw_object_hdr_t *)caster)->chain_word
 |
-- ((ushort *)pObj)[2]
-+ ((uw_object_hdr_t *)pObj)->chain_word
+- ((ushort *)caster)[2]
++ ((uw_object_hdr_t *)caster)->chain_word
 |
-- *(ushort *)(pObj + 4)
-+ ((uw_object_hdr_t *)pObj)->chain_word
+- *(ushort *)(caster + 4)
++ ((uw_object_hdr_t *)caster)->chain_word
 )
 ...>
 }
@@ -665,19 +665,90 @@ typedef ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(ushort *)((char *)pObj + 6)
-+ ((uw_object_hdr_t *)pObj)->link_word
+- *(ushort *)((char *)caster + 6)
++ ((uw_object_hdr_t *)caster)->link_word
 |
-- ((ushort *)pObj)[3]
-+ ((uw_object_hdr_t *)pObj)->link_word
+- ((ushort *)caster)[3]
++ ((uw_object_hdr_t *)caster)->link_word
 |
-- *(ushort *)(pObj + 6)
-+ ((uw_object_hdr_t *)pObj)->link_word
+- *(ushort *)(caster + 6)
++ ((uw_object_hdr_t *)caster)->link_word
 )
 ...>
 }
 
 @word_8_0@
+type R;
+identifier F =~ "^\(cast_summon_or_spawn_effect\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)pObj + 0)
++ ((uw_object_hdr_t *)pObj)->type_flags
+|
+- ((ushort *)pObj)[0]
++ ((uw_object_hdr_t *)pObj)->type_flags
+|
+- *(ushort *)pObj
++ ((uw_object_hdr_t *)pObj)->type_flags
+)
+...>
+}
+
+@word_8_1@
+type R;
+identifier F =~ "^\(cast_summon_or_spawn_effect\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)pObj + 2)
++ ((uw_object_hdr_t *)pObj)->position_word
+|
+- ((ushort *)pObj)[1]
++ ((uw_object_hdr_t *)pObj)->position_word
+)
+...>
+}
+
+@word_8_2@
+type R;
+identifier F =~ "^\(cast_summon_or_spawn_effect\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)pObj + 4)
++ ((uw_object_hdr_t *)pObj)->chain_word
+|
+- ((ushort *)pObj)[2]
++ ((uw_object_hdr_t *)pObj)->chain_word
+)
+...>
+}
+
+@word_8_3@
+type R;
+identifier F =~ "^\(cast_summon_or_spawn_effect\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)pObj + 6)
++ ((uw_object_hdr_t *)pObj)->link_word
+|
+- ((ushort *)pObj)[3]
++ ((uw_object_hdr_t *)pObj)->link_word
+)
+...>
+}
+
+@word_9_0@
 type R;
 identifier F =~ "^\(cast_summon_or_spawn_effect\)$";
 typedef ushort, uw_object_hdr_t;
@@ -697,7 +768,7 @@ R F(...) {
 ...>
 }
 
-@word_8_1@
+@word_9_1@
 type R;
 identifier F =~ "^\(cast_summon_or_spawn_effect\)$";
 typedef ushort, uw_object_hdr_t;
@@ -714,7 +785,7 @@ R F(...) {
 ...>
 }
 
-@word_8_2@
+@word_9_2@
 type R;
 identifier F =~ "^\(cast_summon_or_spawn_effect\)$";
 typedef ushort, uw_object_hdr_t;
@@ -731,7 +802,7 @@ R F(...) {
 ...>
 }
 
-@word_8_3@
+@word_9_3@
 type R;
 identifier F =~ "^\(cast_summon_or_spawn_effect\)$";
 typedef ushort, uw_object_hdr_t;
@@ -748,7 +819,7 @@ R F(...) {
 ...>
 }
 
-@word_9_0@
+@word_10_0@
 type R;
 identifier F =~ "^\(complete_pending_player_command_target\)$";
 typedef ushort, uw_object_hdr_t;
@@ -774,7 +845,7 @@ R F(...) {
 ...>
 }
 
-@word_9_1@
+@word_10_1@
 type R;
 identifier F =~ "^\(complete_pending_player_command_target\)$";
 typedef ushort, uw_object_hdr_t;
@@ -794,7 +865,7 @@ R F(...) {
 ...>
 }
 
-@word_9_2@
+@word_10_2@
 type R;
 identifier F =~ "^\(complete_pending_player_command_target\)$";
 typedef ushort, uw_object_hdr_t;
@@ -814,7 +885,7 @@ R F(...) {
 ...>
 }
 
-@word_9_3@
+@word_10_3@
 type R;
 identifier F =~ "^\(complete_pending_player_command_target\)$";
 typedef ushort, uw_object_hdr_t;
@@ -834,7 +905,7 @@ R F(...) {
 ...>
 }
 
-@word_10_0@
+@word_11_0@
 type R;
 identifier F =~ "^\(damage_all_objects_at_tile\)$";
 typedef ushort, uw_object_hdr_t;
@@ -857,7 +928,7 @@ R F(...) {
 ...>
 }
 
-@word_10_1@
+@word_11_1@
 type R;
 identifier F =~ "^\(damage_all_objects_at_tile\)$";
 typedef ushort, uw_object_hdr_t;
@@ -877,7 +948,7 @@ R F(...) {
 ...>
 }
 
-@word_10_2@
+@word_11_2@
 type R;
 identifier F =~ "^\(damage_all_objects_at_tile\)$";
 typedef ushort, uw_object_hdr_t;
@@ -897,7 +968,7 @@ R F(...) {
 ...>
 }
 
-@word_10_3@
+@word_11_3@
 type R;
 identifier F =~ "^\(damage_all_objects_at_tile\)$";
 typedef ushort, uw_object_hdr_t;
@@ -917,7 +988,7 @@ R F(...) {
 ...>
 }
 
-@word_11_0@
+@word_12_0@
 type R;
 identifier F =~ "^\(damage_all_objects_at_tile\)$";
 typedef ushort, uw_object_hdr_t;
@@ -940,7 +1011,7 @@ R F(...) {
 ...>
 }
 
-@word_11_1@
+@word_12_1@
 type R;
 identifier F =~ "^\(damage_all_objects_at_tile\)$";
 typedef ushort, uw_object_hdr_t;
@@ -960,7 +1031,7 @@ R F(...) {
 ...>
 }
 
-@word_11_2@
+@word_12_2@
 type R;
 identifier F =~ "^\(damage_all_objects_at_tile\)$";
 typedef ushort, uw_object_hdr_t;
@@ -980,7 +1051,7 @@ R F(...) {
 ...>
 }
 
-@word_11_3@
+@word_12_3@
 type R;
 identifier F =~ "^\(damage_all_objects_at_tile\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1000,7 +1071,7 @@ R F(...) {
 ...>
 }
 
-@word_12_0@
+@word_13_0@
 type R;
 identifier F =~ "^\(consume_linked_special_object_charge\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1023,7 +1094,7 @@ R F(...) {
 ...>
 }
 
-@word_12_1@
+@word_13_1@
 type R;
 identifier F =~ "^\(consume_linked_special_object_charge\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1043,7 +1114,7 @@ R F(...) {
 ...>
 }
 
-@word_12_2@
+@word_13_2@
 type R;
 identifier F =~ "^\(consume_linked_special_object_charge\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1063,7 +1134,7 @@ R F(...) {
 ...>
 }
 
-@word_12_3@
+@word_13_3@
 type R;
 identifier F =~ "^\(consume_linked_special_object_charge\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1083,7 +1154,7 @@ R F(...) {
 ...>
 }
 
-@word_13_0@
+@word_14_0@
 type R;
 identifier F =~ "^\(spawn_effect_debris_burst\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1109,7 +1180,7 @@ R F(...) {
 ...>
 }
 
-@word_13_1@
+@word_14_1@
 type R;
 identifier F =~ "^\(spawn_effect_debris_burst\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1129,7 +1200,7 @@ R F(...) {
 ...>
 }
 
-@word_13_2@
+@word_14_2@
 type R;
 identifier F =~ "^\(spawn_effect_debris_burst\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1149,7 +1220,7 @@ R F(...) {
 ...>
 }
 
-@word_13_3@
+@word_14_3@
 type R;
 identifier F =~ "^\(spawn_effect_debris_burst\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1169,7 +1240,7 @@ R F(...) {
 ...>
 }
 
-@word_14_0@
+@word_15_0@
 type R;
 identifier F =~ "^\(init_monster_spawn_defaults\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1189,7 +1260,7 @@ R F(...) {
 ...>
 }
 
-@word_14_1@
+@word_15_1@
 type R;
 identifier F =~ "^\(init_monster_spawn_defaults\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1206,7 +1277,7 @@ R F(...) {
 ...>
 }
 
-@word_14_2@
+@word_15_2@
 type R;
 identifier F =~ "^\(init_monster_spawn_defaults\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1223,7 +1294,7 @@ R F(...) {
 ...>
 }
 
-@word_14_3@
+@word_15_3@
 type R;
 identifier F =~ "^\(init_monster_spawn_defaults\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1240,7 +1311,7 @@ R F(...) {
 ...>
 }
 
-@word_15_0@
+@word_16_0@
 type R;
 identifier F =~ "^\(append_object_special_name\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1266,7 +1337,7 @@ R F(...) {
 ...>
 }
 
-@word_15_1@
+@word_16_1@
 type R;
 identifier F =~ "^\(append_object_special_name\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1286,7 +1357,7 @@ R F(...) {
 ...>
 }
 
-@word_15_2@
+@word_16_2@
 type R;
 identifier F =~ "^\(append_object_special_name\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1306,7 +1377,7 @@ R F(...) {
 ...>
 }
 
-@word_15_3@
+@word_16_3@
 type R;
 identifier F =~ "^\(append_object_special_name\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1326,7 +1397,7 @@ R F(...) {
 ...>
 }
 
-@word_16_0@
+@word_17_0@
 type R;
 identifier F =~ "^\(spawn_object_near_actor\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1352,7 +1423,7 @@ R F(...) {
 ...>
 }
 
-@word_16_1@
+@word_17_1@
 type R;
 identifier F =~ "^\(spawn_object_near_actor\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1372,7 +1443,7 @@ R F(...) {
 ...>
 }
 
-@word_16_2@
+@word_17_2@
 type R;
 identifier F =~ "^\(spawn_object_near_actor\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1392,7 +1463,7 @@ R F(...) {
 ...>
 }
 
-@word_16_3@
+@word_17_3@
 type R;
 identifier F =~ "^\(spawn_object_near_actor\)$";
 typedef ushort, uw_object_hdr_t;

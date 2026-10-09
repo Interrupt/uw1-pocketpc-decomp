@@ -8381,15 +8381,6 @@ R F(...) {
 |
 - *(ushort *)iVar2 & 0x1ff
 + ((uw_object_hdr_t *)iVar2)->item_id
-|
-- *(ushort *)(iVar2 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar2)->item_id
-|
-- CONCAT11(iVar2[1], *iVar2) & 0x1ff
-+ ((uw_object_hdr_t *)iVar2)->item_id
-|
-- CONCAT11(iVar2[1], iVar2[0]) & 0x1ff
-+ ((uw_object_hdr_t *)iVar2)->item_id
 )
 ...>
 }
@@ -8420,34 +8411,10 @@ R F(...) {
 - (*(ushort *)iVar2 & 0xe00) >> 9
 + ((uw_object_hdr_t *)iVar2)->flags_res
 |
-- (*(ushort *)(iVar2 + 0x0) >> 9) & 0x7
-+ ((uw_object_hdr_t *)iVar2)->flags_res
-|
-- (*(ushort *)(iVar2 + 0x0) & 0xe00) >> 9
-+ ((uw_object_hdr_t *)iVar2)->flags_res
-|
-- (CONCAT11(iVar2[1], *iVar2) >> 9) & 0x7
-+ ((uw_object_hdr_t *)iVar2)->flags_res
-|
-- (CONCAT11(iVar2[1], *iVar2) & 0xe00) >> 9
-+ ((uw_object_hdr_t *)iVar2)->flags_res
-|
-- (CONCAT11(iVar2[1], iVar2[0]) >> 9) & 0x7
-+ ((uw_object_hdr_t *)iVar2)->flags_res
-|
-- (CONCAT11(iVar2[1], iVar2[0]) & 0xe00) >> 9
-+ ((uw_object_hdr_t *)iVar2)->flags_res
-|
 - (*(byte *)((char *)iVar2 + 0x1) >> 1) & 0x7
 + ((uw_object_hdr_t *)iVar2)->flags_res
 |
 - (*(byte *)((char *)iVar2 + 0x1) & 0xe) >> 1
-+ ((uw_object_hdr_t *)iVar2)->flags_res
-|
-- (*(byte *)(iVar2 + 0x1) >> 1) & 0x7
-+ ((uw_object_hdr_t *)iVar2)->flags_res
-|
-- (*(byte *)(iVar2 + 0x1) & 0xe) >> 1
 + ((uw_object_hdr_t *)iVar2)->flags_res
 )
 ...>
@@ -8479,34 +8446,10 @@ R F(...) {
 - (*(ushort *)iVar2 & 0x1000) >> 12
 + ((uw_object_hdr_t *)iVar2)->enchanted
 |
-- (*(ushort *)(iVar2 + 0x0) >> 12) & 0x1
-+ ((uw_object_hdr_t *)iVar2)->enchanted
-|
-- (*(ushort *)(iVar2 + 0x0) & 0x1000) >> 12
-+ ((uw_object_hdr_t *)iVar2)->enchanted
-|
-- (CONCAT11(iVar2[1], *iVar2) >> 12) & 0x1
-+ ((uw_object_hdr_t *)iVar2)->enchanted
-|
-- (CONCAT11(iVar2[1], *iVar2) & 0x1000) >> 12
-+ ((uw_object_hdr_t *)iVar2)->enchanted
-|
-- (CONCAT11(iVar2[1], iVar2[0]) >> 12) & 0x1
-+ ((uw_object_hdr_t *)iVar2)->enchanted
-|
-- (CONCAT11(iVar2[1], iVar2[0]) & 0x1000) >> 12
-+ ((uw_object_hdr_t *)iVar2)->enchanted
-|
 - (*(byte *)((char *)iVar2 + 0x1) >> 4) & 0x1
 + ((uw_object_hdr_t *)iVar2)->enchanted
 |
 - (*(byte *)((char *)iVar2 + 0x1) & 0x10) >> 4
-+ ((uw_object_hdr_t *)iVar2)->enchanted
-|
-- (*(byte *)(iVar2 + 0x1) >> 4) & 0x1
-+ ((uw_object_hdr_t *)iVar2)->enchanted
-|
-- (*(byte *)(iVar2 + 0x1) & 0x10) >> 4
 + ((uw_object_hdr_t *)iVar2)->enchanted
 )
 ...>
@@ -8538,34 +8481,10 @@ R F(...) {
 - (*(ushort *)iVar2 & 0x2000) >> 13
 + ((uw_object_hdr_t *)iVar2)->doordir
 |
-- (*(ushort *)(iVar2 + 0x0) >> 13) & 0x1
-+ ((uw_object_hdr_t *)iVar2)->doordir
-|
-- (*(ushort *)(iVar2 + 0x0) & 0x2000) >> 13
-+ ((uw_object_hdr_t *)iVar2)->doordir
-|
-- (CONCAT11(iVar2[1], *iVar2) >> 13) & 0x1
-+ ((uw_object_hdr_t *)iVar2)->doordir
-|
-- (CONCAT11(iVar2[1], *iVar2) & 0x2000) >> 13
-+ ((uw_object_hdr_t *)iVar2)->doordir
-|
-- (CONCAT11(iVar2[1], iVar2[0]) >> 13) & 0x1
-+ ((uw_object_hdr_t *)iVar2)->doordir
-|
-- (CONCAT11(iVar2[1], iVar2[0]) & 0x2000) >> 13
-+ ((uw_object_hdr_t *)iVar2)->doordir
-|
 - (*(byte *)((char *)iVar2 + 0x1) >> 5) & 0x1
 + ((uw_object_hdr_t *)iVar2)->doordir
 |
 - (*(byte *)((char *)iVar2 + 0x1) & 0x20) >> 5
-+ ((uw_object_hdr_t *)iVar2)->doordir
-|
-- (*(byte *)(iVar2 + 0x1) >> 5) & 0x1
-+ ((uw_object_hdr_t *)iVar2)->doordir
-|
-- (*(byte *)(iVar2 + 0x1) & 0x20) >> 5
 + ((uw_object_hdr_t *)iVar2)->doordir
 )
 ...>
@@ -8597,34 +8516,10 @@ R F(...) {
 - (*(ushort *)iVar2 & 0x4000) >> 14
 + ((uw_object_hdr_t *)iVar2)->invisible
 |
-- (*(ushort *)(iVar2 + 0x0) >> 14) & 0x1
-+ ((uw_object_hdr_t *)iVar2)->invisible
-|
-- (*(ushort *)(iVar2 + 0x0) & 0x4000) >> 14
-+ ((uw_object_hdr_t *)iVar2)->invisible
-|
-- (CONCAT11(iVar2[1], *iVar2) >> 14) & 0x1
-+ ((uw_object_hdr_t *)iVar2)->invisible
-|
-- (CONCAT11(iVar2[1], *iVar2) & 0x4000) >> 14
-+ ((uw_object_hdr_t *)iVar2)->invisible
-|
-- (CONCAT11(iVar2[1], iVar2[0]) >> 14) & 0x1
-+ ((uw_object_hdr_t *)iVar2)->invisible
-|
-- (CONCAT11(iVar2[1], iVar2[0]) & 0x4000) >> 14
-+ ((uw_object_hdr_t *)iVar2)->invisible
-|
 - (*(byte *)((char *)iVar2 + 0x1) >> 6) & 0x1
 + ((uw_object_hdr_t *)iVar2)->invisible
 |
 - (*(byte *)((char *)iVar2 + 0x1) & 0x40) >> 6
-+ ((uw_object_hdr_t *)iVar2)->invisible
-|
-- (*(byte *)(iVar2 + 0x1) >> 6) & 0x1
-+ ((uw_object_hdr_t *)iVar2)->invisible
-|
-- (*(byte *)(iVar2 + 0x1) & 0x40) >> 6
 + ((uw_object_hdr_t *)iVar2)->invisible
 )
 ...>
@@ -8656,24 +8551,6 @@ R F(...) {
 - (*(ushort *)iVar2 & 0x8000) >> 15
 + ((uw_object_hdr_t *)iVar2)->is_quant
 |
-- (*(ushort *)(iVar2 + 0x0) >> 15) & 0x1
-+ ((uw_object_hdr_t *)iVar2)->is_quant
-|
-- (*(ushort *)(iVar2 + 0x0) & 0x8000) >> 15
-+ ((uw_object_hdr_t *)iVar2)->is_quant
-|
-- (CONCAT11(iVar2[1], *iVar2) >> 15) & 0x1
-+ ((uw_object_hdr_t *)iVar2)->is_quant
-|
-- (CONCAT11(iVar2[1], *iVar2) & 0x8000) >> 15
-+ ((uw_object_hdr_t *)iVar2)->is_quant
-|
-- (CONCAT11(iVar2[1], iVar2[0]) >> 15) & 0x1
-+ ((uw_object_hdr_t *)iVar2)->is_quant
-|
-- (CONCAT11(iVar2[1], iVar2[0]) & 0x8000) >> 15
-+ ((uw_object_hdr_t *)iVar2)->is_quant
-|
 - (*(byte *)((char *)iVar2 + 0x1) >> 7) & 0x1
 + ((uw_object_hdr_t *)iVar2)->is_quant
 |
@@ -8681,15 +8558,6 @@ R F(...) {
 + ((uw_object_hdr_t *)iVar2)->is_quant
 |
 - *(byte *)((char *)iVar2 + 0x1) >> 7
-+ ((uw_object_hdr_t *)iVar2)->is_quant
-|
-- (*(byte *)(iVar2 + 0x1) >> 7) & 0x1
-+ ((uw_object_hdr_t *)iVar2)->is_quant
-|
-- (*(byte *)(iVar2 + 0x1) & 0x80) >> 7
-+ ((uw_object_hdr_t *)iVar2)->is_quant
-|
-- *(byte *)(iVar2 + 0x1) >> 7
 + ((uw_object_hdr_t *)iVar2)->is_quant
 )
 ...>
@@ -8709,16 +8577,7 @@ R F(...) {
 - ((ushort *)iVar2)[1] & 0x7f
 + ((uw_object_hdr_t *)iVar2)->zpos
 |
-- *(ushort *)(iVar2 + 0x2) & 0x7f
-+ ((uw_object_hdr_t *)iVar2)->zpos
-|
 - *(byte *)((char *)iVar2 + 0x2) & 0x7f
-+ ((uw_object_hdr_t *)iVar2)->zpos
-|
-- iVar2[2] & 0x7f
-+ ((uw_object_hdr_t *)iVar2)->zpos
-|
-- *(byte *)(iVar2 + 0x2) & 0x7f
 + ((uw_object_hdr_t *)iVar2)->zpos
 )
 ...>
@@ -8742,12 +8601,6 @@ R F(...) {
 + ((uw_object_hdr_t *)iVar2)->heading
 |
 - (((ushort *)iVar2)[1] & 0x380) >> 7
-+ ((uw_object_hdr_t *)iVar2)->heading
-|
-- (*(ushort *)(iVar2 + 0x2) >> 7) & 0x7
-+ ((uw_object_hdr_t *)iVar2)->heading
-|
-- (*(ushort *)(iVar2 + 0x2) & 0x380) >> 7
 + ((uw_object_hdr_t *)iVar2)->heading
 )
 ...>
@@ -8773,22 +8626,10 @@ R F(...) {
 - (((ushort *)iVar2)[1] & 0x1c00) >> 10
 + ((uw_object_hdr_t *)iVar2)->ypos
 |
-- (*(ushort *)(iVar2 + 0x2) >> 10) & 0x7
-+ ((uw_object_hdr_t *)iVar2)->ypos
-|
-- (*(ushort *)(iVar2 + 0x2) & 0x1c00) >> 10
-+ ((uw_object_hdr_t *)iVar2)->ypos
-|
 - (*(byte *)((char *)iVar2 + 0x3) >> 2) & 0x7
 + ((uw_object_hdr_t *)iVar2)->ypos
 |
 - (*(byte *)((char *)iVar2 + 0x3) & 0x1c) >> 2
-+ ((uw_object_hdr_t *)iVar2)->ypos
-|
-- (*(byte *)(iVar2 + 0x3) >> 2) & 0x7
-+ ((uw_object_hdr_t *)iVar2)->ypos
-|
-- (*(byte *)(iVar2 + 0x3) & 0x1c) >> 2
 + ((uw_object_hdr_t *)iVar2)->ypos
 )
 ...>
@@ -8814,12 +8655,6 @@ R F(...) {
 - (((ushort *)iVar2)[1] & 0xe000) >> 13
 + ((uw_object_hdr_t *)iVar2)->xpos
 |
-- (*(ushort *)(iVar2 + 0x2) >> 13) & 0x7
-+ ((uw_object_hdr_t *)iVar2)->xpos
-|
-- (*(ushort *)(iVar2 + 0x2) & 0xe000) >> 13
-+ ((uw_object_hdr_t *)iVar2)->xpos
-|
 - (*(byte *)((char *)iVar2 + 0x3) >> 5) & 0x7
 + ((uw_object_hdr_t *)iVar2)->xpos
 |
@@ -8827,15 +8662,6 @@ R F(...) {
 + ((uw_object_hdr_t *)iVar2)->xpos
 |
 - *(byte *)((char *)iVar2 + 0x3) >> 5
-+ ((uw_object_hdr_t *)iVar2)->xpos
-|
-- (*(byte *)(iVar2 + 0x3) >> 5) & 0x7
-+ ((uw_object_hdr_t *)iVar2)->xpos
-|
-- (*(byte *)(iVar2 + 0x3) & 0xe0) >> 5
-+ ((uw_object_hdr_t *)iVar2)->xpos
-|
-- *(byte *)(iVar2 + 0x3) >> 5
 + ((uw_object_hdr_t *)iVar2)->xpos
 )
 ...>
@@ -8855,16 +8681,7 @@ R F(...) {
 - ((ushort *)iVar2)[2] & 0x3f
 + ((uw_object_hdr_t *)iVar2)->quality
 |
-- *(ushort *)(iVar2 + 0x4) & 0x3f
-+ ((uw_object_hdr_t *)iVar2)->quality
-|
 - *(byte *)((char *)iVar2 + 0x4) & 0x3f
-+ ((uw_object_hdr_t *)iVar2)->quality
-|
-- iVar2[4] & 0x3f
-+ ((uw_object_hdr_t *)iVar2)->quality
-|
-- *(byte *)(iVar2 + 0x4) & 0x3f
 + ((uw_object_hdr_t *)iVar2)->quality
 )
 ...>
@@ -8889,12 +8706,6 @@ R F(...) {
 |
 - (((ushort *)iVar2)[2] & 0xffc0) >> 6
 + ((uw_object_hdr_t *)iVar2)->next
-|
-- (*(ushort *)(iVar2 + 0x4) >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)iVar2)->next
-|
-- (*(ushort *)(iVar2 + 0x4) & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)iVar2)->next
 )
 ...>
 }
@@ -8913,16 +8724,7 @@ R F(...) {
 - ((ushort *)iVar2)[3] & 0x3f
 + ((uw_object_hdr_t *)iVar2)->owner
 |
-- *(ushort *)(iVar2 + 0x6) & 0x3f
-+ ((uw_object_hdr_t *)iVar2)->owner
-|
 - *(byte *)((char *)iVar2 + 0x6) & 0x3f
-+ ((uw_object_hdr_t *)iVar2)->owner
-|
-- iVar2[6] & 0x3f
-+ ((uw_object_hdr_t *)iVar2)->owner
-|
-- *(byte *)(iVar2 + 0x6) & 0x3f
 + ((uw_object_hdr_t *)iVar2)->owner
 )
 ...>
@@ -8946,12 +8748,6 @@ R F(...) {
 + ((uw_object_hdr_t *)iVar2)->link
 |
 - (((ushort *)iVar2)[3] & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)iVar2)->link
-|
-- (*(ushort *)(iVar2 + 0x6) >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)iVar2)->link
-|
-- (*(ushort *)(iVar2 + 0x6) & 0xffc0) >> 6
 + ((uw_object_hdr_t *)iVar2)->link
 )
 ...>

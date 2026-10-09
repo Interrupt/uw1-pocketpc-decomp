@@ -591,7 +591,7 @@ void babl_builtin_set_race_attitude(char *args)
   short sVar4;
   int iVar5;
   uint uVar6;
-  ushort *puVar7;
+  uw_mobile_object_t *puVar7;
   short sVar8;
   int iVar10;
   uint uVar11;
@@ -602,10 +602,10 @@ void babl_builtin_set_race_attitude(char *args)
   iVar5 = babl_read_var_word((int)*(short *)(args + -2));
   uVar2 = babl_read_var_word((int)*(short *)(args + -4));
   uVar3 = babl_read_var_word((int)*(short *)(args + -6));
-  uVar1 = *DAT_00100674;
-  uVar11 = (uint)(*(byte *)((char *)DAT_00100674 + 0x17) >> 2);
+  uVar1 = ((uw_object_hdr_t *)DAT_00100674)->type_flags;
+  uVar11 = (uint)(((uw_mobile_object_t *)DAT_00100674)->tile_x);
   iVar13 = uVar11 - iVar5;
-  uVar6 = DAT_00100674[0xb] >> 4 & 0x3f;
+  uVar6 = ((uw_mobile_object_t *)DAT_00100674)->tile_y;
   iVar10 = uVar6 - iVar5;
   if (iVar13 * 0x10000 >> 0x10 < 1) {
     iVar13 = 1;
@@ -632,17 +632,16 @@ void babl_builtin_set_race_attitude(char *args)
         /* was folded into `int iVar5` (reused elsewhere as a loop-index
            int) -- truncated tilemap_lookup's real `void *` return */
         char *_tile5 = (char *)tilemap_lookup(iVar9,iVar10);
-        puVar7 = (ushort *)resolve_object_link(_tile5 + 2);
-        if (puVar7 != (ushort *)0x0) {
+        puVar7 = (uw_mobile_object_t *)resolve_object_link(_tile5 + 2);
+        if (puVar7 != NULL) {
           do {
-            if ((((((uw_object_hdr_t *)puVar7)->item_id) == (int)(short)(uVar1 & 0x1ff)) && ((puVar7[5] & 0x80) == 0)) &&
-                ((byte) g_monster_type_props[(((uw_object_hdr_t *)puVar7)->item_id & 0x3f)].race_flags == uVar3)) {
-              uVar11 = *(ushort *)((char *)puVar7 + 0xd) & 0x3fff;
-              *(char *)((char *)puVar7 + 0xd) = (char)uVar11;
-              *(byte *)(puVar7 + 7) = (byte)(uVar11 >> 8) | (byte)(((uVar2 & 3) << 0xe) >> 8);
+            if ((((puVar7->hdr.item_id) == (int)(short)(uVar1 & 0x1ff)) && ((puVar7->movement_flags & 0x80) == 0)) &&
+                ((byte) g_monster_type_props[(puVar7->hdr.item_id & 0x3f)].race_flags == uVar3)) {
+              uVar11 = puVar7->status_word & 0x3fff;
+              puVar7->npc_attitude = uVar2 & 3;
             }
-            puVar7 = (ushort *)resolve_object_link(puVar7 + 2);
-          } while (puVar7 != (ushort *)0x0);
+            puVar7 = (uw_mobile_object_t *)resolve_object_link(&puVar7->hdr.chain_word);
+          } while (puVar7 != NULL);
         }
         iVar9 = iVar9 + 1;
         iVar5 = iVar9 * 0x10000 >> 0x10;

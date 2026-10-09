@@ -257,8 +257,8 @@ the repair leaves unrelated functions untouched.
 
 No game function is moved to a different source file during this work.
 
-Checkpoint validation: game build, all 53 C unit suites, and all thirteen conversion
-tool suites pass. The latest
+Validation includes the game build, all 53 C unit suites, conversion regressions,
+and focused sanitizer checks. The latest
 AddressSanitizer pass covers 19 consumers: babl_objects/throw/throw_cursor/npc_state/npc_combat/npc_ai/creatures/
 combat/object_layout/object_core/movement/scheduler/spells/chargen/inventory/
 lighting/sleep/teleport/babl_vm. This is a checkpoint for continuing the full
@@ -329,6 +329,40 @@ including untouched snapshot bytes, object storage and random-call counts.
 `--reference PATH` additionally compares a saved original builder; `--asan`
 enables sanitizer checks. Receiver fixtures check word, character and void
 pointer scaling, signed reads, unrelated fields, scope exclusions and idempotence.
+
+## NPC summon and interaction fields
+
+`generate_npc_interaction_rules.py` emits the function-scoped recipes in
+`npc-interactions/`; `--in-place` applies them, and `--check` verifies the
+current source is stable. Access conversion precedes adjacent packed-store
+consolidation and property updates. Functions stay at their original locations.
+
+Summon initialization names header XYZ, static quality, mobile tile coordinates,
+NPC attitude and target coordinates. Only variant 4 allocates and initializes
+an NPC, so its status and target words never label the caster or static spawn.
+Other caster extensions use the shared mobile layout. Noise reactions and BABL
+race updates set `npc_attitude` while preserving the lower fourteen status bits.
+The scripted conversation sets identity, attitude and goal through a typed NPC
+pointer, then frees its common header. BABL traversal retains the original
+chain-field address when its local record pointer becomes typed.
+
+Packed scalar snapshots retain their original values across calls and property
+updates. The conversation's two pure snapshots are removed only after a scoped
+check proves they have no remaining use or escaped address; volatile snapshots
+are excluded. Unknown movement bit 7 and AI flag bits keep explicit masks on
+named byte views. Status bit 9 remains unnamed; this batch supplies no evidence
+for assigning it a semantic property.
+
+`npc_interaction_fields` extracts the four actual game functions and runs
+712,704 cases against independent byte expectations. Coverage includes all
+65,536 status values, summon variants, NPC/player casters, placement failures,
+noise filtering, conversation cleanup and BABL race filtering. Service mocks
+observe records and deliberately change selected global pointers. `--asan`
+enables sanitizer checks; `--reference-dir PATH` compares saved original sources
+at every service call, including record bytes, arguments, random calls, messages
+and final pointer identities. It also verifies complete original-to-current
+conversion and idempotence. The refreshed audit records 280 proven pointer
+roles and 30 remaining raw accesses at audited sites, down from 61.
 
 ## Packed-byte reassembly
 

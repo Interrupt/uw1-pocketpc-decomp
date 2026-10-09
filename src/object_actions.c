@@ -1396,7 +1396,7 @@ void cast_summon_or_spawn_effect(void *caster, char variant)
   int iVar9;
   uint uVar10;
   undefined4 uVar11;
-  char *pObj;  /* was reuse of `iVar8` (int) -- truncated spawn_new_object's
+  uw_object_hdr_t *pObj;  /* was reuse of `iVar8` (int) -- truncated spawn_new_object's
                   real pointer; iVar8 itself stays int for its earlier,
                   unrelated uses above */
   ushort local_34;
@@ -1408,12 +1408,12 @@ void cast_summon_or_spawn_effect(void *caster, char variant)
   
   uVar11 = 0x115;
   uVar4 = ce_rand();
-  uVar2 = *(ushort *)(caster + 2);
-  bVar1 = *(byte *)(caster + 0x18);
+  uVar2 = ((uw_object_hdr_t *)caster)->position_word;
+  bVar1 = ((uw_mobile_object_t *)caster)->heading_flags;
   uw_ord2005_rem_154 = ((int)(uVar4)) % (0x1b);
   uw_ord2005_rem_155 = ((int)((bVar1 & 0x1f) + (uVar2 >> 2 & 0xe0) + uw_ord2005_rem_154 + -0xd)) % (0xff);
-  local_34 = (*(ushort *)(caster + 0x16) >> 7 & 0x1f8) + (uVar2 >> 0xd);
-  local_32 = (*(ushort *)(caster + 0x16) >> 1 & 0x1f8) + (uVar2 >> 10 & 7);
+  local_34 = ((((uw_mobile_object_t *)caster)->tile_x << 3)) + (uVar2 >> 0xd);
+  local_32 = ((((uw_mobile_object_t *)caster)->tile_y << 3)) + (uVar2 >> 10 & 7);
   uVar7 = 0xc;
   if (variant != '\x04') {
     uVar7 = 9;
@@ -1480,23 +1480,21 @@ void cast_summon_or_spawn_effect(void *caster, char variant)
     }
     iVar8 = check_object_placement_clearance(uVar10,0,(int)(short)local_34,(int)(short)local_32,local_30,1,8);
     if (iVar8 != 0) {
-      pObj = (char *)spawn_new_object(uVar10,variant == '\x04');
-      uVar2 = ((uw_object_hdr_t *)pObj)->position_word;
+      pObj = spawn_new_object(uVar10, variant == '\x04');
+      uVar2 = pObj->position_word;
       uVar6 = uVar2 & 0x1fff;
       bVar1 = (byte)(((local_34 & 7) << 0xd) >> 8);
-      ((uw_object_hdr_t *)pObj)->position_word_low = (byte)(char)uVar6;
-      ((uw_object_hdr_t *)pObj)->position_word_high = (byte)(uVar6 >> 8) | bVar1;
+      pObj->xpos = local_34 & 7;
       uVar6 = uVar2 & 0x3ff;
-      ((uw_object_hdr_t *)pObj)->position_word_low = (byte)(char)uVar6;
-      ((uw_object_hdr_t *)pObj)->position_word_high = (byte)(uVar6 >> 8) | bVar1 | (byte)(((local_32 & 7) << 10) >> 8);
+      pObj->ypos = local_32 & 7;
       saved_scratch = g_scratch_object_ptr;
       if (variant == '\x04') {
         g_scratch_object_ptr = (uw_object_hdr_t *)pObj;
         init_monster_spawn_defaults();
         uVar6 = local_2e & 0x3f | (local_2c & 0x3ff) << 6;
         g_scratch_object_ptr = saved_scratch;
-        *(byte *)(pObj + 0x16) = *(byte *)(pObj + 0x16) & 0xf | (byte)(uVar6 << 4);
-        *(char *)(pObj + 0x17) = (char)(uVar6 >> 4);
+        ((uw_mobile_object_t *)pObj)->tile_y = local_2e & 0x3f;
+        ((uw_mobile_object_t *)pObj)->tile_x = local_2c & 0x3f;
         if ((g_monster_type_props[(uVar10 & 0xfe3f)].movement_flags & 0x80) != 0) {
           iVar9 = local_30 + 0x80;
           if (iVar9 < 0) {
@@ -1506,32 +1504,27 @@ void cast_summon_or_spawn_effect(void *caster, char variant)
         }
         pbVar5 = local_28;
         if (caster == g_player_object) {
-          *(byte *)(pObj + 0x19) = *(byte *)(pObj + 0x19) | 0x40;
+          ((uw_mobile_object_t *)pObj)->npc_ai_flags = ((uw_mobile_object_t *)pObj)->npc_ai_flags | 0x40;
         }
         else {
-          uVar10 = *(ushort *)(pObj + 0xd) & 0x3fff;
-          *(char *)(pObj + 0xd) = (char)uVar10;
-          *(char *)(pObj + 0xe) = (char)(uVar10 >> 8);
-          *(byte *)(pObj + 0x19) = *(byte *)(pObj + 0x19) | 1;
-          uVar2 = *(ushort *)(pObj + 0xf);
+          uVar10 = ((uw_mobile_object_t *)pObj)->status_word & 0x3fff;
+          ((uw_mobile_object_t *)pObj)->npc_attitude = 0;
+          ((uw_mobile_object_t *)pObj)->npc_ai_flags = ((uw_mobile_object_t *)pObj)->npc_ai_flags | 1;
+          uVar2 = ((uw_mobile_object_t *)pObj)->target_word;
           uVar10 = uVar2 & 0xffc0;
           bVar1 = g_player_object->npc_xhome;
-          *(byte *)(pObj + 0xf) = (byte)uVar10 | bVar1;
-          *(char *)(pObj + 0x10) = (char)(uVar10 >> 8);
+          ((uw_mobile_object_t *)pObj)->npc_target_tile_x = bVar1;
           uVar10 = uVar2 & 0xf000 | (uint)bVar1 | (g_player_object->npc_yhome << 4) << 2;
-          *(char *)(pObj + 0xf) = (char)uVar10;
-          *(char *)(pObj + 0x10) = (char)(uVar10 >> 8);
+          ((uw_mobile_object_t *)pObj)->npc_target_tile_y = g_player_object->npc_yhome;
         }
       }
       else {
-        uVar7 = ((uw_object_hdr_t *)pObj)->chain_word;
-        ((uw_object_hdr_t *)pObj)->chain_word_low = (byte)uVar7 | 0x3f;
-        ((uw_object_hdr_t *)pObj)->chain_word_high = (byte)(char)((ushort)uVar7 >> 8);
+        uVar7 = pObj->chain_word;
+        pObj->quality = 0x3f;
       }
-      uVar7 = ((uw_object_hdr_t *)pObj)->position_word;
+      uVar7 = pObj->position_word;
       bVar1 = (byte)uVar7;
-      ((uw_object_hdr_t *)pObj)->position_word_low = (bVar1 ^ (byte)local_30) & 0x7f ^ bVar1;
-      ((uw_object_hdr_t *)pObj)->position_word_high = (byte)(char)((ushort)uVar7 >> 8);
+      pObj->zpos = (byte)local_30 & 0x7f;
       object_list_insert_head(pbVar5 + 2,pObj);
       if (variant == '\x04') {
         return;

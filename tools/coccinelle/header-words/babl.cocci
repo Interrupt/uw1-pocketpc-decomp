@@ -172,7 +172,7 @@ R F(...) {
 
 @word_2_0@
 type R;
-identifier F =~ "^\(babl_builtin_set_race_attitude\|babl_builtin_setup_to_barter\)$";
+identifier F =~ "^\(babl_builtin_set_race_attitude\)$";
 typedef ushort, uw_object_hdr_t;
 @@
 R F(...) {
@@ -186,19 +186,13 @@ R F(...) {
 |
 - *(ushort *)puVar7
 + ((uw_object_hdr_t *)puVar7)->type_flags
-|
-- puVar7[0]
-+ ((uw_object_hdr_t *)puVar7)->type_flags
-|
-- *puVar7
-+ ((uw_object_hdr_t *)puVar7)->type_flags
 )
 ...>
 }
 
 @word_2_1@
 type R;
-identifier F =~ "^\(babl_builtin_set_race_attitude\|babl_builtin_setup_to_barter\)$";
+identifier F =~ "^\(babl_builtin_set_race_attitude\)$";
 typedef ushort, uw_object_hdr_t;
 @@
 R F(...) {
@@ -209,16 +203,13 @@ R F(...) {
 |
 - ((ushort *)puVar7)[1]
 + ((uw_object_hdr_t *)puVar7)->position_word
-|
-- puVar7[1]
-+ ((uw_object_hdr_t *)puVar7)->position_word
 )
 ...>
 }
 
 @word_2_2@
 type R;
-identifier F =~ "^\(babl_builtin_set_race_attitude\|babl_builtin_setup_to_barter\)$";
+identifier F =~ "^\(babl_builtin_set_race_attitude\)$";
 typedef ushort, uw_object_hdr_t;
 @@
 R F(...) {
@@ -229,16 +220,13 @@ R F(...) {
 |
 - ((ushort *)puVar7)[2]
 + ((uw_object_hdr_t *)puVar7)->chain_word
-|
-- puVar7[2]
-+ ((uw_object_hdr_t *)puVar7)->chain_word
 )
 ...>
 }
 
 @word_2_3@
 type R;
-identifier F =~ "^\(babl_builtin_set_race_attitude\|babl_builtin_setup_to_barter\)$";
+identifier F =~ "^\(babl_builtin_set_race_attitude\)$";
 typedef ushort, uw_object_hdr_t;
 @@
 R F(...) {
@@ -248,9 +236,6 @@ R F(...) {
 + ((uw_object_hdr_t *)puVar7)->link_word
 |
 - ((ushort *)puVar7)[3]
-+ ((uw_object_hdr_t *)puVar7)->link_word
-|
-- puVar7[3]
 + ((uw_object_hdr_t *)puVar7)->link_word
 )
 ...>
@@ -1461,6 +1446,92 @@ typedef ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
+- *(ushort *)((char *)puVar7 + 0)
++ ((uw_object_hdr_t *)puVar7)->type_flags
+|
+- ((ushort *)puVar7)[0]
++ ((uw_object_hdr_t *)puVar7)->type_flags
+|
+- *(ushort *)puVar7
++ ((uw_object_hdr_t *)puVar7)->type_flags
+|
+- puVar7[0]
++ ((uw_object_hdr_t *)puVar7)->type_flags
+|
+- *puVar7
++ ((uw_object_hdr_t *)puVar7)->type_flags
+)
+...>
+}
+
+@word_18_1@
+type R;
+identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar7 + 2)
++ ((uw_object_hdr_t *)puVar7)->position_word
+|
+- ((ushort *)puVar7)[1]
++ ((uw_object_hdr_t *)puVar7)->position_word
+|
+- puVar7[1]
++ ((uw_object_hdr_t *)puVar7)->position_word
+)
+...>
+}
+
+@word_18_2@
+type R;
+identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar7 + 4)
++ ((uw_object_hdr_t *)puVar7)->chain_word
+|
+- ((ushort *)puVar7)[2]
++ ((uw_object_hdr_t *)puVar7)->chain_word
+|
+- puVar7[2]
++ ((uw_object_hdr_t *)puVar7)->chain_word
+)
+...>
+}
+
+@word_18_3@
+type R;
+identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar7 + 6)
++ ((uw_object_hdr_t *)puVar7)->link_word
+|
+- ((ushort *)puVar7)[3]
++ ((uw_object_hdr_t *)puVar7)->link_word
+|
+- puVar7[3]
++ ((uw_object_hdr_t *)puVar7)->link_word
+)
+...>
+}
+
+@word_19_0@
+type R;
+identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
 - *(ushort *)((char *)uVar9 + 0)
 + ((uw_object_hdr_t *)uVar9)->type_flags
 |
@@ -1479,7 +1550,7 @@ R F(...) {
 ...>
 }
 
-@word_18_1@
+@word_19_1@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1499,7 +1570,7 @@ R F(...) {
 ...>
 }
 
-@word_18_2@
+@word_19_2@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1519,7 +1590,7 @@ R F(...) {
 ...>
 }
 
-@word_18_3@
+@word_19_3@
 type R;
 identifier F =~ "^\(babl_builtin_setup_to_barter\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1539,7 +1610,7 @@ R F(...) {
 ...>
 }
 
-@word_19_0@
+@word_20_0@
 type R;
 identifier F =~ "^\(end_barter_ui\|finalize_npc_barter_items\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1565,7 +1636,7 @@ R F(...) {
 ...>
 }
 
-@word_19_1@
+@word_20_1@
 type R;
 identifier F =~ "^\(end_barter_ui\|finalize_npc_barter_items\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1585,7 +1656,7 @@ R F(...) {
 ...>
 }
 
-@word_19_2@
+@word_20_2@
 type R;
 identifier F =~ "^\(end_barter_ui\|finalize_npc_barter_items\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1605,7 +1676,7 @@ R F(...) {
 ...>
 }
 
-@word_19_3@
+@word_20_3@
 type R;
 identifier F =~ "^\(end_barter_ui\|finalize_npc_barter_items\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1625,7 +1696,7 @@ R F(...) {
 ...>
 }
 
-@word_20_0@
+@word_21_0@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1648,7 +1719,7 @@ R F(...) {
 ...>
 }
 
-@word_20_1@
+@word_21_1@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1668,7 +1739,7 @@ R F(...) {
 ...>
 }
 
-@word_20_2@
+@word_21_2@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1688,7 +1759,7 @@ R F(...) {
 ...>
 }
 
-@word_20_3@
+@word_21_3@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1708,7 +1779,7 @@ R F(...) {
 ...>
 }
 
-@word_21_0@
+@word_22_0@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1731,7 +1802,7 @@ R F(...) {
 ...>
 }
 
-@word_21_1@
+@word_22_1@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1751,7 +1822,7 @@ R F(...) {
 ...>
 }
 
-@word_21_2@
+@word_22_2@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1771,7 +1842,7 @@ R F(...) {
 ...>
 }
 
-@word_21_3@
+@word_22_3@
 type R;
 identifier F =~ "^\(handle_barter_slot_click\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1791,7 +1862,7 @@ R F(...) {
 ...>
 }
 
-@word_22_0@
+@word_23_0@
 type R;
 identifier F =~ "^\(redraw_barter_slot_icon\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1811,7 +1882,7 @@ R F(...) {
 ...>
 }
 
-@word_22_1@
+@word_23_1@
 type R;
 identifier F =~ "^\(redraw_barter_slot_icon\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1828,7 +1899,7 @@ R F(...) {
 ...>
 }
 
-@word_22_2@
+@word_23_2@
 type R;
 identifier F =~ "^\(redraw_barter_slot_icon\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1845,7 +1916,7 @@ R F(...) {
 ...>
 }
 
-@word_22_3@
+@word_23_3@
 type R;
 identifier F =~ "^\(redraw_barter_slot_icon\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1862,7 +1933,7 @@ R F(...) {
 ...>
 }
 
-@word_23_0@
+@word_24_0@
 type R;
 identifier F =~ "^\(merge_or_swap_barter_slot_item\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1888,7 +1959,7 @@ R F(...) {
 ...>
 }
 
-@word_23_1@
+@word_24_1@
 type R;
 identifier F =~ "^\(merge_or_swap_barter_slot_item\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1908,7 +1979,7 @@ R F(...) {
 ...>
 }
 
-@word_23_2@
+@word_24_2@
 type R;
 identifier F =~ "^\(merge_or_swap_barter_slot_item\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1928,7 +1999,7 @@ R F(...) {
 ...>
 }
 
-@word_23_3@
+@word_24_3@
 type R;
 identifier F =~ "^\(merge_or_swap_barter_slot_item\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1948,7 +2019,7 @@ R F(...) {
 ...>
 }
 
-@word_24_0@
+@word_25_0@
 type R;
 identifier F =~ "^\(check_npc_item_preference\|finalize_player_barter_items\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1974,7 +2045,7 @@ R F(...) {
 ...>
 }
 
-@word_24_1@
+@word_25_1@
 type R;
 identifier F =~ "^\(check_npc_item_preference\|finalize_player_barter_items\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1994,7 +2065,7 @@ R F(...) {
 ...>
 }
 
-@word_24_2@
+@word_25_2@
 type R;
 identifier F =~ "^\(check_npc_item_preference\|finalize_player_barter_items\)$";
 typedef ushort, uw_object_hdr_t;
@@ -2014,7 +2085,7 @@ R F(...) {
 ...>
 }
 
-@word_24_3@
+@word_25_3@
 type R;
 identifier F =~ "^\(check_npc_item_preference\|finalize_player_barter_items\)$";
 typedef ushort, uw_object_hdr_t;
@@ -2034,7 +2105,7 @@ R F(...) {
 ...>
 }
 
-@word_25_0@
+@word_26_0@
 type R;
 identifier F =~ "^\(compute_barter_item_value\)$";
 typedef ushort, uw_object_hdr_t;
@@ -2060,7 +2131,7 @@ R F(...) {
 ...>
 }
 
-@word_25_1@
+@word_26_1@
 type R;
 identifier F =~ "^\(compute_barter_item_value\)$";
 typedef ushort, uw_object_hdr_t;
@@ -2080,7 +2151,7 @@ R F(...) {
 ...>
 }
 
-@word_25_2@
+@word_26_2@
 type R;
 identifier F =~ "^\(compute_barter_item_value\)$";
 typedef ushort, uw_object_hdr_t;
@@ -2100,7 +2171,7 @@ R F(...) {
 ...>
 }
 
-@word_25_3@
+@word_26_3@
 type R;
 identifier F =~ "^\(compute_barter_item_value\)$";
 typedef ushort, uw_object_hdr_t;
@@ -2120,7 +2191,7 @@ R F(...) {
 ...>
 }
 
-@word_26_0@
+@word_27_0@
 type R;
 identifier F =~ "^\(collect_included_player_barter_items\|remove_item_from_npc_inventory_by_id\)$";
 typedef ushort, uw_object_hdr_t;
@@ -2146,7 +2217,7 @@ R F(...) {
 ...>
 }
 
-@word_26_1@
+@word_27_1@
 type R;
 identifier F =~ "^\(collect_included_player_barter_items\|remove_item_from_npc_inventory_by_id\)$";
 typedef ushort, uw_object_hdr_t;
@@ -2166,7 +2237,7 @@ R F(...) {
 ...>
 }
 
-@word_26_2@
+@word_27_2@
 type R;
 identifier F =~ "^\(collect_included_player_barter_items\|remove_item_from_npc_inventory_by_id\)$";
 typedef ushort, uw_object_hdr_t;
@@ -2186,7 +2257,7 @@ R F(...) {
 ...>
 }
 
-@word_26_3@
+@word_27_3@
 type R;
 identifier F =~ "^\(collect_included_player_barter_items\|remove_item_from_npc_inventory_by_id\)$";
 typedef ushort, uw_object_hdr_t;
@@ -2206,7 +2277,7 @@ R F(...) {
 ...>
 }
 
-@word_27_0@
+@word_28_0@
 type R;
 identifier F =~ "^\(give_barter_item_by_item_id\)$";
 typedef ushort, uw_object_hdr_t;
@@ -2229,7 +2300,7 @@ R F(...) {
 ...>
 }
 
-@word_27_1@
+@word_28_1@
 type R;
 identifier F =~ "^\(give_barter_item_by_item_id\)$";
 typedef ushort, uw_object_hdr_t;
@@ -2249,7 +2320,7 @@ R F(...) {
 ...>
 }
 
-@word_27_2@
+@word_28_2@
 type R;
 identifier F =~ "^\(give_barter_item_by_item_id\)$";
 typedef ushort, uw_object_hdr_t;
@@ -2269,7 +2340,7 @@ R F(...) {
 ...>
 }
 
-@word_27_3@
+@word_28_3@
 type R;
 identifier F =~ "^\(give_barter_item_by_item_id\)$";
 typedef ushort, uw_object_hdr_t;

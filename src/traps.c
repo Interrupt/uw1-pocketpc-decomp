@@ -1188,20 +1188,14 @@ void trigger_exploding_book_trap_at_tile(int unused, int tile_x, int tile_y)
 // conversation, runs interact_talk_npc() against it, then frees the slot...
 void trigger_scripted_npc_conversation()
 {
-  undefined2 uVar1;
-  char *iVar2;  /* was `int` -- truncated spawn_new_object's real pointer */
-  uint uVar3;
+  uw_mobile_object_t *iVar2;  /* was `int` -- truncated spawn_new_object's real pointer */
 
-  iVar2 = (char *)spawn_new_object(0x40,1);
-  *(undefined1 *)(iVar2 + 0x1a) = 0x19;
-  uVar1 = *(undefined2 *)(iVar2 + 0xd);
-  *(char *)(iVar2 + 0xd) = (char)uVar1;
-  *(byte *)(iVar2 + 0xe) = (byte)((ushort)uVar1 >> 8) | 0xc0;
-  uVar3 = ((uw_mobile_object_t *)iVar2)->goal_word & 0xfffa;
-  *(byte *)(iVar2 + 0xb) = (byte)uVar3 | 10;
-  *(char *)(iVar2 + 0xc) = (char)(uVar3 >> 8);
+  iVar2 = (uw_mobile_object_t *)spawn_new_object(0x40, 1);
+  iVar2->npc_whoami = 0x19;
+  iVar2->npc_attitude = 3;
+  iVar2->npc_goal = 10;
   interact_talk_npc();
-  free_object_slot(iVar2);
+  free_object_slot(&iVar2->hdr);
 }
 
 

@@ -1017,6 +1017,10 @@ if(UW_SPATCH_EXECUTABLE)
     COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_shared_mobile_fields.py"
       "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME npc_interaction_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_npc_interaction_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
   add_test(NAME projectile_spawn_fields
     COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_projectile_spawn_fields.py"

@@ -3782,8 +3782,8 @@ int alert_npc_to_noise_callback(int scan_x, int scan_y, ushort *npc)
   
   iVar10 = (((uw_object_hdr_t *)npc)->item_id & 0x3f) * 0x30;
   if ((((g_monster_type_props[(iVar10) / 0x30].race_flags == (DAT_0010195c & 0x1f)) &&
-        (((npc[5] & 0x80) == 0 || ((DAT_0010195c & 0x20) != 0)))) &&
-       ((DAT_0010195c != 0x20 || ((npc[5] & 0x80) != 0)))) &&
+        (((((uw_mobile_object_t *)npc)->movement_flags & 0x80) == 0 || ((DAT_0010195c & 0x20) != 0)))) &&
+       ((DAT_0010195c != 0x20 || ((((uw_mobile_object_t *)npc)->movement_flags & 0x80) != 0)))) &&
       ((DAT_0010195c != 0xd || (*(byte *)(DAT_00086df8 + 0x69) < 3)))) {
     uVar1 = ((uw_object_hdr_t *)npc)->position_word;
     iVar3 = (uint)(uVar1 >> 0xd) + scan_x * 8;
@@ -3809,13 +3809,12 @@ int alert_npc_to_noise_callback(int scan_x, int scan_y, ushort *npc)
                                            ,iVar7,(short)iVar9,
                                            (ushort)(byte) g_object_type_props[(*DAT_00101958 & 0x1ff)].height +
                                            (uVar2 & 0x7f) + 0xc), iVar10 != 0)) {
-      uVar8 = (*(ushort *)((char *)npc + 0xd) >> 0xe) - 1;
+      uVar8 = (((uw_mobile_object_t *)npc)->npc_attitude) - 1;
       if ((int)(uVar8 * 0x10000) >> 0x10 < 0) {
         uVar8 = 0;
       }
-      uVar6 = *(ushort *)((char *)npc + 0xd) & 0x3fff;
-      *(char *)((char *)npc + 0xd) = (char)uVar6;
-      *(byte *)(npc + 7) = (byte)(uVar6 >> 8) | (byte)(((uVar8 & 3) << 0xe) >> 8);
+      uVar6 = ((uw_mobile_object_t *)npc)->status_word & 0x3fff;
+      ((uw_mobile_object_t *)npc)->npc_attitude = uVar8 & 3;
       build_object_display_name(auStack_74,npc,1,0);
       uVar4 = get_message_string(uVar8 + 0xe1 | 0x200);
       ce_strcat(auStack_74,uVar4);
