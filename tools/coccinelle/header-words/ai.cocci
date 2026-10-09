@@ -89,92 +89,6 @@ typedef ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
-- *(ushort *)((char *)puVar11 + 0)
-+ ((uw_object_hdr_t *)puVar11)->type_flags
-|
-- ((ushort *)puVar11)[0]
-+ ((uw_object_hdr_t *)puVar11)->type_flags
-|
-- *(ushort *)puVar11
-+ ((uw_object_hdr_t *)puVar11)->type_flags
-|
-- puVar11[0]
-+ ((uw_object_hdr_t *)puVar11)->type_flags
-|
-- *puVar11
-+ ((uw_object_hdr_t *)puVar11)->type_flags
-)
-...>
-}
-
-@word_1_1@
-type R;
-identifier F =~ "^\(npc_ai_tick\)$";
-typedef ushort, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)puVar11 + 2)
-+ ((uw_object_hdr_t *)puVar11)->position_word
-|
-- ((ushort *)puVar11)[1]
-+ ((uw_object_hdr_t *)puVar11)->position_word
-|
-- puVar11[1]
-+ ((uw_object_hdr_t *)puVar11)->position_word
-)
-...>
-}
-
-@word_1_2@
-type R;
-identifier F =~ "^\(npc_ai_tick\)$";
-typedef ushort, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)puVar11 + 4)
-+ ((uw_object_hdr_t *)puVar11)->chain_word
-|
-- ((ushort *)puVar11)[2]
-+ ((uw_object_hdr_t *)puVar11)->chain_word
-|
-- puVar11[2]
-+ ((uw_object_hdr_t *)puVar11)->chain_word
-)
-...>
-}
-
-@word_1_3@
-type R;
-identifier F =~ "^\(npc_ai_tick\)$";
-typedef ushort, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)puVar11 + 6)
-+ ((uw_object_hdr_t *)puVar11)->link_word
-|
-- ((ushort *)puVar11)[3]
-+ ((uw_object_hdr_t *)puVar11)->link_word
-|
-- puVar11[3]
-+ ((uw_object_hdr_t *)puVar11)->link_word
-)
-...>
-}
-
-@word_2_0@
-type R;
-identifier F =~ "^\(npc_ai_tick\)$";
-typedef ushort, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
 - *(ushort *)((char *)player_rec + 0)
 + ((uw_object_hdr_t *)player_rec)->type_flags
 |
@@ -190,7 +104,7 @@ R F(...) {
 ...>
 }
 
-@word_2_1@
+@word_1_1@
 type R;
 identifier F =~ "^\(npc_ai_tick\)$";
 typedef ushort, uw_object_hdr_t;
@@ -210,7 +124,7 @@ R F(...) {
 ...>
 }
 
-@word_2_2@
+@word_1_2@
 type R;
 identifier F =~ "^\(npc_ai_tick\)$";
 typedef ushort, uw_object_hdr_t;
@@ -230,7 +144,7 @@ R F(...) {
 ...>
 }
 
-@word_2_3@
+@word_1_3@
 type R;
 identifier F =~ "^\(npc_ai_tick\)$";
 typedef ushort, uw_object_hdr_t;
@@ -246,6 +160,92 @@ R F(...) {
 |
 - *(ushort *)(player_rec + 6)
 + ((uw_object_hdr_t *)player_rec)->link_word
+)
+...>
+}
+
+@word_2_0@
+type R;
+identifier F =~ "^\(npc_ai_tick\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar11 + 0)
++ ((uw_object_hdr_t *)puVar11)->type_flags
+|
+- ((ushort *)puVar11)[0]
++ ((uw_object_hdr_t *)puVar11)->type_flags
+|
+- *(ushort *)puVar11
++ ((uw_object_hdr_t *)puVar11)->type_flags
+|
+- puVar11[0]
++ ((uw_object_hdr_t *)puVar11)->type_flags
+|
+- *puVar11
++ ((uw_object_hdr_t *)puVar11)->type_flags
+)
+...>
+}
+
+@word_2_1@
+type R;
+identifier F =~ "^\(npc_ai_tick\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar11 + 2)
++ ((uw_object_hdr_t *)puVar11)->position_word
+|
+- ((ushort *)puVar11)[1]
++ ((uw_object_hdr_t *)puVar11)->position_word
+|
+- puVar11[1]
++ ((uw_object_hdr_t *)puVar11)->position_word
+)
+...>
+}
+
+@word_2_2@
+type R;
+identifier F =~ "^\(npc_ai_tick\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar11 + 4)
++ ((uw_object_hdr_t *)puVar11)->chain_word
+|
+- ((ushort *)puVar11)[2]
++ ((uw_object_hdr_t *)puVar11)->chain_word
+|
+- puVar11[2]
++ ((uw_object_hdr_t *)puVar11)->chain_word
+)
+...>
+}
+
+@word_2_3@
+type R;
+identifier F =~ "^\(npc_ai_tick\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar11 + 6)
++ ((uw_object_hdr_t *)puVar11)->link_word
+|
+- ((ushort *)puVar11)[3]
++ ((uw_object_hdr_t *)puVar11)->link_word
+|
+- puVar11[3]
++ ((uw_object_hdr_t *)puVar11)->link_word
 )
 ...>
 }
@@ -335,7 +335,7 @@ R F(...) {
 
 @word_4_0@
 type R;
-identifier F =~ "^\(settle_mobile_to_immobile\|sync_object_tile_position\)$";
+identifier F =~ "^\(build_object_placement_snapshot\|settle_mobile_to_immobile\|sync_object_tile_position\)$";
 typedef ushort, uw_object_hdr_t;
 @@
 R F(...) {
@@ -361,7 +361,7 @@ R F(...) {
 
 @word_4_1@
 type R;
-identifier F =~ "^\(settle_mobile_to_immobile\|sync_object_tile_position\)$";
+identifier F =~ "^\(build_object_placement_snapshot\|settle_mobile_to_immobile\|sync_object_tile_position\)$";
 typedef ushort, uw_object_hdr_t;
 @@
 R F(...) {
@@ -381,7 +381,7 @@ R F(...) {
 
 @word_4_2@
 type R;
-identifier F =~ "^\(settle_mobile_to_immobile\|sync_object_tile_position\)$";
+identifier F =~ "^\(build_object_placement_snapshot\|settle_mobile_to_immobile\|sync_object_tile_position\)$";
 typedef ushort, uw_object_hdr_t;
 @@
 R F(...) {
@@ -401,7 +401,7 @@ R F(...) {
 
 @word_4_3@
 type R;
-identifier F =~ "^\(settle_mobile_to_immobile\|sync_object_tile_position\)$";
+identifier F =~ "^\(build_object_placement_snapshot\|settle_mobile_to_immobile\|sync_object_tile_position\)$";
 typedef ushort, uw_object_hdr_t;
 @@
 R F(...) {

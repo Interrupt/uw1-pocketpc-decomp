@@ -6,6 +6,92 @@ typedef ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
+- *(ushort *)((char *)pl + 0)
++ ((uw_object_hdr_t *)pl)->type_flags
+|
+- ((ushort *)pl)[0]
++ ((uw_object_hdr_t *)pl)->type_flags
+|
+- *(ushort *)pl
++ ((uw_object_hdr_t *)pl)->type_flags
+|
+- pl[0]
++ ((uw_object_hdr_t *)pl)->type_flags
+|
+- *pl
++ ((uw_object_hdr_t *)pl)->type_flags
+)
+...>
+}
+
+@word_0_1@
+type R;
+identifier F =~ "^\(demomode_pump\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)pl + 2)
++ ((uw_object_hdr_t *)pl)->position_word
+|
+- ((ushort *)pl)[1]
++ ((uw_object_hdr_t *)pl)->position_word
+|
+- pl[1]
++ ((uw_object_hdr_t *)pl)->position_word
+)
+...>
+}
+
+@word_0_2@
+type R;
+identifier F =~ "^\(demomode_pump\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)pl + 4)
++ ((uw_object_hdr_t *)pl)->chain_word
+|
+- ((ushort *)pl)[2]
++ ((uw_object_hdr_t *)pl)->chain_word
+|
+- pl[2]
++ ((uw_object_hdr_t *)pl)->chain_word
+)
+...>
+}
+
+@word_0_3@
+type R;
+identifier F =~ "^\(demomode_pump\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)pl + 6)
++ ((uw_object_hdr_t *)pl)->link_word
+|
+- ((ushort *)pl)[3]
++ ((uw_object_hdr_t *)pl)->link_word
+|
+- pl[3]
++ ((uw_object_hdr_t *)pl)->link_word
+)
+...>
+}
+
+@word_1_0@
+type R;
+identifier F =~ "^\(demomode_pump\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
 - *(ushort *)((char *)c + 0)
 + ((uw_object_hdr_t *)c)->type_flags
 |
@@ -24,7 +110,7 @@ R F(...) {
 ...>
 }
 
-@word_0_1@
+@word_1_1@
 type R;
 identifier F =~ "^\(demomode_pump\)$";
 typedef ushort, uw_object_hdr_t;
@@ -44,7 +130,7 @@ R F(...) {
 ...>
 }
 
-@word_0_2@
+@word_1_2@
 type R;
 identifier F =~ "^\(demomode_pump\)$";
 typedef ushort, uw_object_hdr_t;
@@ -64,7 +150,7 @@ R F(...) {
 ...>
 }
 
-@word_0_3@
+@word_1_3@
 type R;
 identifier F =~ "^\(demomode_pump\)$";
 typedef ushort, uw_object_hdr_t;
@@ -84,7 +170,7 @@ R F(...) {
 ...>
 }
 
-@word_1_0@
+@word_2_0@
 type R;
 identifier F =~ "^\(demomode_pump\)$";
 typedef ushort, uw_object_hdr_t;
@@ -110,7 +196,7 @@ R F(...) {
 ...>
 }
 
-@word_1_1@
+@word_2_1@
 type R;
 identifier F =~ "^\(demomode_pump\)$";
 typedef ushort, uw_object_hdr_t;
@@ -130,7 +216,7 @@ R F(...) {
 ...>
 }
 
-@word_1_2@
+@word_2_2@
 type R;
 identifier F =~ "^\(demomode_pump\)$";
 typedef ushort, uw_object_hdr_t;
@@ -150,7 +236,7 @@ R F(...) {
 ...>
 }
 
-@word_1_3@
+@word_2_3@
 type R;
 identifier F =~ "^\(demomode_pump\)$";
 typedef ushort, uw_object_hdr_t;
@@ -170,7 +256,7 @@ R F(...) {
 ...>
 }
 
-@word_2_0@
+@word_3_0@
 type R;
 identifier F =~ "^\(demomode_pump\)$";
 typedef ushort, uw_object_hdr_t;
@@ -196,7 +282,7 @@ R F(...) {
 ...>
 }
 
-@word_2_1@
+@word_3_1@
 type R;
 identifier F =~ "^\(demomode_pump\)$";
 typedef ushort, uw_object_hdr_t;
@@ -216,7 +302,7 @@ R F(...) {
 ...>
 }
 
-@word_2_2@
+@word_3_2@
 type R;
 identifier F =~ "^\(demomode_pump\)$";
 typedef ushort, uw_object_hdr_t;
@@ -236,7 +322,7 @@ R F(...) {
 ...>
 }
 
-@word_2_3@
+@word_3_3@
 type R;
 identifier F =~ "^\(demomode_pump\)$";
 typedef ushort, uw_object_hdr_t;
@@ -256,7 +342,7 @@ R F(...) {
 ...>
 }
 
-@word_3_0@
+@word_4_0@
 type R;
 identifier F =~ "^\(demomode_pump\)$";
 typedef ushort, uw_object_hdr_t;
@@ -276,7 +362,7 @@ R F(...) {
 ...>
 }
 
-@word_3_1@
+@word_4_1@
 type R;
 identifier F =~ "^\(demomode_pump\)$";
 typedef ushort, uw_object_hdr_t;
@@ -293,7 +379,7 @@ R F(...) {
 ...>
 }
 
-@word_3_2@
+@word_4_2@
 type R;
 identifier F =~ "^\(demomode_pump\)$";
 typedef ushort, uw_object_hdr_t;
@@ -310,7 +396,7 @@ R F(...) {
 ...>
 }
 
-@word_3_3@
+@word_4_3@
 type R;
 identifier F =~ "^\(demomode_pump\)$";
 typedef ushort, uw_object_hdr_t;
@@ -323,92 +409,6 @@ R F(...) {
 |
 - ((ushort *)g_player_object)[3]
 + ((uw_object_hdr_t *)g_player_object)->link_word
-)
-...>
-}
-
-@word_4_0@
-type R;
-identifier F =~ "^\(demomode_pump\)$";
-typedef ushort, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)pl + 0)
-+ ((uw_object_hdr_t *)pl)->type_flags
-|
-- ((ushort *)pl)[0]
-+ ((uw_object_hdr_t *)pl)->type_flags
-|
-- *(ushort *)pl
-+ ((uw_object_hdr_t *)pl)->type_flags
-|
-- pl[0]
-+ ((uw_object_hdr_t *)pl)->type_flags
-|
-- *pl
-+ ((uw_object_hdr_t *)pl)->type_flags
-)
-...>
-}
-
-@word_4_1@
-type R;
-identifier F =~ "^\(demomode_pump\)$";
-typedef ushort, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)pl + 2)
-+ ((uw_object_hdr_t *)pl)->position_word
-|
-- ((ushort *)pl)[1]
-+ ((uw_object_hdr_t *)pl)->position_word
-|
-- pl[1]
-+ ((uw_object_hdr_t *)pl)->position_word
-)
-...>
-}
-
-@word_4_2@
-type R;
-identifier F =~ "^\(demomode_pump\)$";
-typedef ushort, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)pl + 4)
-+ ((uw_object_hdr_t *)pl)->chain_word
-|
-- ((ushort *)pl)[2]
-+ ((uw_object_hdr_t *)pl)->chain_word
-|
-- pl[2]
-+ ((uw_object_hdr_t *)pl)->chain_word
-)
-...>
-}
-
-@word_4_3@
-type R;
-identifier F =~ "^\(demomode_pump\)$";
-typedef ushort, uw_object_hdr_t;
-@@
-R F(...) {
-<...
-(
-- *(ushort *)((char *)pl + 6)
-+ ((uw_object_hdr_t *)pl)->link_word
-|
-- ((ushort *)pl)[3]
-+ ((uw_object_hdr_t *)pl)->link_word
-|
-- pl[3]
-+ ((uw_object_hdr_t *)pl)->link_word
 )
 ...>
 }

@@ -484,7 +484,8 @@ void demomode_pump(void) {
             unsigned short *pl = (unsigned short *)g_player_object;
             if (pl)
                 fprintf(stderr, "[demo] player tile = (%d,%d)\n",
-                        pl[0x16/2] >> 10, (pl[0x16/2] & 0x3f0) >> 4);
+                        ((uw_mobile_object_t *)pl)->tile_x,
+                        ((uw_mobile_object_t *)pl)->tile_y);
         }
         full_dungeon_redraw();
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
@@ -671,8 +672,8 @@ void demomode_pump(void) {
         extern uw_mobile_object_t *g_player_object;
         unsigned short *pl = (unsigned short *)g_player_object;
         if (pl) {
-            int row = pl[0x16/2] >> 10;
-            int col = (pl[0x16/2] & 0x3f0) >> 4;
+            int row = ((uw_mobile_object_t *)pl)->tile_x;
+            int col = ((uw_mobile_object_t *)pl)->tile_y;
             void *tile_rec = tilemap_lookup(row, col);
             unsigned short *link = (unsigned short *)((char *)tile_rec + 2);
             fprintf(stderr, "[dumptileobjs] tile=(%d,%d) tile_rec=%p raw_link_field=0x%04x\n",

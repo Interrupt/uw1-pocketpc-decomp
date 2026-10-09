@@ -3958,6 +3958,204 @@ typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_
 + ((uw_mobile_object_t *)P)->tile_word = ((uw_mobile_object_t *)Q)->tile_word;
 )
 
+@copy_tile_position_0_0 disable drop_cast@
+identifier P, Q;
+typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;
+@@
+(
+- P->tile_position_low = Q->tile_position_low;
+- P->tile_position_high = Q->tile_position_high;
++ P->tile_position = Q->tile_position;
+|
+- P->tile_position_low = (byte)(Q->tile_position);
+- P->tile_position_high = Q->tile_position_high;
++ P->tile_position = Q->tile_position;
+|
+- P->tile_position_low = (char)(Q->tile_position);
+- P->tile_position_high = Q->tile_position_high;
++ P->tile_position = Q->tile_position;
+|
+- P->tile_position_low = (byte)(char)(Q->tile_position);
+- P->tile_position_high = Q->tile_position_high;
++ P->tile_position = Q->tile_position;
+)
+
+@copy_tile_position_0_1 disable drop_cast@
+identifier P, Q;
+typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;
+@@
+(
+- P->tile_position_low = Q.tile_position_low;
+- P->tile_position_high = Q.tile_position_high;
++ P->tile_position = Q.tile_position;
+|
+- P->tile_position_low = (byte)(Q.tile_position);
+- P->tile_position_high = Q.tile_position_high;
++ P->tile_position = Q.tile_position;
+|
+- P->tile_position_low = (char)(Q.tile_position);
+- P->tile_position_high = Q.tile_position_high;
++ P->tile_position = Q.tile_position;
+|
+- P->tile_position_low = (byte)(char)(Q.tile_position);
+- P->tile_position_high = Q.tile_position_high;
++ P->tile_position = Q.tile_position;
+)
+
+@copy_tile_position_0_2 disable drop_cast@
+identifier P, Q;
+typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;
+@@
+(
+- P->tile_position_low = ((uw_mobile_object_t *)Q)->tile_position_low;
+- P->tile_position_high = ((uw_mobile_object_t *)Q)->tile_position_high;
++ P->tile_position = ((uw_mobile_object_t *)Q)->tile_position;
+|
+- P->tile_position_low = (byte)(((uw_mobile_object_t *)Q)->tile_position);
+- P->tile_position_high = ((uw_mobile_object_t *)Q)->tile_position_high;
++ P->tile_position = ((uw_mobile_object_t *)Q)->tile_position;
+|
+- P->tile_position_low = (char)(((uw_mobile_object_t *)Q)->tile_position);
+- P->tile_position_high = ((uw_mobile_object_t *)Q)->tile_position_high;
++ P->tile_position = ((uw_mobile_object_t *)Q)->tile_position;
+|
+- P->tile_position_low = (byte)(char)(((uw_mobile_object_t *)Q)->tile_position);
+- P->tile_position_high = ((uw_mobile_object_t *)Q)->tile_position_high;
++ P->tile_position = ((uw_mobile_object_t *)Q)->tile_position;
+)
+
+@copy_tile_position_1_0 disable drop_cast@
+identifier P, Q;
+typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;
+@@
+(
+- P.tile_position_low = Q->tile_position_low;
+- P.tile_position_high = Q->tile_position_high;
++ P.tile_position = Q->tile_position;
+|
+- P.tile_position_low = (byte)(Q->tile_position);
+- P.tile_position_high = Q->tile_position_high;
++ P.tile_position = Q->tile_position;
+|
+- P.tile_position_low = (char)(Q->tile_position);
+- P.tile_position_high = Q->tile_position_high;
++ P.tile_position = Q->tile_position;
+|
+- P.tile_position_low = (byte)(char)(Q->tile_position);
+- P.tile_position_high = Q->tile_position_high;
++ P.tile_position = Q->tile_position;
+)
+
+@copy_tile_position_1_1 disable drop_cast@
+identifier P, Q;
+typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;
+@@
+(
+- P.tile_position_low = Q.tile_position_low;
+- P.tile_position_high = Q.tile_position_high;
++ P.tile_position = Q.tile_position;
+|
+- P.tile_position_low = (byte)(Q.tile_position);
+- P.tile_position_high = Q.tile_position_high;
++ P.tile_position = Q.tile_position;
+|
+- P.tile_position_low = (char)(Q.tile_position);
+- P.tile_position_high = Q.tile_position_high;
++ P.tile_position = Q.tile_position;
+|
+- P.tile_position_low = (byte)(char)(Q.tile_position);
+- P.tile_position_high = Q.tile_position_high;
++ P.tile_position = Q.tile_position;
+)
+
+@copy_tile_position_1_2 disable drop_cast@
+identifier P, Q;
+typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;
+@@
+(
+- P.tile_position_low = ((uw_mobile_object_t *)Q)->tile_position_low;
+- P.tile_position_high = ((uw_mobile_object_t *)Q)->tile_position_high;
++ P.tile_position = ((uw_mobile_object_t *)Q)->tile_position;
+|
+- P.tile_position_low = (byte)(((uw_mobile_object_t *)Q)->tile_position);
+- P.tile_position_high = ((uw_mobile_object_t *)Q)->tile_position_high;
++ P.tile_position = ((uw_mobile_object_t *)Q)->tile_position;
+|
+- P.tile_position_low = (char)(((uw_mobile_object_t *)Q)->tile_position);
+- P.tile_position_high = ((uw_mobile_object_t *)Q)->tile_position_high;
++ P.tile_position = ((uw_mobile_object_t *)Q)->tile_position;
+|
+- P.tile_position_low = (byte)(char)(((uw_mobile_object_t *)Q)->tile_position);
+- P.tile_position_high = ((uw_mobile_object_t *)Q)->tile_position_high;
++ P.tile_position = ((uw_mobile_object_t *)Q)->tile_position;
+)
+
+@copy_tile_position_2_0 disable drop_cast@
+identifier P, Q;
+typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;
+@@
+(
+- ((uw_mobile_object_t *)P)->tile_position_low = Q->tile_position_low;
+- ((uw_mobile_object_t *)P)->tile_position_high = Q->tile_position_high;
++ ((uw_mobile_object_t *)P)->tile_position = Q->tile_position;
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)(Q->tile_position);
+- ((uw_mobile_object_t *)P)->tile_position_high = Q->tile_position_high;
++ ((uw_mobile_object_t *)P)->tile_position = Q->tile_position;
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (char)(Q->tile_position);
+- ((uw_mobile_object_t *)P)->tile_position_high = Q->tile_position_high;
++ ((uw_mobile_object_t *)P)->tile_position = Q->tile_position;
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)(char)(Q->tile_position);
+- ((uw_mobile_object_t *)P)->tile_position_high = Q->tile_position_high;
++ ((uw_mobile_object_t *)P)->tile_position = Q->tile_position;
+)
+
+@copy_tile_position_2_1 disable drop_cast@
+identifier P, Q;
+typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;
+@@
+(
+- ((uw_mobile_object_t *)P)->tile_position_low = Q.tile_position_low;
+- ((uw_mobile_object_t *)P)->tile_position_high = Q.tile_position_high;
++ ((uw_mobile_object_t *)P)->tile_position = Q.tile_position;
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)(Q.tile_position);
+- ((uw_mobile_object_t *)P)->tile_position_high = Q.tile_position_high;
++ ((uw_mobile_object_t *)P)->tile_position = Q.tile_position;
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (char)(Q.tile_position);
+- ((uw_mobile_object_t *)P)->tile_position_high = Q.tile_position_high;
++ ((uw_mobile_object_t *)P)->tile_position = Q.tile_position;
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)(char)(Q.tile_position);
+- ((uw_mobile_object_t *)P)->tile_position_high = Q.tile_position_high;
++ ((uw_mobile_object_t *)P)->tile_position = Q.tile_position;
+)
+
+@copy_tile_position_2_2 disable drop_cast@
+identifier P, Q;
+typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;
+@@
+(
+- ((uw_mobile_object_t *)P)->tile_position_low = ((uw_mobile_object_t *)Q)->tile_position_low;
+- ((uw_mobile_object_t *)P)->tile_position_high = ((uw_mobile_object_t *)Q)->tile_position_high;
++ ((uw_mobile_object_t *)P)->tile_position = ((uw_mobile_object_t *)Q)->tile_position;
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)(((uw_mobile_object_t *)Q)->tile_position);
+- ((uw_mobile_object_t *)P)->tile_position_high = ((uw_mobile_object_t *)Q)->tile_position_high;
++ ((uw_mobile_object_t *)P)->tile_position = ((uw_mobile_object_t *)Q)->tile_position;
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (char)(((uw_mobile_object_t *)Q)->tile_position);
+- ((uw_mobile_object_t *)P)->tile_position_high = ((uw_mobile_object_t *)Q)->tile_position_high;
++ ((uw_mobile_object_t *)P)->tile_position = ((uw_mobile_object_t *)Q)->tile_position;
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)(char)(((uw_mobile_object_t *)Q)->tile_position);
+- ((uw_mobile_object_t *)P)->tile_position_high = ((uw_mobile_object_t *)Q)->tile_position_high;
++ ((uw_mobile_object_t *)P)->tile_position = ((uw_mobile_object_t *)Q)->tile_position;
+)
+
 @copy_size_weight_0_0 disable drop_cast@
 identifier P, Q;
 typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;

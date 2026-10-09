@@ -240,6 +240,10 @@ typedef struct __attribute__((packed)) {
             byte npc_heading : 5;
             byte _pad18 : 3;
         };
+        struct __attribute__((packed)) {
+            byte fine_heading : 5; /* shared low five bits of full placement heading */
+            byte _heading_bits_hi : 3;
+        };
     };
     union {
         byte npc_ai_flags;        /* 0x19: notice, attack and allegiance flags */

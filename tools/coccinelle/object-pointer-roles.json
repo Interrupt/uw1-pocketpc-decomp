@@ -461,7 +461,7 @@
               "name": "pp",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias",
+              "evidence": "UW1 object struct member access",
               "current_mobile_alias": false
             }
           ],
@@ -985,7 +985,7 @@
               "name": "_dpp",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias",
+              "evidence": "UW1 object struct member access",
               "current_mobile_alias": false
             }
           ],
@@ -1453,7 +1453,7 @@
               "name": "puVar9",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias",
+              "evidence": "UW1 object struct member access",
               "current_mobile_alias": false
             }
           ],
@@ -1541,18 +1541,18 @@
           "function": "npc_ai_tick",
           "roles": [
             {
+              "name": "player_rec",
+              "type": "char *",
+              "parameter": false,
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            },
+            {
               "name": "puVar11",
               "type": "ushort *",
               "parameter": false,
               "evidence": "UW1 object struct member access",
               "current_mobile_alias": true
-            },
-            {
-              "name": "player_rec",
-              "type": "char *",
-              "parameter": false,
-              "evidence": "object accessor / proven object alias",
-              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -1682,7 +1682,7 @@
               "name": "iVar1",
               "type": "char *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias",
+              "evidence": "UW1 object struct member access",
               "current_mobile_alias": false
             }
           ],
@@ -1855,6 +1855,19 @@
               "parameter": false,
               "evidence": "UW1 object struct member access",
               "current_mobile_alias": true
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "build_object_placement_snapshot",
+          "roles": [
+            {
+              "name": "object",
+              "type": "ushort *",
+              "parameter": true,
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
             }
           ],
           "requires_review": []
@@ -2264,7 +2277,7 @@
               "name": "iVar2",
               "type": "void *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias",
+              "evidence": "UW1 object struct member access",
               "current_mobile_alias": false
             }
           ],
@@ -3306,6 +3319,13 @@
           "function": "demomode_pump",
           "roles": [
             {
+              "name": "pl",
+              "type": "unsigned short *",
+              "parameter": false,
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            },
+            {
               "name": "c",
               "type": "unsigned short *",
               "parameter": false,
@@ -3314,6 +3334,13 @@
             },
             {
               "name": "nc",
+              "type": "unsigned short *",
+              "parameter": false,
+              "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "pl",
               "type": "unsigned short *",
               "parameter": false,
               "evidence": "UW1 object struct member access",
@@ -3345,13 +3372,6 @@
               "type": "uw_mobile_object_t *",
               "parameter": false,
               "evidence": "typed UW1 object pointer declaration",
-              "current_mobile_alias": false
-            },
-            {
-              "name": "pl",
-              "type": "unsigned short *",
-              "parameter": false,
-              "evidence": "object accessor / proven object alias",
               "current_mobile_alias": false
             },
             {
@@ -3371,13 +3391,6 @@
             {
               "name": "nx",
               "type": "void *",
-              "parameter": false,
-              "evidence": "object accessor / proven object alias",
-              "current_mobile_alias": false
-            },
-            {
-              "name": "pl",
-              "type": "unsigned short *",
               "parameter": false,
               "evidence": "object accessor / proven object alias",
               "current_mobile_alias": false

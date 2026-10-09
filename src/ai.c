@@ -681,10 +681,10 @@ int npc_ai_tick()
               (((int)(char)DAT_001013f8 - (int)DAT_0010193c) * 0x10000 >> 0x10) *
               (((int)(char)DAT_001013f8 - (int)DAT_0010193c) * 0x10000 >> 0x10)) * 0x10000 >> 0x10)
       && (iVar6 = (int)(char)DAT_001013f8 -
-                  (int)(char)((byte)(*(ushort *)(player_rec + 0x16) >> 4) & 0x3f),
-         iVar5 = (int)(char)DAT_00101918 - (int)(char)(byte)(*(ushort *)(player_rec + 0x16) >> 10),
-         100 < (iVar5 * iVar5 + iVar6 * iVar6) * 0x10000 >> 0x10)) &&
-     ((DAT_0010190c->npc_goal) != 3)) {
+                  (int)(char)(((uw_mobile_object_t *)player_rec)->tile_y),
+                  iVar5 = (int)(char)DAT_00101918 - (int)(char)(byte)(((uw_mobile_object_t *)player_rec)->tile_x),
+                  100 < (iVar5 * iVar5 + iVar6 * iVar6) * 0x10000 >> 0x10)) &&
+      ((DAT_0010190c->npc_goal) != 3)) {
     bVar3 = DAT_0010190c->movement_flags;
     /* Was `ordint_divmod(0x10,(bVar3&0xf)+8); bVar8 = extraout_r1;` -- the classic "call idivmod,
        then read its remainder back through the extraout_r1 register-leftover fiction" pattern
@@ -1239,7 +1239,7 @@ ushort *settle_mobile_to_immobile(ushort *object)
   
   bVar3 = true;
   bVar13 = (byte) g_object_type_props[(((uw_object_hdr_t *)object)->item_id)].owner_flags >> 1 & 0xf;
-  bVar5 = (byte)object[5] & 0x70;
+  bVar5 = (((uw_mobile_object_t *)object)->movement_mode << 4);
   if (bVar5 == 0x10) {
     bVar13 = 8;
     spawn_scheduled_effect_object(object,6,3,0,0,DAT_0010144c,DAT_00101454);
@@ -1326,7 +1326,7 @@ ushort *settle_mobile_to_immobile(ushort *object)
       set_ambient_bias_without_light(0);
     }
     uVar1 = ((uw_object_hdr_t *)puVar9)->chain_word;
-    ((uw_object_hdr_t *)puVar9)->chain_word_low = (byte)object[4] & 0x3f | (byte)(uVar1 & 0xffc0);
+    ((uw_object_hdr_t *)puVar9)->chain_word_low = ((uw_mobile_object_t *)object)->hit_points & 0x3f | (byte)(uVar1 & 0xffc0);
     ((uw_object_hdr_t *)puVar9)->chain_word_high = (byte)((uVar1 & 0xffc0) >> 8);
     uVar12 = (uint)(ushort)((uw_object_hdr_t *)puVar9)->type_flags;
     uVar11 = uVar12 & 0x1c0;
@@ -1344,7 +1344,7 @@ ushort *settle_mobile_to_immobile(ushort *object)
       local_2c = 0;
     }
     else {
-      local_2c = (byte)object[9];
+      local_2c = ((uw_projectile_object_t *)object)->source_slot;
     }
   }
   discard_misplaced_object(pbTile,object,1);
@@ -2164,7 +2164,7 @@ void reset_npc_path_cache()
   iVar2 = 2;
   do {
     iVar1 = get_object_record_by_slot_index(iVar2);
-    *(byte *)(iVar1 + 0x15) = *(byte *)(iVar1 + 0x15) & 0x7f;
+    ((uw_mobile_object_t *)iVar1)->animation_flags = ((uw_mobile_object_t *)iVar1)->animation_flags & 0x7f;
     iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
   } while (iVar2 < 0x100);
   DAT_000853b8 = 0xffff;
@@ -3071,7 +3071,7 @@ LAB_00033e9c:
     npc_rec = (char *)DAT_0010190c;
     bVar10 = DAT_0010190c->motion_flags;
     uw_ord2005_rem_93 = ((int)(uVar6)) % (2);
-    *(byte *)(npc_rec + 0x13) = (uw_ord2005_rem_93 ^ bVar10) & 0x7f ^ bVar10;
+    ((uw_mobile_object_t *)npc_rec)->motion_flags = (uw_ord2005_rem_93 ^ bVar10) & 0x7f ^ bVar10;
     uVar6 = ce_rand();
     uw_ord2005_rem_94 = ((int)(uVar6)) % (0x100);
     DAT_0010190c->full_heading = uw_ord2005_rem_94;
@@ -3136,7 +3136,7 @@ LAB_00033e9c:
     uVar5 = (uint)DAT_00101458;
     uVar11 = ((bVar10 - uVar5) + 0x100) & 0xff;
     if ((uVar11 < 0x20) || (0xe0 < uVar11)) {
-      *(byte *)(npc_rec + 9) = bVar10;
+      ((uw_mobile_object_t *)npc_rec)->full_heading = bVar10;
       return;
     }
     if (uVar11 < 0x40) {
@@ -3144,12 +3144,12 @@ LAB_00033e9c:
     }
     else {
       if (uVar11 < 0xc1) {
-        *(byte *)(npc_rec + 0x13) = bVar1 & 0x80;
+        ((uw_mobile_object_t *)npc_rec)->motion_flags = bVar1 & 0x80;
         goto LAB_00032690;
       }
       uVar9 = (uVar5 + 0xe0) & 0xff;
     }
-    *(undefined1 *)(npc_rec + 9) = uVar9;
+    ((uw_mobile_object_t *)npc_rec)->full_heading = uVar9;
   }
   else {
 LAB_00032690:
@@ -5023,7 +5023,7 @@ void build_object_placement_snapshot(ushort *object, byte *snapshot)
   bool bVar8;
   
   bVar8 = true;
-  iVar5 = (*object & 0x1ff) * 0xd;
+  iVar5 = (((uw_object_hdr_t *)object)->item_id) * 0xd;
   uVar2 = encode_object_slot_index(object);
   snapshot[0x23] = (byte)uVar2;
   snapshot[0x24] = (byte)((ushort)uVar2 >> 8);
@@ -5038,68 +5038,69 @@ void build_object_placement_snapshot(ushort *object, byte *snapshot)
   bVar6 = g_object_type_props[iVar5 / 0xd].scale_flags;
   snapshot[0x20] = 0;
   snapshot[0x1f] = bVar6;
-  uVar1 = object[1];
+  uVar1 = ((uw_object_hdr_t *)object)->position_word;
   snapshot[0x27] = 0;
   snapshot[0x21] = 0;
   snapshot[0x22] = (byte)((((int)(short)uVar1 & 0xffffff80U) << 6) >> 8);
   snapshot[0x25] = g_object_type_props[iVar5 / 0xd].collision_radius;
   snapshot[0x26] = g_object_type_props[iVar5 / 0xd].height;
-  *snapshot = *(byte *)((char *)object + 3) >> 5;
+  *snapshot = ((uw_object_hdr_t *)object)->xpos;
   snapshot[1] = 0;
-  snapshot[2] = (byte)((*(byte *)((char *)object + 3) & 0x1c) >> 2);
+  snapshot[2] = (byte)(((uw_object_hdr_t *)object)->ypos);
   snapshot[3] = 0;
-  snapshot[4] = (byte)object[1] & 0x7f;
+  snapshot[4] = ((uw_object_hdr_t *)object)->zpos;
   snapshot[5] = 0;
   if ((char *)object < DAT_002046c4) {
-    iVar7 = (int)*(short *)snapshot + ((object[0xb] & 0xfc00) >> 7);
+    iVar7 = (int)*(short *)snapshot + ((((uw_mobile_object_t *)object)->tile_x << 3));
     *snapshot = (byte)iVar7;
     snapshot[1] = (byte)((uint)iVar7 >> 8);
-    iVar7 = (int)CONCAT11(snapshot[3],snapshot[2]) + ((object[0xb] & 0x3f0) >> 1);
+    iVar7 = (int)CONCAT11(snapshot[3],snapshot[2]) + ((((uw_mobile_object_t *)object)->tile_y << 3));
     snapshot[2] = (byte)iVar7;
     snapshot[3] = (byte)((uint)iVar7 >> 8);
-    bVar6 = *(byte *)((char *)object + 9);
+    bVar6 = ((uw_mobile_object_t *)object)->full_heading;
     snapshot[0x21] = 0;
     snapshot[0x22] = bVar6;
-    snapshot[0x28] = (byte)(1 << ((byte)((byte)object[5] >> 4) & 7));
-    iVar7 = ((byte)((byte)object[10] >> 3) - 0x10) * 0x40;
+    snapshot[0x28] = (byte)(1 << (((uw_mobile_object_t *)object)->movement_mode));
+    iVar7 = ((byte)(((uw_mobile_object_t *)object)->pitch) - 0x10) * 0x40;
     snapshot[10] = (byte)iVar7;
     snapshot[0xb] = (byte)((uint)iVar7 >> 8);
-    iVar7 = (uint)(*(byte *)((char *)object + 0x13) >> 7) * -4;
+    iVar7 = (uint)(((uw_mobile_object_t *)object)->gravity_flag) * -4;
     snapshot[0x10] = (byte)iVar7;
     snapshot[0x11] = (byte)((uint)iVar7 >> 8);
-    snapshot[0x1e] = (byte)object[4];
-    bVar8 = (*object & 0x1c0) == 0x40;
+    snapshot[0x1e] = ((uw_mobile_object_t *)object)->hit_points;
+    bVar8 = (((uw_object_hdr_t *)object)->type_flags & 0x1c0) == 0x40;
     if (!bVar8) {
-      uVar2 = *(undefined2 *)((char *)object + 0xb);
+      uVar2 = ((uw_projectile_object_t *)object)->precise_x;
       *snapshot = (byte)uVar2;
       snapshot[1] = (byte)((ushort)uVar2 >> 8);
-      uVar2 = *(undefined2 *)((char *)object + 0xd);
+      uVar2 = ((uw_projectile_object_t *)object)->precise_y;
       snapshot[2] = (byte)uVar2;
       snapshot[3] = (byte)((ushort)uVar2 >> 8);
-      uVar2 = *(undefined2 *)((char *)object + 0xf);
+      uVar2 = ((uw_projectile_object_t *)object)->precise_z;
       snapshot[4] = (byte)uVar2;
       snapshot[5] = (byte)((ushort)uVar2 >> 8);
     }
-    uVar4 = *(byte *)((char *)object + 0x13) & 0x7f;
+    uVar4 = ((uw_mobile_object_t *)object)->speed;
     snapshot[0x14] = (byte)uVar4;
     snapshot[0x15] = 0;
     if (getenv("UW_DEBUG_NPC_SPEED"))
       fprintf(stderr, "[npc-speed] obj=%p byte13&0x7f=%d class0x40=%d\n", (void *)object,
-              (int)uVar4, (int)((*object & 0x1c0) == 0x40));
-    if ((((*object & 0x1c0) == 0x40) ||
-        (*(short *)(snapshot + 0x10) != 0 || *(short *)(snapshot + 10) != 0)) ||
-       ((g_object_type_props[iVar5 / 0xd].flags & 8) != 0)) {
+              (int)uVar4,
+              (int)((((uw_object_hdr_t *)object)->type_flags & 0x1c0) == 0x40));
+    if ((((((uw_object_hdr_t *)object)->type_flags & 0x1c0) == 0x40) ||
+         (*(short *)(snapshot + 0x10) != 0 || *(short *)(snapshot + 10) != 0)) ||
+        ((g_object_type_props[iVar5 / 0xd].flags & 8) != 0)) {
       snapshot[0x14] = (byte)(uVar4 * 0x2f);
       snapshot[0x15] = (byte)(uVar4 * 0x2f >> 8);
       if (getenv("UW_DEBUG_NPC_SPEED"))
         fprintf(stderr, "[npc-speed] obj=%p -> final speed=%d\n", (void *)object, (int)(short)(uVar4 * 0x2f));
-      if ((*object & 0x1c0) == 0x40) {
+      if ((((uw_object_hdr_t *)object)->type_flags & 0x1c0) == 0x40) {
         snapshot[0x27] = 8;
       }
     }
     else {
       if ((*(int *)(snapshot + 0x1a) + 1) * 2 < (int)(short)uVar4) {
-        iVar5 = (*(byte *)((char *)object + 0x13) & 0x7f) *
+        iVar5 = (((uw_mobile_object_t *)object)->speed) *
                 ((short)*(int *)(snapshot + 0x1a) * 4 + 0x29);
         snapshot[0x14] = (byte)iVar5;
         bVar6 = (byte)((uint)iVar5 >> 8);
@@ -5118,7 +5119,7 @@ void build_object_placement_snapshot(ushort *object, byte *snapshot)
     snapshot[0x11] = 0;
     snapshot[0x14] = 0;
     snapshot[0x15] = 0;
-    snapshot[0x1e] = (byte)object[2] & 0x3f;
+    snapshot[0x1e] = ((uw_object_hdr_t *)object)->quality;
     iVar5 = (int)CONCAT11(snapshot[1],*snapshot) + DAT_0010144c * 8;
     *snapshot = (byte)iVar5;
     snapshot[1] = (byte)((uint)iVar5 >> 8);

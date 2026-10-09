@@ -537,7 +537,7 @@ void process_visible_tile_cell(byte *cell)
     intptr_t _dcell = (DAT_0023b4ec - (byte *)DAT_002029cc) / 4;
     ushort *_dpp = (ushort *)g_player_object;
     int _dcx = (int)(_dcell & 0x3f), _dcy = (int)(_dcell >> 6);
-    int _dpx = (int)(_dpp[0xb] >> 10), _dpy = (int)((_dpp[0xb] & 0x3f0) >> 4);
+    int _dpx = (int)(((uw_mobile_object_t *)_dpp)->tile_x), _dpy = (int)(((uw_mobile_object_t *)_dpp)->tile_y);
     int _ddx = _dcx - _dpx; if (_ddx < 0) _ddx = -_ddx;
     int _ddy = _dcy - _dpy; if (_ddy < 0) _ddy = -_ddy;
     fprintf(stderr, "[geom-dist] bit80=%d rawbyte=0x%02x tile=(%d,%d) player=(%d,%d) dist=%d willreveal=%d\n",

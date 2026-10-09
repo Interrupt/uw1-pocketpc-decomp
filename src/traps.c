@@ -926,8 +926,8 @@ int apply_poison_or_damage_trap_effect(int object_slot, uint damage_delta, int u
     }
   }
   if ((0 < sVar4) &&
-     (iVar3 = apply_typed_damage_to_object(iVar2,0,*(ushort *)(iVar2 + 0x16) >> 10,
-                           (*(ushort *)(iVar2 + 0x16) & 0x3f0) >> 4,(char)sVar4,4), iVar3 != 0)) {
+     (iVar3 = apply_typed_damage_to_object(iVar2,0, ((uw_mobile_object_t *)iVar2)->tile_x,
+                                           ((uw_mobile_object_t *)iVar2)->tile_y,(char)sVar4,4), iVar3 != 0)) {
     return 0x10;
   }
   return 2;

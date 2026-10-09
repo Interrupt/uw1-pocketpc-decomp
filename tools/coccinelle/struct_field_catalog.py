@@ -20,6 +20,7 @@ WORDS = {
                     (12, 4, 'npc_swing_charge')],
     'tile_word': [(0, 4, 'npc_path_slot'), (4, 6, 'npc_yhome'),
                   (10, 6, 'npc_xhome')],
+    'tile_position': [(4, 6, 'tile_y'), (10, 6, 'tile_x')],
     'size_weight': [(0, 3, 'collision_radius'), (3, 1, 'animated'),
                     (4, 12, 'unit_weight')],
 }

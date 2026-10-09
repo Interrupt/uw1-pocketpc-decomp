@@ -1628,19 +1628,18 @@ LAB_000564d8:
       DAT_0010144c = uVar6;
       DAT_00101454 = uVar3;
       if (DAT_002046d4 != 0) {
-        *(byte *)((char *)puVar9 + 0x13) = *(byte *)((char *)puVar9 + 0x13) & 0x83 | 3;
+        ((uw_mobile_object_t *)puVar9)->motion_flags = ((uw_mobile_object_t *)puVar9)->motion_flags & 0x83 | 3;
         uVar10 = ce_rand();
         uw_ord2005_rem_119 = ((int)(uVar10)) % (9);
-        *(char *)((char *)puVar9 + 9) = *(char *)((char *)puVar9 + 9) + (uw_ord2005_rem_119 + '\f') * '\x10';
+        ((uw_mobile_object_t *)puVar9)->full_heading = (byte)((char)((uw_mobile_object_t *)puVar9)->full_heading + (uw_ord2005_rem_119 + '\f') * '\x10');
       }
       if (force == 0) {
         return puVar9;
       }
       bVar5 = ce_rand();
-      *(byte *)((char *)puVar9 + 0x13) =
-           ((bVar5 & 3) + 1 ^ *(byte *)((char *)puVar9 + 0x13)) & 0x7f ^ *(byte *)((char *)puVar9 + 0x13);
+      ((uw_mobile_object_t *)puVar9)->speed = ((bVar5 & 3) + 1) & 0x7f;
       bVar5 = ce_rand();
-      *(byte *)(puVar9 + 10) = (byte)puVar9[10] & 7 ^ ((bVar5 & 3) + 0xe) * '\b';
+      ((uw_mobile_object_t *)puVar9)->attack_pitch = ((uw_mobile_object_t *)puVar9)->attack_pitch & 7 ^ ((bVar5 & 3) + 0xe) * '\b';
       return puVar9;
     }
     DAT_00202c6c = local_4c;
@@ -1874,7 +1873,7 @@ uw_object_hdr_t *reallocate_object_to_arena(ushort *object)
     ((uw_object_hdr_t *)puVar2)->chain_word = ((uw_object_hdr_t *)object)->chain_word;
     ((uw_object_hdr_t *)puVar2)->link_word = ((uw_object_hdr_t *)object)->link_word;
     compute_object_placement_fields(puVar2,(int)DAT_0010144c,(int)DAT_00101454);
-    *(byte *)(puVar2 + 4) = ((uw_object_hdr_t *)object)->quality;
+    ((uw_mobile_object_t *)puVar2)->hit_points = ((uw_object_hdr_t *)object)->quality;
     if (((((uw_object_hdr_t *)object)->item_id & 0x1c0) != 0x140) && ((g_object_type_props[(((uw_object_hdr_t *)object)->item_id)].class_flags & 3) != 2)) {
       *(byte *)(puVar2 + 0xd) = ((uw_object_hdr_t *)object)->heading;
     }
@@ -1885,7 +1884,8 @@ uw_object_hdr_t *reallocate_object_to_arena(ushort *object)
       fprintf(stderr, "[replace] new copy puVar2=%p type=0x%x height(f/10)=%d in_arena=%d\n",
               (void *)puVar2,
               (unsigned)(((uw_object_hdr_t *)puVar2)->item_id),
-              (int)*(short *)((char *)puVar2 + 0xf), (int)object_ptr_in_arena((char *)puVar2));
+              (int)(short)((uw_projectile_object_t *)puVar2)->precise_z,
+              (int)object_ptr_in_arena((char *)puVar2));
     object_list_unlink(iVar1 + 2,object);
     free_object_slot(object);
     object_list_insert_head(iVar1 + 2,puVar2);

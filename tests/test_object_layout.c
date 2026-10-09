@@ -212,6 +212,7 @@ static void test_uw1_mobile_fields(void)
     VERIFY_FIELD(uw_mobile_object_t, speed, 19, 0, 0x7f);
     VERIFY_FIELD(uw_mobile_object_t, gravity_flag, 19, 7, 1);
     VERIFY_FIELD(uw_mobile_object_t, pitch, 20, 3, 0x1f);
+    VERIFY_FIELD(uw_mobile_object_t, fine_heading, 24, 0, 0x1f);
     VERIFY_FIELD(uw_mobile_object_t, tile_x, 22, 10, 0x3f);
     VERIFY_FIELD(uw_mobile_object_t, tile_y, 22, 4, 0x3f);
     VERIFY_FIELD(uw_mobile_object_t,npc_path_slot,22,0,15);

@@ -3706,6 +3706,315 @@ typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_
 + ((uw_mobile_object_t *)P)->tile_word = (ushort)(V ^ C);
 )
 
+@store_tile_position_0 disable drop_cast, bitand_comm, bitor_comm@
+identifier P, V;
+constant C =~ "^[0-9]";
+typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;
+@@
+(
+- P->tile_position_low = (byte)V;
+- P->tile_position_high = (byte)(V >> 8);
++ P->tile_position = (ushort)V;
+|
+- P->tile_position_low = (char)V;
+- P->tile_position_high = (char)(V >> 8);
++ P->tile_position = (ushort)V;
+|
+- P->tile_position_low = (byte)(char)V;
+- P->tile_position_high = (byte)(V >> 8);
++ P->tile_position = (ushort)V;
+|
+- P->tile_position_low = (byte)(char)V;
+- P->tile_position_high = (byte)(char)(V >> 8);
++ P->tile_position = (ushort)V;
+|
+- P->tile_position_low = (char)V;
+- P->tile_position_high = (byte)(V >> 8);
++ P->tile_position = (ushort)V;
+|
+- P->tile_position_low = (byte)V;
+- P->tile_position_high = (byte)(char)(V >> 8);
++ P->tile_position = (ushort)V;
+|
+- P->tile_position_low = (byte)(V & C);
+- P->tile_position_high = (byte)((V & C) >> 8);
++ P->tile_position = (ushort)(V & C);
+|
+- P->tile_position_low = (char)(V & C);
+- P->tile_position_high = (char)((V & C) >> 8);
++ P->tile_position = (ushort)(V & C);
+|
+- P->tile_position_low = (byte)(char)(V & C);
+- P->tile_position_high = (byte)((V & C) >> 8);
++ P->tile_position = (ushort)(V & C);
+|
+- P->tile_position_low = (byte)(char)(V & C);
+- P->tile_position_high = (byte)(char)((V & C) >> 8);
++ P->tile_position = (ushort)(V & C);
+|
+- P->tile_position_low = (char)(V & C);
+- P->tile_position_high = (byte)((V & C) >> 8);
++ P->tile_position = (ushort)(V & C);
+|
+- P->tile_position_low = (byte)(V & C);
+- P->tile_position_high = (byte)(char)((V & C) >> 8);
++ P->tile_position = (ushort)(V & C);
+|
+- P->tile_position_low = (byte)(V | C);
+- P->tile_position_high = (byte)((V | C) >> 8);
++ P->tile_position = (ushort)(V | C);
+|
+- P->tile_position_low = (char)(V | C);
+- P->tile_position_high = (char)((V | C) >> 8);
++ P->tile_position = (ushort)(V | C);
+|
+- P->tile_position_low = (byte)(char)(V | C);
+- P->tile_position_high = (byte)((V | C) >> 8);
++ P->tile_position = (ushort)(V | C);
+|
+- P->tile_position_low = (byte)(char)(V | C);
+- P->tile_position_high = (byte)(char)((V | C) >> 8);
++ P->tile_position = (ushort)(V | C);
+|
+- P->tile_position_low = (char)(V | C);
+- P->tile_position_high = (byte)((V | C) >> 8);
++ P->tile_position = (ushort)(V | C);
+|
+- P->tile_position_low = (byte)(V | C);
+- P->tile_position_high = (byte)(char)((V | C) >> 8);
++ P->tile_position = (ushort)(V | C);
+|
+- P->tile_position_low = (byte)(V ^ C);
+- P->tile_position_high = (byte)((V ^ C) >> 8);
++ P->tile_position = (ushort)(V ^ C);
+|
+- P->tile_position_low = (char)(V ^ C);
+- P->tile_position_high = (char)((V ^ C) >> 8);
++ P->tile_position = (ushort)(V ^ C);
+|
+- P->tile_position_low = (byte)(char)(V ^ C);
+- P->tile_position_high = (byte)((V ^ C) >> 8);
++ P->tile_position = (ushort)(V ^ C);
+|
+- P->tile_position_low = (byte)(char)(V ^ C);
+- P->tile_position_high = (byte)(char)((V ^ C) >> 8);
++ P->tile_position = (ushort)(V ^ C);
+|
+- P->tile_position_low = (char)(V ^ C);
+- P->tile_position_high = (byte)((V ^ C) >> 8);
++ P->tile_position = (ushort)(V ^ C);
+|
+- P->tile_position_low = (byte)(V ^ C);
+- P->tile_position_high = (byte)(char)((V ^ C) >> 8);
++ P->tile_position = (ushort)(V ^ C);
+)
+
+@store_tile_position_1 disable drop_cast, bitand_comm, bitor_comm@
+identifier P, V;
+constant C =~ "^[0-9]";
+typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;
+@@
+(
+- P.tile_position_low = (byte)V;
+- P.tile_position_high = (byte)(V >> 8);
++ P.tile_position = (ushort)V;
+|
+- P.tile_position_low = (char)V;
+- P.tile_position_high = (char)(V >> 8);
++ P.tile_position = (ushort)V;
+|
+- P.tile_position_low = (byte)(char)V;
+- P.tile_position_high = (byte)(V >> 8);
++ P.tile_position = (ushort)V;
+|
+- P.tile_position_low = (byte)(char)V;
+- P.tile_position_high = (byte)(char)(V >> 8);
++ P.tile_position = (ushort)V;
+|
+- P.tile_position_low = (char)V;
+- P.tile_position_high = (byte)(V >> 8);
++ P.tile_position = (ushort)V;
+|
+- P.tile_position_low = (byte)V;
+- P.tile_position_high = (byte)(char)(V >> 8);
++ P.tile_position = (ushort)V;
+|
+- P.tile_position_low = (byte)(V & C);
+- P.tile_position_high = (byte)((V & C) >> 8);
++ P.tile_position = (ushort)(V & C);
+|
+- P.tile_position_low = (char)(V & C);
+- P.tile_position_high = (char)((V & C) >> 8);
++ P.tile_position = (ushort)(V & C);
+|
+- P.tile_position_low = (byte)(char)(V & C);
+- P.tile_position_high = (byte)((V & C) >> 8);
++ P.tile_position = (ushort)(V & C);
+|
+- P.tile_position_low = (byte)(char)(V & C);
+- P.tile_position_high = (byte)(char)((V & C) >> 8);
++ P.tile_position = (ushort)(V & C);
+|
+- P.tile_position_low = (char)(V & C);
+- P.tile_position_high = (byte)((V & C) >> 8);
++ P.tile_position = (ushort)(V & C);
+|
+- P.tile_position_low = (byte)(V & C);
+- P.tile_position_high = (byte)(char)((V & C) >> 8);
++ P.tile_position = (ushort)(V & C);
+|
+- P.tile_position_low = (byte)(V | C);
+- P.tile_position_high = (byte)((V | C) >> 8);
++ P.tile_position = (ushort)(V | C);
+|
+- P.tile_position_low = (char)(V | C);
+- P.tile_position_high = (char)((V | C) >> 8);
++ P.tile_position = (ushort)(V | C);
+|
+- P.tile_position_low = (byte)(char)(V | C);
+- P.tile_position_high = (byte)((V | C) >> 8);
++ P.tile_position = (ushort)(V | C);
+|
+- P.tile_position_low = (byte)(char)(V | C);
+- P.tile_position_high = (byte)(char)((V | C) >> 8);
++ P.tile_position = (ushort)(V | C);
+|
+- P.tile_position_low = (char)(V | C);
+- P.tile_position_high = (byte)((V | C) >> 8);
++ P.tile_position = (ushort)(V | C);
+|
+- P.tile_position_low = (byte)(V | C);
+- P.tile_position_high = (byte)(char)((V | C) >> 8);
++ P.tile_position = (ushort)(V | C);
+|
+- P.tile_position_low = (byte)(V ^ C);
+- P.tile_position_high = (byte)((V ^ C) >> 8);
++ P.tile_position = (ushort)(V ^ C);
+|
+- P.tile_position_low = (char)(V ^ C);
+- P.tile_position_high = (char)((V ^ C) >> 8);
++ P.tile_position = (ushort)(V ^ C);
+|
+- P.tile_position_low = (byte)(char)(V ^ C);
+- P.tile_position_high = (byte)((V ^ C) >> 8);
++ P.tile_position = (ushort)(V ^ C);
+|
+- P.tile_position_low = (byte)(char)(V ^ C);
+- P.tile_position_high = (byte)(char)((V ^ C) >> 8);
++ P.tile_position = (ushort)(V ^ C);
+|
+- P.tile_position_low = (char)(V ^ C);
+- P.tile_position_high = (byte)((V ^ C) >> 8);
++ P.tile_position = (ushort)(V ^ C);
+|
+- P.tile_position_low = (byte)(V ^ C);
+- P.tile_position_high = (byte)(char)((V ^ C) >> 8);
++ P.tile_position = (ushort)(V ^ C);
+)
+
+@store_tile_position_2 disable drop_cast, bitand_comm, bitor_comm@
+identifier P, V;
+constant C =~ "^[0-9]";
+typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;
+@@
+(
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)V;
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)(V >> 8);
++ ((uw_mobile_object_t *)P)->tile_position = (ushort)V;
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (char)V;
+- ((uw_mobile_object_t *)P)->tile_position_high = (char)(V >> 8);
++ ((uw_mobile_object_t *)P)->tile_position = (ushort)V;
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)(char)V;
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)(V >> 8);
++ ((uw_mobile_object_t *)P)->tile_position = (ushort)V;
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)(char)V;
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)(char)(V >> 8);
++ ((uw_mobile_object_t *)P)->tile_position = (ushort)V;
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (char)V;
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)(V >> 8);
++ ((uw_mobile_object_t *)P)->tile_position = (ushort)V;
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)V;
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)(char)(V >> 8);
++ ((uw_mobile_object_t *)P)->tile_position = (ushort)V;
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)(V & C);
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)((V & C) >> 8);
++ ((uw_mobile_object_t *)P)->tile_position = (ushort)(V & C);
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (char)(V & C);
+- ((uw_mobile_object_t *)P)->tile_position_high = (char)((V & C) >> 8);
++ ((uw_mobile_object_t *)P)->tile_position = (ushort)(V & C);
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)(char)(V & C);
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)((V & C) >> 8);
++ ((uw_mobile_object_t *)P)->tile_position = (ushort)(V & C);
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)(char)(V & C);
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)(char)((V & C) >> 8);
++ ((uw_mobile_object_t *)P)->tile_position = (ushort)(V & C);
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (char)(V & C);
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)((V & C) >> 8);
++ ((uw_mobile_object_t *)P)->tile_position = (ushort)(V & C);
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)(V & C);
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)(char)((V & C) >> 8);
++ ((uw_mobile_object_t *)P)->tile_position = (ushort)(V & C);
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)(V | C);
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)((V | C) >> 8);
++ ((uw_mobile_object_t *)P)->tile_position = (ushort)(V | C);
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (char)(V | C);
+- ((uw_mobile_object_t *)P)->tile_position_high = (char)((V | C) >> 8);
++ ((uw_mobile_object_t *)P)->tile_position = (ushort)(V | C);
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)(char)(V | C);
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)((V | C) >> 8);
++ ((uw_mobile_object_t *)P)->tile_position = (ushort)(V | C);
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)(char)(V | C);
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)(char)((V | C) >> 8);
++ ((uw_mobile_object_t *)P)->tile_position = (ushort)(V | C);
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (char)(V | C);
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)((V | C) >> 8);
++ ((uw_mobile_object_t *)P)->tile_position = (ushort)(V | C);
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)(V | C);
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)(char)((V | C) >> 8);
++ ((uw_mobile_object_t *)P)->tile_position = (ushort)(V | C);
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)(V ^ C);
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)((V ^ C) >> 8);
++ ((uw_mobile_object_t *)P)->tile_position = (ushort)(V ^ C);
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (char)(V ^ C);
+- ((uw_mobile_object_t *)P)->tile_position_high = (char)((V ^ C) >> 8);
++ ((uw_mobile_object_t *)P)->tile_position = (ushort)(V ^ C);
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)(char)(V ^ C);
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)((V ^ C) >> 8);
++ ((uw_mobile_object_t *)P)->tile_position = (ushort)(V ^ C);
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)(char)(V ^ C);
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)(char)((V ^ C) >> 8);
++ ((uw_mobile_object_t *)P)->tile_position = (ushort)(V ^ C);
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (char)(V ^ C);
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)((V ^ C) >> 8);
++ ((uw_mobile_object_t *)P)->tile_position = (ushort)(V ^ C);
+|
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)(V ^ C);
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)(char)((V ^ C) >> 8);
++ ((uw_mobile_object_t *)P)->tile_position = (ushort)(V ^ C);
+)
+
 @store_size_weight_0 disable drop_cast, bitand_comm, bitor_comm@
 identifier P, V;
 constant C =~ "^[0-9]";

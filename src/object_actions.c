@@ -574,16 +574,17 @@ int check_object_drop_height(ushort *object, ushort *reference)
   *(undefined *)((char *)DAT_00202c6c + 9) = g_object_type_props[iVar5 / 0xd].height;
   if (getenv("UW_DEBUG_THROW"))
     fprintf(stderr, "[throw-refine] ENTER object=%p object[0xb]=0x%x object+3byte=0x%x\n",
-            (void *)object, (unsigned)object[0xb],
+            (void *)object,
+            (unsigned)((uw_mobile_object_t *)object)->tile_position,
             (unsigned)((uw_object_hdr_t *)object)->position_word_high);
-  iVar5 = ((object[0xb] & 0xfc00) >> 7) + (uint)(((uw_object_hdr_t *)object)->xpos);
+  iVar5 = ((((uw_mobile_object_t *)object)->tile_x << 3)) + (uint)(((uw_object_hdr_t *)object)->xpos);
   *(byte *)DAT_00202c6c = (byte)iVar5;
   *(byte *)((char *)DAT_00202c6c + 1) = (byte)((uint)iVar5 >> 8);
   if (getenv("UW_DEBUG_THROW"))
     fprintf(stderr, "[throw-refine] X computed iVar5=%d (tile=%d)\n", iVar5, iVar5 >> 3);
   /* Was `DAT_00202c6c + 1` for Y's low byte -- disassembly-confirmed (0x4b288 @ 0x4b3b8: `strb
      r3,[r1,#0x2]`) the real write target is offset+2, not +1. */
-  iVar5 = (((uw_object_hdr_t *)object)->ypos) + ((object[0xb] & 0x3f0) >> 1);
+  iVar5 = (((uw_object_hdr_t *)object)->ypos) + ((((uw_mobile_object_t *)object)->tile_y << 3));
   *(byte *)((char *)DAT_00202c6c + 2) = (byte)iVar5;
   *(byte *)((char *)DAT_00202c6c + 3) = (byte)((uint)iVar5 >> 8);
   if (getenv("UW_DEBUG_THROW"))
@@ -591,7 +592,7 @@ int check_object_drop_height(ushort *object, ushort *reference)
   /* Both pointer args below were `DAT_00202c6c`/`DAT_00202c6c + 1` -- the Y output must be `+2` to
      match the real Y storage (offset+2/+3, see the fix just above); `+1` is X's own high byte.
      Disassembly- confirmed (0x4b288 @ 0x4b458's `bl 0x69f2c` args). */
-  project_position_by_heading(((byte)object[0xc] & 0x1f) + ((((uw_object_hdr_t *)object)->heading << 7) >> 2),
+  project_position_by_heading((((uw_mobile_object_t *)object)->fine_heading) + ((((uw_object_hdr_t *)object)->heading << 7) >> 2),
                               (g_object_type_props[(((uw_object_hdr_t *)object)->item_id)].collision_radius) +
                               (g_object_type_props[(((uw_object_hdr_t *)reference)->item_id)].collision_radius) + '\x04',
                               DAT_00202c6c,
@@ -618,16 +619,15 @@ int check_object_drop_height(ushort *object, ushort *reference)
       sort_collision_candidates();
       if (*(byte *)((char *)DAT_00202c6c + 0x15) != 0) goto LAB_0004b4d4;
     }
-    uVar2 = object[0xb];
+    uVar2 = ((uw_mobile_object_t *)object)->tile_position;
     uVar6 = uVar2 & 0x3ff;
     /* ARM 0x4b4e4..0x4b5d0 reads full X/Y words at bytes 0/2;
        byte reads discarded X's high bits and used X's high byte as Y. */
     uVar7 = ((int)(short)(*(ushort *)DAT_00202c6c & 0x1f8) >> 3) << 10;
-    *(char *)(object + 0xb) = (char)uVar6;
-    *(byte *)((char *)object + 0x17) = (byte)(uVar6 >> 8) | (byte)(uVar7 >> 8);
+    ((uw_mobile_object_t *)object)->tile_position_low = (byte)(char)uVar6;
+    ((uw_mobile_object_t *)object)->tile_position_high = (byte)(uVar6 >> 8) | (byte)(uVar7 >> 8);
     uVar7 = uVar2 & 0xf | uVar7 | ((int)(short)(*(ushort *)(DAT_00202c6c + 2) & 0x1f8) >> 3) << 4;
-    *(char *)(object + 0xb) = (char)uVar7;
-    *(char *)((char *)object + 0x17) = (char)(uVar7 >> 8);
+    ((uw_mobile_object_t *)object)->tile_position = (ushort)uVar7;
     uVar7 = (uint)((uw_object_hdr_t *)object)->position_word;
     uVar6 = uVar7 & 0x1fff;
     bVar1 = (byte)((((byte)*DAT_00202c6c & 7) << 0xd) >> 8);
@@ -1575,17 +1575,15 @@ int spawn_random_variant_object_at_tile(int tile_x, int tile_y)
   iVar5 = place_object_in_world(tile_x * 8 + 3,tile_y * 8 + 3,0x6e,iVar4,0,0);
   if ((iVar5 != 0) && (iVar5 = object_ptr_in_arena(iVar4), iVar5 != 0)) {
     bVar1 = ce_rand();
-    *(byte *)(iVar4 + 0x13) =
-         ((bVar1 & 3) + 2 ^ *(byte *)(iVar4 + 0x13)) & 0x7f ^ *(byte *)(iVar4 + 0x13);
+    ((uw_mobile_object_t *)iVar4)->speed = ((bVar1 & 3) + 2) & 0x7f;
     uVar2 = ce_rand();
-    *(undefined1 *)(iVar4 + 9) = uVar2;
+    ((uw_mobile_object_t *)iVar4)->full_heading = uVar2;
     bVar1 = ce_rand();
-    *(byte *)(iVar4 + 10) =
-         ((bVar1 & 3) + DAT_00101928 ^ *(byte *)(iVar4 + 10)) & 0xf ^ *(byte *)(iVar4 + 10);
+    ((uw_mobile_object_t *)iVar4)->tick_phase = ((bVar1 & 3) + DAT_00101928) & 0xf;
     uVar3 = ce_rand();
-    bVar1 = *(byte *)(iVar4 + 0x14);
+    bVar1 = ((uw_mobile_object_t *)iVar4)->attack_pitch;
     uw_ord2005_rem_158 = ((int)(uVar3)) % (3);
-    *(byte *)(iVar4 + 0x14) = (uw_ord2005_rem_158 + 1U ^ bVar1) & 7 ^ bVar1;
+    ((uw_mobile_object_t *)iVar4)->attack_pitch = (uw_ord2005_rem_158 + 1U ^ bVar1) & 7 ^ bVar1;
   }
   return 1;
 }

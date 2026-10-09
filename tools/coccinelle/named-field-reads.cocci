@@ -1300,6 +1300,96 @@ typedef byte;
 + (B->npc_xhome << 2)
 )
 
+@tile_position_tile_y_ptr disable drop_cast, is_zero, isnt_zero@
+expression B;
+typedef byte;
+@@
+(
+- (byte)(B->tile_position >> 4) & 0x3f
++ B->tile_y
+|
+- (B->tile_position >> 4) & 0x3f
++ B->tile_y
+|
+- (B->tile_position & 0x3f0) >> 4
++ B->tile_y
+|
+- B->tile_position & 0x3f0
++ (B->tile_y << 4)
+|
+- (byte)(B->tile_position_signed >> 4) & 0x3f
++ B->tile_y
+|
+- (B->tile_position_signed >> 4) & 0x3f
++ B->tile_y
+|
+- (B->tile_position_signed & 0x3f0) >> 4
++ B->tile_y
+|
+- B->tile_position_signed & 0x3f0
++ (B->tile_y << 4)
+)
+
+@tile_position_tile_x_ptr disable drop_cast, is_zero, isnt_zero@
+expression B;
+typedef byte;
+@@
+(
+- (byte)(B->tile_position >> 10) & 0x3f
++ B->tile_x
+|
+- (B->tile_position >> 10) & 0x3f
++ B->tile_x
+|
+- (B->tile_position & 0xfc00) >> 10
++ B->tile_x
+|
+- B->tile_position >> 10
++ B->tile_x
+|
+- B->tile_position & 0xfc00
++ (B->tile_x << 10)
+|
+- (byte)(B->tile_position_signed >> 10) & 0x3f
++ B->tile_x
+|
+- (B->tile_position_signed >> 10) & 0x3f
++ B->tile_x
+|
+- (B->tile_position_signed & 0xfc00) >> 10
++ B->tile_x
+|
+- B->tile_position_signed & 0xfc00
++ (B->tile_x << 10)
+|
+- (byte)(B->tile_position_high >> 2) & 0x3f
++ B->tile_x
+|
+- (B->tile_position_high >> 2) & 0x3f
++ B->tile_x
+|
+- (B->tile_position_high & 0xfc) >> 2
++ B->tile_x
+|
+- B->tile_position_high >> 2
++ B->tile_x
+|
+- B->tile_position_high & 0xfc
++ (B->tile_x << 2)
+|
+- (byte)((char)B->tile_position_high >> 2) & 0x3f
++ B->tile_x
+|
+- ((char)B->tile_position_high >> 2) & 0x3f
++ B->tile_x
+|
+- ((char)B->tile_position_high & 0xfc) >> 2
++ B->tile_x
+|
+- (char)B->tile_position_high & 0xfc
++ (B->tile_x << 2)
+)
+
 @size_weight_collision_radius_ptr disable drop_cast, is_zero, isnt_zero@
 expression B;
 typedef byte;
@@ -2850,6 +2940,96 @@ typedef byte;
 |
 - (char)B.tile_word_high & 0xfc
 + (B.npc_xhome << 2)
+)
+
+@tile_position_tile_y_value disable drop_cast, is_zero, isnt_zero@
+expression B;
+typedef byte;
+@@
+(
+- (byte)(B.tile_position >> 4) & 0x3f
++ B.tile_y
+|
+- (B.tile_position >> 4) & 0x3f
++ B.tile_y
+|
+- (B.tile_position & 0x3f0) >> 4
++ B.tile_y
+|
+- B.tile_position & 0x3f0
++ (B.tile_y << 4)
+|
+- (byte)(B.tile_position_signed >> 4) & 0x3f
++ B.tile_y
+|
+- (B.tile_position_signed >> 4) & 0x3f
++ B.tile_y
+|
+- (B.tile_position_signed & 0x3f0) >> 4
++ B.tile_y
+|
+- B.tile_position_signed & 0x3f0
++ (B.tile_y << 4)
+)
+
+@tile_position_tile_x_value disable drop_cast, is_zero, isnt_zero@
+expression B;
+typedef byte;
+@@
+(
+- (byte)(B.tile_position >> 10) & 0x3f
++ B.tile_x
+|
+- (B.tile_position >> 10) & 0x3f
++ B.tile_x
+|
+- (B.tile_position & 0xfc00) >> 10
++ B.tile_x
+|
+- B.tile_position >> 10
++ B.tile_x
+|
+- B.tile_position & 0xfc00
++ (B.tile_x << 10)
+|
+- (byte)(B.tile_position_signed >> 10) & 0x3f
++ B.tile_x
+|
+- (B.tile_position_signed >> 10) & 0x3f
++ B.tile_x
+|
+- (B.tile_position_signed & 0xfc00) >> 10
++ B.tile_x
+|
+- B.tile_position_signed & 0xfc00
++ (B.tile_x << 10)
+|
+- (byte)(B.tile_position_high >> 2) & 0x3f
++ B.tile_x
+|
+- (B.tile_position_high >> 2) & 0x3f
++ B.tile_x
+|
+- (B.tile_position_high & 0xfc) >> 2
++ B.tile_x
+|
+- B.tile_position_high >> 2
++ B.tile_x
+|
+- B.tile_position_high & 0xfc
++ (B.tile_x << 2)
+|
+- (byte)((char)B.tile_position_high >> 2) & 0x3f
++ B.tile_x
+|
+- ((char)B.tile_position_high >> 2) & 0x3f
++ B.tile_x
+|
+- ((char)B.tile_position_high & 0xfc) >> 2
++ B.tile_x
+|
+- (char)B.tile_position_high & 0xfc
++ (B.tile_x << 2)
 )
 
 @size_weight_collision_radius_value disable drop_cast, is_zero, isnt_zero@
@@ -6372,6 +6552,597 @@ expression B;
 + B->npc_xhome != 15
 )
 
+@compare_tile_position_tile_y_4_ptr disable drop_cast, is_zero, isnt_zero@
+expression B;
+@@
+(
+- (B->tile_y << 4) == 0x0
++ B->tile_y == 0
+|
+- ((B->tile_y << 4)) == 0x0
++ B->tile_y == 0
+|
+- (B->tile_y << 4) != 0x0
++ B->tile_y != 0
+|
+- ((B->tile_y << 4)) != 0x0
++ B->tile_y != 0
+|
+- (B->tile_y << 4) == 0x10
++ B->tile_y == 1
+|
+- ((B->tile_y << 4)) == 0x10
++ B->tile_y == 1
+|
+- (B->tile_y << 4) != 0x10
++ B->tile_y != 1
+|
+- ((B->tile_y << 4)) != 0x10
++ B->tile_y != 1
+|
+- (B->tile_y << 4) == 0x20
++ B->tile_y == 2
+|
+- ((B->tile_y << 4)) == 0x20
++ B->tile_y == 2
+|
+- (B->tile_y << 4) != 0x20
++ B->tile_y != 2
+|
+- ((B->tile_y << 4)) != 0x20
++ B->tile_y != 2
+|
+- (B->tile_y << 4) == 0x30
++ B->tile_y == 3
+|
+- ((B->tile_y << 4)) == 0x30
++ B->tile_y == 3
+|
+- (B->tile_y << 4) != 0x30
++ B->tile_y != 3
+|
+- ((B->tile_y << 4)) != 0x30
++ B->tile_y != 3
+|
+- (B->tile_y << 4) == 0x40
++ B->tile_y == 4
+|
+- ((B->tile_y << 4)) == 0x40
++ B->tile_y == 4
+|
+- (B->tile_y << 4) != 0x40
++ B->tile_y != 4
+|
+- ((B->tile_y << 4)) != 0x40
++ B->tile_y != 4
+|
+- (B->tile_y << 4) == 0x50
++ B->tile_y == 5
+|
+- ((B->tile_y << 4)) == 0x50
++ B->tile_y == 5
+|
+- (B->tile_y << 4) != 0x50
++ B->tile_y != 5
+|
+- ((B->tile_y << 4)) != 0x50
++ B->tile_y != 5
+|
+- (B->tile_y << 4) == 0x60
++ B->tile_y == 6
+|
+- ((B->tile_y << 4)) == 0x60
++ B->tile_y == 6
+|
+- (B->tile_y << 4) != 0x60
++ B->tile_y != 6
+|
+- ((B->tile_y << 4)) != 0x60
++ B->tile_y != 6
+|
+- (B->tile_y << 4) == 0x70
++ B->tile_y == 7
+|
+- ((B->tile_y << 4)) == 0x70
++ B->tile_y == 7
+|
+- (B->tile_y << 4) != 0x70
++ B->tile_y != 7
+|
+- ((B->tile_y << 4)) != 0x70
++ B->tile_y != 7
+|
+- (B->tile_y << 4) == 0x80
++ B->tile_y == 8
+|
+- ((B->tile_y << 4)) == 0x80
++ B->tile_y == 8
+|
+- (B->tile_y << 4) != 0x80
++ B->tile_y != 8
+|
+- ((B->tile_y << 4)) != 0x80
++ B->tile_y != 8
+|
+- (B->tile_y << 4) == 0x90
++ B->tile_y == 9
+|
+- ((B->tile_y << 4)) == 0x90
++ B->tile_y == 9
+|
+- (B->tile_y << 4) != 0x90
++ B->tile_y != 9
+|
+- ((B->tile_y << 4)) != 0x90
++ B->tile_y != 9
+|
+- (B->tile_y << 4) == 0xa0
++ B->tile_y == 10
+|
+- ((B->tile_y << 4)) == 0xa0
++ B->tile_y == 10
+|
+- (B->tile_y << 4) != 0xa0
++ B->tile_y != 10
+|
+- ((B->tile_y << 4)) != 0xa0
++ B->tile_y != 10
+|
+- (B->tile_y << 4) == 0xb0
++ B->tile_y == 11
+|
+- ((B->tile_y << 4)) == 0xb0
++ B->tile_y == 11
+|
+- (B->tile_y << 4) != 0xb0
++ B->tile_y != 11
+|
+- ((B->tile_y << 4)) != 0xb0
++ B->tile_y != 11
+|
+- (B->tile_y << 4) == 0xc0
++ B->tile_y == 12
+|
+- ((B->tile_y << 4)) == 0xc0
++ B->tile_y == 12
+|
+- (B->tile_y << 4) != 0xc0
++ B->tile_y != 12
+|
+- ((B->tile_y << 4)) != 0xc0
++ B->tile_y != 12
+|
+- (B->tile_y << 4) == 0xd0
++ B->tile_y == 13
+|
+- ((B->tile_y << 4)) == 0xd0
++ B->tile_y == 13
+|
+- (B->tile_y << 4) != 0xd0
++ B->tile_y != 13
+|
+- ((B->tile_y << 4)) != 0xd0
++ B->tile_y != 13
+|
+- (B->tile_y << 4) == 0xe0
++ B->tile_y == 14
+|
+- ((B->tile_y << 4)) == 0xe0
++ B->tile_y == 14
+|
+- (B->tile_y << 4) != 0xe0
++ B->tile_y != 14
+|
+- ((B->tile_y << 4)) != 0xe0
++ B->tile_y != 14
+|
+- (B->tile_y << 4) == 0xf0
++ B->tile_y == 15
+|
+- ((B->tile_y << 4)) == 0xf0
++ B->tile_y == 15
+|
+- (B->tile_y << 4) != 0xf0
++ B->tile_y != 15
+|
+- ((B->tile_y << 4)) != 0xf0
++ B->tile_y != 15
+)
+
+@compare_tile_position_tile_x_2_ptr disable drop_cast, is_zero, isnt_zero@
+expression B;
+@@
+(
+- (B->tile_x << 2) == 0x0
++ B->tile_x == 0
+|
+- ((B->tile_x << 2)) == 0x0
++ B->tile_x == 0
+|
+- (B->tile_x << 2) != 0x0
++ B->tile_x != 0
+|
+- ((B->tile_x << 2)) != 0x0
++ B->tile_x != 0
+|
+- (B->tile_x << 2) == 0x4
++ B->tile_x == 1
+|
+- ((B->tile_x << 2)) == 0x4
++ B->tile_x == 1
+|
+- (B->tile_x << 2) != 0x4
++ B->tile_x != 1
+|
+- ((B->tile_x << 2)) != 0x4
++ B->tile_x != 1
+|
+- (B->tile_x << 2) == 0x8
++ B->tile_x == 2
+|
+- ((B->tile_x << 2)) == 0x8
++ B->tile_x == 2
+|
+- (B->tile_x << 2) != 0x8
++ B->tile_x != 2
+|
+- ((B->tile_x << 2)) != 0x8
++ B->tile_x != 2
+|
+- (B->tile_x << 2) == 0xc
++ B->tile_x == 3
+|
+- ((B->tile_x << 2)) == 0xc
++ B->tile_x == 3
+|
+- (B->tile_x << 2) != 0xc
++ B->tile_x != 3
+|
+- ((B->tile_x << 2)) != 0xc
++ B->tile_x != 3
+|
+- (B->tile_x << 2) == 0x10
++ B->tile_x == 4
+|
+- ((B->tile_x << 2)) == 0x10
++ B->tile_x == 4
+|
+- (B->tile_x << 2) != 0x10
++ B->tile_x != 4
+|
+- ((B->tile_x << 2)) != 0x10
++ B->tile_x != 4
+|
+- (B->tile_x << 2) == 0x14
++ B->tile_x == 5
+|
+- ((B->tile_x << 2)) == 0x14
++ B->tile_x == 5
+|
+- (B->tile_x << 2) != 0x14
++ B->tile_x != 5
+|
+- ((B->tile_x << 2)) != 0x14
++ B->tile_x != 5
+|
+- (B->tile_x << 2) == 0x18
++ B->tile_x == 6
+|
+- ((B->tile_x << 2)) == 0x18
++ B->tile_x == 6
+|
+- (B->tile_x << 2) != 0x18
++ B->tile_x != 6
+|
+- ((B->tile_x << 2)) != 0x18
++ B->tile_x != 6
+|
+- (B->tile_x << 2) == 0x1c
++ B->tile_x == 7
+|
+- ((B->tile_x << 2)) == 0x1c
++ B->tile_x == 7
+|
+- (B->tile_x << 2) != 0x1c
++ B->tile_x != 7
+|
+- ((B->tile_x << 2)) != 0x1c
++ B->tile_x != 7
+|
+- (B->tile_x << 2) == 0x20
++ B->tile_x == 8
+|
+- ((B->tile_x << 2)) == 0x20
++ B->tile_x == 8
+|
+- (B->tile_x << 2) != 0x20
++ B->tile_x != 8
+|
+- ((B->tile_x << 2)) != 0x20
++ B->tile_x != 8
+|
+- (B->tile_x << 2) == 0x24
++ B->tile_x == 9
+|
+- ((B->tile_x << 2)) == 0x24
++ B->tile_x == 9
+|
+- (B->tile_x << 2) != 0x24
++ B->tile_x != 9
+|
+- ((B->tile_x << 2)) != 0x24
++ B->tile_x != 9
+|
+- (B->tile_x << 2) == 0x28
++ B->tile_x == 10
+|
+- ((B->tile_x << 2)) == 0x28
++ B->tile_x == 10
+|
+- (B->tile_x << 2) != 0x28
++ B->tile_x != 10
+|
+- ((B->tile_x << 2)) != 0x28
++ B->tile_x != 10
+|
+- (B->tile_x << 2) == 0x2c
++ B->tile_x == 11
+|
+- ((B->tile_x << 2)) == 0x2c
++ B->tile_x == 11
+|
+- (B->tile_x << 2) != 0x2c
++ B->tile_x != 11
+|
+- ((B->tile_x << 2)) != 0x2c
++ B->tile_x != 11
+|
+- (B->tile_x << 2) == 0x30
++ B->tile_x == 12
+|
+- ((B->tile_x << 2)) == 0x30
++ B->tile_x == 12
+|
+- (B->tile_x << 2) != 0x30
++ B->tile_x != 12
+|
+- ((B->tile_x << 2)) != 0x30
++ B->tile_x != 12
+|
+- (B->tile_x << 2) == 0x34
++ B->tile_x == 13
+|
+- ((B->tile_x << 2)) == 0x34
++ B->tile_x == 13
+|
+- (B->tile_x << 2) != 0x34
++ B->tile_x != 13
+|
+- ((B->tile_x << 2)) != 0x34
++ B->tile_x != 13
+|
+- (B->tile_x << 2) == 0x38
++ B->tile_x == 14
+|
+- ((B->tile_x << 2)) == 0x38
++ B->tile_x == 14
+|
+- (B->tile_x << 2) != 0x38
++ B->tile_x != 14
+|
+- ((B->tile_x << 2)) != 0x38
++ B->tile_x != 14
+|
+- (B->tile_x << 2) == 0x3c
++ B->tile_x == 15
+|
+- ((B->tile_x << 2)) == 0x3c
++ B->tile_x == 15
+|
+- (B->tile_x << 2) != 0x3c
++ B->tile_x != 15
+|
+- ((B->tile_x << 2)) != 0x3c
++ B->tile_x != 15
+)
+
+@compare_tile_position_tile_x_10_ptr disable drop_cast, is_zero, isnt_zero@
+expression B;
+@@
+(
+- (B->tile_x << 10) == 0x0
++ B->tile_x == 0
+|
+- ((B->tile_x << 10)) == 0x0
++ B->tile_x == 0
+|
+- (B->tile_x << 10) != 0x0
++ B->tile_x != 0
+|
+- ((B->tile_x << 10)) != 0x0
++ B->tile_x != 0
+|
+- (B->tile_x << 10) == 0x400
++ B->tile_x == 1
+|
+- ((B->tile_x << 10)) == 0x400
++ B->tile_x == 1
+|
+- (B->tile_x << 10) != 0x400
++ B->tile_x != 1
+|
+- ((B->tile_x << 10)) != 0x400
++ B->tile_x != 1
+|
+- (B->tile_x << 10) == 0x800
++ B->tile_x == 2
+|
+- ((B->tile_x << 10)) == 0x800
++ B->tile_x == 2
+|
+- (B->tile_x << 10) != 0x800
++ B->tile_x != 2
+|
+- ((B->tile_x << 10)) != 0x800
++ B->tile_x != 2
+|
+- (B->tile_x << 10) == 0xc00
++ B->tile_x == 3
+|
+- ((B->tile_x << 10)) == 0xc00
++ B->tile_x == 3
+|
+- (B->tile_x << 10) != 0xc00
++ B->tile_x != 3
+|
+- ((B->tile_x << 10)) != 0xc00
++ B->tile_x != 3
+|
+- (B->tile_x << 10) == 0x1000
++ B->tile_x == 4
+|
+- ((B->tile_x << 10)) == 0x1000
++ B->tile_x == 4
+|
+- (B->tile_x << 10) != 0x1000
++ B->tile_x != 4
+|
+- ((B->tile_x << 10)) != 0x1000
++ B->tile_x != 4
+|
+- (B->tile_x << 10) == 0x1400
++ B->tile_x == 5
+|
+- ((B->tile_x << 10)) == 0x1400
++ B->tile_x == 5
+|
+- (B->tile_x << 10) != 0x1400
++ B->tile_x != 5
+|
+- ((B->tile_x << 10)) != 0x1400
++ B->tile_x != 5
+|
+- (B->tile_x << 10) == 0x1800
++ B->tile_x == 6
+|
+- ((B->tile_x << 10)) == 0x1800
++ B->tile_x == 6
+|
+- (B->tile_x << 10) != 0x1800
++ B->tile_x != 6
+|
+- ((B->tile_x << 10)) != 0x1800
++ B->tile_x != 6
+|
+- (B->tile_x << 10) == 0x1c00
++ B->tile_x == 7
+|
+- ((B->tile_x << 10)) == 0x1c00
++ B->tile_x == 7
+|
+- (B->tile_x << 10) != 0x1c00
++ B->tile_x != 7
+|
+- ((B->tile_x << 10)) != 0x1c00
++ B->tile_x != 7
+|
+- (B->tile_x << 10) == 0x2000
++ B->tile_x == 8
+|
+- ((B->tile_x << 10)) == 0x2000
++ B->tile_x == 8
+|
+- (B->tile_x << 10) != 0x2000
++ B->tile_x != 8
+|
+- ((B->tile_x << 10)) != 0x2000
++ B->tile_x != 8
+|
+- (B->tile_x << 10) == 0x2400
++ B->tile_x == 9
+|
+- ((B->tile_x << 10)) == 0x2400
++ B->tile_x == 9
+|
+- (B->tile_x << 10) != 0x2400
++ B->tile_x != 9
+|
+- ((B->tile_x << 10)) != 0x2400
++ B->tile_x != 9
+|
+- (B->tile_x << 10) == 0x2800
++ B->tile_x == 10
+|
+- ((B->tile_x << 10)) == 0x2800
++ B->tile_x == 10
+|
+- (B->tile_x << 10) != 0x2800
++ B->tile_x != 10
+|
+- ((B->tile_x << 10)) != 0x2800
++ B->tile_x != 10
+|
+- (B->tile_x << 10) == 0x2c00
++ B->tile_x == 11
+|
+- ((B->tile_x << 10)) == 0x2c00
++ B->tile_x == 11
+|
+- (B->tile_x << 10) != 0x2c00
++ B->tile_x != 11
+|
+- ((B->tile_x << 10)) != 0x2c00
++ B->tile_x != 11
+|
+- (B->tile_x << 10) == 0x3000
++ B->tile_x == 12
+|
+- ((B->tile_x << 10)) == 0x3000
++ B->tile_x == 12
+|
+- (B->tile_x << 10) != 0x3000
++ B->tile_x != 12
+|
+- ((B->tile_x << 10)) != 0x3000
++ B->tile_x != 12
+|
+- (B->tile_x << 10) == 0x3400
++ B->tile_x == 13
+|
+- ((B->tile_x << 10)) == 0x3400
++ B->tile_x == 13
+|
+- (B->tile_x << 10) != 0x3400
++ B->tile_x != 13
+|
+- ((B->tile_x << 10)) != 0x3400
++ B->tile_x != 13
+|
+- (B->tile_x << 10) == 0x3800
++ B->tile_x == 14
+|
+- ((B->tile_x << 10)) == 0x3800
++ B->tile_x == 14
+|
+- (B->tile_x << 10) != 0x3800
++ B->tile_x != 14
+|
+- ((B->tile_x << 10)) != 0x3800
++ B->tile_x != 14
+|
+- (B->tile_x << 10) == 0x3c00
++ B->tile_x == 15
+|
+- ((B->tile_x << 10)) == 0x3c00
++ B->tile_x == 15
+|
+- (B->tile_x << 10) != 0x3c00
++ B->tile_x != 15
+|
+- ((B->tile_x << 10)) != 0x3c00
++ B->tile_x != 15
+)
+
 @compare_size_weight_animated_3_ptr disable drop_cast, is_zero, isnt_zero@
 expression B;
 @@
@@ -9866,6 +10637,597 @@ expression B;
 |
 - ((B.npc_xhome << 10)) != 0x3c00
 + B.npc_xhome != 15
+)
+
+@compare_tile_position_tile_y_4_value disable drop_cast, is_zero, isnt_zero@
+expression B;
+@@
+(
+- (B.tile_y << 4) == 0x0
++ B.tile_y == 0
+|
+- ((B.tile_y << 4)) == 0x0
++ B.tile_y == 0
+|
+- (B.tile_y << 4) != 0x0
++ B.tile_y != 0
+|
+- ((B.tile_y << 4)) != 0x0
++ B.tile_y != 0
+|
+- (B.tile_y << 4) == 0x10
++ B.tile_y == 1
+|
+- ((B.tile_y << 4)) == 0x10
++ B.tile_y == 1
+|
+- (B.tile_y << 4) != 0x10
++ B.tile_y != 1
+|
+- ((B.tile_y << 4)) != 0x10
++ B.tile_y != 1
+|
+- (B.tile_y << 4) == 0x20
++ B.tile_y == 2
+|
+- ((B.tile_y << 4)) == 0x20
++ B.tile_y == 2
+|
+- (B.tile_y << 4) != 0x20
++ B.tile_y != 2
+|
+- ((B.tile_y << 4)) != 0x20
++ B.tile_y != 2
+|
+- (B.tile_y << 4) == 0x30
++ B.tile_y == 3
+|
+- ((B.tile_y << 4)) == 0x30
++ B.tile_y == 3
+|
+- (B.tile_y << 4) != 0x30
++ B.tile_y != 3
+|
+- ((B.tile_y << 4)) != 0x30
++ B.tile_y != 3
+|
+- (B.tile_y << 4) == 0x40
++ B.tile_y == 4
+|
+- ((B.tile_y << 4)) == 0x40
++ B.tile_y == 4
+|
+- (B.tile_y << 4) != 0x40
++ B.tile_y != 4
+|
+- ((B.tile_y << 4)) != 0x40
++ B.tile_y != 4
+|
+- (B.tile_y << 4) == 0x50
++ B.tile_y == 5
+|
+- ((B.tile_y << 4)) == 0x50
++ B.tile_y == 5
+|
+- (B.tile_y << 4) != 0x50
++ B.tile_y != 5
+|
+- ((B.tile_y << 4)) != 0x50
++ B.tile_y != 5
+|
+- (B.tile_y << 4) == 0x60
++ B.tile_y == 6
+|
+- ((B.tile_y << 4)) == 0x60
++ B.tile_y == 6
+|
+- (B.tile_y << 4) != 0x60
++ B.tile_y != 6
+|
+- ((B.tile_y << 4)) != 0x60
++ B.tile_y != 6
+|
+- (B.tile_y << 4) == 0x70
++ B.tile_y == 7
+|
+- ((B.tile_y << 4)) == 0x70
++ B.tile_y == 7
+|
+- (B.tile_y << 4) != 0x70
++ B.tile_y != 7
+|
+- ((B.tile_y << 4)) != 0x70
++ B.tile_y != 7
+|
+- (B.tile_y << 4) == 0x80
++ B.tile_y == 8
+|
+- ((B.tile_y << 4)) == 0x80
++ B.tile_y == 8
+|
+- (B.tile_y << 4) != 0x80
++ B.tile_y != 8
+|
+- ((B.tile_y << 4)) != 0x80
++ B.tile_y != 8
+|
+- (B.tile_y << 4) == 0x90
++ B.tile_y == 9
+|
+- ((B.tile_y << 4)) == 0x90
++ B.tile_y == 9
+|
+- (B.tile_y << 4) != 0x90
++ B.tile_y != 9
+|
+- ((B.tile_y << 4)) != 0x90
++ B.tile_y != 9
+|
+- (B.tile_y << 4) == 0xa0
++ B.tile_y == 10
+|
+- ((B.tile_y << 4)) == 0xa0
++ B.tile_y == 10
+|
+- (B.tile_y << 4) != 0xa0
++ B.tile_y != 10
+|
+- ((B.tile_y << 4)) != 0xa0
++ B.tile_y != 10
+|
+- (B.tile_y << 4) == 0xb0
++ B.tile_y == 11
+|
+- ((B.tile_y << 4)) == 0xb0
++ B.tile_y == 11
+|
+- (B.tile_y << 4) != 0xb0
++ B.tile_y != 11
+|
+- ((B.tile_y << 4)) != 0xb0
++ B.tile_y != 11
+|
+- (B.tile_y << 4) == 0xc0
++ B.tile_y == 12
+|
+- ((B.tile_y << 4)) == 0xc0
++ B.tile_y == 12
+|
+- (B.tile_y << 4) != 0xc0
++ B.tile_y != 12
+|
+- ((B.tile_y << 4)) != 0xc0
++ B.tile_y != 12
+|
+- (B.tile_y << 4) == 0xd0
++ B.tile_y == 13
+|
+- ((B.tile_y << 4)) == 0xd0
++ B.tile_y == 13
+|
+- (B.tile_y << 4) != 0xd0
++ B.tile_y != 13
+|
+- ((B.tile_y << 4)) != 0xd0
++ B.tile_y != 13
+|
+- (B.tile_y << 4) == 0xe0
++ B.tile_y == 14
+|
+- ((B.tile_y << 4)) == 0xe0
++ B.tile_y == 14
+|
+- (B.tile_y << 4) != 0xe0
++ B.tile_y != 14
+|
+- ((B.tile_y << 4)) != 0xe0
++ B.tile_y != 14
+|
+- (B.tile_y << 4) == 0xf0
++ B.tile_y == 15
+|
+- ((B.tile_y << 4)) == 0xf0
++ B.tile_y == 15
+|
+- (B.tile_y << 4) != 0xf0
++ B.tile_y != 15
+|
+- ((B.tile_y << 4)) != 0xf0
++ B.tile_y != 15
+)
+
+@compare_tile_position_tile_x_2_value disable drop_cast, is_zero, isnt_zero@
+expression B;
+@@
+(
+- (B.tile_x << 2) == 0x0
++ B.tile_x == 0
+|
+- ((B.tile_x << 2)) == 0x0
++ B.tile_x == 0
+|
+- (B.tile_x << 2) != 0x0
++ B.tile_x != 0
+|
+- ((B.tile_x << 2)) != 0x0
++ B.tile_x != 0
+|
+- (B.tile_x << 2) == 0x4
++ B.tile_x == 1
+|
+- ((B.tile_x << 2)) == 0x4
++ B.tile_x == 1
+|
+- (B.tile_x << 2) != 0x4
++ B.tile_x != 1
+|
+- ((B.tile_x << 2)) != 0x4
++ B.tile_x != 1
+|
+- (B.tile_x << 2) == 0x8
++ B.tile_x == 2
+|
+- ((B.tile_x << 2)) == 0x8
++ B.tile_x == 2
+|
+- (B.tile_x << 2) != 0x8
++ B.tile_x != 2
+|
+- ((B.tile_x << 2)) != 0x8
++ B.tile_x != 2
+|
+- (B.tile_x << 2) == 0xc
++ B.tile_x == 3
+|
+- ((B.tile_x << 2)) == 0xc
++ B.tile_x == 3
+|
+- (B.tile_x << 2) != 0xc
++ B.tile_x != 3
+|
+- ((B.tile_x << 2)) != 0xc
++ B.tile_x != 3
+|
+- (B.tile_x << 2) == 0x10
++ B.tile_x == 4
+|
+- ((B.tile_x << 2)) == 0x10
++ B.tile_x == 4
+|
+- (B.tile_x << 2) != 0x10
++ B.tile_x != 4
+|
+- ((B.tile_x << 2)) != 0x10
++ B.tile_x != 4
+|
+- (B.tile_x << 2) == 0x14
++ B.tile_x == 5
+|
+- ((B.tile_x << 2)) == 0x14
++ B.tile_x == 5
+|
+- (B.tile_x << 2) != 0x14
++ B.tile_x != 5
+|
+- ((B.tile_x << 2)) != 0x14
++ B.tile_x != 5
+|
+- (B.tile_x << 2) == 0x18
++ B.tile_x == 6
+|
+- ((B.tile_x << 2)) == 0x18
++ B.tile_x == 6
+|
+- (B.tile_x << 2) != 0x18
++ B.tile_x != 6
+|
+- ((B.tile_x << 2)) != 0x18
++ B.tile_x != 6
+|
+- (B.tile_x << 2) == 0x1c
++ B.tile_x == 7
+|
+- ((B.tile_x << 2)) == 0x1c
++ B.tile_x == 7
+|
+- (B.tile_x << 2) != 0x1c
++ B.tile_x != 7
+|
+- ((B.tile_x << 2)) != 0x1c
++ B.tile_x != 7
+|
+- (B.tile_x << 2) == 0x20
++ B.tile_x == 8
+|
+- ((B.tile_x << 2)) == 0x20
++ B.tile_x == 8
+|
+- (B.tile_x << 2) != 0x20
++ B.tile_x != 8
+|
+- ((B.tile_x << 2)) != 0x20
++ B.tile_x != 8
+|
+- (B.tile_x << 2) == 0x24
++ B.tile_x == 9
+|
+- ((B.tile_x << 2)) == 0x24
++ B.tile_x == 9
+|
+- (B.tile_x << 2) != 0x24
++ B.tile_x != 9
+|
+- ((B.tile_x << 2)) != 0x24
++ B.tile_x != 9
+|
+- (B.tile_x << 2) == 0x28
++ B.tile_x == 10
+|
+- ((B.tile_x << 2)) == 0x28
++ B.tile_x == 10
+|
+- (B.tile_x << 2) != 0x28
++ B.tile_x != 10
+|
+- ((B.tile_x << 2)) != 0x28
++ B.tile_x != 10
+|
+- (B.tile_x << 2) == 0x2c
++ B.tile_x == 11
+|
+- ((B.tile_x << 2)) == 0x2c
++ B.tile_x == 11
+|
+- (B.tile_x << 2) != 0x2c
++ B.tile_x != 11
+|
+- ((B.tile_x << 2)) != 0x2c
++ B.tile_x != 11
+|
+- (B.tile_x << 2) == 0x30
++ B.tile_x == 12
+|
+- ((B.tile_x << 2)) == 0x30
++ B.tile_x == 12
+|
+- (B.tile_x << 2) != 0x30
++ B.tile_x != 12
+|
+- ((B.tile_x << 2)) != 0x30
++ B.tile_x != 12
+|
+- (B.tile_x << 2) == 0x34
++ B.tile_x == 13
+|
+- ((B.tile_x << 2)) == 0x34
++ B.tile_x == 13
+|
+- (B.tile_x << 2) != 0x34
++ B.tile_x != 13
+|
+- ((B.tile_x << 2)) != 0x34
++ B.tile_x != 13
+|
+- (B.tile_x << 2) == 0x38
++ B.tile_x == 14
+|
+- ((B.tile_x << 2)) == 0x38
++ B.tile_x == 14
+|
+- (B.tile_x << 2) != 0x38
++ B.tile_x != 14
+|
+- ((B.tile_x << 2)) != 0x38
++ B.tile_x != 14
+|
+- (B.tile_x << 2) == 0x3c
++ B.tile_x == 15
+|
+- ((B.tile_x << 2)) == 0x3c
++ B.tile_x == 15
+|
+- (B.tile_x << 2) != 0x3c
++ B.tile_x != 15
+|
+- ((B.tile_x << 2)) != 0x3c
++ B.tile_x != 15
+)
+
+@compare_tile_position_tile_x_10_value disable drop_cast, is_zero, isnt_zero@
+expression B;
+@@
+(
+- (B.tile_x << 10) == 0x0
++ B.tile_x == 0
+|
+- ((B.tile_x << 10)) == 0x0
++ B.tile_x == 0
+|
+- (B.tile_x << 10) != 0x0
++ B.tile_x != 0
+|
+- ((B.tile_x << 10)) != 0x0
++ B.tile_x != 0
+|
+- (B.tile_x << 10) == 0x400
++ B.tile_x == 1
+|
+- ((B.tile_x << 10)) == 0x400
++ B.tile_x == 1
+|
+- (B.tile_x << 10) != 0x400
++ B.tile_x != 1
+|
+- ((B.tile_x << 10)) != 0x400
++ B.tile_x != 1
+|
+- (B.tile_x << 10) == 0x800
++ B.tile_x == 2
+|
+- ((B.tile_x << 10)) == 0x800
++ B.tile_x == 2
+|
+- (B.tile_x << 10) != 0x800
++ B.tile_x != 2
+|
+- ((B.tile_x << 10)) != 0x800
++ B.tile_x != 2
+|
+- (B.tile_x << 10) == 0xc00
++ B.tile_x == 3
+|
+- ((B.tile_x << 10)) == 0xc00
++ B.tile_x == 3
+|
+- (B.tile_x << 10) != 0xc00
++ B.tile_x != 3
+|
+- ((B.tile_x << 10)) != 0xc00
++ B.tile_x != 3
+|
+- (B.tile_x << 10) == 0x1000
++ B.tile_x == 4
+|
+- ((B.tile_x << 10)) == 0x1000
++ B.tile_x == 4
+|
+- (B.tile_x << 10) != 0x1000
++ B.tile_x != 4
+|
+- ((B.tile_x << 10)) != 0x1000
++ B.tile_x != 4
+|
+- (B.tile_x << 10) == 0x1400
++ B.tile_x == 5
+|
+- ((B.tile_x << 10)) == 0x1400
++ B.tile_x == 5
+|
+- (B.tile_x << 10) != 0x1400
++ B.tile_x != 5
+|
+- ((B.tile_x << 10)) != 0x1400
++ B.tile_x != 5
+|
+- (B.tile_x << 10) == 0x1800
++ B.tile_x == 6
+|
+- ((B.tile_x << 10)) == 0x1800
++ B.tile_x == 6
+|
+- (B.tile_x << 10) != 0x1800
++ B.tile_x != 6
+|
+- ((B.tile_x << 10)) != 0x1800
++ B.tile_x != 6
+|
+- (B.tile_x << 10) == 0x1c00
++ B.tile_x == 7
+|
+- ((B.tile_x << 10)) == 0x1c00
++ B.tile_x == 7
+|
+- (B.tile_x << 10) != 0x1c00
++ B.tile_x != 7
+|
+- ((B.tile_x << 10)) != 0x1c00
++ B.tile_x != 7
+|
+- (B.tile_x << 10) == 0x2000
++ B.tile_x == 8
+|
+- ((B.tile_x << 10)) == 0x2000
++ B.tile_x == 8
+|
+- (B.tile_x << 10) != 0x2000
++ B.tile_x != 8
+|
+- ((B.tile_x << 10)) != 0x2000
++ B.tile_x != 8
+|
+- (B.tile_x << 10) == 0x2400
++ B.tile_x == 9
+|
+- ((B.tile_x << 10)) == 0x2400
++ B.tile_x == 9
+|
+- (B.tile_x << 10) != 0x2400
++ B.tile_x != 9
+|
+- ((B.tile_x << 10)) != 0x2400
++ B.tile_x != 9
+|
+- (B.tile_x << 10) == 0x2800
++ B.tile_x == 10
+|
+- ((B.tile_x << 10)) == 0x2800
++ B.tile_x == 10
+|
+- (B.tile_x << 10) != 0x2800
++ B.tile_x != 10
+|
+- ((B.tile_x << 10)) != 0x2800
++ B.tile_x != 10
+|
+- (B.tile_x << 10) == 0x2c00
++ B.tile_x == 11
+|
+- ((B.tile_x << 10)) == 0x2c00
++ B.tile_x == 11
+|
+- (B.tile_x << 10) != 0x2c00
++ B.tile_x != 11
+|
+- ((B.tile_x << 10)) != 0x2c00
++ B.tile_x != 11
+|
+- (B.tile_x << 10) == 0x3000
++ B.tile_x == 12
+|
+- ((B.tile_x << 10)) == 0x3000
++ B.tile_x == 12
+|
+- (B.tile_x << 10) != 0x3000
++ B.tile_x != 12
+|
+- ((B.tile_x << 10)) != 0x3000
++ B.tile_x != 12
+|
+- (B.tile_x << 10) == 0x3400
++ B.tile_x == 13
+|
+- ((B.tile_x << 10)) == 0x3400
++ B.tile_x == 13
+|
+- (B.tile_x << 10) != 0x3400
++ B.tile_x != 13
+|
+- ((B.tile_x << 10)) != 0x3400
++ B.tile_x != 13
+|
+- (B.tile_x << 10) == 0x3800
++ B.tile_x == 14
+|
+- ((B.tile_x << 10)) == 0x3800
++ B.tile_x == 14
+|
+- (B.tile_x << 10) != 0x3800
++ B.tile_x != 14
+|
+- ((B.tile_x << 10)) != 0x3800
++ B.tile_x != 14
+|
+- (B.tile_x << 10) == 0x3c00
++ B.tile_x == 15
+|
+- ((B.tile_x << 10)) == 0x3c00
++ B.tile_x == 15
+|
+- (B.tile_x << 10) != 0x3c00
++ B.tile_x != 15
+|
+- ((B.tile_x << 10)) != 0x3c00
++ B.tile_x != 15
 )
 
 @compare_size_weight_animated_3_value disable drop_cast, is_zero, isnt_zero@

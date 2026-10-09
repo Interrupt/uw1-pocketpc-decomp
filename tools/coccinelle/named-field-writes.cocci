@@ -9703,6 +9703,447 @@ typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_
 + ((uw_mobile_object_t *)P)->npc_xhome = (H >> 2) & 0x3f;
 )
 
+@tile_position_0_tile_y@
+identifier P, H, V;
+typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;
+@@
+(
+- P->tile_position = P->tile_position & 0xfc0f | (H & 0x3f) << 4;
++ P->tile_y = H & 0x3f;
+|
+- V = P->tile_position & 0xfc0f | (H & 0x3f) << 4;
+- P->tile_position = (ushort)V;
++ P->tile_y = H & 0x3f;
++ V = P->tile_position;
+|
+- V = P->tile_position & 0xfc0f | (H & 0x3f) << 4;
+- P->tile_position_low = (byte)V;
+- P->tile_position_high = (byte)(V >> 8);
++ P->tile_y = H & 0x3f;
++ V = P->tile_position;
+|
+- V = P->tile_position & 0xfc0f | (H & 0x3f) << 4;
+- P->tile_position_low = (byte)(char)V;
+- P->tile_position_high = (byte)(char)(V >> 8);
++ P->tile_y = H & 0x3f;
++ V = P->tile_position;
+|
+- P->tile_position = P->tile_position & 0xfc0f;
++ P->tile_y = 0x0;
+|
+- V = P->tile_position & 0xfc0f;
+- P->tile_position = (ushort)V;
++ P->tile_y = 0x0;
++ V = P->tile_position;
+|
+- V = P->tile_position & 0xfc0f;
+- P->tile_position_low = (byte)V;
+- P->tile_position_high = (byte)(V >> 8);
++ P->tile_y = 0x0;
++ V = P->tile_position;
+|
+- V = P->tile_position & 0xfc0f;
+- P->tile_position_low = (byte)(char)V;
+- P->tile_position_high = (byte)(char)(V >> 8);
++ P->tile_y = 0x0;
++ V = P->tile_position;
+|
+- P->tile_position = P->tile_position | 0x3f0;
++ P->tile_y = 0x3f;
+|
+- V = P->tile_position | 0x3f0;
+- P->tile_position = (ushort)V;
++ P->tile_y = 0x3f;
++ V = P->tile_position;
+|
+- V = P->tile_position | 0x3f0;
+- P->tile_position_low = (byte)V;
+- P->tile_position_high = (byte)(V >> 8);
++ P->tile_y = 0x3f;
++ V = P->tile_position;
+|
+- V = P->tile_position | 0x3f0;
+- P->tile_position_low = (byte)(char)V;
+- P->tile_position_high = (byte)(char)(V >> 8);
++ P->tile_y = 0x3f;
++ V = P->tile_position;
+)
+
+@tile_position_0_tile_x@
+identifier P, H, V;
+typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;
+@@
+(
+- P->tile_position = P->tile_position & 0x3ff | (H & 0x3f) << 10;
++ P->tile_x = H & 0x3f;
+|
+- V = P->tile_position & 0x3ff | (H & 0x3f) << 10;
+- P->tile_position = (ushort)V;
++ P->tile_x = H & 0x3f;
++ V = P->tile_position;
+|
+- V = P->tile_position & 0x3ff | (H & 0x3f) << 10;
+- P->tile_position_low = (byte)V;
+- P->tile_position_high = (byte)(V >> 8);
++ P->tile_x = H & 0x3f;
++ V = P->tile_position;
+|
+- V = P->tile_position & 0x3ff | (H & 0x3f) << 10;
+- P->tile_position_low = (byte)(char)V;
+- P->tile_position_high = (byte)(char)(V >> 8);
++ P->tile_x = H & 0x3f;
++ V = P->tile_position;
+|
+- P->tile_position = P->tile_position & 0x3ff;
++ P->tile_x = 0x0;
+|
+- V = P->tile_position & 0x3ff;
+- P->tile_position = (ushort)V;
++ P->tile_x = 0x0;
++ V = P->tile_position;
+|
+- V = P->tile_position & 0x3ff;
+- P->tile_position_low = (byte)V;
+- P->tile_position_high = (byte)(V >> 8);
++ P->tile_x = 0x0;
++ V = P->tile_position;
+|
+- V = P->tile_position & 0x3ff;
+- P->tile_position_low = (byte)(char)V;
+- P->tile_position_high = (byte)(char)(V >> 8);
++ P->tile_x = 0x0;
++ V = P->tile_position;
+|
+- P->tile_position = P->tile_position | 0xfc00;
++ P->tile_x = 0x3f;
+|
+- V = P->tile_position | 0xfc00;
+- P->tile_position = (ushort)V;
++ P->tile_x = 0x3f;
++ V = P->tile_position;
+|
+- V = P->tile_position | 0xfc00;
+- P->tile_position_low = (byte)V;
+- P->tile_position_high = (byte)(V >> 8);
++ P->tile_x = 0x3f;
++ V = P->tile_position;
+|
+- V = P->tile_position | 0xfc00;
+- P->tile_position_low = (byte)(char)V;
+- P->tile_position_high = (byte)(char)(V >> 8);
++ P->tile_x = 0x3f;
++ V = P->tile_position;
+|
+- P->tile_position_high = P->tile_position_high & 0x3 | (H & 0x3f) << 2;
++ P->tile_x = H & 0x3f;
+|
+- P->tile_position_high = P->tile_position_high & 0x3;
++ P->tile_x = 0;
+|
+- P->tile_position_high = P->tile_position_high | 0xfc;
++ P->tile_x = 0x3f;
+|
+- P->tile_position_high = (H ^ P->tile_position_high) & 0xfc ^ P->tile_position_high;
++ P->tile_x = (H >> 2) & 0x3f;
+|
+- P->tile_position_high = (P->tile_position_high ^ H) & 0xfc ^ P->tile_position_high;
++ P->tile_x = (H >> 2) & 0x3f;
+)
+
+@tile_position_1_tile_y@
+identifier P, H, V;
+typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;
+@@
+(
+- P.tile_position = P.tile_position & 0xfc0f | (H & 0x3f) << 4;
++ P.tile_y = H & 0x3f;
+|
+- V = P.tile_position & 0xfc0f | (H & 0x3f) << 4;
+- P.tile_position = (ushort)V;
++ P.tile_y = H & 0x3f;
++ V = P.tile_position;
+|
+- V = P.tile_position & 0xfc0f | (H & 0x3f) << 4;
+- P.tile_position_low = (byte)V;
+- P.tile_position_high = (byte)(V >> 8);
++ P.tile_y = H & 0x3f;
++ V = P.tile_position;
+|
+- V = P.tile_position & 0xfc0f | (H & 0x3f) << 4;
+- P.tile_position_low = (byte)(char)V;
+- P.tile_position_high = (byte)(char)(V >> 8);
++ P.tile_y = H & 0x3f;
++ V = P.tile_position;
+|
+- P.tile_position = P.tile_position & 0xfc0f;
++ P.tile_y = 0x0;
+|
+- V = P.tile_position & 0xfc0f;
+- P.tile_position = (ushort)V;
++ P.tile_y = 0x0;
++ V = P.tile_position;
+|
+- V = P.tile_position & 0xfc0f;
+- P.tile_position_low = (byte)V;
+- P.tile_position_high = (byte)(V >> 8);
++ P.tile_y = 0x0;
++ V = P.tile_position;
+|
+- V = P.tile_position & 0xfc0f;
+- P.tile_position_low = (byte)(char)V;
+- P.tile_position_high = (byte)(char)(V >> 8);
++ P.tile_y = 0x0;
++ V = P.tile_position;
+|
+- P.tile_position = P.tile_position | 0x3f0;
++ P.tile_y = 0x3f;
+|
+- V = P.tile_position | 0x3f0;
+- P.tile_position = (ushort)V;
++ P.tile_y = 0x3f;
++ V = P.tile_position;
+|
+- V = P.tile_position | 0x3f0;
+- P.tile_position_low = (byte)V;
+- P.tile_position_high = (byte)(V >> 8);
++ P.tile_y = 0x3f;
++ V = P.tile_position;
+|
+- V = P.tile_position | 0x3f0;
+- P.tile_position_low = (byte)(char)V;
+- P.tile_position_high = (byte)(char)(V >> 8);
++ P.tile_y = 0x3f;
++ V = P.tile_position;
+)
+
+@tile_position_1_tile_x@
+identifier P, H, V;
+typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;
+@@
+(
+- P.tile_position = P.tile_position & 0x3ff | (H & 0x3f) << 10;
++ P.tile_x = H & 0x3f;
+|
+- V = P.tile_position & 0x3ff | (H & 0x3f) << 10;
+- P.tile_position = (ushort)V;
++ P.tile_x = H & 0x3f;
++ V = P.tile_position;
+|
+- V = P.tile_position & 0x3ff | (H & 0x3f) << 10;
+- P.tile_position_low = (byte)V;
+- P.tile_position_high = (byte)(V >> 8);
++ P.tile_x = H & 0x3f;
++ V = P.tile_position;
+|
+- V = P.tile_position & 0x3ff | (H & 0x3f) << 10;
+- P.tile_position_low = (byte)(char)V;
+- P.tile_position_high = (byte)(char)(V >> 8);
++ P.tile_x = H & 0x3f;
++ V = P.tile_position;
+|
+- P.tile_position = P.tile_position & 0x3ff;
++ P.tile_x = 0x0;
+|
+- V = P.tile_position & 0x3ff;
+- P.tile_position = (ushort)V;
++ P.tile_x = 0x0;
++ V = P.tile_position;
+|
+- V = P.tile_position & 0x3ff;
+- P.tile_position_low = (byte)V;
+- P.tile_position_high = (byte)(V >> 8);
++ P.tile_x = 0x0;
++ V = P.tile_position;
+|
+- V = P.tile_position & 0x3ff;
+- P.tile_position_low = (byte)(char)V;
+- P.tile_position_high = (byte)(char)(V >> 8);
++ P.tile_x = 0x0;
++ V = P.tile_position;
+|
+- P.tile_position = P.tile_position | 0xfc00;
++ P.tile_x = 0x3f;
+|
+- V = P.tile_position | 0xfc00;
+- P.tile_position = (ushort)V;
++ P.tile_x = 0x3f;
++ V = P.tile_position;
+|
+- V = P.tile_position | 0xfc00;
+- P.tile_position_low = (byte)V;
+- P.tile_position_high = (byte)(V >> 8);
++ P.tile_x = 0x3f;
++ V = P.tile_position;
+|
+- V = P.tile_position | 0xfc00;
+- P.tile_position_low = (byte)(char)V;
+- P.tile_position_high = (byte)(char)(V >> 8);
++ P.tile_x = 0x3f;
++ V = P.tile_position;
+|
+- P.tile_position_high = P.tile_position_high & 0x3 | (H & 0x3f) << 2;
++ P.tile_x = H & 0x3f;
+|
+- P.tile_position_high = P.tile_position_high & 0x3;
++ P.tile_x = 0;
+|
+- P.tile_position_high = P.tile_position_high | 0xfc;
++ P.tile_x = 0x3f;
+|
+- P.tile_position_high = (H ^ P.tile_position_high) & 0xfc ^ P.tile_position_high;
++ P.tile_x = (H >> 2) & 0x3f;
+|
+- P.tile_position_high = (P.tile_position_high ^ H) & 0xfc ^ P.tile_position_high;
++ P.tile_x = (H >> 2) & 0x3f;
+)
+
+@tile_position_2_tile_y@
+identifier P, H, V;
+typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;
+@@
+(
+- ((uw_mobile_object_t *)P)->tile_position = ((uw_mobile_object_t *)P)->tile_position & 0xfc0f | (H & 0x3f) << 4;
++ ((uw_mobile_object_t *)P)->tile_y = H & 0x3f;
+|
+- V = ((uw_mobile_object_t *)P)->tile_position & 0xfc0f | (H & 0x3f) << 4;
+- ((uw_mobile_object_t *)P)->tile_position = (ushort)V;
++ ((uw_mobile_object_t *)P)->tile_y = H & 0x3f;
++ V = ((uw_mobile_object_t *)P)->tile_position;
+|
+- V = ((uw_mobile_object_t *)P)->tile_position & 0xfc0f | (H & 0x3f) << 4;
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)V;
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)(V >> 8);
++ ((uw_mobile_object_t *)P)->tile_y = H & 0x3f;
++ V = ((uw_mobile_object_t *)P)->tile_position;
+|
+- V = ((uw_mobile_object_t *)P)->tile_position & 0xfc0f | (H & 0x3f) << 4;
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)(char)V;
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)(char)(V >> 8);
++ ((uw_mobile_object_t *)P)->tile_y = H & 0x3f;
++ V = ((uw_mobile_object_t *)P)->tile_position;
+|
+- ((uw_mobile_object_t *)P)->tile_position = ((uw_mobile_object_t *)P)->tile_position & 0xfc0f;
++ ((uw_mobile_object_t *)P)->tile_y = 0x0;
+|
+- V = ((uw_mobile_object_t *)P)->tile_position & 0xfc0f;
+- ((uw_mobile_object_t *)P)->tile_position = (ushort)V;
++ ((uw_mobile_object_t *)P)->tile_y = 0x0;
++ V = ((uw_mobile_object_t *)P)->tile_position;
+|
+- V = ((uw_mobile_object_t *)P)->tile_position & 0xfc0f;
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)V;
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)(V >> 8);
++ ((uw_mobile_object_t *)P)->tile_y = 0x0;
++ V = ((uw_mobile_object_t *)P)->tile_position;
+|
+- V = ((uw_mobile_object_t *)P)->tile_position & 0xfc0f;
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)(char)V;
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)(char)(V >> 8);
++ ((uw_mobile_object_t *)P)->tile_y = 0x0;
++ V = ((uw_mobile_object_t *)P)->tile_position;
+|
+- ((uw_mobile_object_t *)P)->tile_position = ((uw_mobile_object_t *)P)->tile_position | 0x3f0;
++ ((uw_mobile_object_t *)P)->tile_y = 0x3f;
+|
+- V = ((uw_mobile_object_t *)P)->tile_position | 0x3f0;
+- ((uw_mobile_object_t *)P)->tile_position = (ushort)V;
++ ((uw_mobile_object_t *)P)->tile_y = 0x3f;
++ V = ((uw_mobile_object_t *)P)->tile_position;
+|
+- V = ((uw_mobile_object_t *)P)->tile_position | 0x3f0;
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)V;
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)(V >> 8);
++ ((uw_mobile_object_t *)P)->tile_y = 0x3f;
++ V = ((uw_mobile_object_t *)P)->tile_position;
+|
+- V = ((uw_mobile_object_t *)P)->tile_position | 0x3f0;
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)(char)V;
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)(char)(V >> 8);
++ ((uw_mobile_object_t *)P)->tile_y = 0x3f;
++ V = ((uw_mobile_object_t *)P)->tile_position;
+)
+
+@tile_position_2_tile_x@
+identifier P, H, V;
+typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;
+@@
+(
+- ((uw_mobile_object_t *)P)->tile_position = ((uw_mobile_object_t *)P)->tile_position & 0x3ff | (H & 0x3f) << 10;
++ ((uw_mobile_object_t *)P)->tile_x = H & 0x3f;
+|
+- V = ((uw_mobile_object_t *)P)->tile_position & 0x3ff | (H & 0x3f) << 10;
+- ((uw_mobile_object_t *)P)->tile_position = (ushort)V;
++ ((uw_mobile_object_t *)P)->tile_x = H & 0x3f;
++ V = ((uw_mobile_object_t *)P)->tile_position;
+|
+- V = ((uw_mobile_object_t *)P)->tile_position & 0x3ff | (H & 0x3f) << 10;
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)V;
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)(V >> 8);
++ ((uw_mobile_object_t *)P)->tile_x = H & 0x3f;
++ V = ((uw_mobile_object_t *)P)->tile_position;
+|
+- V = ((uw_mobile_object_t *)P)->tile_position & 0x3ff | (H & 0x3f) << 10;
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)(char)V;
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)(char)(V >> 8);
++ ((uw_mobile_object_t *)P)->tile_x = H & 0x3f;
++ V = ((uw_mobile_object_t *)P)->tile_position;
+|
+- ((uw_mobile_object_t *)P)->tile_position = ((uw_mobile_object_t *)P)->tile_position & 0x3ff;
++ ((uw_mobile_object_t *)P)->tile_x = 0x0;
+|
+- V = ((uw_mobile_object_t *)P)->tile_position & 0x3ff;
+- ((uw_mobile_object_t *)P)->tile_position = (ushort)V;
++ ((uw_mobile_object_t *)P)->tile_x = 0x0;
++ V = ((uw_mobile_object_t *)P)->tile_position;
+|
+- V = ((uw_mobile_object_t *)P)->tile_position & 0x3ff;
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)V;
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)(V >> 8);
++ ((uw_mobile_object_t *)P)->tile_x = 0x0;
++ V = ((uw_mobile_object_t *)P)->tile_position;
+|
+- V = ((uw_mobile_object_t *)P)->tile_position & 0x3ff;
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)(char)V;
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)(char)(V >> 8);
++ ((uw_mobile_object_t *)P)->tile_x = 0x0;
++ V = ((uw_mobile_object_t *)P)->tile_position;
+|
+- ((uw_mobile_object_t *)P)->tile_position = ((uw_mobile_object_t *)P)->tile_position | 0xfc00;
++ ((uw_mobile_object_t *)P)->tile_x = 0x3f;
+|
+- V = ((uw_mobile_object_t *)P)->tile_position | 0xfc00;
+- ((uw_mobile_object_t *)P)->tile_position = (ushort)V;
++ ((uw_mobile_object_t *)P)->tile_x = 0x3f;
++ V = ((uw_mobile_object_t *)P)->tile_position;
+|
+- V = ((uw_mobile_object_t *)P)->tile_position | 0xfc00;
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)V;
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)(V >> 8);
++ ((uw_mobile_object_t *)P)->tile_x = 0x3f;
++ V = ((uw_mobile_object_t *)P)->tile_position;
+|
+- V = ((uw_mobile_object_t *)P)->tile_position | 0xfc00;
+- ((uw_mobile_object_t *)P)->tile_position_low = (byte)(char)V;
+- ((uw_mobile_object_t *)P)->tile_position_high = (byte)(char)(V >> 8);
++ ((uw_mobile_object_t *)P)->tile_x = 0x3f;
++ V = ((uw_mobile_object_t *)P)->tile_position;
+|
+- ((uw_mobile_object_t *)P)->tile_position_high = ((uw_mobile_object_t *)P)->tile_position_high & 0x3 | (H & 0x3f) << 2;
++ ((uw_mobile_object_t *)P)->tile_x = H & 0x3f;
+|
+- ((uw_mobile_object_t *)P)->tile_position_high = ((uw_mobile_object_t *)P)->tile_position_high & 0x3;
++ ((uw_mobile_object_t *)P)->tile_x = 0;
+|
+- ((uw_mobile_object_t *)P)->tile_position_high = ((uw_mobile_object_t *)P)->tile_position_high | 0xfc;
++ ((uw_mobile_object_t *)P)->tile_x = 0x3f;
+|
+- ((uw_mobile_object_t *)P)->tile_position_high = (H ^ ((uw_mobile_object_t *)P)->tile_position_high) & 0xfc ^ ((uw_mobile_object_t *)P)->tile_position_high;
++ ((uw_mobile_object_t *)P)->tile_x = (H >> 2) & 0x3f;
+|
+- ((uw_mobile_object_t *)P)->tile_position_high = (((uw_mobile_object_t *)P)->tile_position_high ^ H) & 0xfc ^ ((uw_mobile_object_t *)P)->tile_position_high;
++ ((uw_mobile_object_t *)P)->tile_x = (H >> 2) & 0x3f;
+)
+
 @size_weight_0_collision_radius@
 identifier P, H, V;
 typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;

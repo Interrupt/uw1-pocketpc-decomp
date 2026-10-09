@@ -257,7 +257,7 @@ the repair leaves unrelated functions untouched.
 
 No game function is moved to a different source file during this work.
 
-Checkpoint validation: game build, all 53 C unit suites, and all twelve conversion
+Checkpoint validation: game build, all 53 C unit suites, and all thirteen conversion
 tool suites pass. The latest
 AddressSanitizer pass covers 19 consumers: babl_objects/throw/throw_cursor/npc_state/npc_combat/npc_ai/creatures/
 combat/object_layout/object_core/movement/scheduler/spells/chargen/inventory/
@@ -295,7 +295,40 @@ agree over 4,194,304 cases spanning relocation, landing failures, off-map
 tiles and damage callbacks. The same run checks complete conversion and
 idempotence against the saved original. The object-layout suite checks every
 new alias and property against byte offsets and masks. This pass removes all
-23 raw audited accesses in synchronization; 115 remain elsewhere.
+23 raw audited accesses in synchronization. Remaining raw accesses elsewhere
+are tracked by the property-usage inventory.
+
+## Shared mobile consumers
+
+`generate_shared_mobile_rules.py` emits function- and receiver-scoped recipes
+in `shared-mobile/`. `apply_shared_mobile_rules.py --in-place --jobs 4` applies
+them to temporary copies of the reviewed functions and reinserts each body at
+its original location. `--check` verifies that no additional changes are pending.
+Original pointer declarations determine byte scaling; signed byte reads retain
+their casts. The pass names common header fields, tile coordinates, scheduling
+phase, movement mode, speed, gravity, pitch and fine heading. Scaled tile reads
+retain their multiplication by eight through `tile_x/y << 3`.
+
+The snapshot builder guards extended storage with the mobile arena boundary.
+Its non-NPC branch alone reads projectile precise coordinates. The settling
+function reads the projectile source slot only in its non-NPC branch, and the
+reallocation diagnostic reads signed precise Z only for projectile class 0x80.
+Saved local pointers remain local when calls change the selected global object.
+Mixed attacker/current-object consumers use only shared byte views; raw NPC
+goal/status/target words and unresolved byte-26 accesses remain further work.
+Monster-table `movement_flags` is excluded from mobile scheduling rules.
+Complete byte-field writes use named properties, including XOR inserts whose
+values contain only scalar identifiers, masks, shifts and numeric literals.
+Calls and repeated memory expressions are excluded from those value recipes.
+The refreshed audit records 279 proven pointer roles across 47 sources and
+61 remaining raw accesses at audited sites, down from 115 before this batch.
+
+`shared_mobile_fields` extracts the actual placement snapshot builder and
+checks 196,608 NPC/projectile/static cases against independent byte expectations,
+including untouched snapshot bytes, object storage and random-call counts.
+`--reference PATH` additionally compares a saved original builder; `--asan`
+enables sanitizer checks. Receiver fixtures check word, character and void
+pointer scaling, signed reads, unrelated fields, scope exclusions and idempotence.
 
 ## Packed-byte reassembly
 
@@ -441,7 +474,7 @@ that are disjoint or identical, not partially overlapping raw buffers or
 volatile/device storage. The current matches copy records from object slots
 into newly allocated slots in relocation, stack splitting, and traps.
 
-`packed_field_copies` checks all 756 source/destination/cast combinations over
+`packed_field_copies` checks all 792 source/destination/cast combinations over
 all 65,536 words using the real structs, including self-aliasing pointer forms,
 source and neighboring bytes, mismatched-source and intervening-write
 exclusions, and idempotence. Twenty paired copies across four game sources
@@ -456,7 +489,7 @@ values, destination members and intervening writes stay separate. Five more
 pairs in game reset, save preparation and object callbacks now assign the
 complete word; their old scalar snapshots remain unchanged.
 
-`packed_struct_stores` verifies 936 scalar/cast/receiver forms over all 65,536
+`packed_struct_stores` verifies 1008 scalar/cast/receiver forms over all 65,536
 words with positive and negative inputs, checking neighboring bytes, exclusion
 cases and idempotence. Pass `--asan` after the `spatch` argument for sanitizer
 coverage. These packed assignments preserve the original mask expressions;

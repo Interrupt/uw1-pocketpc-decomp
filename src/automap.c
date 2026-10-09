@@ -1062,7 +1062,8 @@ byte automap_reveal_byte(byte *tile_rec)
     ushort *pp = (ushort *)g_player_object;
     fprintf(stderr, "[automap-reveal] tile_rec=%p idx=%ld tile=(%ld,%ld) player_tile=(%u,%u) heading=0x%x\n",
             (void *)tile_rec, (long)idx, (long)(idx & 0x3f), (long)(idx >> 6),
-            (unsigned)(pp[0xb] >> 10), (unsigned)((pp[0xb] & 0x3f0) >> 4),
+            (unsigned)(((uw_mobile_object_t *)pp)->tile_x),
+            (unsigned)(((uw_mobile_object_t *)pp)->tile_y),
             (unsigned)(ushort)DAT_00201c70);
   }
   return (byte)DAT_0023ae40_backing[tile_rec[1] >> 2 & 0xf] |
