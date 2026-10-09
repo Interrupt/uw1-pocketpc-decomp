@@ -1,4 +1,4 @@
-@field_0_item_id disable drop_cast, is_zero, isnt_zero@
+@field_0_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(find_and_consume_ammo\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7,19 +7,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)found_item + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)found_item)->item_id
++ ((uw_object_hdr_t *)found_item)->object_id
 |
 - ((ushort *)found_item)[0] & 0x1ff
-+ ((uw_object_hdr_t *)found_item)->item_id
++ ((uw_object_hdr_t *)found_item)->object_id
 |
 - *(ushort *)found_item & 0x1ff
-+ ((uw_object_hdr_t *)found_item)->item_id
++ ((uw_object_hdr_t *)found_item)->object_id
 |
 - found_item[0] & 0x1ff
-+ ((uw_object_hdr_t *)found_item)->item_id
++ ((uw_object_hdr_t *)found_item)->object_id
 |
 - *found_item & 0x1ff
-+ ((uw_object_hdr_t *)found_item)->item_id
++ ((uw_object_hdr_t *)found_item)->object_id
 )
 ...>
 }
@@ -542,7 +542,7 @@ R F(...) {
 ...>
 }
 
-@field_1_item_id disable drop_cast, is_zero, isnt_zero@
+@field_1_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(fire_ranged_weapon\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -551,19 +551,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)puVar6 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puVar6)->item_id
++ ((uw_object_hdr_t *)puVar6)->object_id
 |
 - ((ushort *)puVar6)[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar6)->item_id
++ ((uw_object_hdr_t *)puVar6)->object_id
 |
 - *(ushort *)puVar6 & 0x1ff
-+ ((uw_object_hdr_t *)puVar6)->item_id
++ ((uw_object_hdr_t *)puVar6)->object_id
 |
 - puVar6[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar6)->item_id
++ ((uw_object_hdr_t *)puVar6)->object_id
 |
 - *puVar6 & 0x1ff
-+ ((uw_object_hdr_t *)puVar6)->item_id
++ ((uw_object_hdr_t *)puVar6)->object_id
 )
 ...>
 }

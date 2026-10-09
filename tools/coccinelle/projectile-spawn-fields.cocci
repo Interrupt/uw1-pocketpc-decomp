@@ -285,7 +285,7 @@ R F(...) {
 <...
 (
 - ((uw_object_hdr_t *)DAT_00202a44)->type_flags & 0x1ff
-+ ((uw_object_hdr_t *)DAT_00202a44)->item_id
++ ((uw_object_hdr_t *)DAT_00202a44)->object_id
 )
 ...>
 }
@@ -300,7 +300,7 @@ R F(...) {
 <...
 (
 - ((uw_object_hdr_t *)DAT_00202a44)->type_flags & 0x1c0
-+ ((uw_object_hdr_t *)DAT_00202a44)->item_id & 0x1c0
++ ((uw_object_hdr_t *)DAT_00202a44)->object_id & 0x1c0
 )
 ...>
 }
@@ -385,7 +385,7 @@ R F(...) {
 ...>
 }
 
-@projectile_spawn_item_id disable drop_cast, plus_comm, mult_comm, plus_assoc, minus_assoc, plus_minus_assoc1, plus_minus_assoc2, times_assoc, bitand_comm, bitor_comm@
+@projectile_spawn_object_id disable drop_cast, plus_comm, mult_comm, plus_assoc, minus_assoc, plus_minus_assoc1, plus_minus_assoc2, times_assoc, bitand_comm, bitor_comm@
 type R;
 identifier F =~ "^spawn_object_near_player$";
 typedef byte, ushort, uint, uw_object_hdr_t, uw_projectile_object_t;
@@ -396,7 +396,7 @@ R F(...) {
 (
 - uVar7 = (uVar7 ^ (int)DAT_00202a38) & 0x1ff ^ uVar7;
 - puVar6->hdr.type_flags = (ushort)uVar7;
-+ puVar6->hdr.item_id = (int)DAT_00202a38 & 0x1ff;
++ puVar6->hdr.object_id = (int)DAT_00202a38 & 0x1ff;
 + uVar7 = puVar6->hdr.type_flags;
 )
 ...>
@@ -528,9 +528,9 @@ typedef byte, ushort, uint, uw_object_hdr_t, uw_projectile_object_t;
 R F(...) {
 <...
 (
-- puVar6->hdr.position_word_low = (((char)DAT_00202a3c * '\x02' - (*(byte *)(DAT_00086df8 + 0xb9) >> 3)) + g_object_type_props[(((uw_object_hdr_t *)DAT_00202a44)->item_id)].height + (bVar1 & 0x7f) ^ bVar3) & 0x7f ^ bVar3;
+- puVar6->hdr.position_word_low = (((char)DAT_00202a3c * '\x02' - (*(byte *)(DAT_00086df8 + 0xb9) >> 3)) + g_object_type_props[(((uw_object_hdr_t *)DAT_00202a44)->object_id)].height + (bVar1 & 0x7f) ^ bVar3) & 0x7f ^ bVar3;
 - puVar6->hdr.position_word_high = bVar2;
-+ puVar6->hdr.zpos = ((char)DAT_00202a3c * '\x02' - (*(byte *)(DAT_00086df8 + 0xb9) >> 3)) + g_object_type_props[(((uw_object_hdr_t *)DAT_00202a44)->item_id)].height + (bVar1 & 0x7f);
++ puVar6->hdr.zpos = ((char)DAT_00202a3c * '\x02' - (*(byte *)(DAT_00086df8 + 0xb9) >> 3)) + g_object_type_props[(((uw_object_hdr_t *)DAT_00202a44)->object_id)].height + (bVar1 & 0x7f);
 )
 ...>
 }

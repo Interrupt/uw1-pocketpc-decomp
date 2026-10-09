@@ -106,7 +106,7 @@ void open_door_object(void *door_ptr)
 
 
 
-// was FUN_0007c814 NOTE: for the item_id==0x1cf special-object branch inside
+// was FUN_0007c814 NOTE: for the object_id==0x1cf special-object branch inside
 // close_door_object/open_door_object, this dispatch is provably always a no-op: closed(<8) routes
 // to close_door_object, whose 0x1cf branch only proceeds when quality is ALREADY >=8...
 void toggle_door_object(char *actor, void *door_ptr)

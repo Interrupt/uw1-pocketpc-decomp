@@ -83,11 +83,11 @@ static void test_chain_search_follows_next_and_contents_words(void)
 {
     ushort root = 256 << 6;
     ushort *cursor = &root;
-    stationary[0].item_id = 0x80;
+    stationary[0].object_id = 0x80;
     stationary[0].next = 257;
-    stationary[1].item_id = 0x81;
+    stationary[1].object_id = 0x81;
     stationary[1].link = 2;
-    mobile[2].hdr.item_id = 0x43;
+    mobile[2].hdr.object_id = 0x43;
     TEST_ASSERT_EQUAL_PTR(&mobile[2].hdr,
         find_object_in_chain(&cursor, 1, 1, 0, 3));
     TEST_ASSERT_EQUAL_PTR((char *)&stationary[1] + 6, cursor);
@@ -144,15 +144,15 @@ static void test_contents_weight_distinguishes_quantity_from_links(void)
 {
     ushort root = (256 << 6) | 37;
     short total = 10;
-    stationary[0].item_id = 0x80;
+    stationary[0].object_id = 0x80;
     stationary[0].link = 2;
     g_object_type_props[0x80].unit_weight = 12;
-    mobile[2].hdr.item_id = 0x83;
+    mobile[2].hdr.object_id = 0x83;
     mobile[2].hdr.is_quant = 1;
     mobile[2].hdr.link = 3;
     mobile[2].hdr.next = 257;
     g_object_type_props[0x83].unit_weight = 7;
-    stationary[1].item_id = 0x87;
+    stationary[1].object_id = 0x87;
     stationary[1].is_quant = 1;
     stationary[1].link = 600; /* Special property, not 600 objects. */
     g_object_type_props[0x87].unit_weight = 5;
@@ -163,16 +163,16 @@ static void test_stacking_checks_type_contents_quantity_and_quality(void)
 {
     uw_object_hdr_t *a = &stationary[0];
     uw_object_hdr_t *b = &stationary[1];
-    a->item_id = b->item_id = 0x80;
+    a->object_id = b->object_id = 0x80;
     a->is_quant = b->is_quant = 1;
     a->link = 3;
     b->link = 7;
     a->quality = 18;
     b->quality = 31;
     TEST_ASSERT_EQUAL_INT(1, objects_can_stack(a, b));
-    b->item_id = 0x81;
+    b->object_id = 0x81;
     TEST_ASSERT_EQUAL_INT(0, objects_can_stack(a, b));
-    b->item_id = 0x80;
+    b->object_id = 0x80;
     b->is_quant = 0;
     TEST_ASSERT_EQUAL_INT(0, objects_can_stack(a, b));
     b->is_quant = 1;
@@ -187,7 +187,7 @@ static void test_stacking_checks_type_contents_quantity_and_quality(void)
     a->quality = 0;
     b->quality = 1;
     TEST_ASSERT_EQUAL_INT(0, objects_can_stack(a, b));
-    a->item_id = b->item_id = 0x10; /* Ammunition ignores quality. */
+    a->object_id = b->object_id = 0x10; /* Ammunition ignores quality. */
     TEST_ASSERT_EQUAL_INT(1, objects_can_stack(a, b));
 }
 int main(void)

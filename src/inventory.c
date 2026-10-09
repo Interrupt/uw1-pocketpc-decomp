@@ -543,10 +543,10 @@ joined_r0x00048308:
               if (getenv("UW_DEBUG_INV"))
                 fprintf(stderr, "[inv] slot widget_id=%d slot_arr_idx=%d objid=0x%03x draw_x=%d draw_y=%d w=%d h=%d\n",
                         iVar6, (char)(&g_backpack_widget_to_slot)[iVar6],
-                        ((uw_object_hdr_t *)puVar7)->item_id,
+                        ((uw_object_hdr_t *)puVar7)->object_id,
                         (int)(short)(&g_inv_hotspot_draw_x)[iVar6 * 7], (int)(short)(&g_inv_hotspot_draw_y)[iVar6 * 7],
                         (int)(&g_inv_hotspot_dirty_h)[iVar6 * 0xe], (int)(&g_inv_hotspot_dirty_w)[iVar6 * 0xe]);
-              draw_sprite_by_id(((uw_object_hdr_t *)puVar7)->item_id,
+              draw_sprite_by_id(((uw_object_hdr_t *)puVar7)->object_id,
                                 (int)(short)(&g_inv_hotspot_draw_x)[iVar6 * 7],
                                 (int)(short)(&g_inv_hotspot_draw_y)[iVar6 * 7],
                                 (&g_inv_hotspot_dirty_h)[iVar6 * 0xe],
@@ -597,8 +597,8 @@ joined_r0x00048308:
         puVar7 = (ushort *)resolve_object_link((ushort *)(&g_equipped_items + DAT_00085c4c * 2));
         if (getenv("UW_DEBUG_W20"))
           fprintf(stderr, "[w20] resolved=%p id=0x%03x\n", (void *)puVar7,
-                  puVar7 ? (unsigned)(((uw_object_hdr_t *)puVar7)->item_id) : 0u);
-        draw_sprite_by_id(((uw_object_hdr_t *)puVar7)->item_id,
+                  puVar7 ? (unsigned)(((uw_object_hdr_t *)puVar7)->object_id) : 0u);
+        draw_sprite_by_id(((uw_object_hdr_t *)puVar7)->object_id,
                           (int)_DAT_00085bf0,
                           (int)CONCAT11(DAT_00085bf3,DAT_00085bf2),
                           DAT_00085bf5,DAT_00085bf4);

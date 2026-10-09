@@ -1,4 +1,4 @@
-@field_0_item_id disable drop_cast, is_zero, isnt_zero@
+@field_0_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(begin_directional_move\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7,19 +7,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)uVar11 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)uVar11)->item_id
++ ((uw_object_hdr_t *)uVar11)->object_id
 |
 - ((ushort *)uVar11)[0] & 0x1ff
-+ ((uw_object_hdr_t *)uVar11)->item_id
++ ((uw_object_hdr_t *)uVar11)->object_id
 |
 - *(ushort *)uVar11 & 0x1ff
-+ ((uw_object_hdr_t *)uVar11)->item_id
++ ((uw_object_hdr_t *)uVar11)->object_id
 |
 - uVar11[0] & 0x1ff
-+ ((uw_object_hdr_t *)uVar11)->item_id
++ ((uw_object_hdr_t *)uVar11)->object_id
 |
 - *uVar11 & 0x1ff
-+ ((uw_object_hdr_t *)uVar11)->item_id
++ ((uw_object_hdr_t *)uVar11)->object_id
 )
 ...>
 }

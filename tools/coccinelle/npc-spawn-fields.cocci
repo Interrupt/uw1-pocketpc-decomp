@@ -3181,7 +3181,7 @@ R F(...) {
 ...>
 }
 
-@init_monster_spawn_defaults_scratch_bytes_header_item_id@
+@init_monster_spawn_defaults_scratch_bytes_header_object_id@
 type R;
 identifier F =~ "^\(init_monster_spawn_defaults\)$";
 typedef byte, undefined1, undefined2, ushort, uw_object_hdr_t, uw_mobile_object_t;
@@ -3190,8 +3190,8 @@ typedef byte, undefined1, undefined2, ushort, uw_object_hdr_t, uw_mobile_object_
 R F(...) {
 <...
 (
-- ((uw_object_hdr_t *)scratch_bytes)->item_id
-+ npc->hdr.item_id
+- ((uw_object_hdr_t *)scratch_bytes)->object_id
++ npc->hdr.object_id
 )
 ...>
 }
@@ -3635,8 +3635,8 @@ typedef byte, undefined1, undefined2, ushort, uw_object_hdr_t, uw_mobile_object_
 R F(...) {
 <...
 (
-- DAT_001007c8 = &DAT_001007d0 + (npc->hdr.item_id & 0x3f) * 0x30;
-+ DAT_001007c8 = &g_monster_type_props[npc->hdr.item_id & 0x3f];
+- DAT_001007c8 = &DAT_001007d0 + (npc->hdr.object_id & 0x3f) * 0x30;
++ DAT_001007c8 = &g_monster_type_props[npc->hdr.object_id & 0x3f];
 )
 ...>
 }

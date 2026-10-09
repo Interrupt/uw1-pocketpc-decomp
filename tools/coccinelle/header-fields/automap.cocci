@@ -1,4 +1,4 @@
-@field_0_item_id disable drop_cast, is_zero, isnt_zero@
+@field_0_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(automap_reveal_byte\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7,19 +7,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)pp + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)pp)->item_id
++ ((uw_object_hdr_t *)pp)->object_id
 |
 - ((ushort *)pp)[0] & 0x1ff
-+ ((uw_object_hdr_t *)pp)->item_id
++ ((uw_object_hdr_t *)pp)->object_id
 |
 - *(ushort *)pp & 0x1ff
-+ ((uw_object_hdr_t *)pp)->item_id
++ ((uw_object_hdr_t *)pp)->object_id
 |
 - pp[0] & 0x1ff
-+ ((uw_object_hdr_t *)pp)->item_id
++ ((uw_object_hdr_t *)pp)->object_id
 |
 - *pp & 0x1ff
-+ ((uw_object_hdr_t *)pp)->item_id
++ ((uw_object_hdr_t *)pp)->object_id
 )
 ...>
 }

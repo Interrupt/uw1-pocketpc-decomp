@@ -188,7 +188,7 @@ static void test_uw1_monster_property_offsets(void)
 
 static void test_uw1_header_fields(void)
 {
-    VERIFY_FIELD(uw_object_hdr_t,item_id,0,0,0x1ff);
+    VERIFY_FIELD(uw_object_hdr_t,object_id,0,0,0x1ff);
     VERIFY_FIELD(uw_object_hdr_t,flags_res,0,9,7);
     VERIFY_FIELD(uw_object_hdr_t,enchanted,0,12,1);
     VERIFY_FIELD(uw_object_hdr_t,doordir,0,13,1);

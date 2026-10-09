@@ -3,7 +3,7 @@ from pathlib import Path
 
 G='DAT_0010190c'
 NPC_REGEX=r'^\(npc_.*\|setup_npc_ai_tick_state\|set_npc_altitude_state\|refresh_npc_target_delta\|check_npc_morale_flee\|initiate_npc_death\|handle_monster_death\|compute_pathfind_search_radius\)$'
-fields=[(0,'hdr.type_flags',0,0x1ff,'hdr.item_id'),
+fields=[(0,'hdr.type_flags',0,0x1ff,'hdr.object_id'),
         (0,'hdr.type_flags',15,1,'hdr.is_quant'),
         (2,'hdr.position_word',0,0x7f,'hdr.zpos'),
         (2,'hdr.position_word',7,7,'hdr.heading'),

@@ -4,28 +4,28 @@ typedef byte;
 @@
 (
 - (B->type_flags & 0x7) == 0
-+ (B->item_id & 0x7) == 0
++ (B->object_id & 0x7) == 0
 |
 - (B->type_flags & 0x7) != 0
-+ (B->item_id & 0x7) != 0
++ (B->object_id & 0x7) != 0
 |
 - ((byte)(B->type_flags) & 0x7) == 0
-+ (B->item_id & 0x7) == 0
++ (B->object_id & 0x7) == 0
 |
 - ((byte)(B->type_flags) & 0x7) != 0
-+ (B->item_id & 0x7) != 0
++ (B->object_id & 0x7) != 0
 |
 - ((char)(B->type_flags) & 0x7) == 0
-+ (B->item_id & 0x7) == 0
++ (B->object_id & 0x7) == 0
 |
 - ((char)(B->type_flags) & 0x7) != 0
-+ (B->item_id & 0x7) != 0
++ (B->object_id & 0x7) != 0
 |
 - ((byte)(byte)(B->type_flags) & 0x7) == 0
-+ (B->item_id & 0x7) == 0
++ (B->object_id & 0x7) == 0
 |
 - ((byte)(byte)(B->type_flags) & 0x7) != 0
-+ (B->item_id & 0x7) != 0
++ (B->object_id & 0x7) != 0
 )
 
 @partial_ptr_0_read disable drop_cast@
@@ -34,16 +34,16 @@ typedef byte;
 @@
 (
 - B->type_flags & 0x7
-+ B->item_id & 0x7
++ B->object_id & 0x7
 |
 - (byte)(B->type_flags) & 0x7
-+ B->item_id & 0x7
++ B->object_id & 0x7
 |
 - (char)(B->type_flags) & 0x7
-+ B->item_id & 0x7
++ B->object_id & 0x7
 |
 - (byte)(byte)(B->type_flags) & 0x7
-+ B->item_id & 0x7
++ B->object_id & 0x7
 )
 
 @partial_ptr_1_compare disable is_zero, isnt_zero, drop_cast@
@@ -52,28 +52,28 @@ typedef byte;
 @@
 (
 - (B->type_flags_signed & 0x7) == 0
-+ (B->item_id & 0x7) == 0
++ (B->object_id & 0x7) == 0
 |
 - (B->type_flags_signed & 0x7) != 0
-+ (B->item_id & 0x7) != 0
++ (B->object_id & 0x7) != 0
 |
 - ((byte)(B->type_flags_signed) & 0x7) == 0
-+ (B->item_id & 0x7) == 0
++ (B->object_id & 0x7) == 0
 |
 - ((byte)(B->type_flags_signed) & 0x7) != 0
-+ (B->item_id & 0x7) != 0
++ (B->object_id & 0x7) != 0
 |
 - ((char)(B->type_flags_signed) & 0x7) == 0
-+ (B->item_id & 0x7) == 0
++ (B->object_id & 0x7) == 0
 |
 - ((char)(B->type_flags_signed) & 0x7) != 0
-+ (B->item_id & 0x7) != 0
++ (B->object_id & 0x7) != 0
 |
 - ((byte)(byte)(B->type_flags_signed) & 0x7) == 0
-+ (B->item_id & 0x7) == 0
++ (B->object_id & 0x7) == 0
 |
 - ((byte)(byte)(B->type_flags_signed) & 0x7) != 0
-+ (B->item_id & 0x7) != 0
++ (B->object_id & 0x7) != 0
 )
 
 @partial_ptr_1_read disable drop_cast@
@@ -82,16 +82,16 @@ typedef byte;
 @@
 (
 - B->type_flags_signed & 0x7
-+ B->item_id & 0x7
++ B->object_id & 0x7
 |
 - (byte)(B->type_flags_signed) & 0x7
-+ B->item_id & 0x7
++ B->object_id & 0x7
 |
 - (char)(B->type_flags_signed) & 0x7
-+ B->item_id & 0x7
++ B->object_id & 0x7
 |
 - (byte)(byte)(B->type_flags_signed) & 0x7
-+ B->item_id & 0x7
++ B->object_id & 0x7
 )
 
 @partial_ptr_2_compare disable is_zero, isnt_zero, drop_cast@
@@ -100,28 +100,28 @@ typedef byte;
 @@
 (
 - (B->type_flags_low & 0x7) == 0
-+ (B->item_id & 0x7) == 0
++ (B->object_id & 0x7) == 0
 |
 - (B->type_flags_low & 0x7) != 0
-+ (B->item_id & 0x7) != 0
++ (B->object_id & 0x7) != 0
 |
 - ((byte)(B->type_flags_low) & 0x7) == 0
-+ (B->item_id & 0x7) == 0
++ (B->object_id & 0x7) == 0
 |
 - ((byte)(B->type_flags_low) & 0x7) != 0
-+ (B->item_id & 0x7) != 0
++ (B->object_id & 0x7) != 0
 |
 - ((char)(B->type_flags_low) & 0x7) == 0
-+ (B->item_id & 0x7) == 0
++ (B->object_id & 0x7) == 0
 |
 - ((char)(B->type_flags_low) & 0x7) != 0
-+ (B->item_id & 0x7) != 0
++ (B->object_id & 0x7) != 0
 |
 - ((byte)(byte)(B->type_flags_low) & 0x7) == 0
-+ (B->item_id & 0x7) == 0
++ (B->object_id & 0x7) == 0
 |
 - ((byte)(byte)(B->type_flags_low) & 0x7) != 0
-+ (B->item_id & 0x7) != 0
++ (B->object_id & 0x7) != 0
 )
 
 @partial_ptr_2_read disable drop_cast@
@@ -130,16 +130,16 @@ typedef byte;
 @@
 (
 - B->type_flags_low & 0x7
-+ B->item_id & 0x7
++ B->object_id & 0x7
 |
 - (byte)(B->type_flags_low) & 0x7
-+ B->item_id & 0x7
++ B->object_id & 0x7
 |
 - (char)(B->type_flags_low) & 0x7
-+ B->item_id & 0x7
++ B->object_id & 0x7
 |
 - (byte)(byte)(B->type_flags_low) & 0x7
-+ B->item_id & 0x7
++ B->object_id & 0x7
 )
 
 @partial_ptr_3_compare disable is_zero, isnt_zero, drop_cast@
@@ -148,28 +148,28 @@ typedef byte;
 @@
 (
 - (B->type_flags & 0xf) == 0
-+ (B->item_id & 0xf) == 0
++ (B->object_id & 0xf) == 0
 |
 - (B->type_flags & 0xf) != 0
-+ (B->item_id & 0xf) != 0
++ (B->object_id & 0xf) != 0
 |
 - ((byte)(B->type_flags) & 0xf) == 0
-+ (B->item_id & 0xf) == 0
++ (B->object_id & 0xf) == 0
 |
 - ((byte)(B->type_flags) & 0xf) != 0
-+ (B->item_id & 0xf) != 0
++ (B->object_id & 0xf) != 0
 |
 - ((char)(B->type_flags) & 0xf) == 0
-+ (B->item_id & 0xf) == 0
++ (B->object_id & 0xf) == 0
 |
 - ((char)(B->type_flags) & 0xf) != 0
-+ (B->item_id & 0xf) != 0
++ (B->object_id & 0xf) != 0
 |
 - ((byte)(byte)(B->type_flags) & 0xf) == 0
-+ (B->item_id & 0xf) == 0
++ (B->object_id & 0xf) == 0
 |
 - ((byte)(byte)(B->type_flags) & 0xf) != 0
-+ (B->item_id & 0xf) != 0
++ (B->object_id & 0xf) != 0
 )
 
 @partial_ptr_3_read disable drop_cast@
@@ -178,16 +178,16 @@ typedef byte;
 @@
 (
 - B->type_flags & 0xf
-+ B->item_id & 0xf
++ B->object_id & 0xf
 |
 - (byte)(B->type_flags) & 0xf
-+ B->item_id & 0xf
++ B->object_id & 0xf
 |
 - (char)(B->type_flags) & 0xf
-+ B->item_id & 0xf
++ B->object_id & 0xf
 |
 - (byte)(byte)(B->type_flags) & 0xf
-+ B->item_id & 0xf
++ B->object_id & 0xf
 )
 
 @partial_ptr_4_compare disable is_zero, isnt_zero, drop_cast@
@@ -196,28 +196,28 @@ typedef byte;
 @@
 (
 - (B->type_flags_signed & 0xf) == 0
-+ (B->item_id & 0xf) == 0
++ (B->object_id & 0xf) == 0
 |
 - (B->type_flags_signed & 0xf) != 0
-+ (B->item_id & 0xf) != 0
++ (B->object_id & 0xf) != 0
 |
 - ((byte)(B->type_flags_signed) & 0xf) == 0
-+ (B->item_id & 0xf) == 0
++ (B->object_id & 0xf) == 0
 |
 - ((byte)(B->type_flags_signed) & 0xf) != 0
-+ (B->item_id & 0xf) != 0
++ (B->object_id & 0xf) != 0
 |
 - ((char)(B->type_flags_signed) & 0xf) == 0
-+ (B->item_id & 0xf) == 0
++ (B->object_id & 0xf) == 0
 |
 - ((char)(B->type_flags_signed) & 0xf) != 0
-+ (B->item_id & 0xf) != 0
++ (B->object_id & 0xf) != 0
 |
 - ((byte)(byte)(B->type_flags_signed) & 0xf) == 0
-+ (B->item_id & 0xf) == 0
++ (B->object_id & 0xf) == 0
 |
 - ((byte)(byte)(B->type_flags_signed) & 0xf) != 0
-+ (B->item_id & 0xf) != 0
++ (B->object_id & 0xf) != 0
 )
 
 @partial_ptr_4_read disable drop_cast@
@@ -226,16 +226,16 @@ typedef byte;
 @@
 (
 - B->type_flags_signed & 0xf
-+ B->item_id & 0xf
++ B->object_id & 0xf
 |
 - (byte)(B->type_flags_signed) & 0xf
-+ B->item_id & 0xf
++ B->object_id & 0xf
 |
 - (char)(B->type_flags_signed) & 0xf
-+ B->item_id & 0xf
++ B->object_id & 0xf
 |
 - (byte)(byte)(B->type_flags_signed) & 0xf
-+ B->item_id & 0xf
++ B->object_id & 0xf
 )
 
 @partial_ptr_5_compare disable is_zero, isnt_zero, drop_cast@
@@ -244,28 +244,28 @@ typedef byte;
 @@
 (
 - (B->type_flags_low & 0xf) == 0
-+ (B->item_id & 0xf) == 0
++ (B->object_id & 0xf) == 0
 |
 - (B->type_flags_low & 0xf) != 0
-+ (B->item_id & 0xf) != 0
++ (B->object_id & 0xf) != 0
 |
 - ((byte)(B->type_flags_low) & 0xf) == 0
-+ (B->item_id & 0xf) == 0
++ (B->object_id & 0xf) == 0
 |
 - ((byte)(B->type_flags_low) & 0xf) != 0
-+ (B->item_id & 0xf) != 0
++ (B->object_id & 0xf) != 0
 |
 - ((char)(B->type_flags_low) & 0xf) == 0
-+ (B->item_id & 0xf) == 0
++ (B->object_id & 0xf) == 0
 |
 - ((char)(B->type_flags_low) & 0xf) != 0
-+ (B->item_id & 0xf) != 0
++ (B->object_id & 0xf) != 0
 |
 - ((byte)(byte)(B->type_flags_low) & 0xf) == 0
-+ (B->item_id & 0xf) == 0
++ (B->object_id & 0xf) == 0
 |
 - ((byte)(byte)(B->type_flags_low) & 0xf) != 0
-+ (B->item_id & 0xf) != 0
++ (B->object_id & 0xf) != 0
 )
 
 @partial_ptr_5_read disable drop_cast@
@@ -274,16 +274,16 @@ typedef byte;
 @@
 (
 - B->type_flags_low & 0xf
-+ B->item_id & 0xf
++ B->object_id & 0xf
 |
 - (byte)(B->type_flags_low) & 0xf
-+ B->item_id & 0xf
++ B->object_id & 0xf
 |
 - (char)(B->type_flags_low) & 0xf
-+ B->item_id & 0xf
++ B->object_id & 0xf
 |
 - (byte)(byte)(B->type_flags_low) & 0xf
-+ B->item_id & 0xf
++ B->object_id & 0xf
 )
 
 @partial_ptr_6_compare disable is_zero, isnt_zero, drop_cast@
@@ -292,28 +292,28 @@ typedef byte;
 @@
 (
 - (B->type_flags & 0x1f) == 0
-+ (B->item_id & 0x1f) == 0
++ (B->object_id & 0x1f) == 0
 |
 - (B->type_flags & 0x1f) != 0
-+ (B->item_id & 0x1f) != 0
++ (B->object_id & 0x1f) != 0
 |
 - ((byte)(B->type_flags) & 0x1f) == 0
-+ (B->item_id & 0x1f) == 0
++ (B->object_id & 0x1f) == 0
 |
 - ((byte)(B->type_flags) & 0x1f) != 0
-+ (B->item_id & 0x1f) != 0
++ (B->object_id & 0x1f) != 0
 |
 - ((char)(B->type_flags) & 0x1f) == 0
-+ (B->item_id & 0x1f) == 0
++ (B->object_id & 0x1f) == 0
 |
 - ((char)(B->type_flags) & 0x1f) != 0
-+ (B->item_id & 0x1f) != 0
++ (B->object_id & 0x1f) != 0
 |
 - ((byte)(byte)(B->type_flags) & 0x1f) == 0
-+ (B->item_id & 0x1f) == 0
++ (B->object_id & 0x1f) == 0
 |
 - ((byte)(byte)(B->type_flags) & 0x1f) != 0
-+ (B->item_id & 0x1f) != 0
++ (B->object_id & 0x1f) != 0
 )
 
 @partial_ptr_6_read disable drop_cast@
@@ -322,16 +322,16 @@ typedef byte;
 @@
 (
 - B->type_flags & 0x1f
-+ B->item_id & 0x1f
++ B->object_id & 0x1f
 |
 - (byte)(B->type_flags) & 0x1f
-+ B->item_id & 0x1f
++ B->object_id & 0x1f
 |
 - (char)(B->type_flags) & 0x1f
-+ B->item_id & 0x1f
++ B->object_id & 0x1f
 |
 - (byte)(byte)(B->type_flags) & 0x1f
-+ B->item_id & 0x1f
++ B->object_id & 0x1f
 )
 
 @partial_ptr_7_compare disable is_zero, isnt_zero, drop_cast@
@@ -340,28 +340,28 @@ typedef byte;
 @@
 (
 - (B->type_flags_signed & 0x1f) == 0
-+ (B->item_id & 0x1f) == 0
++ (B->object_id & 0x1f) == 0
 |
 - (B->type_flags_signed & 0x1f) != 0
-+ (B->item_id & 0x1f) != 0
++ (B->object_id & 0x1f) != 0
 |
 - ((byte)(B->type_flags_signed) & 0x1f) == 0
-+ (B->item_id & 0x1f) == 0
++ (B->object_id & 0x1f) == 0
 |
 - ((byte)(B->type_flags_signed) & 0x1f) != 0
-+ (B->item_id & 0x1f) != 0
++ (B->object_id & 0x1f) != 0
 |
 - ((char)(B->type_flags_signed) & 0x1f) == 0
-+ (B->item_id & 0x1f) == 0
++ (B->object_id & 0x1f) == 0
 |
 - ((char)(B->type_flags_signed) & 0x1f) != 0
-+ (B->item_id & 0x1f) != 0
++ (B->object_id & 0x1f) != 0
 |
 - ((byte)(byte)(B->type_flags_signed) & 0x1f) == 0
-+ (B->item_id & 0x1f) == 0
++ (B->object_id & 0x1f) == 0
 |
 - ((byte)(byte)(B->type_flags_signed) & 0x1f) != 0
-+ (B->item_id & 0x1f) != 0
++ (B->object_id & 0x1f) != 0
 )
 
 @partial_ptr_7_read disable drop_cast@
@@ -370,16 +370,16 @@ typedef byte;
 @@
 (
 - B->type_flags_signed & 0x1f
-+ B->item_id & 0x1f
++ B->object_id & 0x1f
 |
 - (byte)(B->type_flags_signed) & 0x1f
-+ B->item_id & 0x1f
++ B->object_id & 0x1f
 |
 - (char)(B->type_flags_signed) & 0x1f
-+ B->item_id & 0x1f
++ B->object_id & 0x1f
 |
 - (byte)(byte)(B->type_flags_signed) & 0x1f
-+ B->item_id & 0x1f
++ B->object_id & 0x1f
 )
 
 @partial_ptr_8_compare disable is_zero, isnt_zero, drop_cast@
@@ -388,28 +388,28 @@ typedef byte;
 @@
 (
 - (B->type_flags_low & 0x1f) == 0
-+ (B->item_id & 0x1f) == 0
++ (B->object_id & 0x1f) == 0
 |
 - (B->type_flags_low & 0x1f) != 0
-+ (B->item_id & 0x1f) != 0
++ (B->object_id & 0x1f) != 0
 |
 - ((byte)(B->type_flags_low) & 0x1f) == 0
-+ (B->item_id & 0x1f) == 0
++ (B->object_id & 0x1f) == 0
 |
 - ((byte)(B->type_flags_low) & 0x1f) != 0
-+ (B->item_id & 0x1f) != 0
++ (B->object_id & 0x1f) != 0
 |
 - ((char)(B->type_flags_low) & 0x1f) == 0
-+ (B->item_id & 0x1f) == 0
++ (B->object_id & 0x1f) == 0
 |
 - ((char)(B->type_flags_low) & 0x1f) != 0
-+ (B->item_id & 0x1f) != 0
++ (B->object_id & 0x1f) != 0
 |
 - ((byte)(byte)(B->type_flags_low) & 0x1f) == 0
-+ (B->item_id & 0x1f) == 0
++ (B->object_id & 0x1f) == 0
 |
 - ((byte)(byte)(B->type_flags_low) & 0x1f) != 0
-+ (B->item_id & 0x1f) != 0
++ (B->object_id & 0x1f) != 0
 )
 
 @partial_ptr_8_read disable drop_cast@
@@ -418,16 +418,16 @@ typedef byte;
 @@
 (
 - B->type_flags_low & 0x1f
-+ B->item_id & 0x1f
++ B->object_id & 0x1f
 |
 - (byte)(B->type_flags_low) & 0x1f
-+ B->item_id & 0x1f
++ B->object_id & 0x1f
 |
 - (char)(B->type_flags_low) & 0x1f
-+ B->item_id & 0x1f
++ B->object_id & 0x1f
 |
 - (byte)(byte)(B->type_flags_low) & 0x1f
-+ B->item_id & 0x1f
++ B->object_id & 0x1f
 )
 
 @partial_ptr_9_compare disable is_zero, isnt_zero, drop_cast@
@@ -436,76 +436,76 @@ typedef byte;
 @@
 (
 - (B->type_flags & 0x30) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - (B->type_flags & 0x30) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - ((byte)(B->type_flags) & 0x30) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - ((byte)(B->type_flags) & 0x30) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - ((char)(B->type_flags) & 0x30) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - ((char)(B->type_flags) & 0x30) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - ((byte)(byte)(B->type_flags) & 0x30) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - ((byte)(byte)(B->type_flags) & 0x30) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - ((B->type_flags >> 4) & 0x3) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - ((B->type_flags >> 4) & 0x3) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - ((B->type_flags & 0x30) >> 4) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - ((B->type_flags & 0x30) >> 4) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - (((byte)(B->type_flags) >> 4) & 0x3) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - (((byte)(B->type_flags) >> 4) & 0x3) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - (((byte)(B->type_flags) & 0x30) >> 4) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - (((byte)(B->type_flags) & 0x30) >> 4) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - (((char)(B->type_flags) >> 4) & 0x3) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - (((char)(B->type_flags) >> 4) & 0x3) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - (((char)(B->type_flags) & 0x30) >> 4) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - (((char)(B->type_flags) & 0x30) >> 4) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - (((byte)(byte)(B->type_flags) >> 4) & 0x3) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - (((byte)(byte)(B->type_flags) >> 4) & 0x3) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - (((byte)(byte)(B->type_flags) & 0x30) >> 4) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - (((byte)(byte)(B->type_flags) & 0x30) >> 4) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 )
 
 @partial_ptr_9_read disable drop_cast@
@@ -514,40 +514,40 @@ typedef byte;
 @@
 (
 - B->type_flags & 0x30
-+ B->item_id & 0x30
++ B->object_id & 0x30
 |
 - (byte)(B->type_flags) & 0x30
-+ B->item_id & 0x30
++ B->object_id & 0x30
 |
 - (char)(B->type_flags) & 0x30
-+ B->item_id & 0x30
++ B->object_id & 0x30
 |
 - (byte)(byte)(B->type_flags) & 0x30
-+ B->item_id & 0x30
++ B->object_id & 0x30
 |
 - (B->type_flags >> 4) & 0x3
-+ (B->item_id >> 4) & 0x3
++ (B->object_id >> 4) & 0x3
 |
 - (B->type_flags & 0x30) >> 4
-+ (B->item_id >> 4) & 0x3
++ (B->object_id >> 4) & 0x3
 |
 - ((byte)(B->type_flags) >> 4) & 0x3
-+ (B->item_id >> 4) & 0x3
++ (B->object_id >> 4) & 0x3
 |
 - ((byte)(B->type_flags) & 0x30) >> 4
-+ (B->item_id >> 4) & 0x3
++ (B->object_id >> 4) & 0x3
 |
 - ((char)(B->type_flags) >> 4) & 0x3
-+ (B->item_id >> 4) & 0x3
++ (B->object_id >> 4) & 0x3
 |
 - ((char)(B->type_flags) & 0x30) >> 4
-+ (B->item_id >> 4) & 0x3
++ (B->object_id >> 4) & 0x3
 |
 - ((byte)(byte)(B->type_flags) >> 4) & 0x3
-+ (B->item_id >> 4) & 0x3
++ (B->object_id >> 4) & 0x3
 |
 - ((byte)(byte)(B->type_flags) & 0x30) >> 4
-+ (B->item_id >> 4) & 0x3
++ (B->object_id >> 4) & 0x3
 )
 
 @partial_ptr_10_compare disable is_zero, isnt_zero, drop_cast@
@@ -556,76 +556,76 @@ typedef byte;
 @@
 (
 - (B->type_flags_signed & 0x30) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - (B->type_flags_signed & 0x30) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - ((byte)(B->type_flags_signed) & 0x30) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - ((byte)(B->type_flags_signed) & 0x30) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - ((char)(B->type_flags_signed) & 0x30) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - ((char)(B->type_flags_signed) & 0x30) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - ((byte)(byte)(B->type_flags_signed) & 0x30) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - ((byte)(byte)(B->type_flags_signed) & 0x30) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - ((B->type_flags_signed >> 4) & 0x3) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - ((B->type_flags_signed >> 4) & 0x3) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - ((B->type_flags_signed & 0x30) >> 4) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - ((B->type_flags_signed & 0x30) >> 4) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - (((byte)(B->type_flags_signed) >> 4) & 0x3) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - (((byte)(B->type_flags_signed) >> 4) & 0x3) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - (((byte)(B->type_flags_signed) & 0x30) >> 4) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - (((byte)(B->type_flags_signed) & 0x30) >> 4) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - (((char)(B->type_flags_signed) >> 4) & 0x3) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - (((char)(B->type_flags_signed) >> 4) & 0x3) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - (((char)(B->type_flags_signed) & 0x30) >> 4) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - (((char)(B->type_flags_signed) & 0x30) >> 4) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - (((byte)(byte)(B->type_flags_signed) >> 4) & 0x3) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - (((byte)(byte)(B->type_flags_signed) >> 4) & 0x3) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - (((byte)(byte)(B->type_flags_signed) & 0x30) >> 4) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - (((byte)(byte)(B->type_flags_signed) & 0x30) >> 4) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 )
 
 @partial_ptr_10_read disable drop_cast@
@@ -634,40 +634,40 @@ typedef byte;
 @@
 (
 - B->type_flags_signed & 0x30
-+ B->item_id & 0x30
++ B->object_id & 0x30
 |
 - (byte)(B->type_flags_signed) & 0x30
-+ B->item_id & 0x30
++ B->object_id & 0x30
 |
 - (char)(B->type_flags_signed) & 0x30
-+ B->item_id & 0x30
++ B->object_id & 0x30
 |
 - (byte)(byte)(B->type_flags_signed) & 0x30
-+ B->item_id & 0x30
++ B->object_id & 0x30
 |
 - (B->type_flags_signed >> 4) & 0x3
-+ (B->item_id >> 4) & 0x3
++ (B->object_id >> 4) & 0x3
 |
 - (B->type_flags_signed & 0x30) >> 4
-+ (B->item_id >> 4) & 0x3
++ (B->object_id >> 4) & 0x3
 |
 - ((byte)(B->type_flags_signed) >> 4) & 0x3
-+ (B->item_id >> 4) & 0x3
++ (B->object_id >> 4) & 0x3
 |
 - ((byte)(B->type_flags_signed) & 0x30) >> 4
-+ (B->item_id >> 4) & 0x3
++ (B->object_id >> 4) & 0x3
 |
 - ((char)(B->type_flags_signed) >> 4) & 0x3
-+ (B->item_id >> 4) & 0x3
++ (B->object_id >> 4) & 0x3
 |
 - ((char)(B->type_flags_signed) & 0x30) >> 4
-+ (B->item_id >> 4) & 0x3
++ (B->object_id >> 4) & 0x3
 |
 - ((byte)(byte)(B->type_flags_signed) >> 4) & 0x3
-+ (B->item_id >> 4) & 0x3
++ (B->object_id >> 4) & 0x3
 |
 - ((byte)(byte)(B->type_flags_signed) & 0x30) >> 4
-+ (B->item_id >> 4) & 0x3
++ (B->object_id >> 4) & 0x3
 )
 
 @partial_ptr_11_compare disable is_zero, isnt_zero, drop_cast@
@@ -676,76 +676,76 @@ typedef byte;
 @@
 (
 - (B->type_flags_low & 0x30) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - (B->type_flags_low & 0x30) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - ((byte)(B->type_flags_low) & 0x30) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - ((byte)(B->type_flags_low) & 0x30) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - ((char)(B->type_flags_low) & 0x30) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - ((char)(B->type_flags_low) & 0x30) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - ((byte)(byte)(B->type_flags_low) & 0x30) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - ((byte)(byte)(B->type_flags_low) & 0x30) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - ((B->type_flags_low >> 4) & 0x3) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - ((B->type_flags_low >> 4) & 0x3) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - ((B->type_flags_low & 0x30) >> 4) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - ((B->type_flags_low & 0x30) >> 4) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - (((byte)(B->type_flags_low) >> 4) & 0x3) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - (((byte)(B->type_flags_low) >> 4) & 0x3) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - (((byte)(B->type_flags_low) & 0x30) >> 4) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - (((byte)(B->type_flags_low) & 0x30) >> 4) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - (((char)(B->type_flags_low) >> 4) & 0x3) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - (((char)(B->type_flags_low) >> 4) & 0x3) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - (((char)(B->type_flags_low) & 0x30) >> 4) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - (((char)(B->type_flags_low) & 0x30) >> 4) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - (((byte)(byte)(B->type_flags_low) >> 4) & 0x3) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - (((byte)(byte)(B->type_flags_low) >> 4) & 0x3) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 |
 - (((byte)(byte)(B->type_flags_low) & 0x30) >> 4) == 0
-+ (B->item_id & 0x30) == 0
++ (B->object_id & 0x30) == 0
 |
 - (((byte)(byte)(B->type_flags_low) & 0x30) >> 4) != 0
-+ (B->item_id & 0x30) != 0
++ (B->object_id & 0x30) != 0
 )
 
 @partial_ptr_11_read disable drop_cast@
@@ -754,40 +754,40 @@ typedef byte;
 @@
 (
 - B->type_flags_low & 0x30
-+ B->item_id & 0x30
++ B->object_id & 0x30
 |
 - (byte)(B->type_flags_low) & 0x30
-+ B->item_id & 0x30
++ B->object_id & 0x30
 |
 - (char)(B->type_flags_low) & 0x30
-+ B->item_id & 0x30
++ B->object_id & 0x30
 |
 - (byte)(byte)(B->type_flags_low) & 0x30
-+ B->item_id & 0x30
++ B->object_id & 0x30
 |
 - (B->type_flags_low >> 4) & 0x3
-+ (B->item_id >> 4) & 0x3
++ (B->object_id >> 4) & 0x3
 |
 - (B->type_flags_low & 0x30) >> 4
-+ (B->item_id >> 4) & 0x3
++ (B->object_id >> 4) & 0x3
 |
 - ((byte)(B->type_flags_low) >> 4) & 0x3
-+ (B->item_id >> 4) & 0x3
++ (B->object_id >> 4) & 0x3
 |
 - ((byte)(B->type_flags_low) & 0x30) >> 4
-+ (B->item_id >> 4) & 0x3
++ (B->object_id >> 4) & 0x3
 |
 - ((char)(B->type_flags_low) >> 4) & 0x3
-+ (B->item_id >> 4) & 0x3
++ (B->object_id >> 4) & 0x3
 |
 - ((char)(B->type_flags_low) & 0x30) >> 4
-+ (B->item_id >> 4) & 0x3
++ (B->object_id >> 4) & 0x3
 |
 - ((byte)(byte)(B->type_flags_low) >> 4) & 0x3
-+ (B->item_id >> 4) & 0x3
++ (B->object_id >> 4) & 0x3
 |
 - ((byte)(byte)(B->type_flags_low) & 0x30) >> 4
-+ (B->item_id >> 4) & 0x3
++ (B->object_id >> 4) & 0x3
 )
 
 @partial_ptr_12_compare disable is_zero, isnt_zero, drop_cast@
@@ -796,28 +796,28 @@ typedef byte;
 @@
 (
 - (B->type_flags & 0x3f) == 0
-+ (B->item_id & 0x3f) == 0
++ (B->object_id & 0x3f) == 0
 |
 - (B->type_flags & 0x3f) != 0
-+ (B->item_id & 0x3f) != 0
++ (B->object_id & 0x3f) != 0
 |
 - ((byte)(B->type_flags) & 0x3f) == 0
-+ (B->item_id & 0x3f) == 0
++ (B->object_id & 0x3f) == 0
 |
 - ((byte)(B->type_flags) & 0x3f) != 0
-+ (B->item_id & 0x3f) != 0
++ (B->object_id & 0x3f) != 0
 |
 - ((char)(B->type_flags) & 0x3f) == 0
-+ (B->item_id & 0x3f) == 0
++ (B->object_id & 0x3f) == 0
 |
 - ((char)(B->type_flags) & 0x3f) != 0
-+ (B->item_id & 0x3f) != 0
++ (B->object_id & 0x3f) != 0
 |
 - ((byte)(byte)(B->type_flags) & 0x3f) == 0
-+ (B->item_id & 0x3f) == 0
++ (B->object_id & 0x3f) == 0
 |
 - ((byte)(byte)(B->type_flags) & 0x3f) != 0
-+ (B->item_id & 0x3f) != 0
++ (B->object_id & 0x3f) != 0
 )
 
 @partial_ptr_12_read disable drop_cast@
@@ -826,16 +826,16 @@ typedef byte;
 @@
 (
 - B->type_flags & 0x3f
-+ B->item_id & 0x3f
++ B->object_id & 0x3f
 |
 - (byte)(B->type_flags) & 0x3f
-+ B->item_id & 0x3f
++ B->object_id & 0x3f
 |
 - (char)(B->type_flags) & 0x3f
-+ B->item_id & 0x3f
++ B->object_id & 0x3f
 |
 - (byte)(byte)(B->type_flags) & 0x3f
-+ B->item_id & 0x3f
++ B->object_id & 0x3f
 )
 
 @partial_ptr_13_compare disable is_zero, isnt_zero, drop_cast@
@@ -844,28 +844,28 @@ typedef byte;
 @@
 (
 - (B->type_flags_signed & 0x3f) == 0
-+ (B->item_id & 0x3f) == 0
++ (B->object_id & 0x3f) == 0
 |
 - (B->type_flags_signed & 0x3f) != 0
-+ (B->item_id & 0x3f) != 0
++ (B->object_id & 0x3f) != 0
 |
 - ((byte)(B->type_flags_signed) & 0x3f) == 0
-+ (B->item_id & 0x3f) == 0
++ (B->object_id & 0x3f) == 0
 |
 - ((byte)(B->type_flags_signed) & 0x3f) != 0
-+ (B->item_id & 0x3f) != 0
++ (B->object_id & 0x3f) != 0
 |
 - ((char)(B->type_flags_signed) & 0x3f) == 0
-+ (B->item_id & 0x3f) == 0
++ (B->object_id & 0x3f) == 0
 |
 - ((char)(B->type_flags_signed) & 0x3f) != 0
-+ (B->item_id & 0x3f) != 0
++ (B->object_id & 0x3f) != 0
 |
 - ((byte)(byte)(B->type_flags_signed) & 0x3f) == 0
-+ (B->item_id & 0x3f) == 0
++ (B->object_id & 0x3f) == 0
 |
 - ((byte)(byte)(B->type_flags_signed) & 0x3f) != 0
-+ (B->item_id & 0x3f) != 0
++ (B->object_id & 0x3f) != 0
 )
 
 @partial_ptr_13_read disable drop_cast@
@@ -874,16 +874,16 @@ typedef byte;
 @@
 (
 - B->type_flags_signed & 0x3f
-+ B->item_id & 0x3f
++ B->object_id & 0x3f
 |
 - (byte)(B->type_flags_signed) & 0x3f
-+ B->item_id & 0x3f
++ B->object_id & 0x3f
 |
 - (char)(B->type_flags_signed) & 0x3f
-+ B->item_id & 0x3f
++ B->object_id & 0x3f
 |
 - (byte)(byte)(B->type_flags_signed) & 0x3f
-+ B->item_id & 0x3f
++ B->object_id & 0x3f
 )
 
 @partial_ptr_14_compare disable is_zero, isnt_zero, drop_cast@
@@ -892,28 +892,28 @@ typedef byte;
 @@
 (
 - (B->type_flags_low & 0x3f) == 0
-+ (B->item_id & 0x3f) == 0
++ (B->object_id & 0x3f) == 0
 |
 - (B->type_flags_low & 0x3f) != 0
-+ (B->item_id & 0x3f) != 0
++ (B->object_id & 0x3f) != 0
 |
 - ((byte)(B->type_flags_low) & 0x3f) == 0
-+ (B->item_id & 0x3f) == 0
++ (B->object_id & 0x3f) == 0
 |
 - ((byte)(B->type_flags_low) & 0x3f) != 0
-+ (B->item_id & 0x3f) != 0
++ (B->object_id & 0x3f) != 0
 |
 - ((char)(B->type_flags_low) & 0x3f) == 0
-+ (B->item_id & 0x3f) == 0
++ (B->object_id & 0x3f) == 0
 |
 - ((char)(B->type_flags_low) & 0x3f) != 0
-+ (B->item_id & 0x3f) != 0
++ (B->object_id & 0x3f) != 0
 |
 - ((byte)(byte)(B->type_flags_low) & 0x3f) == 0
-+ (B->item_id & 0x3f) == 0
++ (B->object_id & 0x3f) == 0
 |
 - ((byte)(byte)(B->type_flags_low) & 0x3f) != 0
-+ (B->item_id & 0x3f) != 0
++ (B->object_id & 0x3f) != 0
 )
 
 @partial_ptr_14_read disable drop_cast@
@@ -922,16 +922,16 @@ typedef byte;
 @@
 (
 - B->type_flags_low & 0x3f
-+ B->item_id & 0x3f
++ B->object_id & 0x3f
 |
 - (byte)(B->type_flags_low) & 0x3f
-+ B->item_id & 0x3f
++ B->object_id & 0x3f
 |
 - (char)(B->type_flags_low) & 0x3f
-+ B->item_id & 0x3f
++ B->object_id & 0x3f
 |
 - (byte)(byte)(B->type_flags_low) & 0x3f
-+ B->item_id & 0x3f
++ B->object_id & 0x3f
 )
 
 @partial_ptr_15_compare disable is_zero, isnt_zero, drop_cast@
@@ -940,22 +940,22 @@ typedef byte;
 @@
 (
 - (B->type_flags & 0x1c0) == 0
-+ (B->item_id & 0x1c0) == 0
++ (B->object_id & 0x1c0) == 0
 |
 - (B->type_flags & 0x1c0) != 0
-+ (B->item_id & 0x1c0) != 0
++ (B->object_id & 0x1c0) != 0
 |
 - ((B->type_flags >> 6) & 0x7) == 0
-+ (B->item_id & 0x1c0) == 0
++ (B->object_id & 0x1c0) == 0
 |
 - ((B->type_flags >> 6) & 0x7) != 0
-+ (B->item_id & 0x1c0) != 0
++ (B->object_id & 0x1c0) != 0
 |
 - ((B->type_flags & 0x1c0) >> 6) == 0
-+ (B->item_id & 0x1c0) == 0
++ (B->object_id & 0x1c0) == 0
 |
 - ((B->type_flags & 0x1c0) >> 6) != 0
-+ (B->item_id & 0x1c0) != 0
++ (B->object_id & 0x1c0) != 0
 )
 
 @partial_ptr_15_read disable drop_cast@
@@ -964,13 +964,13 @@ typedef byte;
 @@
 (
 - B->type_flags & 0x1c0
-+ B->item_id & 0x1c0
++ B->object_id & 0x1c0
 |
 - (B->type_flags >> 6) & 0x7
-+ B->item_id >> 6
++ B->object_id >> 6
 |
 - (B->type_flags & 0x1c0) >> 6
-+ B->item_id >> 6
++ B->object_id >> 6
 )
 
 @partial_ptr_16_compare disable is_zero, isnt_zero, drop_cast@
@@ -979,22 +979,22 @@ typedef byte;
 @@
 (
 - (B->type_flags_signed & 0x1c0) == 0
-+ (B->item_id & 0x1c0) == 0
++ (B->object_id & 0x1c0) == 0
 |
 - (B->type_flags_signed & 0x1c0) != 0
-+ (B->item_id & 0x1c0) != 0
++ (B->object_id & 0x1c0) != 0
 |
 - ((B->type_flags_signed >> 6) & 0x7) == 0
-+ (B->item_id & 0x1c0) == 0
++ (B->object_id & 0x1c0) == 0
 |
 - ((B->type_flags_signed >> 6) & 0x7) != 0
-+ (B->item_id & 0x1c0) != 0
++ (B->object_id & 0x1c0) != 0
 |
 - ((B->type_flags_signed & 0x1c0) >> 6) == 0
-+ (B->item_id & 0x1c0) == 0
++ (B->object_id & 0x1c0) == 0
 |
 - ((B->type_flags_signed & 0x1c0) >> 6) != 0
-+ (B->item_id & 0x1c0) != 0
++ (B->object_id & 0x1c0) != 0
 )
 
 @partial_ptr_16_read disable drop_cast@
@@ -1003,13 +1003,13 @@ typedef byte;
 @@
 (
 - B->type_flags_signed & 0x1c0
-+ B->item_id & 0x1c0
++ B->object_id & 0x1c0
 |
 - (B->type_flags_signed >> 6) & 0x7
-+ B->item_id >> 6
++ B->object_id >> 6
 |
 - (B->type_flags_signed & 0x1c0) >> 6
-+ B->item_id >> 6
++ B->object_id >> 6
 )
 
 @partial_ptr_17_compare disable is_zero, isnt_zero, drop_cast@
@@ -1018,22 +1018,22 @@ typedef byte;
 @@
 (
 - (B->type_flags & 0x1f0) == 0
-+ (B->item_id & 0x1f0) == 0
++ (B->object_id & 0x1f0) == 0
 |
 - (B->type_flags & 0x1f0) != 0
-+ (B->item_id & 0x1f0) != 0
++ (B->object_id & 0x1f0) != 0
 |
 - ((B->type_flags >> 4) & 0x1f) == 0
-+ (B->item_id & 0x1f0) == 0
++ (B->object_id & 0x1f0) == 0
 |
 - ((B->type_flags >> 4) & 0x1f) != 0
-+ (B->item_id & 0x1f0) != 0
++ (B->object_id & 0x1f0) != 0
 |
 - ((B->type_flags & 0x1f0) >> 4) == 0
-+ (B->item_id & 0x1f0) == 0
++ (B->object_id & 0x1f0) == 0
 |
 - ((B->type_flags & 0x1f0) >> 4) != 0
-+ (B->item_id & 0x1f0) != 0
++ (B->object_id & 0x1f0) != 0
 )
 
 @partial_ptr_17_read disable drop_cast@
@@ -1042,13 +1042,13 @@ typedef byte;
 @@
 (
 - B->type_flags & 0x1f0
-+ B->item_id & 0x1f0
++ B->object_id & 0x1f0
 |
 - (B->type_flags >> 4) & 0x1f
-+ B->item_id >> 4
++ B->object_id >> 4
 |
 - (B->type_flags & 0x1f0) >> 4
-+ B->item_id >> 4
++ B->object_id >> 4
 )
 
 @partial_ptr_18_compare disable is_zero, isnt_zero, drop_cast@
@@ -1057,22 +1057,22 @@ typedef byte;
 @@
 (
 - (B->type_flags_signed & 0x1f0) == 0
-+ (B->item_id & 0x1f0) == 0
++ (B->object_id & 0x1f0) == 0
 |
 - (B->type_flags_signed & 0x1f0) != 0
-+ (B->item_id & 0x1f0) != 0
++ (B->object_id & 0x1f0) != 0
 |
 - ((B->type_flags_signed >> 4) & 0x1f) == 0
-+ (B->item_id & 0x1f0) == 0
++ (B->object_id & 0x1f0) == 0
 |
 - ((B->type_flags_signed >> 4) & 0x1f) != 0
-+ (B->item_id & 0x1f0) != 0
++ (B->object_id & 0x1f0) != 0
 |
 - ((B->type_flags_signed & 0x1f0) >> 4) == 0
-+ (B->item_id & 0x1f0) == 0
++ (B->object_id & 0x1f0) == 0
 |
 - ((B->type_flags_signed & 0x1f0) >> 4) != 0
-+ (B->item_id & 0x1f0) != 0
++ (B->object_id & 0x1f0) != 0
 )
 
 @partial_ptr_18_read disable drop_cast@
@@ -1081,13 +1081,13 @@ typedef byte;
 @@
 (
 - B->type_flags_signed & 0x1f0
-+ B->item_id & 0x1f0
++ B->object_id & 0x1f0
 |
 - (B->type_flags_signed >> 4) & 0x1f
-+ B->item_id >> 4
++ B->object_id >> 4
 |
 - (B->type_flags_signed & 0x1f0) >> 4
-+ B->item_id >> 4
++ B->object_id >> 4
 )
 
 @partial_ptr_19_compare disable is_zero, isnt_zero, drop_cast@
@@ -4036,28 +4036,28 @@ typedef byte;
 @@
 (
 - (B.type_flags & 0x7) == 0
-+ (B.item_id & 0x7) == 0
++ (B.object_id & 0x7) == 0
 |
 - (B.type_flags & 0x7) != 0
-+ (B.item_id & 0x7) != 0
++ (B.object_id & 0x7) != 0
 |
 - ((byte)(B.type_flags) & 0x7) == 0
-+ (B.item_id & 0x7) == 0
++ (B.object_id & 0x7) == 0
 |
 - ((byte)(B.type_flags) & 0x7) != 0
-+ (B.item_id & 0x7) != 0
++ (B.object_id & 0x7) != 0
 |
 - ((char)(B.type_flags) & 0x7) == 0
-+ (B.item_id & 0x7) == 0
++ (B.object_id & 0x7) == 0
 |
 - ((char)(B.type_flags) & 0x7) != 0
-+ (B.item_id & 0x7) != 0
++ (B.object_id & 0x7) != 0
 |
 - ((byte)(byte)(B.type_flags) & 0x7) == 0
-+ (B.item_id & 0x7) == 0
++ (B.object_id & 0x7) == 0
 |
 - ((byte)(byte)(B.type_flags) & 0x7) != 0
-+ (B.item_id & 0x7) != 0
++ (B.object_id & 0x7) != 0
 )
 
 @partial_value_0_read disable drop_cast@
@@ -4066,16 +4066,16 @@ typedef byte;
 @@
 (
 - B.type_flags & 0x7
-+ B.item_id & 0x7
++ B.object_id & 0x7
 |
 - (byte)(B.type_flags) & 0x7
-+ B.item_id & 0x7
++ B.object_id & 0x7
 |
 - (char)(B.type_flags) & 0x7
-+ B.item_id & 0x7
++ B.object_id & 0x7
 |
 - (byte)(byte)(B.type_flags) & 0x7
-+ B.item_id & 0x7
++ B.object_id & 0x7
 )
 
 @partial_value_1_compare disable is_zero, isnt_zero, drop_cast@
@@ -4084,28 +4084,28 @@ typedef byte;
 @@
 (
 - (B.type_flags_signed & 0x7) == 0
-+ (B.item_id & 0x7) == 0
++ (B.object_id & 0x7) == 0
 |
 - (B.type_flags_signed & 0x7) != 0
-+ (B.item_id & 0x7) != 0
++ (B.object_id & 0x7) != 0
 |
 - ((byte)(B.type_flags_signed) & 0x7) == 0
-+ (B.item_id & 0x7) == 0
++ (B.object_id & 0x7) == 0
 |
 - ((byte)(B.type_flags_signed) & 0x7) != 0
-+ (B.item_id & 0x7) != 0
++ (B.object_id & 0x7) != 0
 |
 - ((char)(B.type_flags_signed) & 0x7) == 0
-+ (B.item_id & 0x7) == 0
++ (B.object_id & 0x7) == 0
 |
 - ((char)(B.type_flags_signed) & 0x7) != 0
-+ (B.item_id & 0x7) != 0
++ (B.object_id & 0x7) != 0
 |
 - ((byte)(byte)(B.type_flags_signed) & 0x7) == 0
-+ (B.item_id & 0x7) == 0
++ (B.object_id & 0x7) == 0
 |
 - ((byte)(byte)(B.type_flags_signed) & 0x7) != 0
-+ (B.item_id & 0x7) != 0
++ (B.object_id & 0x7) != 0
 )
 
 @partial_value_1_read disable drop_cast@
@@ -4114,16 +4114,16 @@ typedef byte;
 @@
 (
 - B.type_flags_signed & 0x7
-+ B.item_id & 0x7
++ B.object_id & 0x7
 |
 - (byte)(B.type_flags_signed) & 0x7
-+ B.item_id & 0x7
++ B.object_id & 0x7
 |
 - (char)(B.type_flags_signed) & 0x7
-+ B.item_id & 0x7
++ B.object_id & 0x7
 |
 - (byte)(byte)(B.type_flags_signed) & 0x7
-+ B.item_id & 0x7
++ B.object_id & 0x7
 )
 
 @partial_value_2_compare disable is_zero, isnt_zero, drop_cast@
@@ -4132,28 +4132,28 @@ typedef byte;
 @@
 (
 - (B.type_flags_low & 0x7) == 0
-+ (B.item_id & 0x7) == 0
++ (B.object_id & 0x7) == 0
 |
 - (B.type_flags_low & 0x7) != 0
-+ (B.item_id & 0x7) != 0
++ (B.object_id & 0x7) != 0
 |
 - ((byte)(B.type_flags_low) & 0x7) == 0
-+ (B.item_id & 0x7) == 0
++ (B.object_id & 0x7) == 0
 |
 - ((byte)(B.type_flags_low) & 0x7) != 0
-+ (B.item_id & 0x7) != 0
++ (B.object_id & 0x7) != 0
 |
 - ((char)(B.type_flags_low) & 0x7) == 0
-+ (B.item_id & 0x7) == 0
++ (B.object_id & 0x7) == 0
 |
 - ((char)(B.type_flags_low) & 0x7) != 0
-+ (B.item_id & 0x7) != 0
++ (B.object_id & 0x7) != 0
 |
 - ((byte)(byte)(B.type_flags_low) & 0x7) == 0
-+ (B.item_id & 0x7) == 0
++ (B.object_id & 0x7) == 0
 |
 - ((byte)(byte)(B.type_flags_low) & 0x7) != 0
-+ (B.item_id & 0x7) != 0
++ (B.object_id & 0x7) != 0
 )
 
 @partial_value_2_read disable drop_cast@
@@ -4162,16 +4162,16 @@ typedef byte;
 @@
 (
 - B.type_flags_low & 0x7
-+ B.item_id & 0x7
++ B.object_id & 0x7
 |
 - (byte)(B.type_flags_low) & 0x7
-+ B.item_id & 0x7
++ B.object_id & 0x7
 |
 - (char)(B.type_flags_low) & 0x7
-+ B.item_id & 0x7
++ B.object_id & 0x7
 |
 - (byte)(byte)(B.type_flags_low) & 0x7
-+ B.item_id & 0x7
++ B.object_id & 0x7
 )
 
 @partial_value_3_compare disable is_zero, isnt_zero, drop_cast@
@@ -4180,28 +4180,28 @@ typedef byte;
 @@
 (
 - (B.type_flags & 0xf) == 0
-+ (B.item_id & 0xf) == 0
++ (B.object_id & 0xf) == 0
 |
 - (B.type_flags & 0xf) != 0
-+ (B.item_id & 0xf) != 0
++ (B.object_id & 0xf) != 0
 |
 - ((byte)(B.type_flags) & 0xf) == 0
-+ (B.item_id & 0xf) == 0
++ (B.object_id & 0xf) == 0
 |
 - ((byte)(B.type_flags) & 0xf) != 0
-+ (B.item_id & 0xf) != 0
++ (B.object_id & 0xf) != 0
 |
 - ((char)(B.type_flags) & 0xf) == 0
-+ (B.item_id & 0xf) == 0
++ (B.object_id & 0xf) == 0
 |
 - ((char)(B.type_flags) & 0xf) != 0
-+ (B.item_id & 0xf) != 0
++ (B.object_id & 0xf) != 0
 |
 - ((byte)(byte)(B.type_flags) & 0xf) == 0
-+ (B.item_id & 0xf) == 0
++ (B.object_id & 0xf) == 0
 |
 - ((byte)(byte)(B.type_flags) & 0xf) != 0
-+ (B.item_id & 0xf) != 0
++ (B.object_id & 0xf) != 0
 )
 
 @partial_value_3_read disable drop_cast@
@@ -4210,16 +4210,16 @@ typedef byte;
 @@
 (
 - B.type_flags & 0xf
-+ B.item_id & 0xf
++ B.object_id & 0xf
 |
 - (byte)(B.type_flags) & 0xf
-+ B.item_id & 0xf
++ B.object_id & 0xf
 |
 - (char)(B.type_flags) & 0xf
-+ B.item_id & 0xf
++ B.object_id & 0xf
 |
 - (byte)(byte)(B.type_flags) & 0xf
-+ B.item_id & 0xf
++ B.object_id & 0xf
 )
 
 @partial_value_4_compare disable is_zero, isnt_zero, drop_cast@
@@ -4228,28 +4228,28 @@ typedef byte;
 @@
 (
 - (B.type_flags_signed & 0xf) == 0
-+ (B.item_id & 0xf) == 0
++ (B.object_id & 0xf) == 0
 |
 - (B.type_flags_signed & 0xf) != 0
-+ (B.item_id & 0xf) != 0
++ (B.object_id & 0xf) != 0
 |
 - ((byte)(B.type_flags_signed) & 0xf) == 0
-+ (B.item_id & 0xf) == 0
++ (B.object_id & 0xf) == 0
 |
 - ((byte)(B.type_flags_signed) & 0xf) != 0
-+ (B.item_id & 0xf) != 0
++ (B.object_id & 0xf) != 0
 |
 - ((char)(B.type_flags_signed) & 0xf) == 0
-+ (B.item_id & 0xf) == 0
++ (B.object_id & 0xf) == 0
 |
 - ((char)(B.type_flags_signed) & 0xf) != 0
-+ (B.item_id & 0xf) != 0
++ (B.object_id & 0xf) != 0
 |
 - ((byte)(byte)(B.type_flags_signed) & 0xf) == 0
-+ (B.item_id & 0xf) == 0
++ (B.object_id & 0xf) == 0
 |
 - ((byte)(byte)(B.type_flags_signed) & 0xf) != 0
-+ (B.item_id & 0xf) != 0
++ (B.object_id & 0xf) != 0
 )
 
 @partial_value_4_read disable drop_cast@
@@ -4258,16 +4258,16 @@ typedef byte;
 @@
 (
 - B.type_flags_signed & 0xf
-+ B.item_id & 0xf
++ B.object_id & 0xf
 |
 - (byte)(B.type_flags_signed) & 0xf
-+ B.item_id & 0xf
++ B.object_id & 0xf
 |
 - (char)(B.type_flags_signed) & 0xf
-+ B.item_id & 0xf
++ B.object_id & 0xf
 |
 - (byte)(byte)(B.type_flags_signed) & 0xf
-+ B.item_id & 0xf
++ B.object_id & 0xf
 )
 
 @partial_value_5_compare disable is_zero, isnt_zero, drop_cast@
@@ -4276,28 +4276,28 @@ typedef byte;
 @@
 (
 - (B.type_flags_low & 0xf) == 0
-+ (B.item_id & 0xf) == 0
++ (B.object_id & 0xf) == 0
 |
 - (B.type_flags_low & 0xf) != 0
-+ (B.item_id & 0xf) != 0
++ (B.object_id & 0xf) != 0
 |
 - ((byte)(B.type_flags_low) & 0xf) == 0
-+ (B.item_id & 0xf) == 0
++ (B.object_id & 0xf) == 0
 |
 - ((byte)(B.type_flags_low) & 0xf) != 0
-+ (B.item_id & 0xf) != 0
++ (B.object_id & 0xf) != 0
 |
 - ((char)(B.type_flags_low) & 0xf) == 0
-+ (B.item_id & 0xf) == 0
++ (B.object_id & 0xf) == 0
 |
 - ((char)(B.type_flags_low) & 0xf) != 0
-+ (B.item_id & 0xf) != 0
++ (B.object_id & 0xf) != 0
 |
 - ((byte)(byte)(B.type_flags_low) & 0xf) == 0
-+ (B.item_id & 0xf) == 0
++ (B.object_id & 0xf) == 0
 |
 - ((byte)(byte)(B.type_flags_low) & 0xf) != 0
-+ (B.item_id & 0xf) != 0
++ (B.object_id & 0xf) != 0
 )
 
 @partial_value_5_read disable drop_cast@
@@ -4306,16 +4306,16 @@ typedef byte;
 @@
 (
 - B.type_flags_low & 0xf
-+ B.item_id & 0xf
++ B.object_id & 0xf
 |
 - (byte)(B.type_flags_low) & 0xf
-+ B.item_id & 0xf
++ B.object_id & 0xf
 |
 - (char)(B.type_flags_low) & 0xf
-+ B.item_id & 0xf
++ B.object_id & 0xf
 |
 - (byte)(byte)(B.type_flags_low) & 0xf
-+ B.item_id & 0xf
++ B.object_id & 0xf
 )
 
 @partial_value_6_compare disable is_zero, isnt_zero, drop_cast@
@@ -4324,28 +4324,28 @@ typedef byte;
 @@
 (
 - (B.type_flags & 0x1f) == 0
-+ (B.item_id & 0x1f) == 0
++ (B.object_id & 0x1f) == 0
 |
 - (B.type_flags & 0x1f) != 0
-+ (B.item_id & 0x1f) != 0
++ (B.object_id & 0x1f) != 0
 |
 - ((byte)(B.type_flags) & 0x1f) == 0
-+ (B.item_id & 0x1f) == 0
++ (B.object_id & 0x1f) == 0
 |
 - ((byte)(B.type_flags) & 0x1f) != 0
-+ (B.item_id & 0x1f) != 0
++ (B.object_id & 0x1f) != 0
 |
 - ((char)(B.type_flags) & 0x1f) == 0
-+ (B.item_id & 0x1f) == 0
++ (B.object_id & 0x1f) == 0
 |
 - ((char)(B.type_flags) & 0x1f) != 0
-+ (B.item_id & 0x1f) != 0
++ (B.object_id & 0x1f) != 0
 |
 - ((byte)(byte)(B.type_flags) & 0x1f) == 0
-+ (B.item_id & 0x1f) == 0
++ (B.object_id & 0x1f) == 0
 |
 - ((byte)(byte)(B.type_flags) & 0x1f) != 0
-+ (B.item_id & 0x1f) != 0
++ (B.object_id & 0x1f) != 0
 )
 
 @partial_value_6_read disable drop_cast@
@@ -4354,16 +4354,16 @@ typedef byte;
 @@
 (
 - B.type_flags & 0x1f
-+ B.item_id & 0x1f
++ B.object_id & 0x1f
 |
 - (byte)(B.type_flags) & 0x1f
-+ B.item_id & 0x1f
++ B.object_id & 0x1f
 |
 - (char)(B.type_flags) & 0x1f
-+ B.item_id & 0x1f
++ B.object_id & 0x1f
 |
 - (byte)(byte)(B.type_flags) & 0x1f
-+ B.item_id & 0x1f
++ B.object_id & 0x1f
 )
 
 @partial_value_7_compare disable is_zero, isnt_zero, drop_cast@
@@ -4372,28 +4372,28 @@ typedef byte;
 @@
 (
 - (B.type_flags_signed & 0x1f) == 0
-+ (B.item_id & 0x1f) == 0
++ (B.object_id & 0x1f) == 0
 |
 - (B.type_flags_signed & 0x1f) != 0
-+ (B.item_id & 0x1f) != 0
++ (B.object_id & 0x1f) != 0
 |
 - ((byte)(B.type_flags_signed) & 0x1f) == 0
-+ (B.item_id & 0x1f) == 0
++ (B.object_id & 0x1f) == 0
 |
 - ((byte)(B.type_flags_signed) & 0x1f) != 0
-+ (B.item_id & 0x1f) != 0
++ (B.object_id & 0x1f) != 0
 |
 - ((char)(B.type_flags_signed) & 0x1f) == 0
-+ (B.item_id & 0x1f) == 0
++ (B.object_id & 0x1f) == 0
 |
 - ((char)(B.type_flags_signed) & 0x1f) != 0
-+ (B.item_id & 0x1f) != 0
++ (B.object_id & 0x1f) != 0
 |
 - ((byte)(byte)(B.type_flags_signed) & 0x1f) == 0
-+ (B.item_id & 0x1f) == 0
++ (B.object_id & 0x1f) == 0
 |
 - ((byte)(byte)(B.type_flags_signed) & 0x1f) != 0
-+ (B.item_id & 0x1f) != 0
++ (B.object_id & 0x1f) != 0
 )
 
 @partial_value_7_read disable drop_cast@
@@ -4402,16 +4402,16 @@ typedef byte;
 @@
 (
 - B.type_flags_signed & 0x1f
-+ B.item_id & 0x1f
++ B.object_id & 0x1f
 |
 - (byte)(B.type_flags_signed) & 0x1f
-+ B.item_id & 0x1f
++ B.object_id & 0x1f
 |
 - (char)(B.type_flags_signed) & 0x1f
-+ B.item_id & 0x1f
++ B.object_id & 0x1f
 |
 - (byte)(byte)(B.type_flags_signed) & 0x1f
-+ B.item_id & 0x1f
++ B.object_id & 0x1f
 )
 
 @partial_value_8_compare disable is_zero, isnt_zero, drop_cast@
@@ -4420,28 +4420,28 @@ typedef byte;
 @@
 (
 - (B.type_flags_low & 0x1f) == 0
-+ (B.item_id & 0x1f) == 0
++ (B.object_id & 0x1f) == 0
 |
 - (B.type_flags_low & 0x1f) != 0
-+ (B.item_id & 0x1f) != 0
++ (B.object_id & 0x1f) != 0
 |
 - ((byte)(B.type_flags_low) & 0x1f) == 0
-+ (B.item_id & 0x1f) == 0
++ (B.object_id & 0x1f) == 0
 |
 - ((byte)(B.type_flags_low) & 0x1f) != 0
-+ (B.item_id & 0x1f) != 0
++ (B.object_id & 0x1f) != 0
 |
 - ((char)(B.type_flags_low) & 0x1f) == 0
-+ (B.item_id & 0x1f) == 0
++ (B.object_id & 0x1f) == 0
 |
 - ((char)(B.type_flags_low) & 0x1f) != 0
-+ (B.item_id & 0x1f) != 0
++ (B.object_id & 0x1f) != 0
 |
 - ((byte)(byte)(B.type_flags_low) & 0x1f) == 0
-+ (B.item_id & 0x1f) == 0
++ (B.object_id & 0x1f) == 0
 |
 - ((byte)(byte)(B.type_flags_low) & 0x1f) != 0
-+ (B.item_id & 0x1f) != 0
++ (B.object_id & 0x1f) != 0
 )
 
 @partial_value_8_read disable drop_cast@
@@ -4450,16 +4450,16 @@ typedef byte;
 @@
 (
 - B.type_flags_low & 0x1f
-+ B.item_id & 0x1f
++ B.object_id & 0x1f
 |
 - (byte)(B.type_flags_low) & 0x1f
-+ B.item_id & 0x1f
++ B.object_id & 0x1f
 |
 - (char)(B.type_flags_low) & 0x1f
-+ B.item_id & 0x1f
++ B.object_id & 0x1f
 |
 - (byte)(byte)(B.type_flags_low) & 0x1f
-+ B.item_id & 0x1f
++ B.object_id & 0x1f
 )
 
 @partial_value_9_compare disable is_zero, isnt_zero, drop_cast@
@@ -4468,76 +4468,76 @@ typedef byte;
 @@
 (
 - (B.type_flags & 0x30) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - (B.type_flags & 0x30) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - ((byte)(B.type_flags) & 0x30) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - ((byte)(B.type_flags) & 0x30) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - ((char)(B.type_flags) & 0x30) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - ((char)(B.type_flags) & 0x30) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - ((byte)(byte)(B.type_flags) & 0x30) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - ((byte)(byte)(B.type_flags) & 0x30) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - ((B.type_flags >> 4) & 0x3) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - ((B.type_flags >> 4) & 0x3) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - ((B.type_flags & 0x30) >> 4) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - ((B.type_flags & 0x30) >> 4) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - (((byte)(B.type_flags) >> 4) & 0x3) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - (((byte)(B.type_flags) >> 4) & 0x3) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - (((byte)(B.type_flags) & 0x30) >> 4) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - (((byte)(B.type_flags) & 0x30) >> 4) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - (((char)(B.type_flags) >> 4) & 0x3) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - (((char)(B.type_flags) >> 4) & 0x3) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - (((char)(B.type_flags) & 0x30) >> 4) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - (((char)(B.type_flags) & 0x30) >> 4) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - (((byte)(byte)(B.type_flags) >> 4) & 0x3) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - (((byte)(byte)(B.type_flags) >> 4) & 0x3) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - (((byte)(byte)(B.type_flags) & 0x30) >> 4) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - (((byte)(byte)(B.type_flags) & 0x30) >> 4) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 )
 
 @partial_value_9_read disable drop_cast@
@@ -4546,40 +4546,40 @@ typedef byte;
 @@
 (
 - B.type_flags & 0x30
-+ B.item_id & 0x30
++ B.object_id & 0x30
 |
 - (byte)(B.type_flags) & 0x30
-+ B.item_id & 0x30
++ B.object_id & 0x30
 |
 - (char)(B.type_flags) & 0x30
-+ B.item_id & 0x30
++ B.object_id & 0x30
 |
 - (byte)(byte)(B.type_flags) & 0x30
-+ B.item_id & 0x30
++ B.object_id & 0x30
 |
 - (B.type_flags >> 4) & 0x3
-+ (B.item_id >> 4) & 0x3
++ (B.object_id >> 4) & 0x3
 |
 - (B.type_flags & 0x30) >> 4
-+ (B.item_id >> 4) & 0x3
++ (B.object_id >> 4) & 0x3
 |
 - ((byte)(B.type_flags) >> 4) & 0x3
-+ (B.item_id >> 4) & 0x3
++ (B.object_id >> 4) & 0x3
 |
 - ((byte)(B.type_flags) & 0x30) >> 4
-+ (B.item_id >> 4) & 0x3
++ (B.object_id >> 4) & 0x3
 |
 - ((char)(B.type_flags) >> 4) & 0x3
-+ (B.item_id >> 4) & 0x3
++ (B.object_id >> 4) & 0x3
 |
 - ((char)(B.type_flags) & 0x30) >> 4
-+ (B.item_id >> 4) & 0x3
++ (B.object_id >> 4) & 0x3
 |
 - ((byte)(byte)(B.type_flags) >> 4) & 0x3
-+ (B.item_id >> 4) & 0x3
++ (B.object_id >> 4) & 0x3
 |
 - ((byte)(byte)(B.type_flags) & 0x30) >> 4
-+ (B.item_id >> 4) & 0x3
++ (B.object_id >> 4) & 0x3
 )
 
 @partial_value_10_compare disable is_zero, isnt_zero, drop_cast@
@@ -4588,76 +4588,76 @@ typedef byte;
 @@
 (
 - (B.type_flags_signed & 0x30) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - (B.type_flags_signed & 0x30) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - ((byte)(B.type_flags_signed) & 0x30) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - ((byte)(B.type_flags_signed) & 0x30) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - ((char)(B.type_flags_signed) & 0x30) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - ((char)(B.type_flags_signed) & 0x30) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - ((byte)(byte)(B.type_flags_signed) & 0x30) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - ((byte)(byte)(B.type_flags_signed) & 0x30) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - ((B.type_flags_signed >> 4) & 0x3) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - ((B.type_flags_signed >> 4) & 0x3) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - ((B.type_flags_signed & 0x30) >> 4) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - ((B.type_flags_signed & 0x30) >> 4) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - (((byte)(B.type_flags_signed) >> 4) & 0x3) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - (((byte)(B.type_flags_signed) >> 4) & 0x3) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - (((byte)(B.type_flags_signed) & 0x30) >> 4) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - (((byte)(B.type_flags_signed) & 0x30) >> 4) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - (((char)(B.type_flags_signed) >> 4) & 0x3) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - (((char)(B.type_flags_signed) >> 4) & 0x3) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - (((char)(B.type_flags_signed) & 0x30) >> 4) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - (((char)(B.type_flags_signed) & 0x30) >> 4) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - (((byte)(byte)(B.type_flags_signed) >> 4) & 0x3) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - (((byte)(byte)(B.type_flags_signed) >> 4) & 0x3) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - (((byte)(byte)(B.type_flags_signed) & 0x30) >> 4) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - (((byte)(byte)(B.type_flags_signed) & 0x30) >> 4) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 )
 
 @partial_value_10_read disable drop_cast@
@@ -4666,40 +4666,40 @@ typedef byte;
 @@
 (
 - B.type_flags_signed & 0x30
-+ B.item_id & 0x30
++ B.object_id & 0x30
 |
 - (byte)(B.type_flags_signed) & 0x30
-+ B.item_id & 0x30
++ B.object_id & 0x30
 |
 - (char)(B.type_flags_signed) & 0x30
-+ B.item_id & 0x30
++ B.object_id & 0x30
 |
 - (byte)(byte)(B.type_flags_signed) & 0x30
-+ B.item_id & 0x30
++ B.object_id & 0x30
 |
 - (B.type_flags_signed >> 4) & 0x3
-+ (B.item_id >> 4) & 0x3
++ (B.object_id >> 4) & 0x3
 |
 - (B.type_flags_signed & 0x30) >> 4
-+ (B.item_id >> 4) & 0x3
++ (B.object_id >> 4) & 0x3
 |
 - ((byte)(B.type_flags_signed) >> 4) & 0x3
-+ (B.item_id >> 4) & 0x3
++ (B.object_id >> 4) & 0x3
 |
 - ((byte)(B.type_flags_signed) & 0x30) >> 4
-+ (B.item_id >> 4) & 0x3
++ (B.object_id >> 4) & 0x3
 |
 - ((char)(B.type_flags_signed) >> 4) & 0x3
-+ (B.item_id >> 4) & 0x3
++ (B.object_id >> 4) & 0x3
 |
 - ((char)(B.type_flags_signed) & 0x30) >> 4
-+ (B.item_id >> 4) & 0x3
++ (B.object_id >> 4) & 0x3
 |
 - ((byte)(byte)(B.type_flags_signed) >> 4) & 0x3
-+ (B.item_id >> 4) & 0x3
++ (B.object_id >> 4) & 0x3
 |
 - ((byte)(byte)(B.type_flags_signed) & 0x30) >> 4
-+ (B.item_id >> 4) & 0x3
++ (B.object_id >> 4) & 0x3
 )
 
 @partial_value_11_compare disable is_zero, isnt_zero, drop_cast@
@@ -4708,76 +4708,76 @@ typedef byte;
 @@
 (
 - (B.type_flags_low & 0x30) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - (B.type_flags_low & 0x30) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - ((byte)(B.type_flags_low) & 0x30) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - ((byte)(B.type_flags_low) & 0x30) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - ((char)(B.type_flags_low) & 0x30) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - ((char)(B.type_flags_low) & 0x30) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - ((byte)(byte)(B.type_flags_low) & 0x30) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - ((byte)(byte)(B.type_flags_low) & 0x30) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - ((B.type_flags_low >> 4) & 0x3) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - ((B.type_flags_low >> 4) & 0x3) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - ((B.type_flags_low & 0x30) >> 4) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - ((B.type_flags_low & 0x30) >> 4) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - (((byte)(B.type_flags_low) >> 4) & 0x3) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - (((byte)(B.type_flags_low) >> 4) & 0x3) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - (((byte)(B.type_flags_low) & 0x30) >> 4) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - (((byte)(B.type_flags_low) & 0x30) >> 4) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - (((char)(B.type_flags_low) >> 4) & 0x3) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - (((char)(B.type_flags_low) >> 4) & 0x3) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - (((char)(B.type_flags_low) & 0x30) >> 4) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - (((char)(B.type_flags_low) & 0x30) >> 4) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - (((byte)(byte)(B.type_flags_low) >> 4) & 0x3) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - (((byte)(byte)(B.type_flags_low) >> 4) & 0x3) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 |
 - (((byte)(byte)(B.type_flags_low) & 0x30) >> 4) == 0
-+ (B.item_id & 0x30) == 0
++ (B.object_id & 0x30) == 0
 |
 - (((byte)(byte)(B.type_flags_low) & 0x30) >> 4) != 0
-+ (B.item_id & 0x30) != 0
++ (B.object_id & 0x30) != 0
 )
 
 @partial_value_11_read disable drop_cast@
@@ -4786,40 +4786,40 @@ typedef byte;
 @@
 (
 - B.type_flags_low & 0x30
-+ B.item_id & 0x30
++ B.object_id & 0x30
 |
 - (byte)(B.type_flags_low) & 0x30
-+ B.item_id & 0x30
++ B.object_id & 0x30
 |
 - (char)(B.type_flags_low) & 0x30
-+ B.item_id & 0x30
++ B.object_id & 0x30
 |
 - (byte)(byte)(B.type_flags_low) & 0x30
-+ B.item_id & 0x30
++ B.object_id & 0x30
 |
 - (B.type_flags_low >> 4) & 0x3
-+ (B.item_id >> 4) & 0x3
++ (B.object_id >> 4) & 0x3
 |
 - (B.type_flags_low & 0x30) >> 4
-+ (B.item_id >> 4) & 0x3
++ (B.object_id >> 4) & 0x3
 |
 - ((byte)(B.type_flags_low) >> 4) & 0x3
-+ (B.item_id >> 4) & 0x3
++ (B.object_id >> 4) & 0x3
 |
 - ((byte)(B.type_flags_low) & 0x30) >> 4
-+ (B.item_id >> 4) & 0x3
++ (B.object_id >> 4) & 0x3
 |
 - ((char)(B.type_flags_low) >> 4) & 0x3
-+ (B.item_id >> 4) & 0x3
++ (B.object_id >> 4) & 0x3
 |
 - ((char)(B.type_flags_low) & 0x30) >> 4
-+ (B.item_id >> 4) & 0x3
++ (B.object_id >> 4) & 0x3
 |
 - ((byte)(byte)(B.type_flags_low) >> 4) & 0x3
-+ (B.item_id >> 4) & 0x3
++ (B.object_id >> 4) & 0x3
 |
 - ((byte)(byte)(B.type_flags_low) & 0x30) >> 4
-+ (B.item_id >> 4) & 0x3
++ (B.object_id >> 4) & 0x3
 )
 
 @partial_value_12_compare disable is_zero, isnt_zero, drop_cast@
@@ -4828,28 +4828,28 @@ typedef byte;
 @@
 (
 - (B.type_flags & 0x3f) == 0
-+ (B.item_id & 0x3f) == 0
++ (B.object_id & 0x3f) == 0
 |
 - (B.type_flags & 0x3f) != 0
-+ (B.item_id & 0x3f) != 0
++ (B.object_id & 0x3f) != 0
 |
 - ((byte)(B.type_flags) & 0x3f) == 0
-+ (B.item_id & 0x3f) == 0
++ (B.object_id & 0x3f) == 0
 |
 - ((byte)(B.type_flags) & 0x3f) != 0
-+ (B.item_id & 0x3f) != 0
++ (B.object_id & 0x3f) != 0
 |
 - ((char)(B.type_flags) & 0x3f) == 0
-+ (B.item_id & 0x3f) == 0
++ (B.object_id & 0x3f) == 0
 |
 - ((char)(B.type_flags) & 0x3f) != 0
-+ (B.item_id & 0x3f) != 0
++ (B.object_id & 0x3f) != 0
 |
 - ((byte)(byte)(B.type_flags) & 0x3f) == 0
-+ (B.item_id & 0x3f) == 0
++ (B.object_id & 0x3f) == 0
 |
 - ((byte)(byte)(B.type_flags) & 0x3f) != 0
-+ (B.item_id & 0x3f) != 0
++ (B.object_id & 0x3f) != 0
 )
 
 @partial_value_12_read disable drop_cast@
@@ -4858,16 +4858,16 @@ typedef byte;
 @@
 (
 - B.type_flags & 0x3f
-+ B.item_id & 0x3f
++ B.object_id & 0x3f
 |
 - (byte)(B.type_flags) & 0x3f
-+ B.item_id & 0x3f
++ B.object_id & 0x3f
 |
 - (char)(B.type_flags) & 0x3f
-+ B.item_id & 0x3f
++ B.object_id & 0x3f
 |
 - (byte)(byte)(B.type_flags) & 0x3f
-+ B.item_id & 0x3f
++ B.object_id & 0x3f
 )
 
 @partial_value_13_compare disable is_zero, isnt_zero, drop_cast@
@@ -4876,28 +4876,28 @@ typedef byte;
 @@
 (
 - (B.type_flags_signed & 0x3f) == 0
-+ (B.item_id & 0x3f) == 0
++ (B.object_id & 0x3f) == 0
 |
 - (B.type_flags_signed & 0x3f) != 0
-+ (B.item_id & 0x3f) != 0
++ (B.object_id & 0x3f) != 0
 |
 - ((byte)(B.type_flags_signed) & 0x3f) == 0
-+ (B.item_id & 0x3f) == 0
++ (B.object_id & 0x3f) == 0
 |
 - ((byte)(B.type_flags_signed) & 0x3f) != 0
-+ (B.item_id & 0x3f) != 0
++ (B.object_id & 0x3f) != 0
 |
 - ((char)(B.type_flags_signed) & 0x3f) == 0
-+ (B.item_id & 0x3f) == 0
++ (B.object_id & 0x3f) == 0
 |
 - ((char)(B.type_flags_signed) & 0x3f) != 0
-+ (B.item_id & 0x3f) != 0
++ (B.object_id & 0x3f) != 0
 |
 - ((byte)(byte)(B.type_flags_signed) & 0x3f) == 0
-+ (B.item_id & 0x3f) == 0
++ (B.object_id & 0x3f) == 0
 |
 - ((byte)(byte)(B.type_flags_signed) & 0x3f) != 0
-+ (B.item_id & 0x3f) != 0
++ (B.object_id & 0x3f) != 0
 )
 
 @partial_value_13_read disable drop_cast@
@@ -4906,16 +4906,16 @@ typedef byte;
 @@
 (
 - B.type_flags_signed & 0x3f
-+ B.item_id & 0x3f
++ B.object_id & 0x3f
 |
 - (byte)(B.type_flags_signed) & 0x3f
-+ B.item_id & 0x3f
++ B.object_id & 0x3f
 |
 - (char)(B.type_flags_signed) & 0x3f
-+ B.item_id & 0x3f
++ B.object_id & 0x3f
 |
 - (byte)(byte)(B.type_flags_signed) & 0x3f
-+ B.item_id & 0x3f
++ B.object_id & 0x3f
 )
 
 @partial_value_14_compare disable is_zero, isnt_zero, drop_cast@
@@ -4924,28 +4924,28 @@ typedef byte;
 @@
 (
 - (B.type_flags_low & 0x3f) == 0
-+ (B.item_id & 0x3f) == 0
++ (B.object_id & 0x3f) == 0
 |
 - (B.type_flags_low & 0x3f) != 0
-+ (B.item_id & 0x3f) != 0
++ (B.object_id & 0x3f) != 0
 |
 - ((byte)(B.type_flags_low) & 0x3f) == 0
-+ (B.item_id & 0x3f) == 0
++ (B.object_id & 0x3f) == 0
 |
 - ((byte)(B.type_flags_low) & 0x3f) != 0
-+ (B.item_id & 0x3f) != 0
++ (B.object_id & 0x3f) != 0
 |
 - ((char)(B.type_flags_low) & 0x3f) == 0
-+ (B.item_id & 0x3f) == 0
++ (B.object_id & 0x3f) == 0
 |
 - ((char)(B.type_flags_low) & 0x3f) != 0
-+ (B.item_id & 0x3f) != 0
++ (B.object_id & 0x3f) != 0
 |
 - ((byte)(byte)(B.type_flags_low) & 0x3f) == 0
-+ (B.item_id & 0x3f) == 0
++ (B.object_id & 0x3f) == 0
 |
 - ((byte)(byte)(B.type_flags_low) & 0x3f) != 0
-+ (B.item_id & 0x3f) != 0
++ (B.object_id & 0x3f) != 0
 )
 
 @partial_value_14_read disable drop_cast@
@@ -4954,16 +4954,16 @@ typedef byte;
 @@
 (
 - B.type_flags_low & 0x3f
-+ B.item_id & 0x3f
++ B.object_id & 0x3f
 |
 - (byte)(B.type_flags_low) & 0x3f
-+ B.item_id & 0x3f
++ B.object_id & 0x3f
 |
 - (char)(B.type_flags_low) & 0x3f
-+ B.item_id & 0x3f
++ B.object_id & 0x3f
 |
 - (byte)(byte)(B.type_flags_low) & 0x3f
-+ B.item_id & 0x3f
++ B.object_id & 0x3f
 )
 
 @partial_value_15_compare disable is_zero, isnt_zero, drop_cast@
@@ -4972,22 +4972,22 @@ typedef byte;
 @@
 (
 - (B.type_flags & 0x1c0) == 0
-+ (B.item_id & 0x1c0) == 0
++ (B.object_id & 0x1c0) == 0
 |
 - (B.type_flags & 0x1c0) != 0
-+ (B.item_id & 0x1c0) != 0
++ (B.object_id & 0x1c0) != 0
 |
 - ((B.type_flags >> 6) & 0x7) == 0
-+ (B.item_id & 0x1c0) == 0
++ (B.object_id & 0x1c0) == 0
 |
 - ((B.type_flags >> 6) & 0x7) != 0
-+ (B.item_id & 0x1c0) != 0
++ (B.object_id & 0x1c0) != 0
 |
 - ((B.type_flags & 0x1c0) >> 6) == 0
-+ (B.item_id & 0x1c0) == 0
++ (B.object_id & 0x1c0) == 0
 |
 - ((B.type_flags & 0x1c0) >> 6) != 0
-+ (B.item_id & 0x1c0) != 0
++ (B.object_id & 0x1c0) != 0
 )
 
 @partial_value_15_read disable drop_cast@
@@ -4996,13 +4996,13 @@ typedef byte;
 @@
 (
 - B.type_flags & 0x1c0
-+ B.item_id & 0x1c0
++ B.object_id & 0x1c0
 |
 - (B.type_flags >> 6) & 0x7
-+ B.item_id >> 6
++ B.object_id >> 6
 |
 - (B.type_flags & 0x1c0) >> 6
-+ B.item_id >> 6
++ B.object_id >> 6
 )
 
 @partial_value_16_compare disable is_zero, isnt_zero, drop_cast@
@@ -5011,22 +5011,22 @@ typedef byte;
 @@
 (
 - (B.type_flags_signed & 0x1c0) == 0
-+ (B.item_id & 0x1c0) == 0
++ (B.object_id & 0x1c0) == 0
 |
 - (B.type_flags_signed & 0x1c0) != 0
-+ (B.item_id & 0x1c0) != 0
++ (B.object_id & 0x1c0) != 0
 |
 - ((B.type_flags_signed >> 6) & 0x7) == 0
-+ (B.item_id & 0x1c0) == 0
++ (B.object_id & 0x1c0) == 0
 |
 - ((B.type_flags_signed >> 6) & 0x7) != 0
-+ (B.item_id & 0x1c0) != 0
++ (B.object_id & 0x1c0) != 0
 |
 - ((B.type_flags_signed & 0x1c0) >> 6) == 0
-+ (B.item_id & 0x1c0) == 0
++ (B.object_id & 0x1c0) == 0
 |
 - ((B.type_flags_signed & 0x1c0) >> 6) != 0
-+ (B.item_id & 0x1c0) != 0
++ (B.object_id & 0x1c0) != 0
 )
 
 @partial_value_16_read disable drop_cast@
@@ -5035,13 +5035,13 @@ typedef byte;
 @@
 (
 - B.type_flags_signed & 0x1c0
-+ B.item_id & 0x1c0
++ B.object_id & 0x1c0
 |
 - (B.type_flags_signed >> 6) & 0x7
-+ B.item_id >> 6
++ B.object_id >> 6
 |
 - (B.type_flags_signed & 0x1c0) >> 6
-+ B.item_id >> 6
++ B.object_id >> 6
 )
 
 @partial_value_17_compare disable is_zero, isnt_zero, drop_cast@
@@ -5050,22 +5050,22 @@ typedef byte;
 @@
 (
 - (B.type_flags & 0x1f0) == 0
-+ (B.item_id & 0x1f0) == 0
++ (B.object_id & 0x1f0) == 0
 |
 - (B.type_flags & 0x1f0) != 0
-+ (B.item_id & 0x1f0) != 0
++ (B.object_id & 0x1f0) != 0
 |
 - ((B.type_flags >> 4) & 0x1f) == 0
-+ (B.item_id & 0x1f0) == 0
++ (B.object_id & 0x1f0) == 0
 |
 - ((B.type_flags >> 4) & 0x1f) != 0
-+ (B.item_id & 0x1f0) != 0
++ (B.object_id & 0x1f0) != 0
 |
 - ((B.type_flags & 0x1f0) >> 4) == 0
-+ (B.item_id & 0x1f0) == 0
++ (B.object_id & 0x1f0) == 0
 |
 - ((B.type_flags & 0x1f0) >> 4) != 0
-+ (B.item_id & 0x1f0) != 0
++ (B.object_id & 0x1f0) != 0
 )
 
 @partial_value_17_read disable drop_cast@
@@ -5074,13 +5074,13 @@ typedef byte;
 @@
 (
 - B.type_flags & 0x1f0
-+ B.item_id & 0x1f0
++ B.object_id & 0x1f0
 |
 - (B.type_flags >> 4) & 0x1f
-+ B.item_id >> 4
++ B.object_id >> 4
 |
 - (B.type_flags & 0x1f0) >> 4
-+ B.item_id >> 4
++ B.object_id >> 4
 )
 
 @partial_value_18_compare disable is_zero, isnt_zero, drop_cast@
@@ -5089,22 +5089,22 @@ typedef byte;
 @@
 (
 - (B.type_flags_signed & 0x1f0) == 0
-+ (B.item_id & 0x1f0) == 0
++ (B.object_id & 0x1f0) == 0
 |
 - (B.type_flags_signed & 0x1f0) != 0
-+ (B.item_id & 0x1f0) != 0
++ (B.object_id & 0x1f0) != 0
 |
 - ((B.type_flags_signed >> 4) & 0x1f) == 0
-+ (B.item_id & 0x1f0) == 0
++ (B.object_id & 0x1f0) == 0
 |
 - ((B.type_flags_signed >> 4) & 0x1f) != 0
-+ (B.item_id & 0x1f0) != 0
++ (B.object_id & 0x1f0) != 0
 |
 - ((B.type_flags_signed & 0x1f0) >> 4) == 0
-+ (B.item_id & 0x1f0) == 0
++ (B.object_id & 0x1f0) == 0
 |
 - ((B.type_flags_signed & 0x1f0) >> 4) != 0
-+ (B.item_id & 0x1f0) != 0
++ (B.object_id & 0x1f0) != 0
 )
 
 @partial_value_18_read disable drop_cast@
@@ -5113,13 +5113,13 @@ typedef byte;
 @@
 (
 - B.type_flags_signed & 0x1f0
-+ B.item_id & 0x1f0
++ B.object_id & 0x1f0
 |
 - (B.type_flags_signed >> 4) & 0x1f
-+ B.item_id >> 4
++ B.object_id >> 4
 |
 - (B.type_flags_signed & 0x1f0) >> 4
-+ B.item_id >> 4
++ B.object_id >> 4
 )
 
 @partial_value_19_compare disable is_zero, isnt_zero, drop_cast@

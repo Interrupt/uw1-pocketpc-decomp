@@ -1,4 +1,4 @@
-@field_0_item_id disable drop_cast, is_zero, isnt_zero@
+@field_0_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(npc_combat_approach_tick\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7,22 +7,22 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)iVar5_rec + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar5_rec)->item_id
++ ((uw_object_hdr_t *)iVar5_rec)->object_id
 |
 - ((ushort *)iVar5_rec)[0] & 0x1ff
-+ ((uw_object_hdr_t *)iVar5_rec)->item_id
++ ((uw_object_hdr_t *)iVar5_rec)->object_id
 |
 - *(ushort *)iVar5_rec & 0x1ff
-+ ((uw_object_hdr_t *)iVar5_rec)->item_id
++ ((uw_object_hdr_t *)iVar5_rec)->object_id
 |
 - *(ushort *)(iVar5_rec + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar5_rec)->item_id
++ ((uw_object_hdr_t *)iVar5_rec)->object_id
 |
 - CONCAT11(iVar5_rec[1], *iVar5_rec) & 0x1ff
-+ ((uw_object_hdr_t *)iVar5_rec)->item_id
++ ((uw_object_hdr_t *)iVar5_rec)->object_id
 |
 - CONCAT11(iVar5_rec[1], iVar5_rec[0]) & 0x1ff
-+ ((uw_object_hdr_t *)iVar5_rec)->item_id
++ ((uw_object_hdr_t *)iVar5_rec)->object_id
 )
 ...>
 }
@@ -590,7 +590,7 @@ R F(...) {
 ...>
 }
 
-@field_1_item_id disable drop_cast, is_zero, isnt_zero@
+@field_1_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(npc_combat_engage_close_tick\|npc_combat_set_stance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -599,22 +599,22 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)iVar6_rec + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar6_rec)->item_id
++ ((uw_object_hdr_t *)iVar6_rec)->object_id
 |
 - ((ushort *)iVar6_rec)[0] & 0x1ff
-+ ((uw_object_hdr_t *)iVar6_rec)->item_id
++ ((uw_object_hdr_t *)iVar6_rec)->object_id
 |
 - *(ushort *)iVar6_rec & 0x1ff
-+ ((uw_object_hdr_t *)iVar6_rec)->item_id
++ ((uw_object_hdr_t *)iVar6_rec)->object_id
 |
 - *(ushort *)(iVar6_rec + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar6_rec)->item_id
++ ((uw_object_hdr_t *)iVar6_rec)->object_id
 |
 - CONCAT11(iVar6_rec[1], *iVar6_rec) & 0x1ff
-+ ((uw_object_hdr_t *)iVar6_rec)->item_id
++ ((uw_object_hdr_t *)iVar6_rec)->object_id
 |
 - CONCAT11(iVar6_rec[1], iVar6_rec[0]) & 0x1ff
-+ ((uw_object_hdr_t *)iVar6_rec)->item_id
++ ((uw_object_hdr_t *)iVar6_rec)->object_id
 )
 ...>
 }
@@ -1182,7 +1182,7 @@ R F(...) {
 ...>
 }
 
-@field_2_item_id disable drop_cast, is_zero, isnt_zero@
+@field_2_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(npc_combat_engage_wide_tick\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1191,22 +1191,22 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)iVar2_rec + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar2_rec)->item_id
++ ((uw_object_hdr_t *)iVar2_rec)->object_id
 |
 - ((ushort *)iVar2_rec)[0] & 0x1ff
-+ ((uw_object_hdr_t *)iVar2_rec)->item_id
++ ((uw_object_hdr_t *)iVar2_rec)->object_id
 |
 - *(ushort *)iVar2_rec & 0x1ff
-+ ((uw_object_hdr_t *)iVar2_rec)->item_id
++ ((uw_object_hdr_t *)iVar2_rec)->object_id
 |
 - *(ushort *)(iVar2_rec + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar2_rec)->item_id
++ ((uw_object_hdr_t *)iVar2_rec)->object_id
 |
 - CONCAT11(iVar2_rec[1], *iVar2_rec) & 0x1ff
-+ ((uw_object_hdr_t *)iVar2_rec)->item_id
++ ((uw_object_hdr_t *)iVar2_rec)->object_id
 |
 - CONCAT11(iVar2_rec[1], iVar2_rec[0]) & 0x1ff
-+ ((uw_object_hdr_t *)iVar2_rec)->item_id
++ ((uw_object_hdr_t *)iVar2_rec)->object_id
 )
 ...>
 }
@@ -1774,7 +1774,7 @@ R F(...) {
 ...>
 }
 
-@field_3_item_id disable drop_cast, is_zero, isnt_zero@
+@field_3_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(npc_combat_position_tick\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1783,13 +1783,13 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)iVar7_rec + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar7_rec)->item_id
++ ((uw_object_hdr_t *)iVar7_rec)->object_id
 |
 - ((ushort *)iVar7_rec)[0] & 0x1ff
-+ ((uw_object_hdr_t *)iVar7_rec)->item_id
++ ((uw_object_hdr_t *)iVar7_rec)->object_id
 |
 - *(ushort *)iVar7_rec & 0x1ff
-+ ((uw_object_hdr_t *)iVar7_rec)->item_id
++ ((uw_object_hdr_t *)iVar7_rec)->object_id
 )
 ...>
 }
@@ -2162,7 +2162,7 @@ R F(...) {
 ...>
 }
 
-@field_4_item_id disable drop_cast, is_zero, isnt_zero@
+@field_4_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(npc_combat_disengage_tick\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2171,13 +2171,13 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)iVar2 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar2)->item_id
++ ((uw_object_hdr_t *)iVar2)->object_id
 |
 - ((ushort *)iVar2)[0] & 0x1ff
-+ ((uw_object_hdr_t *)iVar2)->item_id
++ ((uw_object_hdr_t *)iVar2)->object_id
 |
 - *(ushort *)iVar2 & 0x1ff
-+ ((uw_object_hdr_t *)iVar2)->item_id
++ ((uw_object_hdr_t *)iVar2)->object_id
 )
 ...>
 }
@@ -2550,7 +2550,7 @@ R F(...) {
 ...>
 }
 
-@field_5_item_id disable drop_cast, is_zero, isnt_zero@
+@field_5_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\|play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2559,19 +2559,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)puVar6 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puVar6)->item_id
++ ((uw_object_hdr_t *)puVar6)->object_id
 |
 - ((ushort *)puVar6)[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar6)->item_id
++ ((uw_object_hdr_t *)puVar6)->object_id
 |
 - *(ushort *)puVar6 & 0x1ff
-+ ((uw_object_hdr_t *)puVar6)->item_id
++ ((uw_object_hdr_t *)puVar6)->object_id
 |
 - puVar6[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar6)->item_id
++ ((uw_object_hdr_t *)puVar6)->object_id
 |
 - *puVar6 & 0x1ff
-+ ((uw_object_hdr_t *)puVar6)->item_id
++ ((uw_object_hdr_t *)puVar6)->object_id
 )
 ...>
 }
@@ -3094,7 +3094,7 @@ R F(...) {
 ...>
 }
 
-@field_6_item_id disable drop_cast, is_zero, isnt_zero@
+@field_6_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(spawn_blood_splat_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3103,22 +3103,22 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)iVar7 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar7)->item_id
++ ((uw_object_hdr_t *)iVar7)->object_id
 |
 - ((ushort *)iVar7)[0] & 0x1ff
-+ ((uw_object_hdr_t *)iVar7)->item_id
++ ((uw_object_hdr_t *)iVar7)->object_id
 |
 - *(ushort *)iVar7 & 0x1ff
-+ ((uw_object_hdr_t *)iVar7)->item_id
++ ((uw_object_hdr_t *)iVar7)->object_id
 |
 - *(ushort *)(iVar7 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar7)->item_id
++ ((uw_object_hdr_t *)iVar7)->object_id
 |
 - CONCAT11(iVar7[1], *iVar7) & 0x1ff
-+ ((uw_object_hdr_t *)iVar7)->item_id
++ ((uw_object_hdr_t *)iVar7)->object_id
 |
 - CONCAT11(iVar7[1], iVar7[0]) & 0x1ff
-+ ((uw_object_hdr_t *)iVar7)->item_id
++ ((uw_object_hdr_t *)iVar7)->object_id
 )
 ...>
 }
@@ -3686,7 +3686,7 @@ R F(...) {
 ...>
 }
 
-@field_7_item_id disable drop_cast, is_zero, isnt_zero@
+@field_7_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3695,19 +3695,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)puVar2 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puVar2)->item_id
++ ((uw_object_hdr_t *)puVar2)->object_id
 |
 - ((ushort *)puVar2)[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar2)->item_id
++ ((uw_object_hdr_t *)puVar2)->object_id
 |
 - *(ushort *)puVar2 & 0x1ff
-+ ((uw_object_hdr_t *)puVar2)->item_id
++ ((uw_object_hdr_t *)puVar2)->object_id
 |
 - puVar2[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar2)->item_id
++ ((uw_object_hdr_t *)puVar2)->object_id
 |
 - *puVar2 & 0x1ff
-+ ((uw_object_hdr_t *)puVar2)->item_id
++ ((uw_object_hdr_t *)puVar2)->object_id
 )
 ...>
 }
@@ -4230,7 +4230,7 @@ R F(...) {
 ...>
 }
 
-@field_8_item_id disable drop_cast, is_zero, isnt_zero@
+@field_8_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4239,22 +4239,22 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)pbVar5 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)pbVar5)->item_id
++ ((uw_object_hdr_t *)pbVar5)->object_id
 |
 - ((ushort *)pbVar5)[0] & 0x1ff
-+ ((uw_object_hdr_t *)pbVar5)->item_id
++ ((uw_object_hdr_t *)pbVar5)->object_id
 |
 - *(ushort *)pbVar5 & 0x1ff
-+ ((uw_object_hdr_t *)pbVar5)->item_id
++ ((uw_object_hdr_t *)pbVar5)->object_id
 |
 - *(ushort *)(pbVar5 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)pbVar5)->item_id
++ ((uw_object_hdr_t *)pbVar5)->object_id
 |
 - CONCAT11(pbVar5[1], *pbVar5) & 0x1ff
-+ ((uw_object_hdr_t *)pbVar5)->item_id
++ ((uw_object_hdr_t *)pbVar5)->object_id
 |
 - CONCAT11(pbVar5[1], pbVar5[0]) & 0x1ff
-+ ((uw_object_hdr_t *)pbVar5)->item_id
++ ((uw_object_hdr_t *)pbVar5)->object_id
 )
 ...>
 }
@@ -4822,7 +4822,7 @@ R F(...) {
 ...>
 }
 
-@field_9_item_id disable drop_cast, is_zero, isnt_zero@
+@field_9_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(apply_melee_damage\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4831,19 +4831,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)uVar7 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)uVar7)->item_id
++ ((uw_object_hdr_t *)uVar7)->object_id
 |
 - ((ushort *)uVar7)[0] & 0x1ff
-+ ((uw_object_hdr_t *)uVar7)->item_id
++ ((uw_object_hdr_t *)uVar7)->object_id
 |
 - *(ushort *)uVar7 & 0x1ff
-+ ((uw_object_hdr_t *)uVar7)->item_id
++ ((uw_object_hdr_t *)uVar7)->object_id
 |
 - uVar7[0] & 0x1ff
-+ ((uw_object_hdr_t *)uVar7)->item_id
++ ((uw_object_hdr_t *)uVar7)->object_id
 |
 - *uVar7 & 0x1ff
-+ ((uw_object_hdr_t *)uVar7)->item_id
++ ((uw_object_hdr_t *)uVar7)->object_id
 )
 ...>
 }
@@ -5366,7 +5366,7 @@ R F(...) {
 ...>
 }
 
-@field_10_item_id disable drop_cast, is_zero, isnt_zero@
+@field_10_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(play_weapon_impact_sound\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5375,16 +5375,16 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)uVar4 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)uVar4)->item_id
++ ((uw_object_hdr_t *)uVar4)->object_id
 |
 - ((ushort *)uVar4)[0] & 0x1ff
-+ ((uw_object_hdr_t *)uVar4)->item_id
++ ((uw_object_hdr_t *)uVar4)->object_id
 |
 - *(ushort *)uVar4 & 0x1ff
-+ ((uw_object_hdr_t *)uVar4)->item_id
++ ((uw_object_hdr_t *)uVar4)->object_id
 |
 - *(ushort *)(uVar4 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)uVar4)->item_id
++ ((uw_object_hdr_t *)uVar4)->object_id
 )
 ...>
 }
@@ -5883,7 +5883,7 @@ R F(...) {
 ...>
 }
 
-@field_11_item_id disable drop_cast, is_zero, isnt_zero@
+@field_11_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5892,22 +5892,22 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)iVar1 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar1)->item_id
++ ((uw_object_hdr_t *)iVar1)->object_id
 |
 - ((ushort *)iVar1)[0] & 0x1ff
-+ ((uw_object_hdr_t *)iVar1)->item_id
++ ((uw_object_hdr_t *)iVar1)->object_id
 |
 - *(ushort *)iVar1 & 0x1ff
-+ ((uw_object_hdr_t *)iVar1)->item_id
++ ((uw_object_hdr_t *)iVar1)->object_id
 |
 - *(ushort *)(iVar1 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar1)->item_id
++ ((uw_object_hdr_t *)iVar1)->object_id
 |
 - CONCAT11(iVar1[1], *iVar1) & 0x1ff
-+ ((uw_object_hdr_t *)iVar1)->item_id
++ ((uw_object_hdr_t *)iVar1)->object_id
 |
 - CONCAT11(iVar1[1], iVar1[0]) & 0x1ff
-+ ((uw_object_hdr_t *)iVar1)->item_id
++ ((uw_object_hdr_t *)iVar1)->object_id
 )
 ...>
 }
@@ -6475,7 +6475,7 @@ R F(...) {
 ...>
 }
 
-@field_12_item_id disable drop_cast, is_zero, isnt_zero@
+@field_12_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6484,22 +6484,22 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)iVar2 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar2)->item_id
++ ((uw_object_hdr_t *)iVar2)->object_id
 |
 - ((ushort *)iVar2)[0] & 0x1ff
-+ ((uw_object_hdr_t *)iVar2)->item_id
++ ((uw_object_hdr_t *)iVar2)->object_id
 |
 - *(ushort *)iVar2 & 0x1ff
-+ ((uw_object_hdr_t *)iVar2)->item_id
++ ((uw_object_hdr_t *)iVar2)->object_id
 |
 - *(ushort *)(iVar2 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar2)->item_id
++ ((uw_object_hdr_t *)iVar2)->object_id
 |
 - CONCAT11(iVar2[1], *iVar2) & 0x1ff
-+ ((uw_object_hdr_t *)iVar2)->item_id
++ ((uw_object_hdr_t *)iVar2)->object_id
 |
 - CONCAT11(iVar2[1], iVar2[0]) & 0x1ff
-+ ((uw_object_hdr_t *)iVar2)->item_id
++ ((uw_object_hdr_t *)iVar2)->object_id
 )
 ...>
 }
@@ -7067,7 +7067,7 @@ R F(...) {
 ...>
 }
 
-@field_13_item_id disable drop_cast, is_zero, isnt_zero@
+@field_13_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7076,19 +7076,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)puTarget + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puTarget)->item_id
++ ((uw_object_hdr_t *)puTarget)->object_id
 |
 - ((ushort *)puTarget)[0] & 0x1ff
-+ ((uw_object_hdr_t *)puTarget)->item_id
++ ((uw_object_hdr_t *)puTarget)->object_id
 |
 - *(ushort *)puTarget & 0x1ff
-+ ((uw_object_hdr_t *)puTarget)->item_id
++ ((uw_object_hdr_t *)puTarget)->object_id
 |
 - puTarget[0] & 0x1ff
-+ ((uw_object_hdr_t *)puTarget)->item_id
++ ((uw_object_hdr_t *)puTarget)->object_id
 |
 - *puTarget & 0x1ff
-+ ((uw_object_hdr_t *)puTarget)->item_id
++ ((uw_object_hdr_t *)puTarget)->object_id
 )
 ...>
 }
@@ -7611,7 +7611,7 @@ R F(...) {
 ...>
 }
 
-@field_14_item_id disable drop_cast, is_zero, isnt_zero@
+@field_14_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7620,19 +7620,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)puAttacker + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puAttacker)->item_id
++ ((uw_object_hdr_t *)puAttacker)->object_id
 |
 - ((ushort *)puAttacker)[0] & 0x1ff
-+ ((uw_object_hdr_t *)puAttacker)->item_id
++ ((uw_object_hdr_t *)puAttacker)->object_id
 |
 - *(ushort *)puAttacker & 0x1ff
-+ ((uw_object_hdr_t *)puAttacker)->item_id
++ ((uw_object_hdr_t *)puAttacker)->object_id
 |
 - puAttacker[0] & 0x1ff
-+ ((uw_object_hdr_t *)puAttacker)->item_id
++ ((uw_object_hdr_t *)puAttacker)->object_id
 |
 - *puAttacker & 0x1ff
-+ ((uw_object_hdr_t *)puAttacker)->item_id
++ ((uw_object_hdr_t *)puAttacker)->object_id
 )
 ...>
 }
@@ -8155,7 +8155,7 @@ R F(...) {
 ...>
 }
 
-@field_15_item_id disable drop_cast, is_zero, isnt_zero@
+@field_15_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8164,19 +8164,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)uVar4 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)uVar4)->item_id
++ ((uw_object_hdr_t *)uVar4)->object_id
 |
 - ((ushort *)uVar4)[0] & 0x1ff
-+ ((uw_object_hdr_t *)uVar4)->item_id
++ ((uw_object_hdr_t *)uVar4)->object_id
 |
 - *(ushort *)uVar4 & 0x1ff
-+ ((uw_object_hdr_t *)uVar4)->item_id
++ ((uw_object_hdr_t *)uVar4)->object_id
 |
 - uVar4[0] & 0x1ff
-+ ((uw_object_hdr_t *)uVar4)->item_id
++ ((uw_object_hdr_t *)uVar4)->object_id
 |
 - *uVar4 & 0x1ff
-+ ((uw_object_hdr_t *)uVar4)->item_id
++ ((uw_object_hdr_t *)uVar4)->object_id
 )
 ...>
 }
@@ -8699,7 +8699,7 @@ R F(...) {
 ...>
 }
 
-@field_16_item_id disable drop_cast, is_zero, isnt_zero@
+@field_16_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8708,19 +8708,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)uVar5 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)uVar5)->item_id
++ ((uw_object_hdr_t *)uVar5)->object_id
 |
 - ((ushort *)uVar5)[0] & 0x1ff
-+ ((uw_object_hdr_t *)uVar5)->item_id
++ ((uw_object_hdr_t *)uVar5)->object_id
 |
 - *(ushort *)uVar5 & 0x1ff
-+ ((uw_object_hdr_t *)uVar5)->item_id
++ ((uw_object_hdr_t *)uVar5)->object_id
 |
 - uVar5[0] & 0x1ff
-+ ((uw_object_hdr_t *)uVar5)->item_id
++ ((uw_object_hdr_t *)uVar5)->object_id
 |
 - *uVar5 & 0x1ff
-+ ((uw_object_hdr_t *)uVar5)->item_id
++ ((uw_object_hdr_t *)uVar5)->object_id
 )
 ...>
 }
@@ -9243,7 +9243,7 @@ R F(...) {
 ...>
 }
 
-@field_17_item_id disable drop_cast, is_zero, isnt_zero@
+@field_17_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(resolve_collision_candidate_interaction\|resolve_equipped_weapon_attack\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9252,19 +9252,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)puVar4 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
++ ((uw_object_hdr_t *)puVar4)->object_id
 |
 - ((ushort *)puVar4)[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
++ ((uw_object_hdr_t *)puVar4)->object_id
 |
 - *(ushort *)puVar4 & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
++ ((uw_object_hdr_t *)puVar4)->object_id
 |
 - puVar4[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
++ ((uw_object_hdr_t *)puVar4)->object_id
 |
 - *puVar4 & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
++ ((uw_object_hdr_t *)puVar4)->object_id
 )
 ...>
 }
@@ -9787,7 +9787,7 @@ R F(...) {
 ...>
 }
 
-@field_18_item_id disable drop_cast, is_zero, isnt_zero@
+@field_18_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(apply_direct_object_hit\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -9796,19 +9796,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)target + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)target)->item_id
++ ((uw_object_hdr_t *)target)->object_id
 |
 - ((ushort *)target)[0] & 0x1ff
-+ ((uw_object_hdr_t *)target)->item_id
++ ((uw_object_hdr_t *)target)->object_id
 |
 - *(ushort *)target & 0x1ff
-+ ((uw_object_hdr_t *)target)->item_id
++ ((uw_object_hdr_t *)target)->object_id
 |
 - target[0] & 0x1ff
-+ ((uw_object_hdr_t *)target)->item_id
++ ((uw_object_hdr_t *)target)->object_id
 |
 - *target & 0x1ff
-+ ((uw_object_hdr_t *)target)->item_id
++ ((uw_object_hdr_t *)target)->object_id
 )
 ...>
 }
@@ -10331,7 +10331,7 @@ R F(...) {
 ...>
 }
 
-@field_19_item_id disable drop_cast, is_zero, isnt_zero@
+@field_19_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_npc_target_alignment\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10340,22 +10340,22 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)iVar4 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar4)->item_id
++ ((uw_object_hdr_t *)iVar4)->object_id
 |
 - ((ushort *)iVar4)[0] & 0x1ff
-+ ((uw_object_hdr_t *)iVar4)->item_id
++ ((uw_object_hdr_t *)iVar4)->object_id
 |
 - *(ushort *)iVar4 & 0x1ff
-+ ((uw_object_hdr_t *)iVar4)->item_id
++ ((uw_object_hdr_t *)iVar4)->object_id
 |
 - *(ushort *)(iVar4 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar4)->item_id
++ ((uw_object_hdr_t *)iVar4)->object_id
 |
 - CONCAT11(iVar4[1], *iVar4) & 0x1ff
-+ ((uw_object_hdr_t *)iVar4)->item_id
++ ((uw_object_hdr_t *)iVar4)->object_id
 |
 - CONCAT11(iVar4[1], iVar4[0]) & 0x1ff
-+ ((uw_object_hdr_t *)iVar4)->item_id
++ ((uw_object_hdr_t *)iVar4)->object_id
 )
 ...>
 }
@@ -10923,7 +10923,7 @@ R F(...) {
 ...>
 }
 
-@field_20_item_id disable drop_cast, is_zero, isnt_zero@
+@field_20_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(apply_object_durability_damage\|resolve_damage_type_resistance\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10932,19 +10932,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)object + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)object)->item_id
++ ((uw_object_hdr_t *)object)->object_id
 |
 - ((ushort *)object)[0] & 0x1ff
-+ ((uw_object_hdr_t *)object)->item_id
++ ((uw_object_hdr_t *)object)->object_id
 |
 - *(ushort *)object & 0x1ff
-+ ((uw_object_hdr_t *)object)->item_id
++ ((uw_object_hdr_t *)object)->object_id
 |
 - object[0] & 0x1ff
-+ ((uw_object_hdr_t *)object)->item_id
++ ((uw_object_hdr_t *)object)->object_id
 |
 - *object & 0x1ff
-+ ((uw_object_hdr_t *)object)->item_id
++ ((uw_object_hdr_t *)object)->object_id
 )
 ...>
 }
@@ -11467,7 +11467,7 @@ R F(...) {
 ...>
 }
 
-@field_21_item_id disable drop_cast, is_zero, isnt_zero@
+@field_21_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11476,13 +11476,13 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)puVar5 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puVar5)->item_id
++ ((uw_object_hdr_t *)puVar5)->object_id
 |
 - ((ushort *)puVar5)[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar5)->item_id
++ ((uw_object_hdr_t *)puVar5)->object_id
 |
 - *(ushort *)puVar5 & 0x1ff
-+ ((uw_object_hdr_t *)puVar5)->item_id
++ ((uw_object_hdr_t *)puVar5)->object_id
 )
 ...>
 }
@@ -11855,7 +11855,7 @@ R F(...) {
 ...>
 }
 
-@field_22_item_id disable drop_cast, is_zero, isnt_zero@
+@field_22_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -11864,22 +11864,22 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)pDropObj + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)pDropObj)->item_id
++ ((uw_object_hdr_t *)pDropObj)->object_id
 |
 - ((ushort *)pDropObj)[0] & 0x1ff
-+ ((uw_object_hdr_t *)pDropObj)->item_id
++ ((uw_object_hdr_t *)pDropObj)->object_id
 |
 - *(ushort *)pDropObj & 0x1ff
-+ ((uw_object_hdr_t *)pDropObj)->item_id
++ ((uw_object_hdr_t *)pDropObj)->object_id
 |
 - *(ushort *)(pDropObj + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)pDropObj)->item_id
++ ((uw_object_hdr_t *)pDropObj)->object_id
 |
 - CONCAT11(pDropObj[1], *pDropObj) & 0x1ff
-+ ((uw_object_hdr_t *)pDropObj)->item_id
++ ((uw_object_hdr_t *)pDropObj)->object_id
 |
 - CONCAT11(pDropObj[1], pDropObj[0]) & 0x1ff
-+ ((uw_object_hdr_t *)pDropObj)->item_id
++ ((uw_object_hdr_t *)pDropObj)->object_id
 )
 ...>
 }

@@ -1,4 +1,4 @@
-@field_0_item_id disable drop_cast, is_zero, isnt_zero@
+@field_0_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(spawn_scheduled_door_texture_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7,22 +7,22 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)door_texture + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)door_texture)->item_id
++ ((uw_object_hdr_t *)door_texture)->object_id
 |
 - ((ushort *)door_texture)[0] & 0x1ff
-+ ((uw_object_hdr_t *)door_texture)->item_id
++ ((uw_object_hdr_t *)door_texture)->object_id
 |
 - *(ushort *)door_texture & 0x1ff
-+ ((uw_object_hdr_t *)door_texture)->item_id
++ ((uw_object_hdr_t *)door_texture)->object_id
 |
 - *(ushort *)(door_texture + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)door_texture)->item_id
++ ((uw_object_hdr_t *)door_texture)->object_id
 |
 - CONCAT11(door_texture[1], *door_texture) & 0x1ff
-+ ((uw_object_hdr_t *)door_texture)->item_id
++ ((uw_object_hdr_t *)door_texture)->object_id
 |
 - CONCAT11(door_texture[1], door_texture[0]) & 0x1ff
-+ ((uw_object_hdr_t *)door_texture)->item_id
++ ((uw_object_hdr_t *)door_texture)->object_id
 )
 ...>
 }

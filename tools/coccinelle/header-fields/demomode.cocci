@@ -1,4 +1,4 @@
-@field_0_item_id disable drop_cast, is_zero, isnt_zero@
+@field_0_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(demomode_pump\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7,19 +7,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)pl + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)pl)->item_id
++ ((uw_object_hdr_t *)pl)->object_id
 |
 - ((ushort *)pl)[0] & 0x1ff
-+ ((uw_object_hdr_t *)pl)->item_id
++ ((uw_object_hdr_t *)pl)->object_id
 |
 - *(ushort *)pl & 0x1ff
-+ ((uw_object_hdr_t *)pl)->item_id
++ ((uw_object_hdr_t *)pl)->object_id
 |
 - pl[0] & 0x1ff
-+ ((uw_object_hdr_t *)pl)->item_id
++ ((uw_object_hdr_t *)pl)->object_id
 |
 - *pl & 0x1ff
-+ ((uw_object_hdr_t *)pl)->item_id
++ ((uw_object_hdr_t *)pl)->object_id
 )
 ...>
 }
@@ -542,7 +542,7 @@ R F(...) {
 ...>
 }
 
-@field_1_item_id disable drop_cast, is_zero, isnt_zero@
+@field_1_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(demomode_pump\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -551,19 +551,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)c + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)c)->item_id
++ ((uw_object_hdr_t *)c)->object_id
 |
 - ((ushort *)c)[0] & 0x1ff
-+ ((uw_object_hdr_t *)c)->item_id
++ ((uw_object_hdr_t *)c)->object_id
 |
 - *(ushort *)c & 0x1ff
-+ ((uw_object_hdr_t *)c)->item_id
++ ((uw_object_hdr_t *)c)->object_id
 |
 - c[0] & 0x1ff
-+ ((uw_object_hdr_t *)c)->item_id
++ ((uw_object_hdr_t *)c)->object_id
 |
 - *c & 0x1ff
-+ ((uw_object_hdr_t *)c)->item_id
++ ((uw_object_hdr_t *)c)->object_id
 )
 ...>
 }
@@ -1086,7 +1086,7 @@ R F(...) {
 ...>
 }
 
-@field_2_item_id disable drop_cast, is_zero, isnt_zero@
+@field_2_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(demomode_pump\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1095,19 +1095,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)nc + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)nc)->item_id
++ ((uw_object_hdr_t *)nc)->object_id
 |
 - ((ushort *)nc)[0] & 0x1ff
-+ ((uw_object_hdr_t *)nc)->item_id
++ ((uw_object_hdr_t *)nc)->object_id
 |
 - *(ushort *)nc & 0x1ff
-+ ((uw_object_hdr_t *)nc)->item_id
++ ((uw_object_hdr_t *)nc)->object_id
 |
 - nc[0] & 0x1ff
-+ ((uw_object_hdr_t *)nc)->item_id
++ ((uw_object_hdr_t *)nc)->object_id
 |
 - *nc & 0x1ff
-+ ((uw_object_hdr_t *)nc)->item_id
++ ((uw_object_hdr_t *)nc)->object_id
 )
 ...>
 }
@@ -1630,7 +1630,7 @@ R F(...) {
 ...>
 }
 
-@field_3_item_id disable drop_cast, is_zero, isnt_zero@
+@field_3_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(demomode_pump\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1639,19 +1639,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)obj + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)obj)->item_id
++ ((uw_object_hdr_t *)obj)->object_id
 |
 - ((ushort *)obj)[0] & 0x1ff
-+ ((uw_object_hdr_t *)obj)->item_id
++ ((uw_object_hdr_t *)obj)->object_id
 |
 - *(ushort *)obj & 0x1ff
-+ ((uw_object_hdr_t *)obj)->item_id
++ ((uw_object_hdr_t *)obj)->object_id
 |
 - obj[0] & 0x1ff
-+ ((uw_object_hdr_t *)obj)->item_id
++ ((uw_object_hdr_t *)obj)->object_id
 |
 - *obj & 0x1ff
-+ ((uw_object_hdr_t *)obj)->item_id
++ ((uw_object_hdr_t *)obj)->object_id
 )
 ...>
 }
@@ -2174,7 +2174,7 @@ R F(...) {
 ...>
 }
 
-@field_4_item_id disable drop_cast, is_zero, isnt_zero@
+@field_4_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(demomode_pump\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2183,13 +2183,13 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)g_player_object + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)g_player_object)->item_id
++ ((uw_object_hdr_t *)g_player_object)->object_id
 |
 - ((ushort *)g_player_object)[0] & 0x1ff
-+ ((uw_object_hdr_t *)g_player_object)->item_id
++ ((uw_object_hdr_t *)g_player_object)->object_id
 |
 - *(ushort *)g_player_object & 0x1ff
-+ ((uw_object_hdr_t *)g_player_object)->item_id
++ ((uw_object_hdr_t *)g_player_object)->object_id
 )
 ...>
 }
@@ -2562,7 +2562,7 @@ R F(...) {
 ...>
 }
 
-@field_5_item_id disable drop_cast, is_zero, isnt_zero@
+@field_5_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(demomode_pump\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2571,16 +2571,16 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)obj + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)obj)->item_id
++ ((uw_object_hdr_t *)obj)->object_id
 |
 - ((ushort *)obj)[0] & 0x1ff
-+ ((uw_object_hdr_t *)obj)->item_id
++ ((uw_object_hdr_t *)obj)->object_id
 |
 - *(ushort *)obj & 0x1ff
-+ ((uw_object_hdr_t *)obj)->item_id
++ ((uw_object_hdr_t *)obj)->object_id
 |
 - *(ushort *)(obj + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)obj)->item_id
++ ((uw_object_hdr_t *)obj)->object_id
 )
 ...>
 }
@@ -3079,7 +3079,7 @@ R F(...) {
 ...>
 }
 
-@field_6_item_id disable drop_cast, is_zero, isnt_zero@
+@field_6_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(demomode_pump\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3088,16 +3088,16 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)contents + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)contents)->item_id
++ ((uw_object_hdr_t *)contents)->object_id
 |
 - ((ushort *)contents)[0] & 0x1ff
-+ ((uw_object_hdr_t *)contents)->item_id
++ ((uw_object_hdr_t *)contents)->object_id
 |
 - *(ushort *)contents & 0x1ff
-+ ((uw_object_hdr_t *)contents)->item_id
++ ((uw_object_hdr_t *)contents)->object_id
 |
 - *(ushort *)(contents + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)contents)->item_id
++ ((uw_object_hdr_t *)contents)->object_id
 )
 ...>
 }
@@ -3596,7 +3596,7 @@ R F(...) {
 ...>
 }
 
-@field_7_item_id disable drop_cast, is_zero, isnt_zero@
+@field_7_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(demomode_pump\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3605,16 +3605,16 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)nx + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)nx)->item_id
++ ((uw_object_hdr_t *)nx)->object_id
 |
 - ((ushort *)nx)[0] & 0x1ff
-+ ((uw_object_hdr_t *)nx)->item_id
++ ((uw_object_hdr_t *)nx)->object_id
 |
 - *(ushort *)nx & 0x1ff
-+ ((uw_object_hdr_t *)nx)->item_id
++ ((uw_object_hdr_t *)nx)->object_id
 |
 - *(ushort *)(nx + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)nx)->item_id
++ ((uw_object_hdr_t *)nx)->object_id
 )
 ...>
 }

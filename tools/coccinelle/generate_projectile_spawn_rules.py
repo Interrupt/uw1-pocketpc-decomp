@@ -64,9 +64,9 @@ def generate():
     rules.append(rule('template_header_high', '*(byte *)((char *)DAT_00202a44 + 3)',
                       '((uw_object_hdr_t *)DAT_00202a44)->position_word_high'))
     rules.append(rule('template_item_id', '((uw_object_hdr_t *)DAT_00202a44)->type_flags & 0x1ff',
-                      '((uw_object_hdr_t *)DAT_00202a44)->item_id'))
+                      '((uw_object_hdr_t *)DAT_00202a44)->object_id'))
     rules.append(rule('template_class', '((uw_object_hdr_t *)DAT_00202a44)->type_flags & 0x1c0',
-                      '((uw_object_hdr_t *)DAT_00202a44)->item_id & 0x1c0'))
+                      '((uw_object_hdr_t *)DAT_00202a44)->object_id & 0x1c0'))
     rules.append(rule('launch_heading',
                       'DAT_00202a54 = (((uw_object_hdr_t *)DAT_00202a44)->position_word >> 2 & 0xffe0) + DAT_00202a40 + uVar9 & 0xff;',
                       'DAT_00202a54 = (((uw_object_hdr_t *)DAT_00202a44)->heading << 5) + DAT_00202a40 + uVar9 & 0xff;'))
@@ -81,9 +81,9 @@ puVar6->hdr.type_flags_low = (byte)(char)puVar6->hdr.type_flags;
 puVar6->hdr.type_flags_high = (byte)(char)(uVar7 >> 8);''',
                       '''uVar7 = puVar6->hdr.type_flags | 0x8000;
 puVar6->hdr.is_quant = 1;'''))
-    rules.append(rule('item_id', '''uVar7 = (uVar7 ^ (int)DAT_00202a38) & 0x1ff ^ uVar7;
+    rules.append(rule('object_id', '''uVar7 = (uVar7 ^ (int)DAT_00202a38) & 0x1ff ^ uVar7;
 puVar6->hdr.type_flags = (ushort)uVar7;''',
-                      '''puVar6->hdr.item_id = (int)DAT_00202a38 & 0x1ff;
+                      '''puVar6->hdr.object_id = (int)DAT_00202a38 & 0x1ff;
 uVar7 = puVar6->hdr.type_flags;'''))
     rules.append(rule('coarse_heading', '''uVar7 = puVar6->hdr.position_word & 0xfc7f | ((int)(short)(DAT_00202a54 & 0xe0) >> 5) << 7;
 puVar6->hdr.position_word = (ushort)uVar7;''',
@@ -120,9 +120,9 @@ puVar6->hdr.position_word_low = bVar3;
 puVar6->hdr.position_word_high = bVar2;''',
                       '''puVar6->hdr.zpos = cVar4 + (char)DAT_00202a3c * '\\x02' + (bVar1 & 0x7f);
 bVar3 = puVar6->hdr.position_word_low;'''))
-    rules.append(rule('crouch_height', '''puVar6->hdr.position_word_low = (((char)DAT_00202a3c * '\\x02' - (*(byte *)(DAT_00086df8 + 0xb9) >> 3)) + g_object_type_props[(((uw_object_hdr_t *)DAT_00202a44)->item_id)].height + (bVar1 & 0x7f) ^ bVar3) & 0x7f ^ bVar3;
+    rules.append(rule('crouch_height', '''puVar6->hdr.position_word_low = (((char)DAT_00202a3c * '\\x02' - (*(byte *)(DAT_00086df8 + 0xb9) >> 3)) + g_object_type_props[(((uw_object_hdr_t *)DAT_00202a44)->object_id)].height + (bVar1 & 0x7f) ^ bVar3) & 0x7f ^ bVar3;
 puVar6->hdr.position_word_high = bVar2;''',
-                      '''puVar6->hdr.zpos = ((char)DAT_00202a3c * '\\x02' - (*(byte *)(DAT_00086df8 + 0xb9) >> 3)) + g_object_type_props[(((uw_object_hdr_t *)DAT_00202a44)->item_id)].height + (bVar1 & 0x7f);'''))
+                      '''puVar6->hdr.zpos = ((char)DAT_00202a3c * '\\x02' - (*(byte *)(DAT_00086df8 + 0xb9) >> 3)) + g_object_type_props[(((uw_object_hdr_t *)DAT_00202a44)->object_id)].height + (bVar1 & 0x7f);'''))
     rules += [rule('pointer', 'ushort *puVar6;', 'uw_projectile_object_t *puVar6;'),
               rule('allocate', 'puVar6 = (ushort *)alloc_object_slot(1);',
                    'puVar6 = (uw_projectile_object_t *)alloc_object_slot(1);'),

@@ -1498,7 +1498,7 @@ LAB_0003c940:
              ARM ABI, where resolve_object_link's caller apparently re-read some other value out of
              r1 right after the call (Ghidra folded it into a fake 64-bit return value, r0:r1). */
           if (uVar11 == 0) break;
-          if ((((uw_object_hdr_t *)uVar11)->item_id) == 0x1a0) {
+          if ((((uw_object_hdr_t *)uVar11)->object_id) == 0x1a0) {
             /* Was followed by `iVar8 = extraout_r1;` -- same bug as the sibling fix just above in
                this function (resolve_object_link's own high-bits carry), but via a different,
                unrelated callee... */

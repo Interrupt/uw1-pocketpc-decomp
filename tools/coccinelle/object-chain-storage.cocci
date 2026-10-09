@@ -198,7 +198,7 @@ typedef uw_object_hdr_t, ushort, byte, undefined2, undefined1;
 +
 +   puVar1 = resolve_object_link(link_field); /* confirmed via ARM disassembly, 0x533e4 */
 +   if (puVar1 != NULL) {
-+     if ((puVar1->item_id & 0x1c0) == 0x180) {
++     if ((puVar1->object_id & 0x1c0) == 0x180) {
 +       free_trap_class_object(link_field,puVar1);
 +     }
 +     else {

@@ -112,7 +112,7 @@ R {function}(...) {{
 }}
 ''')
         for field in ['type_flags', 'position_word', 'chain_word', 'link_word',
-                      'item_id', 'owner', 'link', 'quality', 'next', 'is_quant']:
+                      'object_id', 'owner', 'link', 'quality', 'next', 'is_quant']:
             rules.append(f'''@{prefix}_parenthesized_{field}@
 type R;
 @@
@@ -176,11 +176,11 @@ type R;
 R {function}(...) {{
 <...
 - {name}->type_flags >> {shift} & {mask}
-+ {name}->item_id >> {shift} & {mask}
++ {name}->object_id >> {shift} & {mask}
 ...>
 }}
 ''')
-        for packed, mask, field in [('type_flags', '0x1ff', 'item_id'),
+        for packed, mask, field in [('type_flags', '0x1ff', 'object_id'),
                                      ('chain_word', '0x3f', 'quality'),
                                      ('link_word', '0x3f', 'owner')]:
             rules.append(f'''@{prefix}_mask_{field}@

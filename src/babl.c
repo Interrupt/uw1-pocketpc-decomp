@@ -406,10 +406,10 @@ int babl_builtin_take_from_npc(char *args)
       uVar1 = (uint)sVar7;
       do {
         if ((int)uVar1 < 1000) {
-          bVar12 = (((uw_object_hdr_t *)puVar9)->item_id) == uVar1;
+          bVar12 = (((uw_object_hdr_t *)puVar9)->object_id) == uVar1;
         }
         else {
-          bVar12 = uVar1 - 1000 == (uint)(((uw_object_hdr_t *)puVar9)->item_id >> 4);
+          bVar12 = uVar1 - 1000 == (uint)(((uw_object_hdr_t *)puVar9)->object_id >> 4);
         }
         if (bVar12) {
           object_list_unlink((byte *)(iVar8 + 6),(byte *)puVar9);
@@ -443,7 +443,7 @@ int babl_builtin_take_from_npc(char *args)
           else {
             *piVar4 = (intptr_t)puVar9;
             decrement_cursor_hide_depth();
-            push_cursor_icon(((uw_object_hdr_t *)puVar9)->item_id);
+            push_cursor_icon(((uw_object_hdr_t *)puVar9)->object_id);
             DAT_002020c4 = 1;
             cursor_show_idle_tick();
             debug_noop_checkpoint();
@@ -512,7 +512,7 @@ int babl_builtin_take_id_from_npc(char *args)
         else {
           *piVar3 = (intptr_t)puVar9;
           decrement_cursor_hide_depth();
-          push_cursor_icon(((uw_object_hdr_t *)puVar9)->item_id);
+          push_cursor_icon(((uw_object_hdr_t *)puVar9)->object_id);
           DAT_002020c4 = 1;
           cursor_show_idle_tick();
           debug_noop_checkpoint();
@@ -635,8 +635,8 @@ void babl_builtin_set_race_attitude(char *args)
         puVar7 = (uw_mobile_object_t *)resolve_object_link(_tile5 + 2);
         if (puVar7 != NULL) {
           do {
-            if ((((puVar7->hdr.item_id) == (int)(short)(uVar1 & 0x1ff)) && ((puVar7->movement_flags & 0x80) == 0)) &&
-                ((byte) g_monster_type_props[(puVar7->hdr.item_id & 0x3f)].race_flags == uVar3)) {
+            if ((((puVar7->hdr.object_id) == (int)(short)(uVar1 & 0x1ff)) && ((puVar7->movement_flags & 0x80) == 0)) &&
+                ((byte) g_monster_type_props[(puVar7->hdr.object_id & 0x3f)].race_flags == uVar3)) {
               uVar11 = puVar7->status_word & 0x3fff;
               puVar7->npc_attitude = uVar2 & 3;
             }
@@ -743,11 +743,11 @@ LAB_0001818c:
       uVar2 = ((uw_object_hdr_t *)puVar4)->position_word;
       ((uw_object_hdr_t *)puVar4)->position_word_low = (byte)(uVar2 & 0xff80) | *pbVar9 >> 1 & 0x78;
       ((uw_object_hdr_t *)puVar4)->position_word_high = (char)((uVar2 & 0xff80) >> 8);
-      iVar8 = check_object_placement_clearance(((uw_object_hdr_t *)puVar4)->item_id,
+      iVar8 = check_object_placement_clearance(((uw_object_hdr_t *)puVar4)->object_id,
                                                uVar3,(iVar8 << 0x13) >> 0x10,
                                                (iVar1 << 0x13) >> 0x10,
                                                (ushort)(*pbVar9 >> 4) << 3,1,
-                                               (g_object_type_props[(((uw_object_hdr_t *)puVar4)->item_id)].collision_radius) + 4);
+                                               (g_object_type_props[(((uw_object_hdr_t *)puVar4)->object_id)].collision_radius) + 4);
       if (iVar8 != 0) {
         object_list_append_tail(pbVar9 + 2,puVar4);
         settle_dropped_object(puVar4,uVar5,uVar6,1);
@@ -933,8 +933,8 @@ void babl_builtin_x_obj_stuff(char *args)
   puVar11_rec = (ushort *)get_object_record_by_slot_index(babl_read_var_word((int)*(short *)(args + -0x12)));  /* r0 passthrough */
   sVar3 = babl_read_var_word((int)*(short *)(args + -0x10));
   if (sVar3 == 0) {
-    if (((*psVar4 != -1) && ((((uw_object_hdr_t *)puVar11_rec)->item_id & 0x1c0) != 0x140)) &&
-        ((g_object_type_props[(((uw_object_hdr_t *)puVar11_rec)->item_id)].class_flags & 3) != 2)) {
+    if (((*psVar4 != -1) && ((((uw_object_hdr_t *)puVar11_rec)->object_id & 0x1c0) != 0x140)) &&
+        ((g_object_type_props[(((uw_object_hdr_t *)puVar11_rec)->object_id)].class_flags & 3) != 2)) {
       *psVar4 = (short)(((uw_object_hdr_t *)puVar11_rec)->heading);
     }
     if (*puVar5 != 0xffff) {
@@ -957,8 +957,8 @@ void babl_builtin_x_obj_stuff(char *args)
     }
   }
   else {
-    if ((((int)*psVar4 != 0xffffffff) && ((((uw_object_hdr_t *)puVar11_rec)->item_id & 0x1c0) != 0x140)) &&
-        ((g_object_type_props[(((uw_object_hdr_t *)puVar11_rec)->item_id)].class_flags & 3) != 2)) {
+    if ((((int)*psVar4 != 0xffffffff) && ((((uw_object_hdr_t *)puVar11_rec)->object_id & 0x1c0) != 0x140)) &&
+        ((g_object_type_props[(((uw_object_hdr_t *)puVar11_rec)->object_id)].class_flags & 3) != 2)) {
       uVar12 = ((uw_object_hdr_t *)puVar11_rec)->position_word & 0xfc7f | ((int)*psVar4 & 7U) << 7;
       ((uw_object_hdr_t *)puVar11_rec)->position_word = (ushort)uVar12;
     }
@@ -3555,8 +3555,8 @@ void babl_builtin_setup_to_barter()
          (iVar1 = (int)sVar11, sVar11 = (short)((uint)((iVar1 + 1) * 0x10000) >> 0x10), iVar1 < 0x28
          ))) {
     puVar7 = (ushort *)resolve_object_link(puVar6 + 2);
-    if ((((((uw_object_hdr_t *)puVar6)->item_id & 0x30) == 0) && (!bVar2)) ||
-        (((short)g_object_type_props[(((uw_object_hdr_t *)puVar6)->item_id)].monetary_value == 0 ||
+    if ((((((uw_object_hdr_t *)puVar6)->object_id & 0x30) == 0) && (!bVar2)) ||
+        (((short)g_object_type_props[(((uw_object_hdr_t *)puVar6)->object_id)].monetary_value == 0 ||
           ((bVar3 && (uVar8 = ce_rand(), (uVar8 & 7) < 5)))))) {
       uVar4 = ((uw_object_hdr_t *)puVar6)->type_flags;
       puVar6 = puVar7;
@@ -4275,7 +4275,7 @@ void finalize_player_barter_items()
       if (((&DAT_000bbf98)[local_28] != 0) && (sVar1 = check_npc_item_preference(*psVar5), sVar1 != -1)) {
         puVar2 = (ushort *)get_object_record_by_slot_index((int)*psVar5);
         puVar3 = (ushort *)resolve_object_link((char *)DAT_00100674 + 6);
-        if ((((uw_object_hdr_t *)puVar2)->item_id) == 0xa1) {
+        if ((((uw_object_hdr_t *)puVar2)->object_id) == 0xa1) {
           for (; puVar3 != (ushort *)0x0; puVar3 = (ushort *)resolve_object_link(puVar3 + 2)) {
             if ((((((uw_object_hdr_t *)puVar2)->is_quant != 0) && (((uw_object_hdr_t *)puVar3)->is_quant != 0)) &&
                  ((((uw_object_hdr_t *)puVar2)->link & 0x200) == 0)) &&
@@ -4533,7 +4533,7 @@ int collect_included_player_barter_items(void *out_item_ids, void *out_values)
       puVar1 = (ushort *)get_object_record_by_slot_index((int)(short)(&DAT_000bbfd0)[iVar2]);
       iVar3 = (int)(short)iVar3;
       *(undefined2 *)(out_values + iVar3 * 2) = (&DAT_000bbfd0)[iVar2];
-      *(ushort *)(out_item_ids + iVar3 * 2) = ((uw_object_hdr_t *)puVar1)->item_id;
+      *(ushort *)(out_item_ids + iVar3 * 2) = ((uw_object_hdr_t *)puVar1)->object_id;
       iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
     }
     iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
@@ -4614,7 +4614,7 @@ int remove_item_from_npc_inventory_by_id(short item_id)
   puVar1 = (ushort *)resolve_object_link(iVar2);
   if (puVar1 != (ushort *)0x0) {
     do {
-      if ((((uw_object_hdr_t *)puVar1)->item_id) == (int)item_id) {
+      if ((((uw_object_hdr_t *)puVar1)->object_id) == (int)item_id) {
         object_list_unlink((void *)(intptr_t)(iVar2),puVar1);
         free_object_slot(puVar1);
         return 1;
@@ -4641,12 +4641,12 @@ int check_npc_item_preference(short item_id)
   int iVar6;
 
   puVar2 = (ushort *)get_object_record_by_slot_index(item_id);
-  if ((short)g_object_type_props[(((uw_object_hdr_t *)puVar2)->item_id)].monetary_value == 0) {
+  if ((short)g_object_type_props[(((uw_object_hdr_t *)puVar2)->object_id)].monetary_value == 0) {
 LAB_0001dbcc:
     uVar3 = 0xffffffff;
   }
   else {
-    uVar1 = ((uw_object_hdr_t *)puVar2)->item_id;
+    uVar1 = ((uw_object_hdr_t *)puVar2)->object_id;
     iVar5 = ((int)(short)uVar1 >> 4) + 1000;
     uVar3 = 0;
     if ((DAT_000bc020 != (short *)0x0) && (uVar4 = (uint)*DAT_000bc020, -1 < (int)uVar4)) {

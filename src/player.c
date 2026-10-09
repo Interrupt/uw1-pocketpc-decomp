@@ -767,8 +767,8 @@ LAB_000669a8:
     for (_s = 0; _s < 11; _s++) {
       ushort *_o = (ushort *)get_equipped_item_at_slot(_s);
       fprintf(stderr, "  slot=%d ptr=%p id=0x%03x nibble=0x%x\n", _s, (void *)_o,
-              _o ? (unsigned)(((uw_object_hdr_t *)_o)->item_id) : 0u,
-              _o ? (unsigned)(((uw_object_hdr_t *)_o)->item_id & 0xf) : 0u);
+              _o ? (unsigned)(((uw_object_hdr_t *)_o)->object_id) : 0u,
+              _o ? (unsigned)(((uw_object_hdr_t *)_o)->object_id & 0xf) : 0u);
     }
   }
   if ((*(ushort *)(DAT_00086df8 + 0x5f) & 0x3c0) != 0) {
@@ -783,10 +783,10 @@ LAB_000669a8:
   do {
     g_scratch_object_ptr = get_equipped_item_at_slot(iVar4);
     if ((g_scratch_object_ptr != NULL) &&
-        (iVar5 = is_valid_equipment_slot_item(g_scratch_object_ptr->item_id,iVar4), iVar5 != 0)) {
+        (iVar5 = is_valid_equipment_slot_item(g_scratch_object_ptr->object_id,iVar4), iVar5 != 0)) {
       iVar5 = resolve_object_variant_or_special_link(g_scratch_object_ptr,local_2c,local_2e,&local_28);
       if ((iVar5 == 0) || (local_28 != 0)) {
-        if (g_scratch_object_ptr->item_id == 0x2f) {
+        if (g_scratch_object_ptr->object_id == 0x2f) {
           DAT_0023bc98 = 1;
         }
       }

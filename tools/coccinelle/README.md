@@ -36,7 +36,7 @@ spatch --sp-file tools/coccinelle/property-fields.cocci --dir src --no-includes 
 `property-pointers.cocci` converts row-address arithmetic at proven consumers.
 Run it on each file separately: spatch accepts only one positional input file.
 Saved COMOBJ offsets at the matched `iVar*` and `_iv` access sites were checked
-to be `item_id * 13`; the patch divides the saved value rather than evaluating
+to be `object_id * 13`; the patch divides the saved value rather than evaluating
 a potentially changed object ID again.
 
 `player-storage-boundaries.cocci` is the temporary migration step that keeps
@@ -631,8 +631,8 @@ they do not establish NPC layout for other consumers of mobile arena slots.
 `generate_partial_field_read_rules.py` emits `partial-field-reads.cocci` for
 masked slices contained wholly within a documented property. The subset masks
 come from the remaining-access inventory: class/subclass indexes within
-`item_id`, reserved flag bits, owner subcodes, quantity/link bits, quality
-subcodes, and position slices. A slice of `item_id` still reads `item_id`;
+`object_id`, reserved flag bits, owner subcodes, quantity/link bits, quality
+subcodes, and position slices. A slice of `object_id` still reads `object_id`;
 it does not need the surrounding `type_flags` word.
 
 Apply this pass with `--all-includes --include-headers-for-types -I . -I src`,

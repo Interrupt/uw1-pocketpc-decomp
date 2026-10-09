@@ -36,7 +36,7 @@ void F() {
 -   g_player_object->hdr.type_flags_high = (byte)(uVar1 >> 8) & 0xfe;
 -   return;
 + ce_memset(g_player_object, 0, sizeof(*g_player_object));
-+ g_player_object->hdr.item_id = 0x7f;
++ g_player_object->hdr.object_id = 0x7f;
 + g_player_object->status_word = 0x00fd;
 + return;
 }

@@ -803,7 +803,7 @@ int find_nearest_hit_target(short *screen_pos)
          passes the candidate link's slot index, confirmed by the identical `uVar4 >> 6` value used
          right below in this same loop. */
       puVar6 = (ushort *)get_object_record_by_slot_index(uVar4 >> 6);
-      if ((((((uw_object_hdr_t *)puVar6)->item_id & 0x1c0) != 0x180) && (uVar4 >> 6 != DAT_00100610)) &&
+      if ((((((uw_object_hdr_t *)puVar6)->object_id & 0x1c0) != 0x180) && (uVar4 >> 6 != DAT_00100610)) &&
           (((DAT_00100610 != 1 ||
              ((iVar5 = object_ptr_in_arena(puVar6), iVar5 == 0 ||
                ((*(byte *)((char *)puVar6 + 0x19) & 0x40) == 0)))) ||
@@ -1060,7 +1060,7 @@ int resolve_weapon_hit_skill_check(short hit_flag, int target_slot)
     if ((short)iVar3 != 2) {
       if ((((short)iVar3 == -1) && (hit_flag == 1)) &&
          (pbVar5 = (byte *)get_object_record_by_slot_index((int)DAT_00100620),
-         (g_monster_type_props[(((uw_object_hdr_t *)pbVar5)->item_id & 0x3f)].movement_flags & 1) == 0)) {
+         (g_monster_type_props[(((uw_object_hdr_t *)pbVar5)->object_id & 0x3f)].movement_flags & 1) == 0)) {
         bVar1 = *(byte *)(DAT_00086df8 + 100);
         uVar4 = roll_dice_sum(2,3);
         damage_equipped_item_in_slot(8 - (bVar1 & 1),uVar4,4,0,1);
@@ -1086,7 +1086,7 @@ int resolve_weapon_hit_skill_check(short hit_flag, int target_slot)
     }
   }
   else if (((hit_flag == 1) && ((uVar6 & 0x1f0) == 0x140)) &&
-          (iVar3 = rand_below(0xc), iVar3 < (int)((((uw_object_hdr_t *)puVar2)->item_id & 0x7) * 2))) {
+          (iVar3 = rand_below(0xc), iVar3 < (int)((((uw_object_hdr_t *)puVar2)->object_id & 0x7) * 2))) {
     bVar1 = *(byte *)(DAT_00086df8 + 100);
     uVar4 = roll_dice_sum(2,4);
     damage_equipped_item_in_slot(8 - (bVar1 & 1),uVar4,4,0,1);
@@ -1305,7 +1305,7 @@ int play_weapon_impact_sound(short result)
   if (puVar6 == (ushort *)0x0) {
     return 0;
   }
-  DAT_00100610 = ((uw_object_hdr_t *)puVar6)->item_id;
+  DAT_00100610 = ((uw_object_hdr_t *)puVar6)->object_id;
   uVar1 = (uint)(short)DAT_00100610;
   if ((uVar1 == 1) || (0xff < uVar1)) {
     bVar7 = 1;
@@ -1315,7 +1315,7 @@ int play_weapon_impact_sound(short result)
   }
   if (DAT_00100620 == 1) {
     puVar6 = (ushort *)get_equipped_item_at_slot((char)DAT_00100624 + 1U & 3);
-    if (((((puVar6 == (ushort *)0x0) || (uVar3 = ((uw_object_hdr_t *)puVar6)->item_id, uVar3 == 0x20)) || (uVar3 == 0x23)
+    if (((((puVar6 == (ushort *)0x0) || (uVar3 = ((uw_object_hdr_t *)puVar6)->object_id, uVar3 == 0x20)) || (uVar3 == 0x23)
          ) || ((uVar3 == 0x26 || (uVar3 == 0x29)))) || (uVar3 == 0x2c)) {
 LAB_00026fe8:
       bVar2 = 0;
@@ -1482,13 +1482,13 @@ void compute_player_weapon_attack_stats(char *weapon_stats, char *weapon_item, s
   }
   if ((short)uVar3 == 2) {
     sVar4 = ordint_divmod(6,
-                          g_monster_type_props[(g_player_object->hdr.item_id & 0x3f)].strength).quot;  /* dividend dropped by Ghidra; ARM 0x2749c-0x274bc, same table lookup as the else branch below */
+                          g_monster_type_props[(g_player_object->hdr.object_id & 0x3f)].strength).quot;  /* dividend dropped by Ghidra; ARM 0x2749c-0x274bc, same table lookup as the else branch below */
     sVar5 = ordint_divmod(5,(uint)*(byte *)(iVar2 + 0x23) << 1).quot;
     DAT_0010061c = sVar4 + sVar5 + 4;
   }
   else {
     sVar4 = ordint_divmod(9,
-                          g_monster_type_props[(g_player_object->hdr.item_id & 0x3f)].strength).quot;
+                          g_monster_type_props[(g_player_object->hdr.object_id & 0x3f)].strength).quot;
     DAT_0010061c = (ushort)*(byte *)(weapon_stats + (uint)(byte)(&DAT_00084eff)[attack_type]) + sVar4;
   }
   DAT_00100610 = 1;
@@ -1527,7 +1527,7 @@ void apply_direct_object_hit(short hit_flag, void *attacker_ptr, ushort *target,
   uVar4 = (byte)attacker[1] & 0x7f;
   uVar2 = ((uw_object_hdr_t *)target)->zpos;
   sVar1 = resolve_combat_hit_zone(uVar2,
-                                  (byte) g_object_type_props[(((uw_object_hdr_t *)target)->item_id)].height + uVar2,
+                                  (byte) g_object_type_props[(((uw_object_hdr_t *)target)->object_id)].height + uVar2,
                                   uVar4,
                                   (byte) g_object_type_props[(*attacker & 0x1ff)].height + uVar4);
   DAT_00100624 = sVar1 + 4;
@@ -1729,7 +1729,7 @@ int try_npc_special_ability_ranged()
         (*(char *)&DAT_00101404->race_flags != '\x13')))) &&
        (((DAT_00101900 < 0x40 && (iVar3 = tile_is_no_magic(DAT_00101918,DAT_001013f8), iVar3 == 0)) &&
          (iVar3 = check_fine_line_of_sight(DAT_00101910,DAT_0010141c,
-                                           (uint)(byte) g_object_type_props[(DAT_0010190c->hdr.item_id)].height +
+                                           (uint)(byte) g_object_type_props[(DAT_0010190c->hdr.object_id)].height +
                                            (DAT_0010190c->hdr.zpos),DAT_00101908,DAT_00101418,
                                            (ushort)(byte) g_object_type_props[(*DAT_00101400 & 0x1ff)].height +
                                            ((byte)DAT_00101400[1] & 0x7f)), iVar3 != 0)))) &&
@@ -1771,7 +1771,7 @@ int try_npc_special_ability_alt()
   
   if (((DAT_00101900 < 0x10) &&
       (iVar2 = check_fine_line_of_sight(DAT_00101910,DAT_0010141c,
-                            (uint)(byte) g_object_type_props[(DAT_0010190c->hdr.item_id)].height +
+                            (uint)(byte) g_object_type_props[(DAT_0010190c->hdr.object_id)].height +
                             (DAT_0010190c->hdr.zpos),DAT_00101908,DAT_00101418,
                             (ushort)(byte) g_object_type_props[(*DAT_00101400 & 0x1ff)].height +
                             ((byte)DAT_00101400[1] & 0x7f)), iVar2 != 0)) &&
@@ -2061,7 +2061,7 @@ int resolve_damage_type_resistance(ushort *object, int damage, uint damage_type_
   int extraout_r1;
   uint uVar2;
 
-  uVar2 = (uint)(byte) g_object_type_props[(((uw_object_hdr_t *)object)->item_id)].scale_flags;
+  uVar2 = (uint)(byte) g_object_type_props[(((uw_object_hdr_t *)object)->object_id)].scale_flags;
   if ((uVar2 & damage_type_mask & 0xff) != 0) {
     if ((damage_type_mask & 3) != 0) {
       uVar1 = ce_rand();
@@ -2120,11 +2120,11 @@ bool apply_object_durability_damage(ushort *object, ushort *attacker, short dama
   uint uVar6;
   
   if (((((uw_object_hdr_t *)object)->doordir == 0) &&
-       (uVar6 = ((byte) g_object_type_props[(((uw_object_hdr_t *)object)->item_id)].quality_flags & 0xc) >> 2, (short)uVar6 != 3)) &&
+       (uVar6 = ((byte) g_object_type_props[(((uw_object_hdr_t *)object)->object_id)].quality_flags & 0xc) >> 2, (short)uVar6 != 3)) &&
       (iVar5 = (int)damage >> uVar6, 0 < (short)iVar5)) {
     iVar4 = object_ptr_in_arena(object);
     if (iVar4 == 0) {
-      if ((0x13f < (((uw_object_hdr_t *)object)->item_id)) && ((((uw_object_hdr_t *)object)->item_id) < 0x148)) {
+      if ((0x13f < (((uw_object_hdr_t *)object)->object_id)) && ((((uw_object_hdr_t *)object)->object_id) < 0x148)) {
         uVar2 = ((uw_object_hdr_t *)object)->link_word;
         if (((uVar2 & 1) != 0) && ((uVar2 & 0x3e) != 0)) {
           uVar6 = (uVar2 >> 1 & 0x1f) - iVar5;
@@ -2214,12 +2214,12 @@ int damage_equipped_item_in_slot(int slot, byte damage, byte damage_type, short 
   }
   if (reaction_mode != 2) {
     if (reaction_mode == 0) {
-      if ((((uw_object_hdr_t *)puVar5)->item_id & 0x1f0) != 0) {
+      if ((((uw_object_hdr_t *)puVar5)->object_id & 0x1f0) != 0) {
         return 0xfffffffe;
       }
     }
     else {
-      iVar6 = is_valid_equipment_slot_item(((uw_object_hdr_t *)puVar5)->item_id,
+      iVar6 = is_valid_equipment_slot_item(((uw_object_hdr_t *)puVar5)->object_id,
                                            slot);
       if (iVar6 == 0) {
         return 0xfffffffe;

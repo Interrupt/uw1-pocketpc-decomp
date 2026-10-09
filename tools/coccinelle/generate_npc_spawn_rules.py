@@ -97,7 +97,7 @@ def generate():
             member = field + suffix
             rules.append(rule(FUNCTION, POINTER, f'header_{member}',
                               [f'((uw_object_hdr_t *){POINTER})->{member}'], 'npc->hdr.' + member))
-    for field in ['item_id', 'zpos', 'heading', 'xpos', 'ypos', 'quality', 'next', 'owner', 'link']:
+    for field in ['object_id', 'zpos', 'heading', 'xpos', 'ypos', 'quality', 'next', 'owner', 'link']:
         rules.append(rule(FUNCTION, POINTER, f'header_{field}',
                           [f'((uw_object_hdr_t *){POINTER})->{field}'], 'npc->hdr.' + field))
     rules.append(rule(FUNCTION, POINTER, 'pointer',
@@ -116,8 +116,8 @@ def generate():
                       ['(byte)(npc->hdr.position_word >> 2) & 0xe0'],
                       'npc->hdr.heading << 5'))
     rules.append(rule(FUNCTION, POINTER, 'monster_row',
-                      ['DAT_001007c8 = &DAT_001007d0 + (npc->hdr.item_id & 0x3f) * 0x30;'],
-                      'DAT_001007c8 = &g_monster_type_props[npc->hdr.item_id & 0x3f];'))
+                      ['DAT_001007c8 = &DAT_001007d0 + (npc->hdr.object_id & 0x3f) * 0x30;'],
+                      'DAT_001007c8 = &g_monster_type_props[npc->hdr.object_id & 0x3f];'))
     rules.append(rule(FUNCTION, POINTER, 'max_hp', ['DAT_001007c8[4]'],
                       'DAT_001007c8->max_hp'))
     rules.append('''@monster_row_type@

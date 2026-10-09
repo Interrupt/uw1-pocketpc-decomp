@@ -3515,7 +3515,7 @@
       "category": "packed_word",
       "member": "size_weight",
       "pointer": null,
-      "code": "uVar2 = g_object_type_props[(((uw_object_hdr_t *)puVar7)->item_id)].size_weight;"
+      "code": "uVar2 = g_object_type_props[(((uw_object_hdr_t *)puVar7)->object_id)].size_weight;"
     },
     {
       "source": "src/movement.c",
@@ -4433,7 +4433,7 @@
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
-      "code": "(uVar3 = (uint) puVar1->type_flags, (puVar1->item_id >> 6 & 7) == (int)(short)object_class)) &&"
+      "code": "(uVar3 = (uint) puVar1->type_flags, (puVar1->object_id >> 6 & 7) == (int)(short)object_class)) &&"
     },
     {
       "source": "src/objects.c",
@@ -4442,7 +4442,7 @@
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
-      "code": "(uVar3 = (uint) puVar1->type_flags, (puVar1->item_id >> 4 & 3) == (int)(short)subclass)))) {"
+      "code": "(uVar3 = (uint) puVar1->type_flags, (puVar1->object_id >> 4 & 3) == (int)(short)subclass)))) {"
     },
     {
       "source": "src/objects.c",

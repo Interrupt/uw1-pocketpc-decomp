@@ -405,7 +405,7 @@ R F(...) {
 }
 
 
-@site_0_field_0_item_id disable drop_cast, is_zero, isnt_zero@
+@site_0_field_0_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(settle_dropped_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -414,19 +414,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)puVar9 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puVar9)->item_id
++ ((uw_object_hdr_t *)puVar9)->object_id
 |
 - ((ushort *)puVar9)[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar9)->item_id
++ ((uw_object_hdr_t *)puVar9)->object_id
 |
 - *(ushort *)puVar9 & 0x1ff
-+ ((uw_object_hdr_t *)puVar9)->item_id
++ ((uw_object_hdr_t *)puVar9)->object_id
 |
 - puVar9[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar9)->item_id
++ ((uw_object_hdr_t *)puVar9)->object_id
 |
 - *puVar9 & 0x1ff
-+ ((uw_object_hdr_t *)puVar9)->item_id
++ ((uw_object_hdr_t *)puVar9)->object_id
 )
 ...>
 }
@@ -3626,7 +3626,7 @@ R F(...) {
 }
 
 
-@site_1_field_0_item_id disable drop_cast, is_zero, isnt_zero@
+@site_1_field_0_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(reallocate_object_to_arena\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3635,19 +3635,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)puVar2 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puVar2)->item_id
++ ((uw_object_hdr_t *)puVar2)->object_id
 |
 - ((ushort *)puVar2)[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar2)->item_id
++ ((uw_object_hdr_t *)puVar2)->object_id
 |
 - *(ushort *)puVar2 & 0x1ff
-+ ((uw_object_hdr_t *)puVar2)->item_id
++ ((uw_object_hdr_t *)puVar2)->object_id
 |
 - puVar2[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar2)->item_id
++ ((uw_object_hdr_t *)puVar2)->object_id
 |
 - *puVar2 & 0x1ff
-+ ((uw_object_hdr_t *)puVar2)->item_id
++ ((uw_object_hdr_t *)puVar2)->object_id
 )
 ...>
 }

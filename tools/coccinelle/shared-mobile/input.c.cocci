@@ -366,7 +366,7 @@ R F(...) {
 }
 
 
-@site_0_field_0_item_id disable drop_cast, is_zero, isnt_zero@
+@site_0_field_0_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(begin_directional_move\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -375,13 +375,13 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)g_player_object + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)g_player_object)->item_id
++ ((uw_object_hdr_t *)g_player_object)->object_id
 |
 - ((ushort *)g_player_object)[0] & 0x1ff
-+ ((uw_object_hdr_t *)g_player_object)->item_id
++ ((uw_object_hdr_t *)g_player_object)->object_id
 |
 - *(ushort *)g_player_object & 0x1ff
-+ ((uw_object_hdr_t *)g_player_object)->item_id
++ ((uw_object_hdr_t *)g_player_object)->object_id
 )
 ...>
 }

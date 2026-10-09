@@ -1,4 +1,4 @@
-@field_0_item_id disable drop_cast, is_zero, isnt_zero@
+@field_0_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(scheduler_despawn_entry\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7,16 +7,16 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)uVar1 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)uVar1)->item_id
++ ((uw_object_hdr_t *)uVar1)->object_id
 |
 - ((ushort *)uVar1)[0] & 0x1ff
-+ ((uw_object_hdr_t *)uVar1)->item_id
++ ((uw_object_hdr_t *)uVar1)->object_id
 |
 - *(ushort *)uVar1 & 0x1ff
-+ ((uw_object_hdr_t *)uVar1)->item_id
++ ((uw_object_hdr_t *)uVar1)->object_id
 |
 - *(ushort *)(uVar1 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)uVar1)->item_id
++ ((uw_object_hdr_t *)uVar1)->object_id
 )
 ...>
 }
@@ -515,7 +515,7 @@ R F(...) {
 ...>
 }
 
-@field_1_item_id disable drop_cast, is_zero, isnt_zero@
+@field_1_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(scheduler_finish_entry\|scheduler_step_entry\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -524,19 +524,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)puVar4 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
++ ((uw_object_hdr_t *)puVar4)->object_id
 |
 - ((ushort *)puVar4)[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
++ ((uw_object_hdr_t *)puVar4)->object_id
 |
 - *(ushort *)puVar4 & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
++ ((uw_object_hdr_t *)puVar4)->object_id
 |
 - puVar4[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
++ ((uw_object_hdr_t *)puVar4)->object_id
 |
 - *puVar4 & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
++ ((uw_object_hdr_t *)puVar4)->object_id
 )
 ...>
 }
@@ -1059,7 +1059,7 @@ R F(...) {
 ...>
 }
 
-@field_2_item_id disable drop_cast, is_zero, isnt_zero@
+@field_2_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(scheduler_add_entry\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1068,22 +1068,22 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)pbVar3 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)pbVar3)->item_id
++ ((uw_object_hdr_t *)pbVar3)->object_id
 |
 - ((ushort *)pbVar3)[0] & 0x1ff
-+ ((uw_object_hdr_t *)pbVar3)->item_id
++ ((uw_object_hdr_t *)pbVar3)->object_id
 |
 - *(ushort *)pbVar3 & 0x1ff
-+ ((uw_object_hdr_t *)pbVar3)->item_id
++ ((uw_object_hdr_t *)pbVar3)->object_id
 |
 - *(ushort *)(pbVar3 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)pbVar3)->item_id
++ ((uw_object_hdr_t *)pbVar3)->object_id
 |
 - CONCAT11(pbVar3[1], *pbVar3) & 0x1ff
-+ ((uw_object_hdr_t *)pbVar3)->item_id
++ ((uw_object_hdr_t *)pbVar3)->object_id
 |
 - CONCAT11(pbVar3[1], pbVar3[0]) & 0x1ff
-+ ((uw_object_hdr_t *)pbVar3)->item_id
++ ((uw_object_hdr_t *)pbVar3)->object_id
 )
 ...>
 }
@@ -1651,7 +1651,7 @@ R F(...) {
 ...>
 }
 
-@field_3_item_id disable drop_cast, is_zero, isnt_zero@
+@field_3_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(spawn_scheduled_effect_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1660,22 +1660,22 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)iVar5 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar5)->item_id
++ ((uw_object_hdr_t *)iVar5)->object_id
 |
 - ((ushort *)iVar5)[0] & 0x1ff
-+ ((uw_object_hdr_t *)iVar5)->item_id
++ ((uw_object_hdr_t *)iVar5)->object_id
 |
 - *(ushort *)iVar5 & 0x1ff
-+ ((uw_object_hdr_t *)iVar5)->item_id
++ ((uw_object_hdr_t *)iVar5)->object_id
 |
 - *(ushort *)(iVar5 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar5)->item_id
++ ((uw_object_hdr_t *)iVar5)->object_id
 |
 - CONCAT11(iVar5[1], *iVar5) & 0x1ff
-+ ((uw_object_hdr_t *)iVar5)->item_id
++ ((uw_object_hdr_t *)iVar5)->object_id
 |
 - CONCAT11(iVar5[1], iVar5[0]) & 0x1ff
-+ ((uw_object_hdr_t *)iVar5)->item_id
++ ((uw_object_hdr_t *)iVar5)->object_id
 )
 ...>
 }
@@ -2243,7 +2243,7 @@ R F(...) {
 ...>
 }
 
-@field_4_item_id disable drop_cast, is_zero, isnt_zero@
+@field_4_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(spawn_scheduled_effect_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2252,19 +2252,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)source_object + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)source_object)->item_id
++ ((uw_object_hdr_t *)source_object)->object_id
 |
 - ((ushort *)source_object)[0] & 0x1ff
-+ ((uw_object_hdr_t *)source_object)->item_id
++ ((uw_object_hdr_t *)source_object)->object_id
 |
 - *(ushort *)source_object & 0x1ff
-+ ((uw_object_hdr_t *)source_object)->item_id
++ ((uw_object_hdr_t *)source_object)->object_id
 |
 - source_object[0] & 0x1ff
-+ ((uw_object_hdr_t *)source_object)->item_id
++ ((uw_object_hdr_t *)source_object)->object_id
 |
 - *source_object & 0x1ff
-+ ((uw_object_hdr_t *)source_object)->item_id
++ ((uw_object_hdr_t *)source_object)->object_id
 )
 ...>
 }
@@ -2787,7 +2787,7 @@ R F(...) {
 ...>
 }
 
-@field_5_item_id disable drop_cast, is_zero, isnt_zero@
+@field_5_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(scheduler_advance_effect\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2796,19 +2796,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)puVar2 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puVar2)->item_id
++ ((uw_object_hdr_t *)puVar2)->object_id
 |
 - ((ushort *)puVar2)[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar2)->item_id
++ ((uw_object_hdr_t *)puVar2)->object_id
 |
 - *(ushort *)puVar2 & 0x1ff
-+ ((uw_object_hdr_t *)puVar2)->item_id
++ ((uw_object_hdr_t *)puVar2)->object_id
 |
 - puVar2[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar2)->item_id
++ ((uw_object_hdr_t *)puVar2)->object_id
 |
 - *puVar2 & 0x1ff
-+ ((uw_object_hdr_t *)puVar2)->item_id
++ ((uw_object_hdr_t *)puVar2)->object_id
 )
 ...>
 }

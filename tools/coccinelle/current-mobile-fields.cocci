@@ -5,7 +5,7 @@ typedef byte;
 
 (
 - DAT_0010190c->hdr.type_flags & 0x1ff
-+ DAT_0010190c->hdr.item_id
++ DAT_0010190c->hdr.object_id
 )
 
 @field_1@

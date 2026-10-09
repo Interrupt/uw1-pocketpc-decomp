@@ -1,4 +1,4 @@
-@field_0_item_id disable drop_cast, is_zero, isnt_zero@
+@field_0_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(deserialize_inventory_link_chain\|serialize_inventory_link_chain\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7,22 +7,22 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)puVar1 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puVar1)->item_id
++ ((uw_object_hdr_t *)puVar1)->object_id
 |
 - ((ushort *)puVar1)[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar1)->item_id
++ ((uw_object_hdr_t *)puVar1)->object_id
 |
 - *(ushort *)puVar1 & 0x1ff
-+ ((uw_object_hdr_t *)puVar1)->item_id
++ ((uw_object_hdr_t *)puVar1)->object_id
 |
 - *(ushort *)(puVar1 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puVar1)->item_id
++ ((uw_object_hdr_t *)puVar1)->object_id
 |
 - CONCAT11(puVar1[1], *puVar1) & 0x1ff
-+ ((uw_object_hdr_t *)puVar1)->item_id
++ ((uw_object_hdr_t *)puVar1)->object_id
 |
 - CONCAT11(puVar1[1], puVar1[0]) & 0x1ff
-+ ((uw_object_hdr_t *)puVar1)->item_id
++ ((uw_object_hdr_t *)puVar1)->object_id
 )
 ...>
 }
@@ -590,7 +590,7 @@ R F(...) {
 ...>
 }
 
-@field_1_item_id disable drop_cast, is_zero, isnt_zero@
+@field_1_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_inventory_panel_click\|redraw_inventory_widget_range\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -599,19 +599,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)puVar7 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puVar7)->item_id
++ ((uw_object_hdr_t *)puVar7)->object_id
 |
 - ((ushort *)puVar7)[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar7)->item_id
++ ((uw_object_hdr_t *)puVar7)->object_id
 |
 - *(ushort *)puVar7 & 0x1ff
-+ ((uw_object_hdr_t *)puVar7)->item_id
++ ((uw_object_hdr_t *)puVar7)->object_id
 |
 - puVar7[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar7)->item_id
++ ((uw_object_hdr_t *)puVar7)->object_id
 |
 - *puVar7 & 0x1ff
-+ ((uw_object_hdr_t *)puVar7)->item_id
++ ((uw_object_hdr_t *)puVar7)->object_id
 )
 ...>
 }
@@ -1134,7 +1134,7 @@ R F(...) {
 ...>
 }
 
-@field_2_item_id disable drop_cast, is_zero, isnt_zero@
+@field_2_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_inventory_panel_click\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1143,19 +1143,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)puVar8 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puVar8)->item_id
++ ((uw_object_hdr_t *)puVar8)->object_id
 |
 - ((ushort *)puVar8)[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar8)->item_id
++ ((uw_object_hdr_t *)puVar8)->object_id
 |
 - *(ushort *)puVar8 & 0x1ff
-+ ((uw_object_hdr_t *)puVar8)->item_id
++ ((uw_object_hdr_t *)puVar8)->object_id
 |
 - puVar8[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar8)->item_id
++ ((uw_object_hdr_t *)puVar8)->object_id
 |
 - *puVar8 & 0x1ff
-+ ((uw_object_hdr_t *)puVar8)->item_id
++ ((uw_object_hdr_t *)puVar8)->object_id
 )
 ...>
 }

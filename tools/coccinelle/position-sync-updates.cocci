@@ -121,7 +121,7 @@ typedef byte, ushort, uint, uw_object_hdr_t, uw_mobile_object_t, uw_projectile_o
 @@
 int sync_object_tile_position(...) {
 <...
-- if ((((uw_object_hdr_t *)object)->item_id & 0x1c0) != 0x40) {
+- if ((((uw_object_hdr_t *)object)->object_id & 0x1c0) != 0x40) {
 - uVar1 = *position;
 - *(char *)((char *)object + 0xb) = (char)uVar1;
 - *(char *)(object + 0x6) = (char)(uVar1 >> 8);
@@ -132,7 +132,7 @@ int sync_object_tile_position(...) {
 - *(char *)((char *)object + 0xf) = (char)uVar1;
 - *(char *)(object + 0x8) = (char)(uVar1 >> 8);
 - }
-+ if ((((uw_object_hdr_t *)object)->item_id & 0x1c0) != 0x40) {
++ if ((((uw_object_hdr_t *)object)->object_id & 0x1c0) != 0x40) {
 + uw_projectile_object_t *projectile = (uw_projectile_object_t *)object;
 + uVar1 = *position;
 + projectile->precise_x = uVar1;

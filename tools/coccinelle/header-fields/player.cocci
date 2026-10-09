@@ -1,4 +1,4 @@
-@field_0_item_id disable drop_cast, is_zero, isnt_zero@
+@field_0_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7,19 +7,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)_o + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)_o)->item_id
++ ((uw_object_hdr_t *)_o)->object_id
 |
 - ((ushort *)_o)[0] & 0x1ff
-+ ((uw_object_hdr_t *)_o)->item_id
++ ((uw_object_hdr_t *)_o)->object_id
 |
 - *(ushort *)_o & 0x1ff
-+ ((uw_object_hdr_t *)_o)->item_id
++ ((uw_object_hdr_t *)_o)->object_id
 |
 - _o[0] & 0x1ff
-+ ((uw_object_hdr_t *)_o)->item_id
++ ((uw_object_hdr_t *)_o)->object_id
 |
 - *_o & 0x1ff
-+ ((uw_object_hdr_t *)_o)->item_id
++ ((uw_object_hdr_t *)_o)->object_id
 )
 ...>
 }
@@ -542,7 +542,7 @@ R F(...) {
 ...>
 }
 
-@field_1_item_id disable drop_cast, is_zero, isnt_zero@
+@field_1_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(refresh_player_equipment_effects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -551,19 +551,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)equipped + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)equipped)->item_id
++ ((uw_object_hdr_t *)equipped)->object_id
 |
 - ((ushort *)equipped)[0] & 0x1ff
-+ ((uw_object_hdr_t *)equipped)->item_id
++ ((uw_object_hdr_t *)equipped)->object_id
 |
 - *(ushort *)equipped & 0x1ff
-+ ((uw_object_hdr_t *)equipped)->item_id
++ ((uw_object_hdr_t *)equipped)->object_id
 |
 - equipped[0] & 0x1ff
-+ ((uw_object_hdr_t *)equipped)->item_id
++ ((uw_object_hdr_t *)equipped)->object_id
 |
 - *equipped & 0x1ff
-+ ((uw_object_hdr_t *)equipped)->item_id
++ ((uw_object_hdr_t *)equipped)->object_id
 )
 ...>
 }
@@ -1086,7 +1086,7 @@ R F(...) {
 ...>
 }
 
-@field_2_item_id disable drop_cast, is_zero, isnt_zero@
+@field_2_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_game_victory_sequence\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1095,13 +1095,13 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)puVar5 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puVar5)->item_id
++ ((uw_object_hdr_t *)puVar5)->object_id
 |
 - ((ushort *)puVar5)[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar5)->item_id
++ ((uw_object_hdr_t *)puVar5)->object_id
 |
 - *(ushort *)puVar5 & 0x1ff
-+ ((uw_object_hdr_t *)puVar5)->item_id
++ ((uw_object_hdr_t *)puVar5)->object_id
 )
 ...>
 }
@@ -1474,7 +1474,7 @@ R F(...) {
 ...>
 }
 
-@field_3_item_id disable drop_cast, is_zero, isnt_zero@
+@field_3_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(handle_starvation_penalty\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1483,22 +1483,22 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)pNewObj + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)pNewObj)->item_id
++ ((uw_object_hdr_t *)pNewObj)->object_id
 |
 - ((ushort *)pNewObj)[0] & 0x1ff
-+ ((uw_object_hdr_t *)pNewObj)->item_id
++ ((uw_object_hdr_t *)pNewObj)->object_id
 |
 - *(ushort *)pNewObj & 0x1ff
-+ ((uw_object_hdr_t *)pNewObj)->item_id
++ ((uw_object_hdr_t *)pNewObj)->object_id
 |
 - *(ushort *)(pNewObj + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)pNewObj)->item_id
++ ((uw_object_hdr_t *)pNewObj)->object_id
 |
 - CONCAT11(pNewObj[1], *pNewObj) & 0x1ff
-+ ((uw_object_hdr_t *)pNewObj)->item_id
++ ((uw_object_hdr_t *)pNewObj)->object_id
 |
 - CONCAT11(pNewObj[1], pNewObj[0]) & 0x1ff
-+ ((uw_object_hdr_t *)pNewObj)->item_id
++ ((uw_object_hdr_t *)pNewObj)->object_id
 )
 ...>
 }
@@ -2066,7 +2066,7 @@ R F(...) {
 ...>
 }
 
-@field_4_item_id disable drop_cast, is_zero, isnt_zero@
+@field_4_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(decay_equipped_light_sources\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2075,19 +2075,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)puVar6 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puVar6)->item_id
++ ((uw_object_hdr_t *)puVar6)->object_id
 |
 - ((ushort *)puVar6)[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar6)->item_id
++ ((uw_object_hdr_t *)puVar6)->object_id
 |
 - *(ushort *)puVar6 & 0x1ff
-+ ((uw_object_hdr_t *)puVar6)->item_id
++ ((uw_object_hdr_t *)puVar6)->object_id
 |
 - puVar6[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar6)->item_id
++ ((uw_object_hdr_t *)puVar6)->object_id
 |
 - *puVar6 & 0x1ff
-+ ((uw_object_hdr_t *)puVar6)->item_id
++ ((uw_object_hdr_t *)puVar6)->object_id
 )
 ...>
 }

@@ -1,25 +1,25 @@
-@type_flags_item_id_ptr disable drop_cast, is_zero, isnt_zero@
+@type_flags_object_id_ptr disable drop_cast, is_zero, isnt_zero@
 expression B;
 typedef byte;
 @@
 (
 - (B->type_flags & 0x1ff) >> 0
-+ B->item_id
++ B->object_id
 |
 - (B->type_flags >> 0) & 0x1ff
-+ B->item_id
++ B->object_id
 |
 - B->type_flags & 0x1ff
-+ B->item_id
++ B->object_id
 |
 - (B->type_flags_signed & 0x1ff) >> 0
-+ B->item_id
++ B->object_id
 |
 - (B->type_flags_signed >> 0) & 0x1ff
-+ B->item_id
++ B->object_id
 |
 - B->type_flags_signed & 0x1ff
-+ B->item_id
++ B->object_id
 )
 
 @type_flags_flags_res_ptr disable drop_cast, is_zero, isnt_zero@
@@ -1640,28 +1640,28 @@ expression B;
 + (B->pitch << 3)
 )
 
-@type_flags_item_id_value disable drop_cast, is_zero, isnt_zero@
+@type_flags_object_id_value disable drop_cast, is_zero, isnt_zero@
 expression B;
 typedef byte;
 @@
 (
 - (B.type_flags & 0x1ff) >> 0
-+ B.item_id
++ B.object_id
 |
 - (B.type_flags >> 0) & 0x1ff
-+ B.item_id
++ B.object_id
 |
 - B.type_flags & 0x1ff
-+ B.item_id
++ B.object_id
 |
 - (B.type_flags_signed & 0x1ff) >> 0
-+ B.item_id
++ B.object_id
 |
 - (B.type_flags_signed >> 0) & 0x1ff
-+ B.item_id
++ B.object_id
 |
 - B.type_flags_signed & 0x1ff
-+ B.item_id
++ B.object_id
 )
 
 @type_flags_flags_res_value disable drop_cast, is_zero, isnt_zero@

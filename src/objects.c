@@ -99,7 +99,7 @@ LAB_0004b06c:
     uVar7 = puVar6->hdr.type_flags | 0x8000;
     puVar6->hdr.is_quant = 1;
     puVar6->hdr.link = 1;
-    puVar6->hdr.item_id = (int)DAT_00202a38 & 0x1ff;
+    puVar6->hdr.object_id = (int)DAT_00202a38 & 0x1ff;
     uVar7 = puVar6->hdr.type_flags;
     uVar9 = 0;
     if (DAT_00202a54 != 0) {
@@ -128,13 +128,13 @@ LAB_0004b06c:
     bVar2 = (byte)(uVar7 >> 8);
     puVar6->hdr.ypos = ((uw_object_hdr_t *)DAT_00202a44)->ypos;
     bVar2 = puVar6->hdr.position_word_high;
-    if ((byte) g_object_type_props[(((uw_object_hdr_t *)DAT_00202a44)->item_id)].height != 0) {
+    if ((byte) g_object_type_props[(((uw_object_hdr_t *)DAT_00202a44)->object_id)].height != 0) {
       cVar4 = ordint_divmod(6,
-                            (uint)(byte) g_object_type_props[(((uw_object_hdr_t *)DAT_00202a44)->item_id)].height * 5).quot;
+                            (uint)(byte) g_object_type_props[(((uw_object_hdr_t *)DAT_00202a44)->object_id)].height * 5).quot;
       puVar6->hdr.zpos = cVar4 + (char)DAT_00202a3c * '\x02' + (bVar1 & 0x7f);
       bVar3 = puVar6->hdr.position_word_low;
       if ((DAT_00202a44 == g_player_object) && (0x50 < *(byte *)(DAT_00086df8 + 0xb9))) {
-        puVar6->hdr.zpos = ((char)DAT_00202a3c * '\x02' - (*(byte *)(DAT_00086df8 + 0xb9) >> 3)) + g_object_type_props[(((uw_object_hdr_t *)DAT_00202a44)->item_id)].height + (bVar1 & 0x7f);
+        puVar6->hdr.zpos = ((char)DAT_00202a3c * '\x02' - (*(byte *)(DAT_00086df8 + 0xb9) >> 3)) + g_object_type_props[(((uw_object_hdr_t *)DAT_00202a44)->object_id)].height + (bVar1 & 0x7f);
       }
       iVar8 = check_object_drop_height((ushort *)puVar6, DAT_00202a44);
       if (iVar8 == 0) {
@@ -145,10 +145,10 @@ LAB_0004b06c:
     if (getenv("UW_DEBUG_THROW"))
       fprintf(stderr, "[throw-spawn] type_flags=0x%x (&0x1c0=0x%x) tile_position_before=0x%x DAT_00202a44_type=0x%x\n",
               (unsigned) puVar6->hdr.type_flags,
-              (unsigned)(puVar6->hdr.item_id & 0x1c0),
+              (unsigned)(puVar6->hdr.object_id & 0x1c0),
               (unsigned) puVar6->tile_position,
-              (unsigned)(((uw_object_hdr_t *)DAT_00202a44)->item_id));
-    if ((puVar6->hdr.item_id & 0x1c0) != 0x40) {
+              (unsigned)(((uw_object_hdr_t *)DAT_00202a44)->object_id));
+    if ((puVar6->hdr.object_id & 0x1c0) != 0x40) {
       sVar5 = 0;
       iVar8 = (puVar6->hdr.xpos << 5) + (puVar6->tile_x << 8) + 0xf;
       puVar6->precise_x = (ushort)iVar8;
@@ -156,7 +156,7 @@ LAB_0004b06c:
       puVar6->precise_y = (ushort)iVar8;
       iVar8 = (puVar6->hdr.zpos) << 3;
       puVar6->precise_z = (ushort)iVar8;
-      if (((((uw_object_hdr_t *)DAT_00202a44)->item_id & 0x1c0) == 0x40) && (sVar5 = encode_object_slot_index(DAT_00202a44), 0xff < sVar5)) {
+      if (((((uw_object_hdr_t *)DAT_00202a44)->object_id & 0x1c0) == 0x40) && (sVar5 = encode_object_slot_index(DAT_00202a44), 0xff < sVar5)) {
         sVar5 = 0;
       }
       puVar6->source_slot = (byte)(char)sVar5;
@@ -178,7 +178,7 @@ LAB_0004b06c:
        for genuine small integer scratch math, so not safe to widen wholesale)... */
     pbTile = (char *)tilemap_lookup(puVar6->tile_x,puVar6->tile_y);
     DEBUG(INFO, "[throw] object id=0x%03x spawned at tile=(%d,%d)\n",
-          (unsigned)(puVar6->hdr.item_id), puVar6->tile_x,
+          (unsigned)(puVar6->hdr.object_id), puVar6->tile_x,
           puVar6->tile_y);
     object_list_insert_head(pbTile + 2, &puVar6->hdr);
     play_sound_effect_at_object(10, (ushort *)puVar6, 0);
@@ -344,7 +344,7 @@ void free_linked_object_recursive(ushort *link_field_ptr)
 
   puVar1 = resolve_object_link(link_field);/* confirmed via ARM disassembly, 0x533e4 */
   if (puVar1 != NULL) {
-    if ((puVar1->item_id & 0x1c0) == 0x180) {
+    if ((puVar1->object_id & 0x1c0) == 0x180) {
       free_trap_class_object(link_field, puVar1);
     }
     else {
@@ -831,9 +831,9 @@ int clear_object_temp_flag_callback(ushort *object)
 
   iVar2 = object_ptr_in_arena(object);
   if (iVar2 == 0) {
-    uVar3 = ((uw_object_hdr_t *)object)->item_id & 0x1c0;
+    uVar3 = ((uw_object_hdr_t *)object)->object_id & 0x1c0;
     if (((uVar3 != 0x140) && (uVar3 != 0x180)) &&
-       ((g_object_type_props[(((uw_object_hdr_t *)object)->item_id)].class_flags & 3) != 2)) {
+       ((g_object_type_props[(((uw_object_hdr_t *)object)->object_id)].class_flags & 3) != 2)) {
       uVar1 = ((uw_object_hdr_t *)object)->position_word;
       ((uw_object_hdr_t *)object)->position_word = (ushort)(uVar1 & 0xfdff);
     }
@@ -908,7 +908,7 @@ uint calculate_object_weight(uw_object_hdr_t *object)
   uint uVar2;
   int iVar3;
   ushort local_8 [2];
-  iVar3 = (object->item_id) * 0xd;
+  iVar3 = (object->object_id) * 0xd;
   if ((!object->is_quant) || ((object->link & 0x200) != 0)) {
     local_8[0] = g_object_type_props[iVar3 / 0xd].unit_weight;
     uVar2 = (uint)local_8[0];
@@ -1034,7 +1034,7 @@ void *get_scanned_object_class_effect_ptr()
 
   /* Was `(*(code *)local_24[...])(); return 0;` -- Ghidra couldn't trace a return value through the
      indirect call and fabricated a "return 0" placeholder. */
-  return class_handlers[(short)((g_scratch_object_ptr->item_id & 0x1c0) >> 6)]();
+  return class_handlers[(short)((g_scratch_object_ptr->object_id & 0x1c0) >> 6)]();
 }
 
 
@@ -1361,9 +1361,9 @@ uw_object_hdr_t *find_object_in_chain(ushort **link_cursor_ptr, int recurse,
   if (puVar1 != NULL) {
     do {
       if ((((int)(short)object_class == 0xffffffff) ||
-          (uVar3 = (uint) puVar1->type_flags, (puVar1->item_id >> 6 & 7) == (int)(short)object_class)) &&
+          (uVar3 = (uint) puVar1->type_flags, (puVar1->object_id >> 6 & 7) == (int)(short)object_class)) &&
           (((int)(short)subclass == 0xffffffff ||
-            (uVar3 = (uint) puVar1->type_flags, (puVar1->item_id >> 4 & 3) == (int)(short)subclass)))) {
+            (uVar3 = (uint) puVar1->type_flags, (puVar1->object_id >> 4 & 3) == (int)(short)subclass)))) {
         if ((int)quality == 0xffffffff) {
           return puVar1;
         }
@@ -1685,7 +1685,7 @@ void *class6_variant_effect_table_lookup()
 void *class7_variant_effect_table_lookup()
 
 {
-  return &g_animation_type_props[(g_scratch_object_ptr->item_id & 0xf)];
+  return &g_animation_type_props[(g_scratch_object_ptr->object_id & 0xf)];
 }
 /* was FUN_0002a2d8: class1_variant_effect_table_lookup, dispatch slot 1 of
    get_scanned_object_class_effect_ptr's local_24 array (the same 4-entry array
@@ -1700,9 +1700,9 @@ void *class1_variant_effect_table_lookup()
   uw_object_hdr_t *pbVar3;
 
   pbVar3 = g_scratch_object_ptr;
-  sVar1 = (short)((pbVar3->item_id & 0x30) >> 4);
+  sVar1 = (short)((pbVar3->object_id & 0x30) >> 4);
   DAT_001013f4 = sVar1;
-  uVar2 = pbVar3->item_id & 0xf;
+  uVar2 = pbVar3->object_id & 0xf;
   DAT_001013f0 = uVar2;
   return &g_monster_type_props[(sVar1 * 0x10 + (int)(short)uVar2)];
 }
@@ -1846,17 +1846,17 @@ uw_object_hdr_t *reallocate_object_to_arena(ushort *object)
   ushort *puVar2;
 
   iVar1 = (char *)tilemap_lookup((int)DAT_0010144c,(int)DAT_00101454);
-  if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)object)->item_id) == 0x80) {
+  if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)object)->object_id) == 0x80) {
     ushort *pWalk;
     int n = 0;
     fprintf(stderr, "[replace] ENTER type=0x%x object=%p tile=(%d,%d) tilerec=%p\n",
-            (unsigned)(((uw_object_hdr_t *)object)->item_id), (void *)object,
+            (unsigned)(((uw_object_hdr_t *)object)->object_id), (void *)object,
             (int)DAT_0010144c, (int)DAT_00101454, (void *)iVar1);
     fprintf(stderr, "[replace] pre-unlink list @ %p:", (void *)(iVar1 + 2));
     pWalk = (ushort *)resolve_object_link(iVar1 + 2);
     while (pWalk != NULL && n < 20) {
       fprintf(stderr, " [%p type=0x%x%s]", (void *)pWalk,
-              (unsigned)(((uw_object_hdr_t *)pWalk)->item_id),
+              (unsigned)(((uw_object_hdr_t *)pWalk)->object_id),
               pWalk == object ? "<-TARGET" : "");
       pWalk = (ushort *)resolve_object_link((ushort *)((char *)pWalk + 4));
       n++;
@@ -1874,22 +1874,22 @@ uw_object_hdr_t *reallocate_object_to_arena(ushort *object)
     ((uw_object_hdr_t *)puVar2)->link_word = ((uw_object_hdr_t *)object)->link_word;
     compute_object_placement_fields(puVar2,(int)DAT_0010144c,(int)DAT_00101454);
     ((uw_mobile_object_t *)puVar2)->hit_points = ((uw_object_hdr_t *)object)->quality;
-    if (((((uw_object_hdr_t *)object)->item_id & 0x1c0) != 0x140) && ((g_object_type_props[(((uw_object_hdr_t *)object)->item_id)].class_flags & 3) != 2)) {
+    if (((((uw_object_hdr_t *)object)->object_id & 0x1c0) != 0x140) && ((g_object_type_props[(((uw_object_hdr_t *)object)->object_id)].class_flags & 3) != 2)) {
       ((uw_projectile_object_t *)puVar2)->original_heading = ((uw_object_hdr_t *)object)->heading;
     }
-    if ((((uw_object_hdr_t *)puVar2)->item_id & 0x1c0) == 0x1c0) {
+    if ((((uw_object_hdr_t *)puVar2)->object_id & 0x1c0) == 0x1c0) {
       scheduler_relink_entry(puVar2,object);
     }
-    if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)object)->item_id) == 0x80)
+    if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)object)->object_id) == 0x80)
       fprintf(stderr, "[replace] new copy puVar2=%p type=0x%x height(f/10)=%d in_arena=%d\n",
               (void *)puVar2,
-              (unsigned)(((uw_object_hdr_t *)puVar2)->item_id),
+              (unsigned)(((uw_object_hdr_t *)puVar2)->object_id),
               (int)(short)((uw_projectile_object_t *)puVar2)->precise_z,
               (int)object_ptr_in_arena((char *)puVar2));
     object_list_unlink(iVar1 + 2,object);
     free_object_slot(object);
     object_list_insert_head(iVar1 + 2,puVar2);
-    if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)puVar2)->item_id) == 0x80) {
+    if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)puVar2)->object_id) == 0x80) {
       ushort *pWalk;
       int n = 0;
       int found = 0;
@@ -1898,7 +1898,7 @@ uw_object_hdr_t *reallocate_object_to_arena(ushort *object)
       while (pWalk != NULL && n < 20) {
         if (pWalk == puVar2) found = 1;
         fprintf(stderr, " [%p type=0x%x%s]", (void *)pWalk,
-                (unsigned)(((uw_object_hdr_t *)pWalk)->item_id),
+                (unsigned)(((uw_object_hdr_t *)pWalk)->object_id),
                 pWalk == puVar2 ? "<-NEWCOPY" : "");
         pWalk = (ushort *)resolve_object_link((ushort *)((char *)pWalk + 4));
         n++;

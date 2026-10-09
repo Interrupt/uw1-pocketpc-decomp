@@ -1,4 +1,4 @@
-@field_0_item_id disable drop_cast, is_zero, isnt_zero@
+@field_0_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_object_drop_height\|dispatch_object_action\|dispatch_object_action_dup\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7,19 +7,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)object + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)object)->item_id
++ ((uw_object_hdr_t *)object)->object_id
 |
 - ((ushort *)object)[0] & 0x1ff
-+ ((uw_object_hdr_t *)object)->item_id
++ ((uw_object_hdr_t *)object)->object_id
 |
 - *(ushort *)object & 0x1ff
-+ ((uw_object_hdr_t *)object)->item_id
++ ((uw_object_hdr_t *)object)->object_id
 |
 - object[0] & 0x1ff
-+ ((uw_object_hdr_t *)object)->item_id
++ ((uw_object_hdr_t *)object)->object_id
 |
 - *object & 0x1ff
-+ ((uw_object_hdr_t *)object)->item_id
++ ((uw_object_hdr_t *)object)->object_id
 )
 ...>
 }
@@ -542,7 +542,7 @@ R F(...) {
 ...>
 }
 
-@field_1_item_id disable drop_cast, is_zero, isnt_zero@
+@field_1_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_object_drop_height\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -551,19 +551,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)reference + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)reference)->item_id
++ ((uw_object_hdr_t *)reference)->object_id
 |
 - ((ushort *)reference)[0] & 0x1ff
-+ ((uw_object_hdr_t *)reference)->item_id
++ ((uw_object_hdr_t *)reference)->object_id
 |
 - *(ushort *)reference & 0x1ff
-+ ((uw_object_hdr_t *)reference)->item_id
++ ((uw_object_hdr_t *)reference)->object_id
 |
 - reference[0] & 0x1ff
-+ ((uw_object_hdr_t *)reference)->item_id
++ ((uw_object_hdr_t *)reference)->object_id
 |
 - *reference & 0x1ff
-+ ((uw_object_hdr_t *)reference)->item_id
++ ((uw_object_hdr_t *)reference)->object_id
 )
 ...>
 }
@@ -1086,7 +1086,7 @@ R F(...) {
 ...>
 }
 
-@field_2_item_id disable drop_cast, is_zero, isnt_zero@
+@field_2_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(check_object_combination\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1095,19 +1095,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)puVar4 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
++ ((uw_object_hdr_t *)puVar4)->object_id
 |
 - ((ushort *)puVar4)[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
++ ((uw_object_hdr_t *)puVar4)->object_id
 |
 - *(ushort *)puVar4 & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
++ ((uw_object_hdr_t *)puVar4)->object_id
 |
 - puVar4[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
++ ((uw_object_hdr_t *)puVar4)->object_id
 |
 - *puVar4 & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
++ ((uw_object_hdr_t *)puVar4)->object_id
 )
 ...>
 }
@@ -1630,7 +1630,7 @@ R F(...) {
 ...>
 }
 
-@field_3_item_id disable drop_cast, is_zero, isnt_zero@
+@field_3_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(spawn_and_prime_spell_effect_object\|spawn_random_variant_object_at_tile\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -1639,22 +1639,22 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)iVar4 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar4)->item_id
++ ((uw_object_hdr_t *)iVar4)->object_id
 |
 - ((ushort *)iVar4)[0] & 0x1ff
-+ ((uw_object_hdr_t *)iVar4)->item_id
++ ((uw_object_hdr_t *)iVar4)->object_id
 |
 - *(ushort *)iVar4 & 0x1ff
-+ ((uw_object_hdr_t *)iVar4)->item_id
++ ((uw_object_hdr_t *)iVar4)->object_id
 |
 - *(ushort *)(iVar4 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar4)->item_id
++ ((uw_object_hdr_t *)iVar4)->object_id
 |
 - CONCAT11(iVar4[1], *iVar4) & 0x1ff
-+ ((uw_object_hdr_t *)iVar4)->item_id
++ ((uw_object_hdr_t *)iVar4)->object_id
 |
 - CONCAT11(iVar4[1], iVar4[0]) & 0x1ff
-+ ((uw_object_hdr_t *)iVar4)->item_id
++ ((uw_object_hdr_t *)iVar4)->object_id
 )
 ...>
 }
@@ -2222,7 +2222,7 @@ R F(...) {
 ...>
 }
 
-@field_4_item_id disable drop_cast, is_zero, isnt_zero@
+@field_4_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(force_unlock_target_object\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2231,19 +2231,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)iVar2 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar2)->item_id
++ ((uw_object_hdr_t *)iVar2)->object_id
 |
 - ((ushort *)iVar2)[0] & 0x1ff
-+ ((uw_object_hdr_t *)iVar2)->item_id
++ ((uw_object_hdr_t *)iVar2)->object_id
 |
 - *(ushort *)iVar2 & 0x1ff
-+ ((uw_object_hdr_t *)iVar2)->item_id
++ ((uw_object_hdr_t *)iVar2)->object_id
 |
 - iVar2[0] & 0x1ff
-+ ((uw_object_hdr_t *)iVar2)->item_id
++ ((uw_object_hdr_t *)iVar2)->object_id
 |
 - *iVar2 & 0x1ff
-+ ((uw_object_hdr_t *)iVar2)->item_id
++ ((uw_object_hdr_t *)iVar2)->object_id
 )
 ...>
 }
@@ -2766,7 +2766,7 @@ R F(...) {
 ...>
 }
 
-@field_5_item_id disable drop_cast, is_zero, isnt_zero@
+@field_5_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(trigger_tile_damage_trap_effect\|trigger_type_flagged_trap_effect\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -2775,16 +2775,16 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)uVar2 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)uVar2)->item_id
++ ((uw_object_hdr_t *)uVar2)->object_id
 |
 - ((ushort *)uVar2)[0] & 0x1ff
-+ ((uw_object_hdr_t *)uVar2)->item_id
++ ((uw_object_hdr_t *)uVar2)->object_id
 |
 - *(ushort *)uVar2 & 0x1ff
-+ ((uw_object_hdr_t *)uVar2)->item_id
++ ((uw_object_hdr_t *)uVar2)->object_id
 |
 - *(ushort *)(uVar2 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)uVar2)->item_id
++ ((uw_object_hdr_t *)uVar2)->object_id
 )
 ...>
 }
@@ -3283,7 +3283,7 @@ R F(...) {
 ...>
 }
 
-@field_6_item_id disable drop_cast, is_zero, isnt_zero@
+@field_6_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(scan_area_for_matching_objects\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3292,19 +3292,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)puVar6 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puVar6)->item_id
++ ((uw_object_hdr_t *)puVar6)->object_id
 |
 - ((ushort *)puVar6)[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar6)->item_id
++ ((uw_object_hdr_t *)puVar6)->object_id
 |
 - *(ushort *)puVar6 & 0x1ff
-+ ((uw_object_hdr_t *)puVar6)->item_id
++ ((uw_object_hdr_t *)puVar6)->object_id
 |
 - puVar6[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar6)->item_id
++ ((uw_object_hdr_t *)puVar6)->object_id
 |
 - *puVar6 & 0x1ff
-+ ((uw_object_hdr_t *)puVar6)->item_id
++ ((uw_object_hdr_t *)puVar6)->object_id
 )
 ...>
 }
@@ -3827,7 +3827,7 @@ R F(...) {
 ...>
 }
 
-@field_7_item_id disable drop_cast, is_zero, isnt_zero@
+@field_7_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(cast_summon_or_spawn_effect\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3836,16 +3836,16 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)caster + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)caster)->item_id
++ ((uw_object_hdr_t *)caster)->object_id
 |
 - ((ushort *)caster)[0] & 0x1ff
-+ ((uw_object_hdr_t *)caster)->item_id
++ ((uw_object_hdr_t *)caster)->object_id
 |
 - *(ushort *)caster & 0x1ff
-+ ((uw_object_hdr_t *)caster)->item_id
++ ((uw_object_hdr_t *)caster)->object_id
 |
 - *(ushort *)(caster + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)caster)->item_id
++ ((uw_object_hdr_t *)caster)->object_id
 )
 ...>
 }
@@ -4344,7 +4344,7 @@ R F(...) {
 ...>
 }
 
-@field_8_item_id disable drop_cast, is_zero, isnt_zero@
+@field_8_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(cast_summon_or_spawn_effect\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4353,13 +4353,13 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)pObj + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)pObj)->item_id
++ ((uw_object_hdr_t *)pObj)->object_id
 |
 - ((ushort *)pObj)[0] & 0x1ff
-+ ((uw_object_hdr_t *)pObj)->item_id
++ ((uw_object_hdr_t *)pObj)->object_id
 |
 - *(ushort *)pObj & 0x1ff
-+ ((uw_object_hdr_t *)pObj)->item_id
++ ((uw_object_hdr_t *)pObj)->object_id
 )
 ...>
 }
@@ -4732,7 +4732,7 @@ R F(...) {
 ...>
 }
 
-@field_9_item_id disable drop_cast, is_zero, isnt_zero@
+@field_9_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(cast_summon_or_spawn_effect\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -4741,13 +4741,13 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)saved_scratch + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)saved_scratch)->item_id
++ ((uw_object_hdr_t *)saved_scratch)->object_id
 |
 - ((ushort *)saved_scratch)[0] & 0x1ff
-+ ((uw_object_hdr_t *)saved_scratch)->item_id
++ ((uw_object_hdr_t *)saved_scratch)->object_id
 |
 - *(ushort *)saved_scratch & 0x1ff
-+ ((uw_object_hdr_t *)saved_scratch)->item_id
++ ((uw_object_hdr_t *)saved_scratch)->object_id
 )
 ...>
 }
@@ -5120,7 +5120,7 @@ R F(...) {
 ...>
 }
 
-@field_10_item_id disable drop_cast, is_zero, isnt_zero@
+@field_10_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(complete_pending_player_command_target\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5129,19 +5129,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)target + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)target)->item_id
++ ((uw_object_hdr_t *)target)->object_id
 |
 - ((ushort *)target)[0] & 0x1ff
-+ ((uw_object_hdr_t *)target)->item_id
++ ((uw_object_hdr_t *)target)->object_id
 |
 - *(ushort *)target & 0x1ff
-+ ((uw_object_hdr_t *)target)->item_id
++ ((uw_object_hdr_t *)target)->object_id
 |
 - target[0] & 0x1ff
-+ ((uw_object_hdr_t *)target)->item_id
++ ((uw_object_hdr_t *)target)->object_id
 |
 - *target & 0x1ff
-+ ((uw_object_hdr_t *)target)->item_id
++ ((uw_object_hdr_t *)target)->object_id
 )
 ...>
 }
@@ -5664,7 +5664,7 @@ R F(...) {
 ...>
 }
 
-@field_11_item_id disable drop_cast, is_zero, isnt_zero@
+@field_11_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(damage_all_objects_at_tile\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -5673,22 +5673,22 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)iVar3 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar3)->item_id
++ ((uw_object_hdr_t *)iVar3)->object_id
 |
 - ((ushort *)iVar3)[0] & 0x1ff
-+ ((uw_object_hdr_t *)iVar3)->item_id
++ ((uw_object_hdr_t *)iVar3)->object_id
 |
 - *(ushort *)iVar3 & 0x1ff
-+ ((uw_object_hdr_t *)iVar3)->item_id
++ ((uw_object_hdr_t *)iVar3)->object_id
 |
 - *(ushort *)(iVar3 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar3)->item_id
++ ((uw_object_hdr_t *)iVar3)->object_id
 |
 - CONCAT11(iVar3[1], *iVar3) & 0x1ff
-+ ((uw_object_hdr_t *)iVar3)->item_id
++ ((uw_object_hdr_t *)iVar3)->object_id
 |
 - CONCAT11(iVar3[1], iVar3[0]) & 0x1ff
-+ ((uw_object_hdr_t *)iVar3)->item_id
++ ((uw_object_hdr_t *)iVar3)->object_id
 )
 ...>
 }
@@ -6256,7 +6256,7 @@ R F(...) {
 ...>
 }
 
-@field_12_item_id disable drop_cast, is_zero, isnt_zero@
+@field_12_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(damage_all_objects_at_tile\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6265,16 +6265,16 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)uVar4 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)uVar4)->item_id
++ ((uw_object_hdr_t *)uVar4)->object_id
 |
 - ((ushort *)uVar4)[0] & 0x1ff
-+ ((uw_object_hdr_t *)uVar4)->item_id
++ ((uw_object_hdr_t *)uVar4)->object_id
 |
 - *(ushort *)uVar4 & 0x1ff
-+ ((uw_object_hdr_t *)uVar4)->item_id
++ ((uw_object_hdr_t *)uVar4)->object_id
 |
 - *(ushort *)(uVar4 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)uVar4)->item_id
++ ((uw_object_hdr_t *)uVar4)->object_id
 )
 ...>
 }
@@ -6773,7 +6773,7 @@ R F(...) {
 ...>
 }
 
-@field_13_item_id disable drop_cast, is_zero, isnt_zero@
+@field_13_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(consume_linked_special_object_charge\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6782,16 +6782,16 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)iVar3 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar3)->item_id
++ ((uw_object_hdr_t *)iVar3)->object_id
 |
 - ((ushort *)iVar3)[0] & 0x1ff
-+ ((uw_object_hdr_t *)iVar3)->item_id
++ ((uw_object_hdr_t *)iVar3)->object_id
 |
 - *(ushort *)iVar3 & 0x1ff
-+ ((uw_object_hdr_t *)iVar3)->item_id
++ ((uw_object_hdr_t *)iVar3)->object_id
 |
 - *(ushort *)(iVar3 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar3)->item_id
++ ((uw_object_hdr_t *)iVar3)->object_id
 )
 ...>
 }
@@ -7290,7 +7290,7 @@ R F(...) {
 ...>
 }
 
-@field_14_item_id disable drop_cast, is_zero, isnt_zero@
+@field_14_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(spawn_effect_debris_burst\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7299,19 +7299,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)puVar8 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puVar8)->item_id
++ ((uw_object_hdr_t *)puVar8)->object_id
 |
 - ((ushort *)puVar8)[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar8)->item_id
++ ((uw_object_hdr_t *)puVar8)->object_id
 |
 - *(ushort *)puVar8 & 0x1ff
-+ ((uw_object_hdr_t *)puVar8)->item_id
++ ((uw_object_hdr_t *)puVar8)->object_id
 |
 - puVar8[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar8)->item_id
++ ((uw_object_hdr_t *)puVar8)->object_id
 |
 - *puVar8 & 0x1ff
-+ ((uw_object_hdr_t *)puVar8)->item_id
++ ((uw_object_hdr_t *)puVar8)->object_id
 )
 ...>
 }
@@ -7834,7 +7834,7 @@ R F(...) {
 ...>
 }
 
-@field_15_item_id disable drop_cast, is_zero, isnt_zero@
+@field_15_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(init_monster_spawn_defaults\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7843,13 +7843,13 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)npc + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)npc)->item_id
++ ((uw_object_hdr_t *)npc)->object_id
 |
 - ((ushort *)npc)[0] & 0x1ff
-+ ((uw_object_hdr_t *)npc)->item_id
++ ((uw_object_hdr_t *)npc)->object_id
 |
 - *(ushort *)npc & 0x1ff
-+ ((uw_object_hdr_t *)npc)->item_id
++ ((uw_object_hdr_t *)npc)->object_id
 )
 ...>
 }
@@ -8222,7 +8222,7 @@ R F(...) {
 ...>
 }
 
-@field_16_item_id disable drop_cast, is_zero, isnt_zero@
+@field_16_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(append_object_special_name\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8231,19 +8231,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)chain_item + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)chain_item)->item_id
++ ((uw_object_hdr_t *)chain_item)->object_id
 |
 - ((ushort *)chain_item)[0] & 0x1ff
-+ ((uw_object_hdr_t *)chain_item)->item_id
++ ((uw_object_hdr_t *)chain_item)->object_id
 |
 - *(ushort *)chain_item & 0x1ff
-+ ((uw_object_hdr_t *)chain_item)->item_id
++ ((uw_object_hdr_t *)chain_item)->object_id
 |
 - chain_item[0] & 0x1ff
-+ ((uw_object_hdr_t *)chain_item)->item_id
++ ((uw_object_hdr_t *)chain_item)->object_id
 |
 - *chain_item & 0x1ff
-+ ((uw_object_hdr_t *)chain_item)->item_id
++ ((uw_object_hdr_t *)chain_item)->object_id
 )
 ...>
 }
@@ -8766,7 +8766,7 @@ R F(...) {
 ...>
 }
 
-@field_17_item_id disable drop_cast, is_zero, isnt_zero@
+@field_17_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(spawn_object_near_actor\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -8775,19 +8775,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)puVar1 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puVar1)->item_id
++ ((uw_object_hdr_t *)puVar1)->object_id
 |
 - ((ushort *)puVar1)[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar1)->item_id
++ ((uw_object_hdr_t *)puVar1)->object_id
 |
 - *(ushort *)puVar1 & 0x1ff
-+ ((uw_object_hdr_t *)puVar1)->item_id
++ ((uw_object_hdr_t *)puVar1)->object_id
 |
 - puVar1[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar1)->item_id
++ ((uw_object_hdr_t *)puVar1)->object_id
 |
 - *puVar1 & 0x1ff
-+ ((uw_object_hdr_t *)puVar1)->item_id
++ ((uw_object_hdr_t *)puVar1)->object_id
 )
 ...>
 }

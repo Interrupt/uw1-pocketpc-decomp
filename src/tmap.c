@@ -1804,11 +1804,11 @@ void emit_tile_features(ushort *tile)
             continue;
           }
           iVar7 = cVar8 * 4;
-          if (getenv("UW_DEBUG_OBJPOS") && puVar5 && (((uw_object_hdr_t *)puVar5)->item_id) == 0x166)
+          if (getenv("UW_DEBUG_OBJPOS") && puVar5 && (((uw_object_hdr_t *)puVar5)->object_id) == 0x166)
             fprintf(stderr, "[objpos] cVar8=%d iVar7=%d bb99=%d bb9a=%d b4e4=%d b4e8=%d\n",
                     (int)cVar8, iVar7, (int)(char)(&DAT_0023bb99)[iVar7], (int)(char)(&DAT_0023bb9a)[iVar7],
                     (int)DAT_0023b4e4, (int)DAT_0023b4e8);
-          if (getenv("UW_DEBUG_DOOR_POS") && puVar5 && (((uw_object_hdr_t *)puVar5)->item_id & 0x1f0) == 0x140)
+          if (getenv("UW_DEBUG_DOOR_POS") && puVar5 && (((uw_object_hdr_t *)puVar5)->object_id & 0x1f0) == 0x140)
             fprintf(stderr, "[doorpos] tile-grid: cVar8=%d slot_x=%d slot_z=%d b4e4(tileX)=%d b4e8(tileZ)=%d tile_origin=(%d,%d)\n",
                     (int)cVar8, (int)(char)(&DAT_0023bb99)[iVar7], (int)(char)(&DAT_0023bb9a)[iVar7],
                     (int)DAT_0023b4e4, (int)DAT_0023b4e8,
@@ -1817,13 +1817,13 @@ void emit_tile_features(ushort *tile)
                          (short)((uint)((int)DAT_0023b4e4 << 0x13) >> 0x10)) * 0x20 + 0x10;
           DAT_0023b920 = ((short)(char)(&DAT_0023bb9a)[iVar7] +
                          (short)((uint)((int)DAT_0023b4e8 << 0x13) >> 0x10)) * 0x20 + 0x10;
-          if (((((uw_object_hdr_t *)puVar5)->item_id & 0x1c0) == 0x40) || (iVar16 = object_ptr_in_arena(puVar5), iVar16 == 0)) {
+          if (((((uw_object_hdr_t *)puVar5)->object_id & 0x1c0) == 0x40) || (iVar16 = object_ptr_in_arena(puVar5), iVar16 == 0)) {
             DAT_0023b91c = (((uw_object_hdr_t *)puVar5)->zpos) << 3;
           }
           else {
             DAT_0023b91c = (short)((uw_projectile_object_t *)puVar5)->precise_z;
           }
-          if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)puVar5)->item_id) == 0x80)
+          if (getenv("UW_DEBUG_THROW") && (((uw_object_hdr_t *)puVar5)->object_id) == 0x80)
             fprintf(stderr, "[throw-scrz] sack DAT_0023b91c=%d cam_ref(DAT_00086e6c+0xe)=%d in_arena=%d\n",
                     (int)(short)DAT_0023b91c, (int)g_current_view->view_elevation,
                     (int)object_ptr_in_arena(puVar5));
@@ -1871,8 +1871,8 @@ void emit_tile_features(ushort *tile)
       }
       return;
     }
-    uVar10 = (uint)(short)(((uw_object_hdr_t *)puVar5)->item_id);
-    if ((uVar10 == 0x164) || (((((uw_object_hdr_t *)puVar5)->item_id & 0x1f0) == 0x140 || (uVar10 == 0x1cf)))) {
+    uVar10 = (uint)(short)(((uw_object_hdr_t *)puVar5)->object_id);
+    if ((uVar10 == 0x164) || (((((uw_object_hdr_t *)puVar5)->object_id & 0x1f0) == 0x140 || (uVar10 == 0x1cf)))) {
       uVar2 = local_34 >> 0x10;
       local_34 = CONCAT22((short)uVar2,sVar3 + (short)((uVar10 << 0x16) >> 0x10));
 LAB_0006574c:
@@ -2268,7 +2268,7 @@ void emit_tile_objects(ushort *tile)
                 _names[0] = '\0';
                 int _n = 0, _guard2 = 0;
                 while (_item != NULL && _guard2++ < 32) {
-                  int _iid = ((uw_object_hdr_t *)_item)->item_id;
+                  int _iid = ((uw_object_hdr_t *)_item)->object_id;
                   char *_iname = (char *)get_message_string(0x800 | _iid);
                   strncat(_names, (_iname && _iname[0]) ? _iname : "?", sizeof(_names) - strlen(_names) - 2);
                   strncat(_names, ",", sizeof(_names) - strlen(_names) - 1);

@@ -20,7 +20,7 @@ void setUp(void)
 {
     memset(g_object_type_props, 0, sizeof g_object_type_props);
     memset(&object, 0, sizeof object);
-    object.item_id = 0x80;
+    object.object_id = 0x80;
     g_object_type_props[0x80].unit_weight = 12;
     contents_calls = 0;
     contents_weight = 60;

@@ -77,7 +77,7 @@ def generate_updates():
         before += [f'uVar1 = {read};', f'*(char *)((char *)object + {hex(11+i*2)}) = (char)uVar1;',
                    f'*(char *)(object + {hex(6+i)}) = (char)(uVar1 >> 8);']
         after += [f'uVar1 = {read};', f'projectile->precise_{axis} = uVar1;']
-    guard = f'if (({hdr}item_id & 0x1c0) != 0x40) {{'
+    guard = f'if (({hdr}object_id & 0x1c0) != 0x40) {{'
     rules.append(update('projectile_coordinates', guard + '\n' + '\n'.join(before) + '\n}',
                         guard + '\nuw_projectile_object_t *projectile = (uw_projectile_object_t *)object;\n' + '\n'.join(after) + '\n}'))
     return '\n'.join(rules)

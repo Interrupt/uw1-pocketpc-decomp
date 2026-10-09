@@ -184,7 +184,7 @@ int dispatch_trap_type_effect(ushort *trap_record, int tile_x, int tile_y)
             ((uw_object_hdr_t *)puVar9)->link_word_high = 0;
           }
         }
-        if ((((uw_object_hdr_t *)puVar8)->item_id & 0x1c0) == 0x1c0) {
+        if ((((uw_object_hdr_t *)puVar8)->object_id & 0x1c0) == 0x1c0) {
           uVar6 = encode_object_slot_index(puVar8);
           scheduler_add_entry(uVar6,0xffffffff,0,tile_x & 0xff,tile_y & 0xff);
         }
@@ -743,7 +743,7 @@ void tick_ambient_doors_and_scheduler(int target_present)
     /* was folded into `int iVar2` (reused below for unrelated int
        values) -- truncated tilemap_lookup's real `void *` return */
     char *_tile2 = (char *)tilemap_lookup((int)local_1c,(int)local_1a);
-    if ((((*(byte *)(_tile2 + 1) & 0x80) == 0) && (7 < (((uw_object_hdr_t *)pbVar1)->item_id & 0xf))) &&
+    if ((((*(byte *)(_tile2 + 1) & 0x80) == 0) && (7 < (((uw_object_hdr_t *)pbVar1)->object_id & 0xf))) &&
         (iVar2 = rand_below(10), iVar2 < 3)) {
       DAT_002020a0 = local_1c;
       DAT_002020a4 = local_1a;
@@ -1249,7 +1249,7 @@ void trigger_quest_milestone_cleanup_event()
   puVar3 = (ushort *)resolve_object_link(tile_rec + 2);
   while (puVar2 = puVar3, puVar2 != (ushort *)0x0) {
     puVar3 = (ushort *)resolve_object_link(puVar2 + 2);
-    if ((((uw_object_hdr_t *)puVar2)->item_id) == 0x1a0) {
+    if ((((uw_object_hdr_t *)puVar2)->object_id) == 0x1a0) {
       object_list_unlink(tile_rec + 2,puVar2);
       free_object_slot(puVar2);
     }

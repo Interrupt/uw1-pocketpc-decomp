@@ -1,7 +1,7 @@
 """Name partial reads wholly contained in a documented packed property.
 
 The masks below are property-relative subsets observed in the remaining-access
-inventory. A class/subclass mask is still an item_id operation; it must not
+inventory. A class/subclass mask is still an object_id operation; it must not
 keep reading type_flags merely because it selects fewer than all nine bits.
 Cross-property masks and packed copies are deliberately outside this pass.
 Apply with --all-includes --include-headers-for-types and the project include
@@ -14,7 +14,7 @@ from struct_field_catalog import WORDS
 
 HERE = Path(__file__).resolve().parent
 MASKS = {
-    'item_id': [7, 15, 31, 0x30, 0x3f, 0x1c0, 0x1f0],
+    'object_id': [7, 15, 31, 0x30, 0x3f, 0x1c0, 0x1f0],
     'flags_res': [1, 2, 4],
     'zpos': [0x78],
     'quality': [0x30],

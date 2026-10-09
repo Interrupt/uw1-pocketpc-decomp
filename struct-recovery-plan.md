@@ -92,7 +92,7 @@ the time you read this; grep for the symbol name, not a line number.
 
 | Record | Base(s) | Stride | State |
 |---|---|---|---|
-| `uw_object_hdr_t` | `DAT_002046c4` | 8B | Type defined, bit-verified. Only the `heading` field is converted project-wide; `item_id`/`zpos`/`ypos`/`xpos`/`quality`/`next`/`owner`/`link` still raw at their ~300+ call sites. |
+| `uw_object_hdr_t` | `DAT_002046c4` | 8B | Type defined, bit-verified. Only the `heading` field is converted project-wide; `object_id`/`zpos`/`ypos`/`xpos`/`quality`/`next`/`owner`/`link` still raw at their ~300+ call sites. |
 | `uw_mobile_object_t` | `DAT_002046b8` | 27B (0x1b) | Header inherited from above. The 19-byte NPC-extra block has real field names for `npc_yhome`/`npc_xhome`/`npc_heading` only (wiki-sourced, only those 3 cross-checked against real code); `npc_hp`/`npc_goal`/`npc_gtarg`/`npc_level`/`npc_talkedto`/`npc_attitude`/`npc_height`/`npc_hunger`/`npc_whoami` are typed but **unverified against this binary** — confirm each before trusting it for a write. |
 | `uw_tile_t` | `DAT_002029cc` | 4B | Type defined, bit-verified. `wall_tex`, `tile_type`, and `floor_height` now converted project-wide (all known call sites, in src/tmap.c after the cleanup split). `floor_tex` converted at the one call site found this pass (src/tmap.c, the automap-reveal-adjacent read) but **not verified exhaustive** -- a fresh grep for the raw `>> 2 & 0xf`-on-byte-1 pattern hasn't been re-run against the other topic files yet. `door_bit`/`no_magic`/`unk_light`/`obj_head` still fully raw -- `obj_head`'s ~70 call sites all go through the generic `object_list_insert_head`/`object_list_unlink` functions, which also operate on `uw_object_hdr_t.next` (offset 6) via the same byte-offset parameter, so converting it means giving those two functions a real dual-purpose signature first, not just a mechanical find/replace; scoped out of this pass for that reason. |
 | `uw_current_view_t` | `DAT_00086e6c_backing` (single instance, not an array) | 0x2e (46)B of a 64B backing allocation | **Done.** `view_x`/`view_elevation`/`view_y`/`view_facing`/`view_shake_x`/`view_shake_y` (sizeof + offsetof verified against a throwaway harness) converted at all ~90 confirmed direct-dereference call sites across uw.c and 5 src/*.c files. A handful of `iVar = DAT_00086e6c;`-then-offset base-pointer-capture sites (src/tmap.c, uw.c's own update_current_view_from_subject) were deliberately left as raw offset math rather than risk misreading how the captured local is reused later in each function. Two bytes ranges (0x0c-0x0d, 0x10-0x11) and the leading/trailing spans (0x00-0x09, 0x14-0x27) have no confirmed call site and are left as honest `_unkNN` gaps. |
@@ -242,12 +242,12 @@ them.
    `tile_type`/`floor_height`/`floor_tex`/`door_bit` reads at
    `tilemap_lookup`'s ~70 call sites. Good second session because the
    methodology is now proven and this is pure repetition of it.
-2. **Finish `uw_object_hdr_t`'s remaining fields** (`item_id`, `zpos`/
+2. **Finish `uw_object_hdr_t`'s remaining fields** (`object_id`, `zpos`/
    `ypos`/`xpos`, `quality`/`next`, `owner`/`link`) across the ~300
    remaining call sites, `g_player_object` first (single global, easy
    to find every site) then the generic object-pointer parameters.
    This is the biggest single chunk of remaining work in the codebase
-   — budget several sessions, batched by field (all `item_id` reads,
+   — budget several sessions, batched by field (all `object_id` reads,
    then all position reads, etc.), not by function.
 3. **comobj.dat property record** (0xd bytes) — next-highest leverage
    after the two in-progress types: well-documented, touches gameplay-

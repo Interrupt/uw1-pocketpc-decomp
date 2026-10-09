@@ -12,7 +12,7 @@ typedef uint;
 uint calculate_object_weight(...) {
 <...
 - uVar1 & 0x1ff
-+ object->item_id
++ object->object_id
 ...>
 }
 

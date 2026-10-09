@@ -306,7 +306,7 @@ void reticle_object_pick(int mode)
           /* get_object_record_by_slot_index returns NULL for an empty slot (id bits clear).
              Ghidra dropped the guard; with forward movement now working this
              loop runs (via sweep_collision_flags) and hit the NULL deref. */
-          if (puVar2 != (ushort *)0x0 && (g_object_type_props[(((uw_object_hdr_t *)puVar2)->item_id)].quality_flags & 1) != 0) {
+          if (puVar2 != (ushort *)0x0 && (g_object_type_props[(((uw_object_hdr_t *)puVar2)->object_id)].quality_flags & 1) != 0) {
             if (iVar4 < (char)DAT_002049de) {
               if ((bVar7) &&
                  (bVar1 = (&DAT_00202c38)[iVar6], (short)_DAT_0008699b <= (short)(ushort)bVar1)) {
@@ -919,7 +919,7 @@ void sweep_land_on_surface()
   /* The decompile uses a short-pointer view of the movement record.
      Keep word indexing and raw byte offsets distinct (ARM 0x59d20..0x5a33c). */
   puVar7 = (ushort *)get_object_record_by_slot_index((int)DAT_002049d2);
-  uVar2 = g_object_type_props[(((uw_object_hdr_t *)puVar7)->item_id)].size_weight;
+  uVar2 = g_object_type_props[(((uw_object_hdr_t *)puVar7)->object_id)].size_weight;
   iVar12 = (int)_DAT_000869a1;
   if (iVar12 < 5) {
     sVar4 = 0;
@@ -1028,7 +1028,7 @@ void sweep_land_on_surface()
   if (DAT_00086998 == -1) {
     if ((int)((uint)DAT_002049d0 + (uint)DAT_002049d8) < (int)*(short *)((char *)g_sweep_foot_pos + 4)) {
       puVar7 = (ushort *)get_object_record_by_slot_index((int)*(short *)((char *)DAT_00204874 + 0x23));
-      if ((((uw_object_hdr_t *)puVar7)->item_id & 0x1c0) != 0x40) goto LAB_0005a238;
+      if ((((uw_object_hdr_t *)puVar7)->object_id & 0x1c0) != 0x40) goto LAB_0005a238;
       if ((DAT_002049d6 & 0x10) == 0) {
         if ((DAT_002049d6 & 0x20) == 0) goto LAB_0005a2d0;
         uVar3 = 4;
@@ -1046,7 +1046,7 @@ void sweep_land_on_surface()
     psVar9 = (short *)get_object_record_by_slot_index(*(ushort *)(&DAT_00202c3a + DAT_00086998 * 6) >> 6);
     if (((g_object_type_props[((int)*psVar9 & 0x1ffU)].flags & 2) != 0) ||
         (puVar7 = (ushort *)get_object_record_by_slot_index((int)*(short *)((char *)DAT_00204874 + 0x23)),
-         (((uw_object_hdr_t *)puVar7)->item_id & 0x1c0) == 0x40)) {
+         (((uw_object_hdr_t *)puVar7)->object_id & 0x1c0) == 0x40)) {
 LAB_0005a2d0:
       *(undefined1 *)(DAT_00204874 + 0x28) = 1;
       goto LAB_0005a33c;
@@ -1635,8 +1635,8 @@ void apply_movement_tick(int elapsed)
   char cVar3;
   short sVar4;
 
-  DAT_002048a5 = g_object_type_props[(g_player_object->hdr.item_id)].collision_radius;
-  DAT_002048a6 = g_object_type_props[(g_player_object->hdr.item_id)].height;
+  DAT_002048a5 = g_object_type_props[(g_player_object->hdr.object_id)].collision_radius;
+  DAT_002048a6 = g_object_type_props[(g_player_object->hdr.object_id)].height;
   DAT_0023be9e = 0;
   DAT_0023be9c = 0;
   DAT_0023be9a = 0;

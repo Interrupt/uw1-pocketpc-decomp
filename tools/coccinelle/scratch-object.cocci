@@ -63,10 +63,10 @@ typedef ushort, uw_object_hdr_t;
 - ushort *saved_scratch;
 + uw_object_hdr_t *saved_scratch;
 
-@item_id@
+@object_id@
 @@
 - (g_scratch_object_ptr->type_flags & 0x1ff)
-+ g_scratch_object_ptr->item_id
++ g_scratch_object_ptr->object_id
 
 @monster_lookup_local@
 typedef byte, uw_object_hdr_t;

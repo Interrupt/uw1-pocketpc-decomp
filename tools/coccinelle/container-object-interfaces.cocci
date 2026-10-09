@@ -64,7 +64,7 @@ type R;
 R place_rune_in_bag(...) {
 <...
 - (int)*rune_object & 0x1ffU
-+ rune_object->item_id
++ rune_object->object_id
 ...>
 }
 

@@ -5,7 +5,7 @@ This is a conversion catalog, not a second definition of the binary layouts;
 object_layout validates the actual structs against independently indexed bytes.
 """
 WORDS = {
-    'type_flags': [(0, 9, 'item_id'), (9, 3, 'flags_res'),
+    'type_flags': [(0, 9, 'object_id'), (9, 3, 'flags_res'),
                    (12, 1, 'enchanted'), (13, 1, 'doordir'),
                    (14, 1, 'invisible'), (15, 1, 'is_quant')],
     'position_word': [(0, 7, 'zpos'), (7, 3, 'heading'),

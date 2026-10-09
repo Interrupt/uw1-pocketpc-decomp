@@ -1,9 +1,9 @@
 // UW1 packed object fields. Match only the proven player-object global;
 // ushort pointers elsewhere also refer to tiles, links and unrelated buffers.
-@item_id@
+@object_id@
 @@
 - *g_player_object & 0x1ff
-+ g_player_object->hdr.item_id
++ g_player_object->hdr.object_id
 
 @tile_x@
 typedef ushort;

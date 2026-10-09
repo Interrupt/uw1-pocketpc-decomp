@@ -287,10 +287,10 @@ int roll_container_lockpick_check(void *container_ptr, int skill)
   if ((((*(byte *)(container + 1) & 0x80) == 0) &&
       (local_c = (ushort *)(container + 6), (*local_c & 0xffc0) != 0)) &&
      (pbVar1 = (byte *)find_object_in_chain(&local_c,0,6,0xffffffff,0xffff), pbVar1 != (byte *)0x0)) {
-    if (0x1f < (((uw_object_hdr_t *)pbVar1)->item_id & 0x30)) {
+    if (0x1f < (((uw_object_hdr_t *)pbVar1)->object_id & 0x30)) {
       pbVar1 = (byte *)resolve_object_link((ushort *)(pbVar1 + 6)); /* confirmed via ARM disassembly, 0x72628 */
     }
-    if ((((uw_object_hdr_t *)pbVar1)->item_id & 0x3f) < 3) {
+    if ((((uw_object_hdr_t *)pbVar1)->object_id & 0x3f) < 3) {
       uVar2 = roll_skill_check(skill,8);
       return uVar2;
     }
@@ -329,7 +329,7 @@ int roll_container_trap_disarm_check(void *container_ptr, int skill)
      (local_34[0] = (ushort *)(container + 6), (*local_34[0] & 0xffc0) != 0)) {
     pbVar3 = (byte *)find_object_in_chain(local_34,0,6,0xffffffff,0xffff);
     if (pbVar3 != (byte *)0x0) {
-      if ((((uw_object_hdr_t *)pbVar3)->item_id & 0x30) < 0x20) {
+      if ((((uw_object_hdr_t *)pbVar3)->object_id & 0x30) < 0x20) {
         pbVar7 = (byte *)0x0;
         pbVar4 = pbVar3;
       }
@@ -337,7 +337,7 @@ int roll_container_trap_disarm_check(void *container_ptr, int skill)
         pbVar4 = (byte *)resolve_object_link(pbVar3 + 6);
         pbVar7 = pbVar3;
       }
-      if ((((uw_object_hdr_t *)pbVar4)->item_id & 0x3f) < 3) {
+      if ((((uw_object_hdr_t *)pbVar4)->object_id & 0x3f) < 3) {
         uVar8 = roll_skill_check(skill,8);
         if ((short)uVar8 < 1) {
           if ((short)uVar8 < 0) {
@@ -519,7 +519,7 @@ void purge_tagged_objects_from_chain(void *link_field_ptr)
   
   for (puVar1 = (ushort *)resolve_object_link(link_field); puVar1 != (ushort *)0x0; /* confirmed via ARM disassembly, 0x7deec */
       puVar1 = (ushort *)resolve_object_link(puVar1 + 2)) {
-    if (((((uw_object_hdr_t *)puVar1)->item_id & 0x1f0) == 0x1a0) && ((int)DAT_0024cfd0 == (uint)(((uw_object_hdr_t *)puVar1)->link))) {
+    if (((((uw_object_hdr_t *)puVar1)->object_id & 0x1f0) == 0x1a0) && ((int)DAT_0024cfd0 == (uint)(((uw_object_hdr_t *)puVar1)->link))) {
       object_list_unlink(link_field,puVar1);
       free_object_slot(puVar1);
       ((uw_object_hdr_t *)puVar1)->link_word_low = ((uw_object_hdr_t *)puVar1)->owner;
@@ -877,10 +877,10 @@ ushort *pick_object_under_cursor(int mode)
 
     if(puVar3) {
       DEBUG(INFO, "[pick] found slot=%u -> objid=0x%03x", uVar4,
-            (unsigned)(((uw_object_hdr_t *)puVar3)->item_id));
+            (unsigned)(((uw_object_hdr_t *)puVar3)->object_id));
       if (_pick_diag)
         fprintf(stderr, "[pick] found slot=%u -> objid=0x%03x ptr=%p\n", uVar4,
-                (unsigned)(((uw_object_hdr_t *)puVar3)->item_id),
+                (unsigned)(((uw_object_hdr_t *)puVar3)->object_id),
                 (void *)puVar3);
     }
 
@@ -888,15 +888,15 @@ ushort *pick_object_under_cursor(int mode)
     if (getenv("UW_DEBUG_THROW"))
       fprintf(stderr, "[pick-grab] puVar3=%p type=0x%x classbit20=%d in_arena=%d off10=0x%x off13=0x%x off14=0x%x off15=0x%x off4000=%d\n",
               (void *)puVar3,
-              (unsigned)(((uw_object_hdr_t *)puVar3)->item_id),
-              (int)(g_object_type_props[(((uw_object_hdr_t *)puVar3)->item_id)].owner_flags & 0x20),
+              (unsigned)(((uw_object_hdr_t *)puVar3)->object_id),
+              (int)(g_object_type_props[(((uw_object_hdr_t *)puVar3)->object_id)].owner_flags & 0x20),
               (int)object_ptr_in_arena((char *)puVar3),
               (unsigned)((uw_mobile_object_t *)puVar3)->movement_flags,
               (unsigned)((uw_mobile_object_t *)puVar3)->motion_flags,
               (unsigned)((uw_mobile_object_t *)puVar3)->attack_pitch,
               (unsigned)((uw_mobile_object_t *)puVar3)->animation_flags,
               (int)(((uw_object_hdr_t *)puVar3)->invisible != 0));
-    if (((g_object_type_props[(((uw_object_hdr_t *)puVar3)->item_id)].owner_flags & 0x20) != 0) &&
+    if (((g_object_type_props[(((uw_object_hdr_t *)puVar3)->object_id)].owner_flags & 0x20) != 0) &&
         (iVar2 = object_ptr_in_arena(puVar3), iVar2 == 0)) {
       DAT_002020ec = 1;
       return puVar3;

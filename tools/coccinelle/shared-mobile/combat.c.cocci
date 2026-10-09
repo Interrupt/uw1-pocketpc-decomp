@@ -405,7 +405,7 @@ R F(...) {
 }
 
 
-@site_0_field_0_item_id disable drop_cast, is_zero, isnt_zero@
+@site_0_field_0_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(apply_melee_damage\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -414,19 +414,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)puVar6 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puVar6)->item_id
++ ((uw_object_hdr_t *)puVar6)->object_id
 |
 - ((ushort *)puVar6)[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar6)->item_id
++ ((uw_object_hdr_t *)puVar6)->object_id
 |
 - *(ushort *)puVar6 & 0x1ff
-+ ((uw_object_hdr_t *)puVar6)->item_id
++ ((uw_object_hdr_t *)puVar6)->object_id
 |
 - puVar6[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar6)->item_id
++ ((uw_object_hdr_t *)puVar6)->object_id
 |
 - *puVar6 & 0x1ff
-+ ((uw_object_hdr_t *)puVar6)->item_id
++ ((uw_object_hdr_t *)puVar6)->object_id
 )
 ...>
 }
@@ -3626,7 +3626,7 @@ R F(...) {
 }
 
 
-@site_1_field_0_item_id disable drop_cast, is_zero, isnt_zero@
+@site_1_field_0_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(apply_object_durability_damage\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3635,19 +3635,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)object + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)object)->item_id
++ ((uw_object_hdr_t *)object)->object_id
 |
 - ((ushort *)object)[0] & 0x1ff
-+ ((uw_object_hdr_t *)object)->item_id
++ ((uw_object_hdr_t *)object)->object_id
 |
 - *(ushort *)object & 0x1ff
-+ ((uw_object_hdr_t *)object)->item_id
++ ((uw_object_hdr_t *)object)->object_id
 |
 - object[0] & 0x1ff
-+ ((uw_object_hdr_t *)object)->item_id
++ ((uw_object_hdr_t *)object)->object_id
 |
 - *object & 0x1ff
-+ ((uw_object_hdr_t *)object)->item_id
++ ((uw_object_hdr_t *)object)->object_id
 )
 ...>
 }
@@ -6847,7 +6847,7 @@ R F(...) {
 }
 
 
-@site_2_field_0_item_id disable drop_cast, is_zero, isnt_zero@
+@site_2_field_0_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(resolve_collision_candidate_interaction\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -6856,19 +6856,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)puVar4 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
++ ((uw_object_hdr_t *)puVar4)->object_id
 |
 - ((ushort *)puVar4)[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
++ ((uw_object_hdr_t *)puVar4)->object_id
 |
 - *(ushort *)puVar4 & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
++ ((uw_object_hdr_t *)puVar4)->object_id
 |
 - puVar4[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
++ ((uw_object_hdr_t *)puVar4)->object_id
 |
 - *puVar4 & 0x1ff
-+ ((uw_object_hdr_t *)puVar4)->item_id
++ ((uw_object_hdr_t *)puVar4)->object_id
 )
 ...>
 }

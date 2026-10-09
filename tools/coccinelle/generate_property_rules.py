@@ -12,7 +12,7 @@ for offset,field in fields.items():
  if offset in (1,5):
   rules += [f'@word_{offset}@\nexpression id;\ntypedef ushort;\n@@\n- *(ushort *)(&{alias} + id * 0xd)\n+ {value}\n',
             f'@signed_word_{offset}@\nexpression id;\n@@\n- *(short *)(&{alias} + id * 0xd)\n+ (short){value}\n']
-# These names were audited: each holds item_id * 13 at the access site.
+# These names were audited: each holds object_id * 13 at the access site.
 # Keep the saved offset rather than reevaluating an ID whose source may change.
 for offset,field in fields.items():
  alias=f'DAT_{0x202c90+offset:08x}'

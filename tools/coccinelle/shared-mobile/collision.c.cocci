@@ -812,7 +812,7 @@ R F(...) {
 }
 
 
-@site_1_field_0_item_id disable drop_cast, is_zero, isnt_zero@
+@site_1_field_0_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(collision_height_envelope\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -821,19 +821,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)puVar7 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)puVar7)->item_id
++ ((uw_object_hdr_t *)puVar7)->object_id
 |
 - ((ushort *)puVar7)[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar7)->item_id
++ ((uw_object_hdr_t *)puVar7)->object_id
 |
 - *(ushort *)puVar7 & 0x1ff
-+ ((uw_object_hdr_t *)puVar7)->item_id
++ ((uw_object_hdr_t *)puVar7)->object_id
 |
 - puVar7[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar7)->item_id
++ ((uw_object_hdr_t *)puVar7)->object_id
 |
 - *puVar7 & 0x1ff
-+ ((uw_object_hdr_t *)puVar7)->item_id
++ ((uw_object_hdr_t *)puVar7)->object_id
 )
 ...>
 }

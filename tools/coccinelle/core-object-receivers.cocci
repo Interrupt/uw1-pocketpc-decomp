@@ -147,13 +147,13 @@ R find_object_in_chain(...) {
 ...>
 }
 
-@find_object_in_chain_puVar1_parenthesized_item_id@
+@find_object_in_chain_puVar1_parenthesized_object_id@
 type R;
 @@
 R find_object_in_chain(...) {
 <...
-- (puVar1)->item_id
-+ puVar1->item_id
+- (puVar1)->object_id
++ puVar1->object_id
 ...>
 }
 
@@ -295,7 +295,7 @@ type R;
 R find_object_in_chain(...) {
 <...
 - puVar1->type_flags >> 6 & 7
-+ puVar1->item_id >> 6 & 7
++ puVar1->object_id >> 6 & 7
 ...>
 }
 
@@ -305,11 +305,11 @@ type R;
 R find_object_in_chain(...) {
 <...
 - puVar1->type_flags >> 4 & 3
-+ puVar1->item_id >> 4 & 3
++ puVar1->object_id >> 4 & 3
 ...>
 }
 
-@find_object_in_chain_puVar1_mask_item_id@
+@find_object_in_chain_puVar1_mask_object_id@
 type R;
 typedef byte;
 @@
@@ -317,10 +317,10 @@ R find_object_in_chain(...) {
 <...
 (
 - puVar1->type_flags & 0x1ff
-+ puVar1->item_id
++ puVar1->object_id
 |
 - (byte)puVar1->type_flags & 0x1ff
-+ puVar1->item_id
++ puVar1->object_id
 )
 ...>
 }
@@ -506,13 +506,13 @@ R find_object_in_chain(...) {
 ...>
 }
 
-@find_object_in_chain_puVar2_parenthesized_item_id@
+@find_object_in_chain_puVar2_parenthesized_object_id@
 type R;
 @@
 R find_object_in_chain(...) {
 <...
-- (puVar2)->item_id
-+ puVar2->item_id
+- (puVar2)->object_id
++ puVar2->object_id
 ...>
 }
 
@@ -654,7 +654,7 @@ type R;
 R find_object_in_chain(...) {
 <...
 - puVar2->type_flags >> 6 & 7
-+ puVar2->item_id >> 6 & 7
++ puVar2->object_id >> 6 & 7
 ...>
 }
 
@@ -664,11 +664,11 @@ type R;
 R find_object_in_chain(...) {
 <...
 - puVar2->type_flags >> 4 & 3
-+ puVar2->item_id >> 4 & 3
++ puVar2->object_id >> 4 & 3
 ...>
 }
 
-@find_object_in_chain_puVar2_mask_item_id@
+@find_object_in_chain_puVar2_mask_object_id@
 type R;
 typedef byte;
 @@
@@ -676,10 +676,10 @@ R find_object_in_chain(...) {
 <...
 (
 - puVar2->type_flags & 0x1ff
-+ puVar2->item_id
++ puVar2->object_id
 |
 - (byte)puVar2->type_flags & 0x1ff
-+ puVar2->item_id
++ puVar2->object_id
 )
 ...>
 }
@@ -845,13 +845,13 @@ R find_object_by_encoded_slot_in_chain(...) {
 ...>
 }
 
-@find_object_by_encoded_slot_in_chain_iVar3_parenthesized_item_id@
+@find_object_by_encoded_slot_in_chain_iVar3_parenthesized_object_id@
 type R;
 @@
 R find_object_by_encoded_slot_in_chain(...) {
 <...
-- (iVar3)->item_id
-+ iVar3->item_id
+- (iVar3)->object_id
++ iVar3->object_id
 ...>
 }
 
@@ -993,7 +993,7 @@ type R;
 R find_object_by_encoded_slot_in_chain(...) {
 <...
 - iVar3->type_flags >> 6 & 7
-+ iVar3->item_id >> 6 & 7
++ iVar3->object_id >> 6 & 7
 ...>
 }
 
@@ -1003,11 +1003,11 @@ type R;
 R find_object_by_encoded_slot_in_chain(...) {
 <...
 - iVar3->type_flags >> 4 & 3
-+ iVar3->item_id >> 4 & 3
++ iVar3->object_id >> 4 & 3
 ...>
 }
 
-@find_object_by_encoded_slot_in_chain_iVar3_mask_item_id@
+@find_object_by_encoded_slot_in_chain_iVar3_mask_object_id@
 type R;
 typedef byte;
 @@
@@ -1015,10 +1015,10 @@ R find_object_by_encoded_slot_in_chain(...) {
 <...
 (
 - iVar3->type_flags & 0x1ff
-+ iVar3->item_id
++ iVar3->object_id
 |
 - (byte)iVar3->type_flags & 0x1ff
-+ iVar3->item_id
++ iVar3->object_id
 )
 ...>
 }
@@ -1204,13 +1204,13 @@ R find_object_by_encoded_slot_in_chain(...) {
 ...>
 }
 
-@find_object_by_encoded_slot_in_chain_iVar4_parenthesized_item_id@
+@find_object_by_encoded_slot_in_chain_iVar4_parenthesized_object_id@
 type R;
 @@
 R find_object_by_encoded_slot_in_chain(...) {
 <...
-- (iVar4)->item_id
-+ iVar4->item_id
+- (iVar4)->object_id
++ iVar4->object_id
 ...>
 }
 
@@ -1352,7 +1352,7 @@ type R;
 R find_object_by_encoded_slot_in_chain(...) {
 <...
 - iVar4->type_flags >> 6 & 7
-+ iVar4->item_id >> 6 & 7
++ iVar4->object_id >> 6 & 7
 ...>
 }
 
@@ -1362,11 +1362,11 @@ type R;
 R find_object_by_encoded_slot_in_chain(...) {
 <...
 - iVar4->type_flags >> 4 & 3
-+ iVar4->item_id >> 4 & 3
++ iVar4->object_id >> 4 & 3
 ...>
 }
 
-@find_object_by_encoded_slot_in_chain_iVar4_mask_item_id@
+@find_object_by_encoded_slot_in_chain_iVar4_mask_object_id@
 type R;
 typedef byte;
 @@
@@ -1374,10 +1374,10 @@ R find_object_by_encoded_slot_in_chain(...) {
 <...
 (
 - iVar4->type_flags & 0x1ff
-+ iVar4->item_id
++ iVar4->object_id
 |
 - (byte)iVar4->type_flags & 0x1ff
-+ iVar4->item_id
++ iVar4->object_id
 )
 ...>
 }
@@ -1563,13 +1563,13 @@ R find_object_in_world(...) {
 ...>
 }
 
-@find_object_in_world_puVar6_parenthesized_item_id@
+@find_object_in_world_puVar6_parenthesized_object_id@
 type R;
 @@
 R find_object_in_world(...) {
 <...
-- (puVar6)->item_id
-+ puVar6->item_id
+- (puVar6)->object_id
++ puVar6->object_id
 ...>
 }
 
@@ -1711,7 +1711,7 @@ type R;
 R find_object_in_world(...) {
 <...
 - puVar6->type_flags >> 6 & 7
-+ puVar6->item_id >> 6 & 7
++ puVar6->object_id >> 6 & 7
 ...>
 }
 
@@ -1721,11 +1721,11 @@ type R;
 R find_object_in_world(...) {
 <...
 - puVar6->type_flags >> 4 & 3
-+ puVar6->item_id >> 4 & 3
++ puVar6->object_id >> 4 & 3
 ...>
 }
 
-@find_object_in_world_puVar6_mask_item_id@
+@find_object_in_world_puVar6_mask_object_id@
 type R;
 typedef byte;
 @@
@@ -1733,10 +1733,10 @@ R find_object_in_world(...) {
 <...
 (
 - puVar6->type_flags & 0x1ff
-+ puVar6->item_id
++ puVar6->object_id
 |
 - (byte)puVar6->type_flags & 0x1ff
-+ puVar6->item_id
++ puVar6->object_id
 )
 ...>
 }
@@ -1922,13 +1922,13 @@ R sum_container_weight(...) {
 ...>
 }
 
-@sum_container_weight_puVar2_parenthesized_item_id@
+@sum_container_weight_puVar2_parenthesized_object_id@
 type R;
 @@
 R sum_container_weight(...) {
 <...
-- (puVar2)->item_id
-+ puVar2->item_id
+- (puVar2)->object_id
++ puVar2->object_id
 ...>
 }
 
@@ -2070,7 +2070,7 @@ type R;
 R sum_container_weight(...) {
 <...
 - puVar2->type_flags >> 6 & 7
-+ puVar2->item_id >> 6 & 7
++ puVar2->object_id >> 6 & 7
 ...>
 }
 
@@ -2080,11 +2080,11 @@ type R;
 R sum_container_weight(...) {
 <...
 - puVar2->type_flags >> 4 & 3
-+ puVar2->item_id >> 4 & 3
++ puVar2->object_id >> 4 & 3
 ...>
 }
 
-@sum_container_weight_puVar2_mask_item_id@
+@sum_container_weight_puVar2_mask_object_id@
 type R;
 typedef byte;
 @@
@@ -2092,10 +2092,10 @@ R sum_container_weight(...) {
 <...
 (
 - puVar2->type_flags & 0x1ff
-+ puVar2->item_id
++ puVar2->object_id
 |
 - (byte)puVar2->type_flags & 0x1ff
-+ puVar2->item_id
++ puVar2->object_id
 )
 ...>
 }
@@ -2281,13 +2281,13 @@ R discard_container_contents(...) {
 ...>
 }
 
-@discard_container_contents_puVar1_parenthesized_item_id@
+@discard_container_contents_puVar1_parenthesized_object_id@
 type R;
 @@
 R discard_container_contents(...) {
 <...
-- (puVar1)->item_id
-+ puVar1->item_id
+- (puVar1)->object_id
++ puVar1->object_id
 ...>
 }
 
@@ -2429,7 +2429,7 @@ type R;
 R discard_container_contents(...) {
 <...
 - puVar1->type_flags >> 6 & 7
-+ puVar1->item_id >> 6 & 7
++ puVar1->object_id >> 6 & 7
 ...>
 }
 
@@ -2439,11 +2439,11 @@ type R;
 R discard_container_contents(...) {
 <...
 - puVar1->type_flags >> 4 & 3
-+ puVar1->item_id >> 4 & 3
++ puVar1->object_id >> 4 & 3
 ...>
 }
 
-@discard_container_contents_puVar1_mask_item_id@
+@discard_container_contents_puVar1_mask_object_id@
 type R;
 typedef byte;
 @@
@@ -2451,10 +2451,10 @@ R discard_container_contents(...) {
 <...
 (
 - puVar1->type_flags & 0x1ff
-+ puVar1->item_id
++ puVar1->object_id
 |
 - (byte)puVar1->type_flags & 0x1ff
-+ puVar1->item_id
++ puVar1->object_id
 )
 ...>
 }
@@ -2640,13 +2640,13 @@ R discard_container_contents(...) {
 ...>
 }
 
-@discard_container_contents_container_parenthesized_item_id@
+@discard_container_contents_container_parenthesized_object_id@
 type R;
 @@
 R discard_container_contents(...) {
 <...
-- (container)->item_id
-+ container->item_id
+- (container)->object_id
++ container->object_id
 ...>
 }
 
@@ -2788,7 +2788,7 @@ type R;
 R discard_container_contents(...) {
 <...
 - container->type_flags >> 6 & 7
-+ container->item_id >> 6 & 7
++ container->object_id >> 6 & 7
 ...>
 }
 
@@ -2798,11 +2798,11 @@ type R;
 R discard_container_contents(...) {
 <...
 - container->type_flags >> 4 & 3
-+ container->item_id >> 4 & 3
++ container->object_id >> 4 & 3
 ...>
 }
 
-@discard_container_contents_container_mask_item_id@
+@discard_container_contents_container_mask_object_id@
 type R;
 typedef byte;
 @@
@@ -2810,10 +2810,10 @@ R discard_container_contents(...) {
 <...
 (
 - container->type_flags & 0x1ff
-+ container->item_id
++ container->object_id
 |
 - (byte)container->type_flags & 0x1ff
-+ container->item_id
++ container->object_id
 )
 ...>
 }
@@ -2999,13 +2999,13 @@ R try_empty_container(...) {
 ...>
 }
 
-@try_empty_container_container_parenthesized_item_id@
+@try_empty_container_container_parenthesized_object_id@
 type R;
 @@
 R try_empty_container(...) {
 <...
-- (container)->item_id
-+ container->item_id
+- (container)->object_id
++ container->object_id
 ...>
 }
 
@@ -3147,7 +3147,7 @@ type R;
 R try_empty_container(...) {
 <...
 - container->type_flags >> 6 & 7
-+ container->item_id >> 6 & 7
++ container->object_id >> 6 & 7
 ...>
 }
 
@@ -3157,11 +3157,11 @@ type R;
 R try_empty_container(...) {
 <...
 - container->type_flags >> 4 & 3
-+ container->item_id >> 4 & 3
++ container->object_id >> 4 & 3
 ...>
 }
 
-@try_empty_container_container_mask_item_id@
+@try_empty_container_container_mask_object_id@
 type R;
 typedef byte;
 @@
@@ -3169,10 +3169,10 @@ R try_empty_container(...) {
 <...
 (
 - container->type_flags & 0x1ff
-+ container->item_id
++ container->object_id
 |
 - (byte)container->type_flags & 0x1ff
-+ container->item_id
++ container->object_id
 )
 ...>
 }
@@ -3358,13 +3358,13 @@ R objects_can_stack(...) {
 ...>
 }
 
-@objects_can_stack_object_a_parenthesized_item_id@
+@objects_can_stack_object_a_parenthesized_object_id@
 type R;
 @@
 R objects_can_stack(...) {
 <...
-- (object_a)->item_id
-+ object_a->item_id
+- (object_a)->object_id
++ object_a->object_id
 ...>
 }
 
@@ -3506,7 +3506,7 @@ type R;
 R objects_can_stack(...) {
 <...
 - object_a->type_flags >> 6 & 7
-+ object_a->item_id >> 6 & 7
++ object_a->object_id >> 6 & 7
 ...>
 }
 
@@ -3516,11 +3516,11 @@ type R;
 R objects_can_stack(...) {
 <...
 - object_a->type_flags >> 4 & 3
-+ object_a->item_id >> 4 & 3
++ object_a->object_id >> 4 & 3
 ...>
 }
 
-@objects_can_stack_object_a_mask_item_id@
+@objects_can_stack_object_a_mask_object_id@
 type R;
 typedef byte;
 @@
@@ -3528,10 +3528,10 @@ R objects_can_stack(...) {
 <...
 (
 - object_a->type_flags & 0x1ff
-+ object_a->item_id
++ object_a->object_id
 |
 - (byte)object_a->type_flags & 0x1ff
-+ object_a->item_id
++ object_a->object_id
 )
 ...>
 }
@@ -3717,13 +3717,13 @@ R objects_can_stack(...) {
 ...>
 }
 
-@objects_can_stack_object_b_parenthesized_item_id@
+@objects_can_stack_object_b_parenthesized_object_id@
 type R;
 @@
 R objects_can_stack(...) {
 <...
-- (object_b)->item_id
-+ object_b->item_id
+- (object_b)->object_id
++ object_b->object_id
 ...>
 }
 
@@ -3865,7 +3865,7 @@ type R;
 R objects_can_stack(...) {
 <...
 - object_b->type_flags >> 6 & 7
-+ object_b->item_id >> 6 & 7
++ object_b->object_id >> 6 & 7
 ...>
 }
 
@@ -3875,11 +3875,11 @@ type R;
 R objects_can_stack(...) {
 <...
 - object_b->type_flags >> 4 & 3
-+ object_b->item_id >> 4 & 3
++ object_b->object_id >> 4 & 3
 ...>
 }
 
-@objects_can_stack_object_b_mask_item_id@
+@objects_can_stack_object_b_mask_object_id@
 type R;
 typedef byte;
 @@
@@ -3887,10 +3887,10 @@ R objects_can_stack(...) {
 <...
 (
 - object_b->type_flags & 0x1ff
-+ object_b->item_id
++ object_b->object_id
 |
 - (byte)object_b->type_flags & 0x1ff
-+ object_b->item_id
++ object_b->object_id
 )
 ...>
 }

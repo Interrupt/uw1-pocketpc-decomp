@@ -127,7 +127,7 @@ def inspect(entry):
                             if rhs.get('value') == '511':
                                 base = first_word_base(part['inner'][0])
                                 if base and base['id'] in declarations and pointer(declarations[base['id']]):
-                                    seeds[base['id']] = 'COMOBJ index from object header item_id'
+                                    seeds[base['id']] = 'COMOBJ index from object header object_id'
         roles = dict(seeds)
 
         def object_value(value):

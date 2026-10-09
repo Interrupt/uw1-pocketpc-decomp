@@ -405,7 +405,7 @@ R F(...) {
 }
 
 
-@site_0_field_0_item_id disable drop_cast, is_zero, isnt_zero@
+@site_0_field_0_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(build_object_placement_snapshot\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -414,19 +414,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)object + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)object)->item_id
++ ((uw_object_hdr_t *)object)->object_id
 |
 - ((ushort *)object)[0] & 0x1ff
-+ ((uw_object_hdr_t *)object)->item_id
++ ((uw_object_hdr_t *)object)->object_id
 |
 - *(ushort *)object & 0x1ff
-+ ((uw_object_hdr_t *)object)->item_id
++ ((uw_object_hdr_t *)object)->object_id
 |
 - object[0] & 0x1ff
-+ ((uw_object_hdr_t *)object)->item_id
++ ((uw_object_hdr_t *)object)->object_id
 |
 - *object & 0x1ff
-+ ((uw_object_hdr_t *)object)->item_id
++ ((uw_object_hdr_t *)object)->object_id
 )
 ...>
 }
@@ -3626,7 +3626,7 @@ R F(...) {
 }
 
 
-@site_1_field_0_item_id disable drop_cast, is_zero, isnt_zero@
+@site_1_field_0_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(settle_mobile_to_immobile\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -3635,19 +3635,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)object + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)object)->item_id
++ ((uw_object_hdr_t *)object)->object_id
 |
 - ((ushort *)object)[0] & 0x1ff
-+ ((uw_object_hdr_t *)object)->item_id
++ ((uw_object_hdr_t *)object)->object_id
 |
 - *(ushort *)object & 0x1ff
-+ ((uw_object_hdr_t *)object)->item_id
++ ((uw_object_hdr_t *)object)->object_id
 |
 - object[0] & 0x1ff
-+ ((uw_object_hdr_t *)object)->item_id
++ ((uw_object_hdr_t *)object)->object_id
 |
 - *object & 0x1ff
-+ ((uw_object_hdr_t *)object)->item_id
++ ((uw_object_hdr_t *)object)->object_id
 )
 ...>
 }
@@ -7290,7 +7290,7 @@ R F(...) {
 }
 
 
-@site_3_field_0_item_id disable drop_cast, is_zero, isnt_zero@
+@site_3_field_0_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(npc_ai_default_tick\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7299,22 +7299,22 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)npc_rec + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)npc_rec)->item_id
++ ((uw_object_hdr_t *)npc_rec)->object_id
 |
 - ((ushort *)npc_rec)[0] & 0x1ff
-+ ((uw_object_hdr_t *)npc_rec)->item_id
++ ((uw_object_hdr_t *)npc_rec)->object_id
 |
 - *(ushort *)npc_rec & 0x1ff
-+ ((uw_object_hdr_t *)npc_rec)->item_id
++ ((uw_object_hdr_t *)npc_rec)->object_id
 |
 - *(ushort *)(npc_rec + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)npc_rec)->item_id
++ ((uw_object_hdr_t *)npc_rec)->object_id
 |
 - CONCAT11(npc_rec[1], *npc_rec) & 0x1ff
-+ ((uw_object_hdr_t *)npc_rec)->item_id
++ ((uw_object_hdr_t *)npc_rec)->object_id
 |
 - CONCAT11(npc_rec[1], npc_rec[0]) & 0x1ff
-+ ((uw_object_hdr_t *)npc_rec)->item_id
++ ((uw_object_hdr_t *)npc_rec)->object_id
 )
 ...>
 }
@@ -10724,7 +10724,7 @@ R F(...) {
 }
 
 
-@site_4_field_0_item_id disable drop_cast, is_zero, isnt_zero@
+@site_4_field_0_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(reset_npc_path_cache\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -10733,22 +10733,22 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)iVar1 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar1)->item_id
++ ((uw_object_hdr_t *)iVar1)->object_id
 |
 - ((ushort *)iVar1)[0] & 0x1ff
-+ ((uw_object_hdr_t *)iVar1)->item_id
++ ((uw_object_hdr_t *)iVar1)->object_id
 |
 - *(ushort *)iVar1 & 0x1ff
-+ ((uw_object_hdr_t *)iVar1)->item_id
++ ((uw_object_hdr_t *)iVar1)->object_id
 |
 - *(ushort *)(iVar1 + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)iVar1)->item_id
++ ((uw_object_hdr_t *)iVar1)->object_id
 |
 - CONCAT11(iVar1[1], *iVar1) & 0x1ff
-+ ((uw_object_hdr_t *)iVar1)->item_id
++ ((uw_object_hdr_t *)iVar1)->object_id
 |
 - CONCAT11(iVar1[1], iVar1[0]) & 0x1ff
-+ ((uw_object_hdr_t *)iVar1)->item_id
++ ((uw_object_hdr_t *)iVar1)->object_id
 )
 ...>
 }

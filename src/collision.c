@@ -41,8 +41,8 @@ int build_collision_height_field_for_object(ushort *object)
   slot_index = encode_object_slot_index(object);
   DAT_00202c6c[10] = (char)slot_index;
   DAT_00202c6c[0xb] = (char)((ushort)slot_index >> 8);
-  DAT_00202c6c[8] = g_object_type_props[(((uw_object_hdr_t *)object)->item_id)].collision_radius;
-  DAT_00202c6c[9] = g_object_type_props[(((uw_object_hdr_t *)object)->item_id)].height;
+  DAT_00202c6c[8] = g_object_type_props[(((uw_object_hdr_t *)object)->object_id)].collision_radius;
+  DAT_00202c6c[9] = g_object_type_props[(((uw_object_hdr_t *)object)->object_id)].height;
   field = ((((uw_mobile_object_t *)object)->tile_x << 3)) + (uint)(((uw_object_hdr_t *)object)->xpos);
   *DAT_00202c6c = (char)field;
   DAT_00202c6c[1] = (char)((uint)field >> 8);
@@ -401,10 +401,10 @@ void collision_height_envelope(int mode, int collision)
                  comment) where this loop's `while ((uVar3 & 0xffc0) != 0)` condition alone used to
                  guarantee success... */
               if (puVar7 == (ushort *)0x0) break;
-              iVar10 = (((uw_object_hdr_t *)puVar7)->item_id) * 0xd;
+              iVar10 = (((uw_object_hdr_t *)puVar7)->object_id) * 0xd;
               if ((((local_3c == 0) || ((g_object_type_props[iVar10 / 0xd].flags & 4) == 0)) &&
                    ((g_object_type_props[iVar10 / 0xd].height != '\0' || ((char *)puVar7 < DAT_002046c4)))) &&
-                  ((((DAT_002046c4 <= (char *)puVar7 || ((((uw_object_hdr_t *)puVar7)->item_id & 0x1c0) == 0x40)) ||
+                  ((((DAT_002046c4 <= (char *)puVar7 || ((((uw_object_hdr_t *)puVar7)->object_id & 0x1c0) == 0x40)) ||
                      ((((uw_mobile_object_t *)puVar7)->animation_flags & 0x80) == 0)) &&
                     ((collision == 0 || ((g_object_type_props[iVar10 / 0xd].quality_flags & 1) != 0)))))) {
                 collision_add_candidate_object(puVar7,*puVar6 >> 6,iVar12,iVar14,local_3c);
@@ -808,7 +808,7 @@ int check_object_placement_clearance(short catalog_type, short ignore_slot, shor
           /* Was an unguarded `*puVar4` -- resolve_object_link legitimately returns NULL when the
              candidate slot (&DAT_00202c3a + sVar7*6) has no object linked there at all... */
           if ((puVar4 != (ushort *)0x0) &&
-             ((g_object_type_props[(((uw_object_hdr_t *)puVar4)->item_id)].flags & 2) == 0)) {
+             ((g_object_type_props[(((uw_object_hdr_t *)puVar4)->object_id)].flags & 2) == 0)) {
             DAT_00202c6c = uVar2;
             return 0;
           }

@@ -1,66 +1,66 @@
-@type_flags_0_item_id@
+@type_flags_0_object_id@
 identifier P, H, V;
 typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;
 @@
 (
 - P->type_flags = P->type_flags & 0xfe00 | H & 0x1ff;
-+ P->item_id = H & 0x1ff;
++ P->object_id = H & 0x1ff;
 |
 - V = P->type_flags & 0xfe00 | H & 0x1ff;
 - P->type_flags = (ushort)V;
-+ P->item_id = H & 0x1ff;
++ P->object_id = H & 0x1ff;
 + V = P->type_flags;
 |
 - V = P->type_flags & 0xfe00 | H & 0x1ff;
 - P->type_flags_low = (byte)V;
 - P->type_flags_high = (byte)(V >> 8);
-+ P->item_id = H & 0x1ff;
++ P->object_id = H & 0x1ff;
 + V = P->type_flags;
 |
 - V = P->type_flags & 0xfe00 | H & 0x1ff;
 - P->type_flags_low = (byte)(char)V;
 - P->type_flags_high = (byte)(char)(V >> 8);
-+ P->item_id = H & 0x1ff;
++ P->object_id = H & 0x1ff;
 + V = P->type_flags;
 |
 - P->type_flags = P->type_flags & 0xfe00;
-+ P->item_id = 0x0;
++ P->object_id = 0x0;
 |
 - V = P->type_flags & 0xfe00;
 - P->type_flags = (ushort)V;
-+ P->item_id = 0x0;
++ P->object_id = 0x0;
 + V = P->type_flags;
 |
 - V = P->type_flags & 0xfe00;
 - P->type_flags_low = (byte)V;
 - P->type_flags_high = (byte)(V >> 8);
-+ P->item_id = 0x0;
++ P->object_id = 0x0;
 + V = P->type_flags;
 |
 - V = P->type_flags & 0xfe00;
 - P->type_flags_low = (byte)(char)V;
 - P->type_flags_high = (byte)(char)(V >> 8);
-+ P->item_id = 0x0;
++ P->object_id = 0x0;
 + V = P->type_flags;
 |
 - P->type_flags = P->type_flags | 0x1ff;
-+ P->item_id = 0x1ff;
++ P->object_id = 0x1ff;
 |
 - V = P->type_flags | 0x1ff;
 - P->type_flags = (ushort)V;
-+ P->item_id = 0x1ff;
++ P->object_id = 0x1ff;
 + V = P->type_flags;
 |
 - V = P->type_flags | 0x1ff;
 - P->type_flags_low = (byte)V;
 - P->type_flags_high = (byte)(V >> 8);
-+ P->item_id = 0x1ff;
++ P->object_id = 0x1ff;
 + V = P->type_flags;
 |
 - V = P->type_flags | 0x1ff;
 - P->type_flags_low = (byte)(char)V;
 - P->type_flags_high = (byte)(char)(V >> 8);
-+ P->item_id = 0x1ff;
++ P->object_id = 0x1ff;
 + V = P->type_flags;
 )
 
@@ -469,69 +469,69 @@ typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_
 + P->is_quant = (H >> 7) & 0x1;
 )
 
-@type_flags_1_item_id@
+@type_flags_1_object_id@
 identifier P, H, V;
 typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;
 @@
 (
 - P.type_flags = P.type_flags & 0xfe00 | H & 0x1ff;
-+ P.item_id = H & 0x1ff;
++ P.object_id = H & 0x1ff;
 |
 - V = P.type_flags & 0xfe00 | H & 0x1ff;
 - P.type_flags = (ushort)V;
-+ P.item_id = H & 0x1ff;
++ P.object_id = H & 0x1ff;
 + V = P.type_flags;
 |
 - V = P.type_flags & 0xfe00 | H & 0x1ff;
 - P.type_flags_low = (byte)V;
 - P.type_flags_high = (byte)(V >> 8);
-+ P.item_id = H & 0x1ff;
++ P.object_id = H & 0x1ff;
 + V = P.type_flags;
 |
 - V = P.type_flags & 0xfe00 | H & 0x1ff;
 - P.type_flags_low = (byte)(char)V;
 - P.type_flags_high = (byte)(char)(V >> 8);
-+ P.item_id = H & 0x1ff;
++ P.object_id = H & 0x1ff;
 + V = P.type_flags;
 |
 - P.type_flags = P.type_flags & 0xfe00;
-+ P.item_id = 0x0;
++ P.object_id = 0x0;
 |
 - V = P.type_flags & 0xfe00;
 - P.type_flags = (ushort)V;
-+ P.item_id = 0x0;
++ P.object_id = 0x0;
 + V = P.type_flags;
 |
 - V = P.type_flags & 0xfe00;
 - P.type_flags_low = (byte)V;
 - P.type_flags_high = (byte)(V >> 8);
-+ P.item_id = 0x0;
++ P.object_id = 0x0;
 + V = P.type_flags;
 |
 - V = P.type_flags & 0xfe00;
 - P.type_flags_low = (byte)(char)V;
 - P.type_flags_high = (byte)(char)(V >> 8);
-+ P.item_id = 0x0;
++ P.object_id = 0x0;
 + V = P.type_flags;
 |
 - P.type_flags = P.type_flags | 0x1ff;
-+ P.item_id = 0x1ff;
++ P.object_id = 0x1ff;
 |
 - V = P.type_flags | 0x1ff;
 - P.type_flags = (ushort)V;
-+ P.item_id = 0x1ff;
++ P.object_id = 0x1ff;
 + V = P.type_flags;
 |
 - V = P.type_flags | 0x1ff;
 - P.type_flags_low = (byte)V;
 - P.type_flags_high = (byte)(V >> 8);
-+ P.item_id = 0x1ff;
++ P.object_id = 0x1ff;
 + V = P.type_flags;
 |
 - V = P.type_flags | 0x1ff;
 - P.type_flags_low = (byte)(char)V;
 - P.type_flags_high = (byte)(char)(V >> 8);
-+ P.item_id = 0x1ff;
++ P.object_id = 0x1ff;
 + V = P.type_flags;
 )
 
@@ -940,69 +940,69 @@ typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_
 + P.is_quant = (H >> 7) & 0x1;
 )
 
-@type_flags_2_item_id@
+@type_flags_2_object_id@
 identifier P, H, V;
 typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;
 @@
 (
 - P->hdr.type_flags = P->hdr.type_flags & 0xfe00 | H & 0x1ff;
-+ P->hdr.item_id = H & 0x1ff;
++ P->hdr.object_id = H & 0x1ff;
 |
 - V = P->hdr.type_flags & 0xfe00 | H & 0x1ff;
 - P->hdr.type_flags = (ushort)V;
-+ P->hdr.item_id = H & 0x1ff;
++ P->hdr.object_id = H & 0x1ff;
 + V = P->hdr.type_flags;
 |
 - V = P->hdr.type_flags & 0xfe00 | H & 0x1ff;
 - P->hdr.type_flags_low = (byte)V;
 - P->hdr.type_flags_high = (byte)(V >> 8);
-+ P->hdr.item_id = H & 0x1ff;
++ P->hdr.object_id = H & 0x1ff;
 + V = P->hdr.type_flags;
 |
 - V = P->hdr.type_flags & 0xfe00 | H & 0x1ff;
 - P->hdr.type_flags_low = (byte)(char)V;
 - P->hdr.type_flags_high = (byte)(char)(V >> 8);
-+ P->hdr.item_id = H & 0x1ff;
++ P->hdr.object_id = H & 0x1ff;
 + V = P->hdr.type_flags;
 |
 - P->hdr.type_flags = P->hdr.type_flags & 0xfe00;
-+ P->hdr.item_id = 0x0;
++ P->hdr.object_id = 0x0;
 |
 - V = P->hdr.type_flags & 0xfe00;
 - P->hdr.type_flags = (ushort)V;
-+ P->hdr.item_id = 0x0;
++ P->hdr.object_id = 0x0;
 + V = P->hdr.type_flags;
 |
 - V = P->hdr.type_flags & 0xfe00;
 - P->hdr.type_flags_low = (byte)V;
 - P->hdr.type_flags_high = (byte)(V >> 8);
-+ P->hdr.item_id = 0x0;
++ P->hdr.object_id = 0x0;
 + V = P->hdr.type_flags;
 |
 - V = P->hdr.type_flags & 0xfe00;
 - P->hdr.type_flags_low = (byte)(char)V;
 - P->hdr.type_flags_high = (byte)(char)(V >> 8);
-+ P->hdr.item_id = 0x0;
++ P->hdr.object_id = 0x0;
 + V = P->hdr.type_flags;
 |
 - P->hdr.type_flags = P->hdr.type_flags | 0x1ff;
-+ P->hdr.item_id = 0x1ff;
++ P->hdr.object_id = 0x1ff;
 |
 - V = P->hdr.type_flags | 0x1ff;
 - P->hdr.type_flags = (ushort)V;
-+ P->hdr.item_id = 0x1ff;
++ P->hdr.object_id = 0x1ff;
 + V = P->hdr.type_flags;
 |
 - V = P->hdr.type_flags | 0x1ff;
 - P->hdr.type_flags_low = (byte)V;
 - P->hdr.type_flags_high = (byte)(V >> 8);
-+ P->hdr.item_id = 0x1ff;
++ P->hdr.object_id = 0x1ff;
 + V = P->hdr.type_flags;
 |
 - V = P->hdr.type_flags | 0x1ff;
 - P->hdr.type_flags_low = (byte)(char)V;
 - P->hdr.type_flags_high = (byte)(char)(V >> 8);
-+ P->hdr.item_id = 0x1ff;
++ P->hdr.object_id = 0x1ff;
 + V = P->hdr.type_flags;
 )
 
@@ -1411,69 +1411,69 @@ typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_
 + P->hdr.is_quant = (H >> 7) & 0x1;
 )
 
-@type_flags_3_item_id@
+@type_flags_3_object_id@
 identifier P, H, V;
 typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;
 @@
 (
 - P.hdr.type_flags = P.hdr.type_flags & 0xfe00 | H & 0x1ff;
-+ P.hdr.item_id = H & 0x1ff;
++ P.hdr.object_id = H & 0x1ff;
 |
 - V = P.hdr.type_flags & 0xfe00 | H & 0x1ff;
 - P.hdr.type_flags = (ushort)V;
-+ P.hdr.item_id = H & 0x1ff;
++ P.hdr.object_id = H & 0x1ff;
 + V = P.hdr.type_flags;
 |
 - V = P.hdr.type_flags & 0xfe00 | H & 0x1ff;
 - P.hdr.type_flags_low = (byte)V;
 - P.hdr.type_flags_high = (byte)(V >> 8);
-+ P.hdr.item_id = H & 0x1ff;
++ P.hdr.object_id = H & 0x1ff;
 + V = P.hdr.type_flags;
 |
 - V = P.hdr.type_flags & 0xfe00 | H & 0x1ff;
 - P.hdr.type_flags_low = (byte)(char)V;
 - P.hdr.type_flags_high = (byte)(char)(V >> 8);
-+ P.hdr.item_id = H & 0x1ff;
++ P.hdr.object_id = H & 0x1ff;
 + V = P.hdr.type_flags;
 |
 - P.hdr.type_flags = P.hdr.type_flags & 0xfe00;
-+ P.hdr.item_id = 0x0;
++ P.hdr.object_id = 0x0;
 |
 - V = P.hdr.type_flags & 0xfe00;
 - P.hdr.type_flags = (ushort)V;
-+ P.hdr.item_id = 0x0;
++ P.hdr.object_id = 0x0;
 + V = P.hdr.type_flags;
 |
 - V = P.hdr.type_flags & 0xfe00;
 - P.hdr.type_flags_low = (byte)V;
 - P.hdr.type_flags_high = (byte)(V >> 8);
-+ P.hdr.item_id = 0x0;
++ P.hdr.object_id = 0x0;
 + V = P.hdr.type_flags;
 |
 - V = P.hdr.type_flags & 0xfe00;
 - P.hdr.type_flags_low = (byte)(char)V;
 - P.hdr.type_flags_high = (byte)(char)(V >> 8);
-+ P.hdr.item_id = 0x0;
++ P.hdr.object_id = 0x0;
 + V = P.hdr.type_flags;
 |
 - P.hdr.type_flags = P.hdr.type_flags | 0x1ff;
-+ P.hdr.item_id = 0x1ff;
++ P.hdr.object_id = 0x1ff;
 |
 - V = P.hdr.type_flags | 0x1ff;
 - P.hdr.type_flags = (ushort)V;
-+ P.hdr.item_id = 0x1ff;
++ P.hdr.object_id = 0x1ff;
 + V = P.hdr.type_flags;
 |
 - V = P.hdr.type_flags | 0x1ff;
 - P.hdr.type_flags_low = (byte)V;
 - P.hdr.type_flags_high = (byte)(V >> 8);
-+ P.hdr.item_id = 0x1ff;
++ P.hdr.object_id = 0x1ff;
 + V = P.hdr.type_flags;
 |
 - V = P.hdr.type_flags | 0x1ff;
 - P.hdr.type_flags_low = (byte)(char)V;
 - P.hdr.type_flags_high = (byte)(char)(V >> 8);
-+ P.hdr.item_id = 0x1ff;
++ P.hdr.object_id = 0x1ff;
 + V = P.hdr.type_flags;
 )
 
@@ -1882,69 +1882,69 @@ typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_
 + P.hdr.is_quant = (H >> 7) & 0x1;
 )
 
-@type_flags_4_item_id@
+@type_flags_4_object_id@
 identifier P, H, V;
 typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;
 @@
 (
 - ((uw_object_hdr_t *)P)->type_flags = ((uw_object_hdr_t *)P)->type_flags & 0xfe00 | H & 0x1ff;
-+ ((uw_object_hdr_t *)P)->item_id = H & 0x1ff;
++ ((uw_object_hdr_t *)P)->object_id = H & 0x1ff;
 |
 - V = ((uw_object_hdr_t *)P)->type_flags & 0xfe00 | H & 0x1ff;
 - ((uw_object_hdr_t *)P)->type_flags = (ushort)V;
-+ ((uw_object_hdr_t *)P)->item_id = H & 0x1ff;
++ ((uw_object_hdr_t *)P)->object_id = H & 0x1ff;
 + V = ((uw_object_hdr_t *)P)->type_flags;
 |
 - V = ((uw_object_hdr_t *)P)->type_flags & 0xfe00 | H & 0x1ff;
 - ((uw_object_hdr_t *)P)->type_flags_low = (byte)V;
 - ((uw_object_hdr_t *)P)->type_flags_high = (byte)(V >> 8);
-+ ((uw_object_hdr_t *)P)->item_id = H & 0x1ff;
++ ((uw_object_hdr_t *)P)->object_id = H & 0x1ff;
 + V = ((uw_object_hdr_t *)P)->type_flags;
 |
 - V = ((uw_object_hdr_t *)P)->type_flags & 0xfe00 | H & 0x1ff;
 - ((uw_object_hdr_t *)P)->type_flags_low = (byte)(char)V;
 - ((uw_object_hdr_t *)P)->type_flags_high = (byte)(char)(V >> 8);
-+ ((uw_object_hdr_t *)P)->item_id = H & 0x1ff;
++ ((uw_object_hdr_t *)P)->object_id = H & 0x1ff;
 + V = ((uw_object_hdr_t *)P)->type_flags;
 |
 - ((uw_object_hdr_t *)P)->type_flags = ((uw_object_hdr_t *)P)->type_flags & 0xfe00;
-+ ((uw_object_hdr_t *)P)->item_id = 0x0;
++ ((uw_object_hdr_t *)P)->object_id = 0x0;
 |
 - V = ((uw_object_hdr_t *)P)->type_flags & 0xfe00;
 - ((uw_object_hdr_t *)P)->type_flags = (ushort)V;
-+ ((uw_object_hdr_t *)P)->item_id = 0x0;
++ ((uw_object_hdr_t *)P)->object_id = 0x0;
 + V = ((uw_object_hdr_t *)P)->type_flags;
 |
 - V = ((uw_object_hdr_t *)P)->type_flags & 0xfe00;
 - ((uw_object_hdr_t *)P)->type_flags_low = (byte)V;
 - ((uw_object_hdr_t *)P)->type_flags_high = (byte)(V >> 8);
-+ ((uw_object_hdr_t *)P)->item_id = 0x0;
++ ((uw_object_hdr_t *)P)->object_id = 0x0;
 + V = ((uw_object_hdr_t *)P)->type_flags;
 |
 - V = ((uw_object_hdr_t *)P)->type_flags & 0xfe00;
 - ((uw_object_hdr_t *)P)->type_flags_low = (byte)(char)V;
 - ((uw_object_hdr_t *)P)->type_flags_high = (byte)(char)(V >> 8);
-+ ((uw_object_hdr_t *)P)->item_id = 0x0;
++ ((uw_object_hdr_t *)P)->object_id = 0x0;
 + V = ((uw_object_hdr_t *)P)->type_flags;
 |
 - ((uw_object_hdr_t *)P)->type_flags = ((uw_object_hdr_t *)P)->type_flags | 0x1ff;
-+ ((uw_object_hdr_t *)P)->item_id = 0x1ff;
++ ((uw_object_hdr_t *)P)->object_id = 0x1ff;
 |
 - V = ((uw_object_hdr_t *)P)->type_flags | 0x1ff;
 - ((uw_object_hdr_t *)P)->type_flags = (ushort)V;
-+ ((uw_object_hdr_t *)P)->item_id = 0x1ff;
++ ((uw_object_hdr_t *)P)->object_id = 0x1ff;
 + V = ((uw_object_hdr_t *)P)->type_flags;
 |
 - V = ((uw_object_hdr_t *)P)->type_flags | 0x1ff;
 - ((uw_object_hdr_t *)P)->type_flags_low = (byte)V;
 - ((uw_object_hdr_t *)P)->type_flags_high = (byte)(V >> 8);
-+ ((uw_object_hdr_t *)P)->item_id = 0x1ff;
++ ((uw_object_hdr_t *)P)->object_id = 0x1ff;
 + V = ((uw_object_hdr_t *)P)->type_flags;
 |
 - V = ((uw_object_hdr_t *)P)->type_flags | 0x1ff;
 - ((uw_object_hdr_t *)P)->type_flags_low = (byte)(char)V;
 - ((uw_object_hdr_t *)P)->type_flags_high = (byte)(char)(V >> 8);
-+ ((uw_object_hdr_t *)P)->item_id = 0x1ff;
++ ((uw_object_hdr_t *)P)->object_id = 0x1ff;
 + V = ((uw_object_hdr_t *)P)->type_flags;
 )
 
@@ -2353,69 +2353,69 @@ typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_
 + ((uw_object_hdr_t *)P)->is_quant = (H >> 7) & 0x1;
 )
 
-@type_flags_5_item_id@
+@type_flags_5_object_id@
 identifier P, H, V;
 typedef byte, ushort, uw_object_hdr_t, uw_mobile_object_t, uw_object_type_props_t;
 @@
 (
 - ((uw_mobile_object_t *)P)->hdr.type_flags = ((uw_mobile_object_t *)P)->hdr.type_flags & 0xfe00 | H & 0x1ff;
-+ ((uw_mobile_object_t *)P)->hdr.item_id = H & 0x1ff;
++ ((uw_mobile_object_t *)P)->hdr.object_id = H & 0x1ff;
 |
 - V = ((uw_mobile_object_t *)P)->hdr.type_flags & 0xfe00 | H & 0x1ff;
 - ((uw_mobile_object_t *)P)->hdr.type_flags = (ushort)V;
-+ ((uw_mobile_object_t *)P)->hdr.item_id = H & 0x1ff;
++ ((uw_mobile_object_t *)P)->hdr.object_id = H & 0x1ff;
 + V = ((uw_mobile_object_t *)P)->hdr.type_flags;
 |
 - V = ((uw_mobile_object_t *)P)->hdr.type_flags & 0xfe00 | H & 0x1ff;
 - ((uw_mobile_object_t *)P)->hdr.type_flags_low = (byte)V;
 - ((uw_mobile_object_t *)P)->hdr.type_flags_high = (byte)(V >> 8);
-+ ((uw_mobile_object_t *)P)->hdr.item_id = H & 0x1ff;
++ ((uw_mobile_object_t *)P)->hdr.object_id = H & 0x1ff;
 + V = ((uw_mobile_object_t *)P)->hdr.type_flags;
 |
 - V = ((uw_mobile_object_t *)P)->hdr.type_flags & 0xfe00 | H & 0x1ff;
 - ((uw_mobile_object_t *)P)->hdr.type_flags_low = (byte)(char)V;
 - ((uw_mobile_object_t *)P)->hdr.type_flags_high = (byte)(char)(V >> 8);
-+ ((uw_mobile_object_t *)P)->hdr.item_id = H & 0x1ff;
++ ((uw_mobile_object_t *)P)->hdr.object_id = H & 0x1ff;
 + V = ((uw_mobile_object_t *)P)->hdr.type_flags;
 |
 - ((uw_mobile_object_t *)P)->hdr.type_flags = ((uw_mobile_object_t *)P)->hdr.type_flags & 0xfe00;
-+ ((uw_mobile_object_t *)P)->hdr.item_id = 0x0;
++ ((uw_mobile_object_t *)P)->hdr.object_id = 0x0;
 |
 - V = ((uw_mobile_object_t *)P)->hdr.type_flags & 0xfe00;
 - ((uw_mobile_object_t *)P)->hdr.type_flags = (ushort)V;
-+ ((uw_mobile_object_t *)P)->hdr.item_id = 0x0;
++ ((uw_mobile_object_t *)P)->hdr.object_id = 0x0;
 + V = ((uw_mobile_object_t *)P)->hdr.type_flags;
 |
 - V = ((uw_mobile_object_t *)P)->hdr.type_flags & 0xfe00;
 - ((uw_mobile_object_t *)P)->hdr.type_flags_low = (byte)V;
 - ((uw_mobile_object_t *)P)->hdr.type_flags_high = (byte)(V >> 8);
-+ ((uw_mobile_object_t *)P)->hdr.item_id = 0x0;
++ ((uw_mobile_object_t *)P)->hdr.object_id = 0x0;
 + V = ((uw_mobile_object_t *)P)->hdr.type_flags;
 |
 - V = ((uw_mobile_object_t *)P)->hdr.type_flags & 0xfe00;
 - ((uw_mobile_object_t *)P)->hdr.type_flags_low = (byte)(char)V;
 - ((uw_mobile_object_t *)P)->hdr.type_flags_high = (byte)(char)(V >> 8);
-+ ((uw_mobile_object_t *)P)->hdr.item_id = 0x0;
++ ((uw_mobile_object_t *)P)->hdr.object_id = 0x0;
 + V = ((uw_mobile_object_t *)P)->hdr.type_flags;
 |
 - ((uw_mobile_object_t *)P)->hdr.type_flags = ((uw_mobile_object_t *)P)->hdr.type_flags | 0x1ff;
-+ ((uw_mobile_object_t *)P)->hdr.item_id = 0x1ff;
++ ((uw_mobile_object_t *)P)->hdr.object_id = 0x1ff;
 |
 - V = ((uw_mobile_object_t *)P)->hdr.type_flags | 0x1ff;
 - ((uw_mobile_object_t *)P)->hdr.type_flags = (ushort)V;
-+ ((uw_mobile_object_t *)P)->hdr.item_id = 0x1ff;
++ ((uw_mobile_object_t *)P)->hdr.object_id = 0x1ff;
 + V = ((uw_mobile_object_t *)P)->hdr.type_flags;
 |
 - V = ((uw_mobile_object_t *)P)->hdr.type_flags | 0x1ff;
 - ((uw_mobile_object_t *)P)->hdr.type_flags_low = (byte)V;
 - ((uw_mobile_object_t *)P)->hdr.type_flags_high = (byte)(V >> 8);
-+ ((uw_mobile_object_t *)P)->hdr.item_id = 0x1ff;
++ ((uw_mobile_object_t *)P)->hdr.object_id = 0x1ff;
 + V = ((uw_mobile_object_t *)P)->hdr.type_flags;
 |
 - V = ((uw_mobile_object_t *)P)->hdr.type_flags | 0x1ff;
 - ((uw_mobile_object_t *)P)->hdr.type_flags_low = (byte)(char)V;
 - ((uw_mobile_object_t *)P)->hdr.type_flags_high = (byte)(char)(V >> 8);
-+ ((uw_mobile_object_t *)P)->hdr.item_id = 0x1ff;
++ ((uw_mobile_object_t *)P)->hdr.object_id = 0x1ff;
 + V = ((uw_mobile_object_t *)P)->hdr.type_flags;
 )
 

@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-FIELDS = [(0,0,0x1ff,'item_id'),(0,9,7,'flags_res'),(0,12,1,'enchanted'),
+FIELDS = [(0,0,0x1ff,'object_id'),(0,9,7,'flags_res'),(0,12,1,'enchanted'),
           (0,13,1,'doordir'),(0,14,1,'invisible'),(0,15,1,'is_quant'),
           (2,0,0x7f,'zpos'),(2,7,7,'heading'),(2,10,7,'ypos'),(2,13,7,'xpos'),
           (4,0,0x3f,'quality'),(4,6,0x3ff,'next'),(6,0,0x3f,'owner'),(6,6,0x3ff,'link')]

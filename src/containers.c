@@ -648,7 +648,7 @@ LAB_0004386c:
       }
       local_28 = 0;
     }
-    if ((((uw_object_hdr_t *)puVar4)->item_id) == 0x8f) {
+    if ((((uw_object_hdr_t *)puVar4)->object_id) == 0x8f) {
       /* Real ARM binary calls place_rune_in_bag() with 0 args here too (confirmed via Ghidra
          decompile of the real auto_place_in_container at 0x43734) -- same "leftover register"
          reliance already found 3 times this session... */
@@ -762,7 +762,7 @@ void sum_container_weight(ushort *link_field, short *total_weight)
     else {
       uVar1 = puVar2->link;
     }
-    *total_weight = (g_object_type_props[(puVar2->item_id)].unit_weight) * uVar1 + *total_weight;
+    *total_weight = (g_object_type_props[(puVar2->object_id)].unit_weight) * uVar1 + *total_weight;
     sum_container_weight(&puVar2->chain_word,total_weight);
     if (puVar2->is_quant != 0) break;
     puVar2 = resolve_object_link(&puVar2->link_word);
@@ -907,7 +907,7 @@ void try_empty_container(uw_object_hdr_t *container, int owned_by_player)
   char acStack_5c [80];
   
   bVar4 = 0;
-  if (g_object_type_props[container->item_id].can_have_owner) {
+  if (g_object_type_props[container->object_id].can_have_owner) {
     bVar4 = container->owner;
   }
   iVar2 = empty_container_into_world(container,bVar4);
@@ -971,7 +971,7 @@ int place_rune_in_bag(uw_object_hdr_t *rune_object)
   undefined4 uVar3;
   byte *pbVar4;   /* was folded into iVar2 (a 32-bit int) -- see below */
 
-  iVar2 = ((rune_object->item_id) - 0xe8) * 0x10000;
+  iVar2 = ((rune_object->object_id) - 0xe8) * 0x10000;
   uVar1 = iVar2 >> 0x10;
   if (((int)uVar1 < 0) || (0x18 < (int)uVar1)) {
     uVar3 = 0;

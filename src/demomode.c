@@ -612,7 +612,7 @@ void demomode_pump(void) {
         if (contents) {
             unsigned short *c = (unsigned short *)contents;
             fprintf(stderr, "[dumpplayerinv] sp_link resolves to obj=%p type=0x%03x word0=0x%04x\n",
-                    contents, ((uw_object_hdr_t *)c)->item_id,
+                    contents, ((uw_object_hdr_t *)c)->object_id,
                     ((uw_object_hdr_t *)c)->type_flags);
             int n = 0;
             unsigned short *next_link = c + 2;
@@ -621,7 +621,7 @@ void demomode_pump(void) {
                 if (!nx) break;
                 unsigned short *nc = (unsigned short *)nx;
                 fprintf(stderr, "[dumpplayerinv]   +sibling #%d obj=%p type=0x%03x word0=0x%04x\n",
-                        n, nx, ((uw_object_hdr_t *)nc)->item_id,
+                        n, nx, ((uw_object_hdr_t *)nc)->object_id,
                         ((uw_object_hdr_t *)nc)->type_flags);
                 next_link = nc + 2;
                 if (++n > 32) break;
@@ -682,7 +682,7 @@ void demomode_pump(void) {
             unsigned short *obj;
             while ((obj = (unsigned short *)resolve_object_link(link)) != NULL) {
                 fprintf(stderr, "[dumptileobjs]   #%d obj=%p type=0x%03x word0=0x%04x word1=0x%04x\n",
-                        n, (void *)obj, ((uw_object_hdr_t *)obj)->item_id,
+                        n, (void *)obj, ((uw_object_hdr_t *)obj)->object_id,
                         ((uw_object_hdr_t *)obj)->type_flags,
                         ((uw_object_hdr_t *)obj)->position_word);
                 link = obj + 2;

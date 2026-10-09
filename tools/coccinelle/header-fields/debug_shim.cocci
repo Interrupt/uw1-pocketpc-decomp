@@ -1,4 +1,4 @@
-@field_0_item_id disable drop_cast, is_zero, isnt_zero@
+@field_0_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(uw_debug_force_item_id_once\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -7,19 +7,19 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)obj + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)obj)->item_id
++ ((uw_object_hdr_t *)obj)->object_id
 |
 - ((ushort *)obj)[0] & 0x1ff
-+ ((uw_object_hdr_t *)obj)->item_id
++ ((uw_object_hdr_t *)obj)->object_id
 |
 - *(ushort *)obj & 0x1ff
-+ ((uw_object_hdr_t *)obj)->item_id
++ ((uw_object_hdr_t *)obj)->object_id
 |
 - obj[0] & 0x1ff
-+ ((uw_object_hdr_t *)obj)->item_id
++ ((uw_object_hdr_t *)obj)->object_id
 |
 - *obj & 0x1ff
-+ ((uw_object_hdr_t *)obj)->item_id
++ ((uw_object_hdr_t *)obj)->object_id
 )
 ...>
 }

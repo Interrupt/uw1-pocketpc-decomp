@@ -2,7 +2,7 @@
 from pathlib import Path
 
 rules = [Path(__file__).with_name('player-object.cocci').read_text()]
-fields = [(0,0,0x1ff,'hdr.item_id'), (2,0,0x7f,'hdr.zpos'),
+fields = [(0,0,0x1ff,'hdr.object_id'), (2,0,0x7f,'hdr.zpos'),
           (2,7,7,'hdr.heading'), (2,10,7,'hdr.ypos'), (2,13,7,'hdr.xpos'),
           (4,0,0x3f,'hdr.quality'), (4,6,0x3ff,'hdr.next'),
           (6,0,0x3f,'hdr.owner'), (6,6,0x3ff,'hdr.link'),

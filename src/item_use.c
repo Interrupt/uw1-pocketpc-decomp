@@ -264,7 +264,7 @@ int drop_held_object_near_player(void *held_object_ptr, int force)
     local_26 = (short)(g_player_object->hdr.ypos) + DAT_00202a50 * 8;
     *(byte *)(held_object + 1) = ((byte) g_player_object->hdr.position_word ^ (byte)held_object[1]) & 0x7f ^ (byte)held_object[1];
     *(byte *)((char *)held_object + 3) = *(byte *)((char *)held_object + 3);
-    cVar9 = (g_object_type_props[((ushort)*held_object & 0x1ff)].collision_radius) + (g_object_type_props[(g_player_object->hdr.item_id)].collision_radius) + '\x01';
+    cVar9 = (g_object_type_props[((ushort)*held_object & 0x1ff)].collision_radius) + (g_object_type_props[(g_player_object->hdr.object_id)].collision_radius) + '\x01';
     if (getenv("UW_DEBUG_THROW"))
       fprintf(stderr, "[throw-heading] facing_byte(g_player_object+0x18)&0x1f=%d fine_aim((g_player_object[1]&0x380)>>2)=%d heading=%d dist(cVar9)=%d start=(%d,%d)\n",
               (int)(g_player_object->npc_heading),
@@ -1861,7 +1861,7 @@ void trigger_object_trap_or_use_action(void *actor_ptr, void *object_ptr, int ac
      (local_1c = (ushort *)(object + 6), (*local_1c & 0xffc0) != 0)) {
     puVar1 = (ushort *)find_object_in_chain(&local_1c,0,6,0xffffffff,0xffff);
     if (puVar1 != (ushort *)0x0) {
-      if ((((uw_object_hdr_t *)puVar1)->item_id & 0x30) < 0x20) {
+      if ((((uw_object_hdr_t *)puVar1)->object_id & 0x30) < 0x20) {
         if (((((uw_object_hdr_t *)puVar1)->type_flags & 0x1e00) == 0) && ((short)action == 4)) {
           apply_trap_or_link_effect(actor,object,puVar1,tile_x,tile_y);
           refresh_object_link_chain(local_1c,puVar1);
@@ -2551,7 +2551,7 @@ ushort *extract_clicked_backpack_item(int category, int subcategory, int quality
 
   uVar1 = extract_and_refresh_slot_item(category,subcategory,quality,slot,0);
   puVar2 = (ushort *)resolve_object_link(&g_equipped_items + slot * 2);
-  if ((((puVar2 != (ushort *)0x0) && ((((uw_object_hdr_t *)puVar2)->item_id & 0x1c0) == 0x80)) && ((((uw_object_hdr_t *)puVar2)->item_id & 0x30) == 0)) &&
+  if ((((puVar2 != (ushort *)0x0) && ((((uw_object_hdr_t *)puVar2)->object_id & 0x1c0) == 0x80)) && ((((uw_object_hdr_t *)puVar2)->object_id & 0x30) == 0)) &&
       (g_current_container_record != 0)) {
     repopulate_container_grid_slots();
     refresh_container_view();
@@ -2767,7 +2767,7 @@ void redraw_armor_overlay_widgets()
     do {
       if ((*(ushort *)(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar4] * 2) & 0xffc0) != 0) {
         pbVar1 = (byte *)resolve_object_link((ushort *)(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar4] * 2));
-        uVar3 = ((uw_object_hdr_t *)pbVar1)->item_id & 0x1f;
+        uVar3 = ((uw_object_hdr_t *)pbVar1)->object_id & 0x1f;
         if ((uint)(int)(short)uVar3 < 0xf) {
           uVar2 = (((uw_object_hdr_t *)pbVar1)->quality & 0x30) >> 4;
         }
@@ -3103,7 +3103,7 @@ uint check_object_fits_in_slot(ushort *object, int slot)
     }
     else {
       puVar11 = (ushort *)resolve_object_link(&g_equipped_items + iVar15 * 2);
-      if ((puVar11 == (ushort *)0x0) || ((((uw_object_hdr_t *)puVar11)->item_id & 0x1f0) != 0x80)) {
+      if ((puVar11 == (ushort *)0x0) || ((((uw_object_hdr_t *)puVar11)->object_id & 0x1f0) != 0x80)) {
         puVar11 = (ushort *)resolve_object_link(&g_current_container_link);
       }
     }
@@ -3159,7 +3159,7 @@ LAB_00047a68:
     goto LAB_00047a68;
   }
   if ((iVar15 == 8 - (*(byte *)(DAT_00086df8 + 100) & 1)) && ((uVar1 == 0 && (uVar5 == 0)))) {
-    if ((puVar11 != (ushort *)0x0) && ((((uw_object_hdr_t *)puVar11)->item_id) == local_4c)) {
+    if ((puVar11 != (ushort *)0x0) && ((((uw_object_hdr_t *)puVar11)->object_id) == local_4c)) {
       return 0;
     }
     if ((((*object & 0x8000) != 0) && ((object[3] & 0x8000) == 0)) &&
@@ -3194,7 +3194,7 @@ LAB_00047a68:
     }
   }
   local_50 = (int)(short)uVar1;
-  if ((puVar11 == (ushort *)0x0) || ((((uw_object_hdr_t *)puVar11)->item_id & 0x1f0) != 0x80)) {
+  if ((puVar11 == (ushort *)0x0) || ((((uw_object_hdr_t *)puVar11)->object_id & 0x1f0) != 0x80)) {
 LAB_00047a0c:
     return local_48->flags >> 5 & 1;
   }
@@ -3213,10 +3213,10 @@ LAB_00047a0c:
       if (pbVar13 == (byte *)0x0) {
         bVar7 = 1;
       }
-      else if (((short)(ushort)(byte) g_container_type_props[(((uw_object_hdr_t *)pbVar13)->item_id & 0xf)].capacity == 0) ||
+      else if (((short)(ushort)(byte) g_container_type_props[(((uw_object_hdr_t *)pbVar13)->object_id & 0xf)].capacity == 0) ||
                (bVar7 = 0,
                 (int)*(short *)(container_rec + 10) + (int)local_54[0] <=
-                (int)(short)(ushort)(byte) g_container_type_props[(((uw_object_hdr_t *)pbVar13)->item_id & 0xf)].capacity)) {
+                (int)(short)(ushort)(byte) g_container_type_props[(((uw_object_hdr_t *)pbVar13)->object_id & 0xf)].capacity)) {
         bVar7 = 1;
       }
       bVar7 = bVar6 & bVar7;
@@ -3224,7 +3224,7 @@ LAB_00047a0c:
   }
   sum_container_weight(puVar11 + 3,local_54);
   uVar8 = local_4c;
-  iVar15 = (((uw_object_hdr_t *)puVar11)->item_id & 0xf) * 3;
+  iVar15 = (((uw_object_hdr_t *)puVar11)->object_id & 0xf) * 3;
   if (((byte) g_container_type_props[(iVar15) / 3].capacity == 0) ||
       (bVar7 = 0, local_54[0] <= (short)(ushort)(byte) g_container_type_props[(iVar15) / 3].capacity)) {
     bVar7 = 1;
@@ -3498,8 +3498,8 @@ void handle_object_drop_target(short widget)
         /* Was missing a NULL check -- resolve_object_link legitimately returns 0 for an empty slot
            (its own link word has no object-table bits set, see its own comment), and every fresh
            character's weapon-hand slot IS empty by default (confirmed live). */
-        if ((puVar1 != 0) && (uVar3 = ((uw_object_hdr_t *)puVar1)->item_id,
-                              ((((((uw_object_hdr_t *)puVar1)->item_id & 0x1f0) == 0) || (uVar3 == 0x18)) || (uVar3 == 0x19)) ||
+        if ((puVar1 != 0) && (uVar3 = ((uw_object_hdr_t *)puVar1)->object_id,
+                              ((((((uw_object_hdr_t *)puVar1)->object_id & 0x1f0) == 0) || (uVar3 == 0x18)) || (uVar3 == 0x19)) ||
                               ((uVar3 == 0x1a || (uVar3 == 0x1f))))) {
           toggle_weapon_ready();
           goto LAB_00042a10;
@@ -3568,10 +3568,10 @@ void handle_object_drop_target(short widget)
     /* Page 4 of comobj's string data is the base object-name table,
        indexed directly by id (0x800 | id) -- same lookup the
        UW_DUMP_OBJECTS_FILE census tool already uses. */
-    char *_useName = (char *)get_message_string(0x800 | (((uw_object_hdr_t *)puVar2)->item_id));
+    char *_useName = (char *)get_message_string(0x800 | (((uw_object_hdr_t *)puVar2)->object_id));
     DEBUG(INFO, "[inv] use item: id=0x%03x type=0x%03x name=\"%s\"\n",
-          (unsigned)(((uw_object_hdr_t *)puVar2)->item_id),
-          (unsigned)(((uw_object_hdr_t *)puVar2)->item_id & 0x1f0),
+          (unsigned)(((uw_object_hdr_t *)puVar2)->object_id),
+          (unsigned)(((uw_object_hdr_t *)puVar2)->object_id & 0x1f0),
           (_useName && _useName[0]) ? _useName : "(unnamed)");
     use_object_on_target(g_player_object,puVar2,1);
   }

@@ -122,9 +122,9 @@ void dispatch_object_action(ushort *object, int mode)
   if (object == (ushort *)0x0) {
     return;
   }
-  iVar9 = (((uw_object_hdr_t *)object)->item_id) * 0xd;
-  if (!g_object_type_props[((uw_object_hdr_t *)object)->item_id].has_look_description) {
-    if ((((uw_object_hdr_t *)object)->item_id & 0x1f0) == 0x160) {
+  iVar9 = (((uw_object_hdr_t *)object)->object_id) * 0xd;
+  if (!g_object_type_props[((uw_object_hdr_t *)object)->object_id].has_look_description) {
+    if ((((uw_object_hdr_t *)object)->object_id & 0x1f0) == 0x160) {
       look_at_inscribed_object(object,mode);
     }
     goto LAB_00048b58;
@@ -144,7 +144,7 @@ void dispatch_object_action(ushort *object, int mode)
     cVar10 = acStack_ac[0];
   }
   acStack_9c[0] = '\0';
-  if ((((uw_object_hdr_t *)object)->item_id & 0x1c0) == 0x40) {
+  if ((((uw_object_hdr_t *)object)->object_id & 0x1c0) == 0x40) {
     build_creature_look_text(object,acStack_7c);
     return;
   }
@@ -200,7 +200,7 @@ LAB_000489fc:
   iVar9 = ce_strlen(acStack_7c);
   build_object_display_name(acStack_7c + iVar9,object,cVar10 == '\0',uVar11);
   append_object_special_name(object,mode,acStack_7c);
-  if (((g_object_type_props[((uw_object_hdr_t *)object)->item_id].can_have_owner) &&
+  if (((g_object_type_props[((uw_object_hdr_t *)object)->object_id].can_have_owner) &&
        (bVar1 = (byte)((uw_object_hdr_t *)object)->link_word, (bVar1 & 0x3f) != 0)) && ((bVar1 & 0x1f) < 0x1c)) {
     ce_strcat(acStack_7c,s_belonging_to_00085c90);
     /* uVar11 is `undefined4` (reused as a flag above); assigning get_message_string's char* to it
@@ -442,9 +442,9 @@ void dispatch_object_action_dup(ushort *object, int mode)
   if (object == (ushort *)0x0) {
     return;
   }
-  iVar9 = (((uw_object_hdr_t *)object)->item_id) * 0xd;
-  if (!g_object_type_props[((uw_object_hdr_t *)object)->item_id].has_look_description) {
-    if ((((uw_object_hdr_t *)object)->item_id & 0x1f0) == 0x160) {
+  iVar9 = (((uw_object_hdr_t *)object)->object_id) * 0xd;
+  if (!g_object_type_props[((uw_object_hdr_t *)object)->object_id].has_look_description) {
+    if ((((uw_object_hdr_t *)object)->object_id & 0x1f0) == 0x160) {
       look_at_inscribed_object(object,mode);
     }
     goto LAB_00048b58;
@@ -467,7 +467,7 @@ void dispatch_object_action_dup(ushort *object, int mode)
     cVar10 = local_ac[0];
   }
   local_9c[0] = '\0';
-  if ((((uw_object_hdr_t *)object)->item_id & 0x1c0) == 0x40) {
+  if ((((uw_object_hdr_t *)object)->object_id & 0x1c0) == 0x40) {
     build_creature_look_text(object,acStack_7c);
     return;
   }
@@ -523,7 +523,7 @@ LAB_000489fc:
   iVar9 = ce_strlen(acStack_7c);
   build_object_display_name(acStack_7c + iVar9,object,cVar10 == '\0',uVar11);
   append_object_special_name(object,mode,acStack_7c);
-  if (((g_object_type_props[((uw_object_hdr_t *)object)->item_id].can_have_owner) &&
+  if (((g_object_type_props[((uw_object_hdr_t *)object)->object_id].can_have_owner) &&
        (bVar1 = (byte)((uw_object_hdr_t *)object)->link_word, (bVar1 & 0x3f) != 0)) && ((bVar1 & 0x1f) < 0x1c)) {
     ce_strcat(acStack_7c,s_belonging_to_00085c90);
     /* uVar11 is `undefined4` (reused as a flag above); assigning get_message_string's char* to it
@@ -593,8 +593,8 @@ int check_object_drop_height(ushort *object, ushort *reference)
      match the real Y storage (offset+2/+3, see the fix just above); `+1` is X's own high byte.
      Disassembly- confirmed (0x4b288 @ 0x4b458's `bl 0x69f2c` args). */
   project_position_by_heading((((uw_mobile_object_t *)object)->fine_heading) + ((((uw_object_hdr_t *)object)->heading << 7) >> 2),
-                              (g_object_type_props[(((uw_object_hdr_t *)object)->item_id)].collision_radius) +
-                              (g_object_type_props[(((uw_object_hdr_t *)reference)->item_id)].collision_radius) + '\x04',
+                              (g_object_type_props[(((uw_object_hdr_t *)object)->object_id)].collision_radius) +
+                              (g_object_type_props[(((uw_object_hdr_t *)reference)->object_id)].collision_radius) + '\x04',
                               DAT_00202c6c,
                               DAT_00202c6c + 2);
   /* Was `DAT_00202c6c + 2` -- disassembly-confirmed (0x4b288 @ 0x4b474: `strb r3,[r0,#0x4]`) the
@@ -1241,7 +1241,7 @@ LAB_000749c4:
                           }
                         }
                         else if (object_class == '\0') {
-                          if ((((uw_object_hdr_t *)puVar6)->item_id & 0x1c0) == 0x40) {
+                          if ((((uw_object_hdr_t *)puVar6)->object_id & 0x1c0) == 0x40) {
                             uVar3 = encode_object_slot_index(puVar6);
                             if (uVar3 != filter_b) goto LAB_000749c4;
                             goto LAB_000749bc;
@@ -1703,9 +1703,9 @@ void complete_pending_player_command_target(ushort *target)
   }
   else if ((short)DAT_00202094 == 4) {
     dispatch_object_action_dup(target,3);
-    uVar4 = ((uw_object_hdr_t *)target)->item_id & 0x1c0;
+    uVar4 = ((uw_object_hdr_t *)target)->object_id & 0x1c0;
     if (((uVar4 != 0x140) && (uVar4 != 0x40)) &&
-       ((g_object_type_props[(((uw_object_hdr_t *)target)->item_id)].class_flags & 3) != 2)) {
+       ((g_object_type_props[(((uw_object_hdr_t *)target)->object_id)].class_flags & 3) != 2)) {
       uVar1 = ((uw_object_hdr_t *)target)->position_word;
       ((uw_object_hdr_t *)target)->position_word = (ushort)(uVar1 | 0x380);
     }
@@ -2336,7 +2336,7 @@ int init_monster_spawn_defaults()
   npc->npc_yhome = 32;
   npc->hdr.quality = 32;
   npc->hdr.owner = 32;
-  DAT_001007c8 = &g_monster_type_props[npc->hdr.item_id & 0x3f];
+  DAT_001007c8 = &g_monster_type_props[npc->hdr.object_id & 0x3f];
   uVar2 = ce_rand();
   uw_ord2005_rem_11 = ((int)(uVar2)) % (0x18);
   iVar3 = (uw_ord2005_rem_11 + 0x10) * (uint)(byte) DAT_001007c8->max_hp;

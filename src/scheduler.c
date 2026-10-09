@@ -109,7 +109,7 @@ void scheduler_finish_entry(int entry_slot)
   if (puVar4 == (ushort *)0x0) {
     return;
   }
-  uVar5 = ((uw_object_hdr_t *)puVar4)->item_id & 0xf;
+  uVar5 = ((uw_object_hdr_t *)puVar4)->object_id & 0xf;
   uVar1 = g_animation_type_props[uVar5].flags;
   bVar11 = (uVar1 & 0x80) == 0;
   if (!bVar11) {
@@ -258,7 +258,7 @@ uint scheduler_add_entry(uint object_link, int delay, byte animation_offset, byt
     /* resolve_object_link legitimately returns NULL (every other one of this file's 140+ call sites
        guards for it -- e.g. the `!= (ushort*)0x0` checks throughout this file). */
     if (pbVar3 != (byte *)0x0) {
-      iVar4 = (((uw_object_hdr_t *)pbVar3)->item_id & 0xf) * 4;
+      iVar4 = (((uw_object_hdr_t *)pbVar3)->object_id & 0xf) * 4;
       cVar1 = g_animation_type_props[(iVar4) / 4].start_frame;
       if (-1 < cVar1) {
         if (g_animation_type_props[(iVar4) / 4].frame_count == '\0') {
@@ -315,14 +315,14 @@ void scheduler_step_entry(int entry_slot, int elapsed)
   if (getenv("UW_DEBUG_DOOR"))
     fprintf(stderr, "[door] scheduler_step_entry: resolved obj0=0x%04x (checking &0x1f0==0x1c0 -> %d)\n",
             (unsigned)((uw_object_hdr_t *)puVar4)->type_flags,
-            (int)((((uw_object_hdr_t *)puVar4)->item_id & 0x1f0) == 0x1c0));
-  if ((((uw_object_hdr_t *)puVar4)->item_id & 0x1f0) == 0x1c0) {
-    iVar1 = (((uw_object_hdr_t *)puVar4)->item_id & 0xf) * 4;
+            (int)((((uw_object_hdr_t *)puVar4)->object_id & 0x1f0) == 0x1c0));
+  if ((((uw_object_hdr_t *)puVar4)->object_id & 0x1f0) == 0x1c0) {
+    iVar1 = (((uw_object_hdr_t *)puVar4)->object_id & 0xf) * 4;
     uVar3 = 1;
     if (getenv("UW_DEBUG_DOOR"))
       fprintf(stderr, "[door] scheduler_step_entry: obj0=0x%04x class=%d iVar1=%d flags(uVar7)=0x%x DAT_00250732[iVar1]=%d DAT_00250733[iVar1]=%d quality_before=%d\n",
               (unsigned)((uw_object_hdr_t *)puVar4)->type_flags,
-              (((uw_object_hdr_t *)puVar4)->item_id & 0xf), iVar1,
+              (((uw_object_hdr_t *)puVar4)->object_id & 0xf), iVar1,
               (unsigned)(ushort)g_animation_type_props[(iVar1) / 4].flags,
               (int)(char) g_animation_type_props[(iVar1) / 4].start_frame,
               (int)(byte) g_animation_type_props[(iVar1) / 4].frame_count,
@@ -479,7 +479,7 @@ int spawn_scheduled_effect_object(ushort *source_object, int effect_group, int d
   }
   else {
     if (source_object == (ushort *)0x0) goto LAB_00081980;
-    bVar9 = (byte) g_object_type_props[(((uw_object_hdr_t *)source_object)->item_id)].height >> 3;
+    bVar9 = (byte) g_object_type_props[(((uw_object_hdr_t *)source_object)->object_id)].height >> 3;
     uVar3 = ((uw_object_hdr_t *)iVar5)->position_word;
     if (bVar9 == 0) {
       bVar9 = 1;

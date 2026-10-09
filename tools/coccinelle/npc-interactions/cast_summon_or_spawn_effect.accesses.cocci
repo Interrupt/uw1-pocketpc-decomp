@@ -405,7 +405,7 @@ R F(...) {
 }
 
 
-@site_0_field_0_item_id disable drop_cast, is_zero, isnt_zero@
+@site_0_field_0_object_id disable drop_cast, is_zero, isnt_zero@
 type R;
 identifier F =~ "^\(cast_summon_or_spawn_effect\)$";
 typedef ushort, byte, uw_object_hdr_t;
@@ -414,16 +414,16 @@ R F(...) {
 <...
 (
 - *(ushort *)((char *)caster + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)caster)->item_id
++ ((uw_object_hdr_t *)caster)->object_id
 |
 - ((ushort *)caster)[0] & 0x1ff
-+ ((uw_object_hdr_t *)caster)->item_id
++ ((uw_object_hdr_t *)caster)->object_id
 |
 - *(ushort *)caster & 0x1ff
-+ ((uw_object_hdr_t *)caster)->item_id
++ ((uw_object_hdr_t *)caster)->object_id
 |
 - *(ushort *)(caster + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)caster)->item_id
++ ((uw_object_hdr_t *)caster)->object_id
 )
 ...>
 }

@@ -108,7 +108,7 @@ int projectile_spawn(byte *scratch_bytes)
     accesses += ['*(char *)(scratch_bytes + 26) = (char)input;',
                  'char *identity = &*(char *)(scratch_bytes + 26);',
                  'hash += *identity;']
-    accesses += ['DAT_001007c8 = &DAT_001007d0 + (((uw_object_hdr_t *)scratch_bytes)->item_id & 0x3f) * 0x30;',
+    accesses += ['DAT_001007c8 = &DAT_001007d0 + (((uw_object_hdr_t *)scratch_bytes)->object_id & 0x3f) * 0x30;',
                  'hash += (byte)DAT_001007c8[4];']
     raw = PREAMBLE.replace('uw_monster_type_props_t *DAT_001007c8;',
                            'static undefined *DAT_001007c8;') + excluded + '''int init_monster_spawn_defaults()

@@ -32,7 +32,7 @@ void player(ushort *tile) {
 ''')
     transform('player-fields.cocci', path)
     result = path.read_text()
-    for field in ['hdr.item_id', 'hdr.xpos', 'npc_xhome', 'npc_hp']:
+    for field in ['hdr.object_id', 'hdr.xpos', 'npc_xhome', 'npc_hp']:
         assert 'g_player_object->' + field in result, result
     assert 'tile[1] >> 13' in result, result
     assert 'npc_hp = (byte)-1' in result, result
@@ -84,7 +84,7 @@ uint calculate_object_weight(ushort *object) {
     result = path.read_text()
     assert 'uw_object_hdr_t *object' in result, result
     assert 'uVar1' not in result and 'object[' not in result, result
-    assert 'object->item_id' in result and 'object->link_word' in result, result
+    assert 'object->object_id' in result and 'object->link_word' in result, result
     transform('object-weight.cocci', path)
     assert path.read_text() == result, 'object-weight patch is not idempotent'
 
@@ -383,7 +383,7 @@ with tempfile.TemporaryDirectory() as tmp:
     path.write_text("""
 typedef unsigned short ushort;
 typedef unsigned char byte;
-typedef struct { ushort type_flags; unsigned item_id; } uw_object_hdr_t;
+typedef struct { ushort type_flags; unsigned object_id; } uw_object_hdr_t;
 ushort *g_scratch_object_ptr;
 extern ushort *g_scratch_object_ptr;
 void refresh_player_equipment_effects(ushort *puVar6) {
@@ -413,7 +413,7 @@ void *class1_variant_effect_table_lookup(void) {
     result = path.read_text()
     assert 'uw_object_hdr_t *g_scratch_object_ptr;' in result, result
     assert 'uw_object_hdr_t *saved_scratch;' in result, result
-    assert 'g_scratch_object_ptr->item_id' in result, result
+    assert 'g_scratch_object_ptr->object_id' in result, result
     assert 'g_scratch_object_ptr->type_flags' in result, result
     assert 'g_scratch_object_ptr = get_equipped_item_at_slot(4);' in result, result
     assert 'return *object & 0x1ff;' in result, result

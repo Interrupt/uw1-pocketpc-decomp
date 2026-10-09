@@ -99,7 +99,7 @@ typedef struct __attribute__((packed)) {
         short type_flags_signed;
         struct __attribute__((packed)) { byte type_flags_low, type_flags_high; }; /* packed word for copies and chain interfaces */
         struct __attribute__((packed)) {
-            unsigned short item_id    : 9;  /* object id / type, 0-0x1ff */
+            unsigned short object_id  : 9;  /* object id / type, 0-0x1ff */
             unsigned short flags_res  : 3;  /* bits 9-11: unused/unknown per wiki */
             unsigned short enchanted  : 1;  /* bit 12 */
             unsigned short doordir    : 1;  /* bit 13: door swing direction (doors only) */
