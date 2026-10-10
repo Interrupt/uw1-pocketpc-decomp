@@ -491,9 +491,6 @@ R F(...) {
 |
 - *(ushort *)iVar7
 + ((uw_object_hdr_t *)iVar7)->type_flags
-|
-- *(ushort *)(iVar7 + 0)
-+ ((uw_object_hdr_t *)iVar7)->type_flags
 )
 ...>
 }
@@ -510,9 +507,6 @@ R F(...) {
 + ((uw_object_hdr_t *)iVar7)->position_word
 |
 - ((ushort *)iVar7)[1]
-+ ((uw_object_hdr_t *)iVar7)->position_word
-|
-- *(ushort *)(iVar7 + 2)
 + ((uw_object_hdr_t *)iVar7)->position_word
 )
 ...>
@@ -531,9 +525,6 @@ R F(...) {
 |
 - ((ushort *)iVar7)[2]
 + ((uw_object_hdr_t *)iVar7)->chain_word
-|
-- *(ushort *)(iVar7 + 4)
-+ ((uw_object_hdr_t *)iVar7)->chain_word
 )
 ...>
 }
@@ -550,9 +541,6 @@ R F(...) {
 + ((uw_object_hdr_t *)iVar7)->link_word
 |
 - ((ushort *)iVar7)[3]
-+ ((uw_object_hdr_t *)iVar7)->link_word
-|
-- *(ushort *)(iVar7 + 6)
 + ((uw_object_hdr_t *)iVar7)->link_word
 )
 ...>
@@ -1749,6 +1737,77 @@ R F(...) {
 
 @word_21_0@
 type R;
+identifier F =~ "^\(apply_object_durability_damage\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)object_hdr + 0)
++ ((uw_object_hdr_t *)object_hdr)->type_flags
+|
+- ((ushort *)object_hdr)[0]
++ ((uw_object_hdr_t *)object_hdr)->type_flags
+|
+- *(ushort *)object_hdr
++ ((uw_object_hdr_t *)object_hdr)->type_flags
+)
+...>
+}
+
+@word_21_1@
+type R;
+identifier F =~ "^\(apply_object_durability_damage\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)object_hdr + 2)
++ ((uw_object_hdr_t *)object_hdr)->position_word
+|
+- ((ushort *)object_hdr)[1]
++ ((uw_object_hdr_t *)object_hdr)->position_word
+)
+...>
+}
+
+@word_21_2@
+type R;
+identifier F =~ "^\(apply_object_durability_damage\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)object_hdr + 4)
++ ((uw_object_hdr_t *)object_hdr)->chain_word
+|
+- ((ushort *)object_hdr)[2]
++ ((uw_object_hdr_t *)object_hdr)->chain_word
+)
+...>
+}
+
+@word_21_3@
+type R;
+identifier F =~ "^\(apply_object_durability_damage\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)object_hdr + 6)
++ ((uw_object_hdr_t *)object_hdr)->link_word
+|
+- ((ushort *)object_hdr)[3]
++ ((uw_object_hdr_t *)object_hdr)->link_word
+)
+...>
+}
+
+@word_22_0@
+type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, uw_object_hdr_t;
 @@
@@ -1767,7 +1826,7 @@ R F(...) {
 ...>
 }
 
-@word_21_1@
+@word_22_1@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1784,7 +1843,7 @@ R F(...) {
 ...>
 }
 
-@word_21_2@
+@word_22_2@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1801,7 +1860,7 @@ R F(...) {
 ...>
 }
 
-@word_21_3@
+@word_22_3@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1818,7 +1877,7 @@ R F(...) {
 ...>
 }
 
-@word_22_0@
+@word_23_0@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1841,7 +1900,7 @@ R F(...) {
 ...>
 }
 
-@word_22_1@
+@word_23_1@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1861,7 +1920,7 @@ R F(...) {
 ...>
 }
 
-@word_22_2@
+@word_23_2@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1881,7 +1940,7 @@ R F(...) {
 ...>
 }
 
-@word_22_3@
+@word_23_3@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, uw_object_hdr_t;

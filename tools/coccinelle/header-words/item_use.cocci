@@ -1,6 +1,6 @@
 @word_0_0@
 type R;
-identifier F =~ "^\(check_offering_container_puzzle\|drop_held_object_near_player\|place_object_in_equipment_slot\)$";
+identifier F =~ "^\(drop_held_object_near_player\)$";
 typedef ushort, uw_object_hdr_t;
 @@
 R F(...) {
@@ -14,19 +14,13 @@ R F(...) {
 |
 - *(ushort *)puVar5
 + ((uw_object_hdr_t *)puVar5)->type_flags
-|
-- puVar5[0]
-+ ((uw_object_hdr_t *)puVar5)->type_flags
-|
-- *puVar5
-+ ((uw_object_hdr_t *)puVar5)->type_flags
 )
 ...>
 }
 
 @word_0_1@
 type R;
-identifier F =~ "^\(check_offering_container_puzzle\|drop_held_object_near_player\|place_object_in_equipment_slot\)$";
+identifier F =~ "^\(drop_held_object_near_player\)$";
 typedef ushort, uw_object_hdr_t;
 @@
 R F(...) {
@@ -37,16 +31,13 @@ R F(...) {
 |
 - ((ushort *)puVar5)[1]
 + ((uw_object_hdr_t *)puVar5)->position_word
-|
-- puVar5[1]
-+ ((uw_object_hdr_t *)puVar5)->position_word
 )
 ...>
 }
 
 @word_0_2@
 type R;
-identifier F =~ "^\(check_offering_container_puzzle\|drop_held_object_near_player\|place_object_in_equipment_slot\)$";
+identifier F =~ "^\(drop_held_object_near_player\)$";
 typedef ushort, uw_object_hdr_t;
 @@
 R F(...) {
@@ -57,16 +48,13 @@ R F(...) {
 |
 - ((ushort *)puVar5)[2]
 + ((uw_object_hdr_t *)puVar5)->chain_word
-|
-- puVar5[2]
-+ ((uw_object_hdr_t *)puVar5)->chain_word
 )
 ...>
 }
 
 @word_0_3@
 type R;
-identifier F =~ "^\(check_offering_container_puzzle\|drop_held_object_near_player\|place_object_in_equipment_slot\)$";
+identifier F =~ "^\(drop_held_object_near_player\)$";
 typedef ushort, uw_object_hdr_t;
 @@
 R F(...) {
@@ -76,9 +64,6 @@ R F(...) {
 + ((uw_object_hdr_t *)puVar5)->link_word
 |
 - ((ushort *)puVar5)[3]
-+ ((uw_object_hdr_t *)puVar5)->link_word
-|
-- puVar5[3]
 + ((uw_object_hdr_t *)puVar5)->link_word
 )
 ...>
@@ -640,6 +625,92 @@ R F(...) {
 
 @word_8_0@
 type R;
+identifier F =~ "^\(check_offering_container_puzzle\|place_object_in_equipment_slot\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar5 + 0)
++ ((uw_object_hdr_t *)puVar5)->type_flags
+|
+- ((ushort *)puVar5)[0]
++ ((uw_object_hdr_t *)puVar5)->type_flags
+|
+- *(ushort *)puVar5
++ ((uw_object_hdr_t *)puVar5)->type_flags
+|
+- puVar5[0]
++ ((uw_object_hdr_t *)puVar5)->type_flags
+|
+- *puVar5
++ ((uw_object_hdr_t *)puVar5)->type_flags
+)
+...>
+}
+
+@word_8_1@
+type R;
+identifier F =~ "^\(check_offering_container_puzzle\|place_object_in_equipment_slot\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar5 + 2)
++ ((uw_object_hdr_t *)puVar5)->position_word
+|
+- ((ushort *)puVar5)[1]
++ ((uw_object_hdr_t *)puVar5)->position_word
+|
+- puVar5[1]
++ ((uw_object_hdr_t *)puVar5)->position_word
+)
+...>
+}
+
+@word_8_2@
+type R;
+identifier F =~ "^\(check_offering_container_puzzle\|place_object_in_equipment_slot\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar5 + 4)
++ ((uw_object_hdr_t *)puVar5)->chain_word
+|
+- ((ushort *)puVar5)[2]
++ ((uw_object_hdr_t *)puVar5)->chain_word
+|
+- puVar5[2]
++ ((uw_object_hdr_t *)puVar5)->chain_word
+)
+...>
+}
+
+@word_8_3@
+type R;
+identifier F =~ "^\(check_offering_container_puzzle\|place_object_in_equipment_slot\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar5 + 6)
++ ((uw_object_hdr_t *)puVar5)->link_word
+|
+- ((ushort *)puVar5)[3]
++ ((uw_object_hdr_t *)puVar5)->link_word
+|
+- puVar5[3]
++ ((uw_object_hdr_t *)puVar5)->link_word
+)
+...>
+}
+
+@word_9_0@
+type R;
 identifier F =~ "^\(place_object_in_equipment_slot\)$";
 typedef ushort, uw_object_hdr_t;
 @@
@@ -664,7 +735,7 @@ R F(...) {
 ...>
 }
 
-@word_8_1@
+@word_9_1@
 type R;
 identifier F =~ "^\(place_object_in_equipment_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -684,7 +755,7 @@ R F(...) {
 ...>
 }
 
-@word_8_2@
+@word_9_2@
 type R;
 identifier F =~ "^\(place_object_in_equipment_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -704,7 +775,7 @@ R F(...) {
 ...>
 }
 
-@word_8_3@
+@word_9_3@
 type R;
 identifier F =~ "^\(place_object_in_equipment_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -724,7 +795,7 @@ R F(...) {
 ...>
 }
 
-@word_9_0@
+@word_10_0@
 type R;
 identifier F =~ "^\(place_object_in_equipment_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -750,7 +821,7 @@ R F(...) {
 ...>
 }
 
-@word_9_1@
+@word_10_1@
 type R;
 identifier F =~ "^\(place_object_in_equipment_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -770,7 +841,7 @@ R F(...) {
 ...>
 }
 
-@word_9_2@
+@word_10_2@
 type R;
 identifier F =~ "^\(place_object_in_equipment_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -790,7 +861,7 @@ R F(...) {
 ...>
 }
 
-@word_9_3@
+@word_10_3@
 type R;
 identifier F =~ "^\(place_object_in_equipment_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -810,7 +881,7 @@ R F(...) {
 ...>
 }
 
-@word_10_0@
+@word_11_0@
 type R;
 identifier F =~ "^\(objects_can_stack\)$";
 typedef ushort, uw_object_hdr_t;
@@ -830,7 +901,7 @@ R F(...) {
 ...>
 }
 
-@word_10_1@
+@word_11_1@
 type R;
 identifier F =~ "^\(objects_can_stack\)$";
 typedef ushort, uw_object_hdr_t;
@@ -847,7 +918,7 @@ R F(...) {
 ...>
 }
 
-@word_10_2@
+@word_11_2@
 type R;
 identifier F =~ "^\(objects_can_stack\)$";
 typedef ushort, uw_object_hdr_t;
@@ -864,7 +935,7 @@ R F(...) {
 ...>
 }
 
-@word_10_3@
+@word_11_3@
 type R;
 identifier F =~ "^\(objects_can_stack\)$";
 typedef ushort, uw_object_hdr_t;
@@ -881,7 +952,7 @@ R F(...) {
 ...>
 }
 
-@word_11_0@
+@word_12_0@
 type R;
 identifier F =~ "^\(objects_can_stack\)$";
 typedef ushort, uw_object_hdr_t;
@@ -901,7 +972,7 @@ R F(...) {
 ...>
 }
 
-@word_11_1@
+@word_12_1@
 type R;
 identifier F =~ "^\(objects_can_stack\)$";
 typedef ushort, uw_object_hdr_t;
@@ -918,7 +989,7 @@ R F(...) {
 ...>
 }
 
-@word_11_2@
+@word_12_2@
 type R;
 identifier F =~ "^\(objects_can_stack\)$";
 typedef ushort, uw_object_hdr_t;
@@ -935,7 +1006,7 @@ R F(...) {
 ...>
 }
 
-@word_11_3@
+@word_12_3@
 type R;
 identifier F =~ "^\(objects_can_stack\)$";
 typedef ushort, uw_object_hdr_t;
@@ -952,7 +1023,7 @@ R F(...) {
 ...>
 }
 
-@word_12_0@
+@word_13_0@
 type R;
 identifier F =~ "^\(find_object_in_link_chain\)$";
 typedef ushort, uw_object_hdr_t;
@@ -975,7 +1046,7 @@ R F(...) {
 ...>
 }
 
-@word_12_1@
+@word_13_1@
 type R;
 identifier F =~ "^\(find_object_in_link_chain\)$";
 typedef ushort, uw_object_hdr_t;
@@ -995,7 +1066,7 @@ R F(...) {
 ...>
 }
 
-@word_12_2@
+@word_13_2@
 type R;
 identifier F =~ "^\(find_object_in_link_chain\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1015,7 +1086,7 @@ R F(...) {
 ...>
 }
 
-@word_12_3@
+@word_13_3@
 type R;
 identifier F =~ "^\(find_object_in_link_chain\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1035,7 +1106,7 @@ R F(...) {
 ...>
 }
 
-@word_13_0@
+@word_14_0@
 type R;
 identifier F =~ "^\(reduce_object_count\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1055,7 +1126,7 @@ R F(...) {
 ...>
 }
 
-@word_13_1@
+@word_14_1@
 type R;
 identifier F =~ "^\(reduce_object_count\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1072,7 +1143,7 @@ R F(...) {
 ...>
 }
 
-@word_13_2@
+@word_14_2@
 type R;
 identifier F =~ "^\(reduce_object_count\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1089,7 +1160,7 @@ R F(...) {
 ...>
 }
 
-@word_13_3@
+@word_14_3@
 type R;
 identifier F =~ "^\(reduce_object_count\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1106,7 +1177,7 @@ R F(...) {
 ...>
 }
 
-@word_14_0@
+@word_15_0@
 type R;
 identifier F =~ "^\(reduce_object_count\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1126,7 +1197,7 @@ R F(...) {
 ...>
 }
 
-@word_14_1@
+@word_15_1@
 type R;
 identifier F =~ "^\(reduce_object_count\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1143,7 +1214,7 @@ R F(...) {
 ...>
 }
 
-@word_14_2@
+@word_15_2@
 type R;
 identifier F =~ "^\(reduce_object_count\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1160,7 +1231,7 @@ R F(...) {
 ...>
 }
 
-@word_14_3@
+@word_15_3@
 type R;
 identifier F =~ "^\(reduce_object_count\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1177,7 +1248,7 @@ R F(...) {
 ...>
 }
 
-@word_15_0@
+@word_16_0@
 type R;
 identifier F =~ "^\(extract_clicked_backpack_item\|handle_object_drop_target\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1203,7 +1274,7 @@ R F(...) {
 ...>
 }
 
-@word_15_1@
+@word_16_1@
 type R;
 identifier F =~ "^\(extract_clicked_backpack_item\|handle_object_drop_target\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1223,7 +1294,7 @@ R F(...) {
 ...>
 }
 
-@word_15_2@
+@word_16_2@
 type R;
 identifier F =~ "^\(extract_clicked_backpack_item\|handle_object_drop_target\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1243,7 +1314,7 @@ R F(...) {
 ...>
 }
 
-@word_15_3@
+@word_16_3@
 type R;
 identifier F =~ "^\(extract_clicked_backpack_item\|handle_object_drop_target\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1263,7 +1334,7 @@ R F(...) {
 ...>
 }
 
-@word_16_0@
+@word_17_0@
 type R;
 identifier F =~ "^\(extract_matching_object_from_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1283,7 +1354,7 @@ R F(...) {
 ...>
 }
 
-@word_16_1@
+@word_17_1@
 type R;
 identifier F =~ "^\(extract_matching_object_from_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1300,7 +1371,7 @@ R F(...) {
 ...>
 }
 
-@word_16_2@
+@word_17_2@
 type R;
 identifier F =~ "^\(extract_matching_object_from_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1317,7 +1388,7 @@ R F(...) {
 ...>
 }
 
-@word_16_3@
+@word_17_3@
 type R;
 identifier F =~ "^\(extract_matching_object_from_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1334,7 +1405,7 @@ R F(...) {
 ...>
 }
 
-@word_17_0@
+@word_18_0@
 type R;
 identifier F =~ "^\(extract_matching_object_from_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1357,7 +1428,7 @@ R F(...) {
 ...>
 }
 
-@word_17_1@
+@word_18_1@
 type R;
 identifier F =~ "^\(extract_matching_object_from_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1377,7 +1448,7 @@ R F(...) {
 ...>
 }
 
-@word_17_2@
+@word_18_2@
 type R;
 identifier F =~ "^\(extract_matching_object_from_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1397,7 +1468,7 @@ R F(...) {
 ...>
 }
 
-@word_17_3@
+@word_18_3@
 type R;
 identifier F =~ "^\(extract_matching_object_from_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1417,7 +1488,7 @@ R F(...) {
 ...>
 }
 
-@word_18_0@
+@word_19_0@
 type R;
 identifier F =~ "^\(redraw_armor_overlay_widgets\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1440,7 +1511,7 @@ R F(...) {
 ...>
 }
 
-@word_18_1@
+@word_19_1@
 type R;
 identifier F =~ "^\(redraw_armor_overlay_widgets\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1460,7 +1531,7 @@ R F(...) {
 ...>
 }
 
-@word_18_2@
+@word_19_2@
 type R;
 identifier F =~ "^\(redraw_armor_overlay_widgets\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1480,7 +1551,7 @@ R F(...) {
 ...>
 }
 
-@word_18_3@
+@word_19_3@
 type R;
 identifier F =~ "^\(redraw_armor_overlay_widgets\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1500,7 +1571,7 @@ R F(...) {
 ...>
 }
 
-@word_19_0@
+@word_20_0@
 type R;
 identifier F =~ "^\(swap_cursor_and_slot_item\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1523,7 +1594,7 @@ R F(...) {
 ...>
 }
 
-@word_19_1@
+@word_20_1@
 type R;
 identifier F =~ "^\(swap_cursor_and_slot_item\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1543,7 +1614,7 @@ R F(...) {
 ...>
 }
 
-@word_19_2@
+@word_20_2@
 type R;
 identifier F =~ "^\(swap_cursor_and_slot_item\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1563,7 +1634,7 @@ R F(...) {
 ...>
 }
 
-@word_19_3@
+@word_20_3@
 type R;
 identifier F =~ "^\(swap_cursor_and_slot_item\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1583,7 +1654,7 @@ R F(...) {
 ...>
 }
 
-@word_20_0@
+@word_21_0@
 type R;
 identifier F =~ "^\(place_object_in_backpack_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1606,7 +1677,7 @@ R F(...) {
 ...>
 }
 
-@word_20_1@
+@word_21_1@
 type R;
 identifier F =~ "^\(place_object_in_backpack_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1626,7 +1697,7 @@ R F(...) {
 ...>
 }
 
-@word_20_2@
+@word_21_2@
 type R;
 identifier F =~ "^\(place_object_in_backpack_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1646,7 +1717,7 @@ R F(...) {
 ...>
 }
 
-@word_20_3@
+@word_21_3@
 type R;
 identifier F =~ "^\(place_object_in_backpack_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1666,7 +1737,7 @@ R F(...) {
 ...>
 }
 
-@word_21_0@
+@word_22_0@
 type R;
 identifier F =~ "^\(find_or_assign_object_widget\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1692,7 +1763,7 @@ R F(...) {
 ...>
 }
 
-@word_21_1@
+@word_22_1@
 type R;
 identifier F =~ "^\(find_or_assign_object_widget\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1712,7 +1783,7 @@ R F(...) {
 ...>
 }
 
-@word_21_2@
+@word_22_2@
 type R;
 identifier F =~ "^\(find_or_assign_object_widget\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1732,7 +1803,7 @@ R F(...) {
 ...>
 }
 
-@word_21_3@
+@word_22_3@
 type R;
 identifier F =~ "^\(find_or_assign_object_widget\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1752,7 +1823,7 @@ R F(...) {
 ...>
 }
 
-@word_22_0@
+@word_23_0@
 type R;
 identifier F =~ "^\(find_or_assign_object_widget\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1778,7 +1849,7 @@ R F(...) {
 ...>
 }
 
-@word_22_1@
+@word_23_1@
 type R;
 identifier F =~ "^\(find_or_assign_object_widget\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1798,7 +1869,7 @@ R F(...) {
 ...>
 }
 
-@word_22_2@
+@word_23_2@
 type R;
 identifier F =~ "^\(find_or_assign_object_widget\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1818,7 +1889,7 @@ R F(...) {
 ...>
 }
 
-@word_22_3@
+@word_23_3@
 type R;
 identifier F =~ "^\(find_or_assign_object_widget\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1838,7 +1909,7 @@ R F(...) {
 ...>
 }
 
-@word_23_0@
+@word_24_0@
 type R;
 identifier F =~ "^\(check_object_fits_in_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1864,7 +1935,7 @@ R F(...) {
 ...>
 }
 
-@word_23_1@
+@word_24_1@
 type R;
 identifier F =~ "^\(check_object_fits_in_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1884,7 +1955,7 @@ R F(...) {
 ...>
 }
 
-@word_23_2@
+@word_24_2@
 type R;
 identifier F =~ "^\(check_object_fits_in_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1904,7 +1975,7 @@ R F(...) {
 ...>
 }
 
-@word_23_3@
+@word_24_3@
 type R;
 identifier F =~ "^\(check_object_fits_in_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1924,7 +1995,7 @@ R F(...) {
 ...>
 }
 
-@word_24_0@
+@word_25_0@
 type R;
 identifier F =~ "^\(check_object_fits_in_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1947,7 +2018,7 @@ R F(...) {
 ...>
 }
 
-@word_24_1@
+@word_25_1@
 type R;
 identifier F =~ "^\(check_object_fits_in_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1967,7 +2038,7 @@ R F(...) {
 ...>
 }
 
-@word_24_2@
+@word_25_2@
 type R;
 identifier F =~ "^\(check_object_fits_in_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1987,7 +2058,7 @@ R F(...) {
 ...>
 }
 
-@word_24_3@
+@word_25_3@
 type R;
 identifier F =~ "^\(check_object_fits_in_slot\)$";
 typedef ushort, uw_object_hdr_t;
