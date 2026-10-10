@@ -364,6 +364,14 @@ add_fixture_game_unit_test(weapon_ready
   src/weapon_swing.c:advance_action_animation_frame
   src/weapon_swing.c:weapon_swing_draw_tick)
 
+# The weapon charge state machine (tick_weapon_swing_state) with a controlled clock and button.
+add_fixture_game_unit_test(weapon_charge
+  src/weapon_swing.c:@DAT_000870e4
+  src/weapon_swing.c:@DAT_00084f0b_backing src/weapon_swing.c:%DAT_00084f0b
+  src/combat.c:@DAT_00084eff_backing
+  src/weapon_swing.c:tick_weapon_swing_state src/weapon_swing.c:reset_weapon_swing_state
+  src/weapon_swing.c:update_weapon_ready_hud_icon)
+
 add_fixture_game_unit_test(head_bob
   src/movement.c:@DAT_00086e38_backing src/movement.c:@DAT_00086e48_backing
   src/player.c:@DAT_00086e58_backing
