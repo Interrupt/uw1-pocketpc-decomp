@@ -1669,13 +1669,15 @@
           "roles": [
             {
               "name": "pDropObj",
-              "type": "char *",
+              "type": "uw_object_hdr_t *",
               "parameter": false,
-              "evidence": "UW1 object struct member access",
+              "evidence": "typed UW1 object pointer declaration",
               "current_mobile_alias": false
             }
           ],
-          "requires_review": []
+          "requires_review": [
+            "monster"
+          ]
         },
         {
           "function": "reset_npc_path_cache",

@@ -841,9 +841,6 @@ R F(...) {
 |
 - *(ushort *)pDropObj
 + ((uw_object_hdr_t *)pDropObj)->type_flags
-|
-- *(ushort *)(pDropObj + 0)
-+ ((uw_object_hdr_t *)pDropObj)->type_flags
 )
 ...>
 }
@@ -860,9 +857,6 @@ R F(...) {
 + ((uw_object_hdr_t *)pDropObj)->position_word
 |
 - ((ushort *)pDropObj)[1]
-+ ((uw_object_hdr_t *)pDropObj)->position_word
-|
-- *(ushort *)(pDropObj + 2)
 + ((uw_object_hdr_t *)pDropObj)->position_word
 )
 ...>
@@ -881,9 +875,6 @@ R F(...) {
 |
 - ((ushort *)pDropObj)[2]
 + ((uw_object_hdr_t *)pDropObj)->chain_word
-|
-- *(ushort *)(pDropObj + 4)
-+ ((uw_object_hdr_t *)pDropObj)->chain_word
 )
 ...>
 }
@@ -900,9 +891,6 @@ R F(...) {
 + ((uw_object_hdr_t *)pDropObj)->link_word
 |
 - ((ushort *)pDropObj)[3]
-+ ((uw_object_hdr_t *)pDropObj)->link_word
-|
-- *(ushort *)(pDropObj + 6)
 + ((uw_object_hdr_t *)pDropObj)->link_word
 )
 ...>

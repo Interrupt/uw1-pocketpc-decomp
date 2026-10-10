@@ -1177,3 +1177,23 @@ guard/player bytes, launch globals and callback events/counts are compared.
 Use `--reference PATH` with the original `weapon_swing.c` and `--asan` for
 AddressSanitizer. The worklist now contains 145 byte views (ten fewer); full
 captured words remain intentional.
+
+`generate_monster_loot_rules.py` / `monster-loot-fields.json` convert
+`drop_monster_loot` using the exact-source applier. Its sole caller supplies
+the current NPC (`DAT_0010190c`), which justifies the typed mobile pointer and
+named home-tile coordinates. Fresh loot records use common-header pointers.
+Named x/y/z writes replace position-byte reconstruction, the chain mask/store
+pair becomes `quality = 0x28`, and the item drop copies the monster ID's low
+six bits to `owner`. Full intermediate word/byte captures, allocation order,
+random-item gates and all insertion/settling/drop callbacks remain intact.
+
+The complete-body rule and test check exact generation/conversion,
+idempotence and rejection of callbacks, volatile/escaping captures, changed
+masks, intervening writes, excluded scopes, quoted bodies and ambiguous
+definitions. The 786,432 before/after executions cover every packed position,
+chain and link word, complete gold/item argument ranges, allocation failures,
+zero-argument gates, signed random results and callback-mutated source/loot
+records. Header/guard/tile bytes, placement globals and callback arguments/
+events/counts are compared. Use `--reference PATH` with the original `ai.c`
+and `--asan` for AddressSanitizer. The worklist now contains 135 byte views
+(ten fewer); retained captures remain intentional.

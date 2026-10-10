@@ -5586,15 +5586,6 @@ R F(...) {
 |
 - *(ushort *)pDropObj & 0x1ff
 + ((uw_object_hdr_t *)pDropObj)->object_id
-|
-- *(ushort *)(pDropObj + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)pDropObj)->object_id
-|
-- CONCAT11(pDropObj[1], *pDropObj) & 0x1ff
-+ ((uw_object_hdr_t *)pDropObj)->object_id
-|
-- CONCAT11(pDropObj[1], pDropObj[0]) & 0x1ff
-+ ((uw_object_hdr_t *)pDropObj)->object_id
 )
 ...>
 }
@@ -5625,34 +5616,10 @@ R F(...) {
 - (*(ushort *)pDropObj & 0xe00) >> 9
 + ((uw_object_hdr_t *)pDropObj)->flags_res
 |
-- (*(ushort *)(pDropObj + 0x0) >> 9) & 0x7
-+ ((uw_object_hdr_t *)pDropObj)->flags_res
-|
-- (*(ushort *)(pDropObj + 0x0) & 0xe00) >> 9
-+ ((uw_object_hdr_t *)pDropObj)->flags_res
-|
-- (CONCAT11(pDropObj[1], *pDropObj) >> 9) & 0x7
-+ ((uw_object_hdr_t *)pDropObj)->flags_res
-|
-- (CONCAT11(pDropObj[1], *pDropObj) & 0xe00) >> 9
-+ ((uw_object_hdr_t *)pDropObj)->flags_res
-|
-- (CONCAT11(pDropObj[1], pDropObj[0]) >> 9) & 0x7
-+ ((uw_object_hdr_t *)pDropObj)->flags_res
-|
-- (CONCAT11(pDropObj[1], pDropObj[0]) & 0xe00) >> 9
-+ ((uw_object_hdr_t *)pDropObj)->flags_res
-|
 - (*(byte *)((char *)pDropObj + 0x1) >> 1) & 0x7
 + ((uw_object_hdr_t *)pDropObj)->flags_res
 |
 - (*(byte *)((char *)pDropObj + 0x1) & 0xe) >> 1
-+ ((uw_object_hdr_t *)pDropObj)->flags_res
-|
-- (*(byte *)(pDropObj + 0x1) >> 1) & 0x7
-+ ((uw_object_hdr_t *)pDropObj)->flags_res
-|
-- (*(byte *)(pDropObj + 0x1) & 0xe) >> 1
 + ((uw_object_hdr_t *)pDropObj)->flags_res
 )
 ...>
@@ -5684,34 +5651,10 @@ R F(...) {
 - (*(ushort *)pDropObj & 0x1000) >> 12
 + ((uw_object_hdr_t *)pDropObj)->enchanted
 |
-- (*(ushort *)(pDropObj + 0x0) >> 12) & 0x1
-+ ((uw_object_hdr_t *)pDropObj)->enchanted
-|
-- (*(ushort *)(pDropObj + 0x0) & 0x1000) >> 12
-+ ((uw_object_hdr_t *)pDropObj)->enchanted
-|
-- (CONCAT11(pDropObj[1], *pDropObj) >> 12) & 0x1
-+ ((uw_object_hdr_t *)pDropObj)->enchanted
-|
-- (CONCAT11(pDropObj[1], *pDropObj) & 0x1000) >> 12
-+ ((uw_object_hdr_t *)pDropObj)->enchanted
-|
-- (CONCAT11(pDropObj[1], pDropObj[0]) >> 12) & 0x1
-+ ((uw_object_hdr_t *)pDropObj)->enchanted
-|
-- (CONCAT11(pDropObj[1], pDropObj[0]) & 0x1000) >> 12
-+ ((uw_object_hdr_t *)pDropObj)->enchanted
-|
 - (*(byte *)((char *)pDropObj + 0x1) >> 4) & 0x1
 + ((uw_object_hdr_t *)pDropObj)->enchanted
 |
 - (*(byte *)((char *)pDropObj + 0x1) & 0x10) >> 4
-+ ((uw_object_hdr_t *)pDropObj)->enchanted
-|
-- (*(byte *)(pDropObj + 0x1) >> 4) & 0x1
-+ ((uw_object_hdr_t *)pDropObj)->enchanted
-|
-- (*(byte *)(pDropObj + 0x1) & 0x10) >> 4
 + ((uw_object_hdr_t *)pDropObj)->enchanted
 )
 ...>
@@ -5743,34 +5686,10 @@ R F(...) {
 - (*(ushort *)pDropObj & 0x2000) >> 13
 + ((uw_object_hdr_t *)pDropObj)->doordir
 |
-- (*(ushort *)(pDropObj + 0x0) >> 13) & 0x1
-+ ((uw_object_hdr_t *)pDropObj)->doordir
-|
-- (*(ushort *)(pDropObj + 0x0) & 0x2000) >> 13
-+ ((uw_object_hdr_t *)pDropObj)->doordir
-|
-- (CONCAT11(pDropObj[1], *pDropObj) >> 13) & 0x1
-+ ((uw_object_hdr_t *)pDropObj)->doordir
-|
-- (CONCAT11(pDropObj[1], *pDropObj) & 0x2000) >> 13
-+ ((uw_object_hdr_t *)pDropObj)->doordir
-|
-- (CONCAT11(pDropObj[1], pDropObj[0]) >> 13) & 0x1
-+ ((uw_object_hdr_t *)pDropObj)->doordir
-|
-- (CONCAT11(pDropObj[1], pDropObj[0]) & 0x2000) >> 13
-+ ((uw_object_hdr_t *)pDropObj)->doordir
-|
 - (*(byte *)((char *)pDropObj + 0x1) >> 5) & 0x1
 + ((uw_object_hdr_t *)pDropObj)->doordir
 |
 - (*(byte *)((char *)pDropObj + 0x1) & 0x20) >> 5
-+ ((uw_object_hdr_t *)pDropObj)->doordir
-|
-- (*(byte *)(pDropObj + 0x1) >> 5) & 0x1
-+ ((uw_object_hdr_t *)pDropObj)->doordir
-|
-- (*(byte *)(pDropObj + 0x1) & 0x20) >> 5
 + ((uw_object_hdr_t *)pDropObj)->doordir
 )
 ...>
@@ -5802,34 +5721,10 @@ R F(...) {
 - (*(ushort *)pDropObj & 0x4000) >> 14
 + ((uw_object_hdr_t *)pDropObj)->invisible
 |
-- (*(ushort *)(pDropObj + 0x0) >> 14) & 0x1
-+ ((uw_object_hdr_t *)pDropObj)->invisible
-|
-- (*(ushort *)(pDropObj + 0x0) & 0x4000) >> 14
-+ ((uw_object_hdr_t *)pDropObj)->invisible
-|
-- (CONCAT11(pDropObj[1], *pDropObj) >> 14) & 0x1
-+ ((uw_object_hdr_t *)pDropObj)->invisible
-|
-- (CONCAT11(pDropObj[1], *pDropObj) & 0x4000) >> 14
-+ ((uw_object_hdr_t *)pDropObj)->invisible
-|
-- (CONCAT11(pDropObj[1], pDropObj[0]) >> 14) & 0x1
-+ ((uw_object_hdr_t *)pDropObj)->invisible
-|
-- (CONCAT11(pDropObj[1], pDropObj[0]) & 0x4000) >> 14
-+ ((uw_object_hdr_t *)pDropObj)->invisible
-|
 - (*(byte *)((char *)pDropObj + 0x1) >> 6) & 0x1
 + ((uw_object_hdr_t *)pDropObj)->invisible
 |
 - (*(byte *)((char *)pDropObj + 0x1) & 0x40) >> 6
-+ ((uw_object_hdr_t *)pDropObj)->invisible
-|
-- (*(byte *)(pDropObj + 0x1) >> 6) & 0x1
-+ ((uw_object_hdr_t *)pDropObj)->invisible
-|
-- (*(byte *)(pDropObj + 0x1) & 0x40) >> 6
 + ((uw_object_hdr_t *)pDropObj)->invisible
 )
 ...>
@@ -5861,24 +5756,6 @@ R F(...) {
 - (*(ushort *)pDropObj & 0x8000) >> 15
 + ((uw_object_hdr_t *)pDropObj)->is_quant
 |
-- (*(ushort *)(pDropObj + 0x0) >> 15) & 0x1
-+ ((uw_object_hdr_t *)pDropObj)->is_quant
-|
-- (*(ushort *)(pDropObj + 0x0) & 0x8000) >> 15
-+ ((uw_object_hdr_t *)pDropObj)->is_quant
-|
-- (CONCAT11(pDropObj[1], *pDropObj) >> 15) & 0x1
-+ ((uw_object_hdr_t *)pDropObj)->is_quant
-|
-- (CONCAT11(pDropObj[1], *pDropObj) & 0x8000) >> 15
-+ ((uw_object_hdr_t *)pDropObj)->is_quant
-|
-- (CONCAT11(pDropObj[1], pDropObj[0]) >> 15) & 0x1
-+ ((uw_object_hdr_t *)pDropObj)->is_quant
-|
-- (CONCAT11(pDropObj[1], pDropObj[0]) & 0x8000) >> 15
-+ ((uw_object_hdr_t *)pDropObj)->is_quant
-|
 - (*(byte *)((char *)pDropObj + 0x1) >> 7) & 0x1
 + ((uw_object_hdr_t *)pDropObj)->is_quant
 |
@@ -5886,15 +5763,6 @@ R F(...) {
 + ((uw_object_hdr_t *)pDropObj)->is_quant
 |
 - *(byte *)((char *)pDropObj + 0x1) >> 7
-+ ((uw_object_hdr_t *)pDropObj)->is_quant
-|
-- (*(byte *)(pDropObj + 0x1) >> 7) & 0x1
-+ ((uw_object_hdr_t *)pDropObj)->is_quant
-|
-- (*(byte *)(pDropObj + 0x1) & 0x80) >> 7
-+ ((uw_object_hdr_t *)pDropObj)->is_quant
-|
-- *(byte *)(pDropObj + 0x1) >> 7
 + ((uw_object_hdr_t *)pDropObj)->is_quant
 )
 ...>
@@ -5914,16 +5782,7 @@ R F(...) {
 - ((ushort *)pDropObj)[1] & 0x7f
 + ((uw_object_hdr_t *)pDropObj)->zpos
 |
-- *(ushort *)(pDropObj + 0x2) & 0x7f
-+ ((uw_object_hdr_t *)pDropObj)->zpos
-|
 - *(byte *)((char *)pDropObj + 0x2) & 0x7f
-+ ((uw_object_hdr_t *)pDropObj)->zpos
-|
-- pDropObj[2] & 0x7f
-+ ((uw_object_hdr_t *)pDropObj)->zpos
-|
-- *(byte *)(pDropObj + 0x2) & 0x7f
 + ((uw_object_hdr_t *)pDropObj)->zpos
 )
 ...>
@@ -5947,12 +5806,6 @@ R F(...) {
 + ((uw_object_hdr_t *)pDropObj)->heading
 |
 - (((ushort *)pDropObj)[1] & 0x380) >> 7
-+ ((uw_object_hdr_t *)pDropObj)->heading
-|
-- (*(ushort *)(pDropObj + 0x2) >> 7) & 0x7
-+ ((uw_object_hdr_t *)pDropObj)->heading
-|
-- (*(ushort *)(pDropObj + 0x2) & 0x380) >> 7
 + ((uw_object_hdr_t *)pDropObj)->heading
 )
 ...>
@@ -5978,22 +5831,10 @@ R F(...) {
 - (((ushort *)pDropObj)[1] & 0x1c00) >> 10
 + ((uw_object_hdr_t *)pDropObj)->ypos
 |
-- (*(ushort *)(pDropObj + 0x2) >> 10) & 0x7
-+ ((uw_object_hdr_t *)pDropObj)->ypos
-|
-- (*(ushort *)(pDropObj + 0x2) & 0x1c00) >> 10
-+ ((uw_object_hdr_t *)pDropObj)->ypos
-|
 - (*(byte *)((char *)pDropObj + 0x3) >> 2) & 0x7
 + ((uw_object_hdr_t *)pDropObj)->ypos
 |
 - (*(byte *)((char *)pDropObj + 0x3) & 0x1c) >> 2
-+ ((uw_object_hdr_t *)pDropObj)->ypos
-|
-- (*(byte *)(pDropObj + 0x3) >> 2) & 0x7
-+ ((uw_object_hdr_t *)pDropObj)->ypos
-|
-- (*(byte *)(pDropObj + 0x3) & 0x1c) >> 2
 + ((uw_object_hdr_t *)pDropObj)->ypos
 )
 ...>
@@ -6019,12 +5860,6 @@ R F(...) {
 - (((ushort *)pDropObj)[1] & 0xe000) >> 13
 + ((uw_object_hdr_t *)pDropObj)->xpos
 |
-- (*(ushort *)(pDropObj + 0x2) >> 13) & 0x7
-+ ((uw_object_hdr_t *)pDropObj)->xpos
-|
-- (*(ushort *)(pDropObj + 0x2) & 0xe000) >> 13
-+ ((uw_object_hdr_t *)pDropObj)->xpos
-|
 - (*(byte *)((char *)pDropObj + 0x3) >> 5) & 0x7
 + ((uw_object_hdr_t *)pDropObj)->xpos
 |
@@ -6032,15 +5867,6 @@ R F(...) {
 + ((uw_object_hdr_t *)pDropObj)->xpos
 |
 - *(byte *)((char *)pDropObj + 0x3) >> 5
-+ ((uw_object_hdr_t *)pDropObj)->xpos
-|
-- (*(byte *)(pDropObj + 0x3) >> 5) & 0x7
-+ ((uw_object_hdr_t *)pDropObj)->xpos
-|
-- (*(byte *)(pDropObj + 0x3) & 0xe0) >> 5
-+ ((uw_object_hdr_t *)pDropObj)->xpos
-|
-- *(byte *)(pDropObj + 0x3) >> 5
 + ((uw_object_hdr_t *)pDropObj)->xpos
 )
 ...>
@@ -6060,16 +5886,7 @@ R F(...) {
 - ((ushort *)pDropObj)[2] & 0x3f
 + ((uw_object_hdr_t *)pDropObj)->quality
 |
-- *(ushort *)(pDropObj + 0x4) & 0x3f
-+ ((uw_object_hdr_t *)pDropObj)->quality
-|
 - *(byte *)((char *)pDropObj + 0x4) & 0x3f
-+ ((uw_object_hdr_t *)pDropObj)->quality
-|
-- pDropObj[4] & 0x3f
-+ ((uw_object_hdr_t *)pDropObj)->quality
-|
-- *(byte *)(pDropObj + 0x4) & 0x3f
 + ((uw_object_hdr_t *)pDropObj)->quality
 )
 ...>
@@ -6094,12 +5911,6 @@ R F(...) {
 |
 - (((ushort *)pDropObj)[2] & 0xffc0) >> 6
 + ((uw_object_hdr_t *)pDropObj)->next
-|
-- (*(ushort *)(pDropObj + 0x4) >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)pDropObj)->next
-|
-- (*(ushort *)(pDropObj + 0x4) & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)pDropObj)->next
 )
 ...>
 }
@@ -6118,16 +5929,7 @@ R F(...) {
 - ((ushort *)pDropObj)[3] & 0x3f
 + ((uw_object_hdr_t *)pDropObj)->owner
 |
-- *(ushort *)(pDropObj + 0x6) & 0x3f
-+ ((uw_object_hdr_t *)pDropObj)->owner
-|
 - *(byte *)((char *)pDropObj + 0x6) & 0x3f
-+ ((uw_object_hdr_t *)pDropObj)->owner
-|
-- pDropObj[6] & 0x3f
-+ ((uw_object_hdr_t *)pDropObj)->owner
-|
-- *(byte *)(pDropObj + 0x6) & 0x3f
 + ((uw_object_hdr_t *)pDropObj)->owner
 )
 ...>
@@ -6151,12 +5953,6 @@ R F(...) {
 + ((uw_object_hdr_t *)pDropObj)->link
 |
 - (((ushort *)pDropObj)[3] & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)pDropObj)->link
-|
-- (*(ushort *)(pDropObj + 0x6) >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)pDropObj)->link
-|
-- (*(ushort *)(pDropObj + 0x6) & 0xffc0) >> 6
 + ((uw_object_hdr_t *)pDropObj)->link
 )
 ...>

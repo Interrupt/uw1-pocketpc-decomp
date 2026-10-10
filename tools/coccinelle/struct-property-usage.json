@@ -1,8 +1,8 @@
 {
   "scope": "Named packed views and existing audited object-pointer roles in src/*.c; unrecorded aliases and other structures still require independent auditing.",
   "counts": {
-    "byte_view": 145,
-    "packed_word": 441,
+    "byte_view": 135,
+    "packed_word": 444,
     "raw_audited_object_access": 7,
     "signed_word_view": 9
   },
@@ -509,120 +509,57 @@
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
-      "code": "uVar6 = (((uw_object_hdr_t *)pDropObj)->position_word ^ *(ushort *)(monster + 2)) & 0x1fff ^"
+      "code": "uVar6 = (pDropObj->position_word ^ monster->hdr.position_word) & 0x1fff ^"
     },
     {
       "source": "src/ai.c",
       "function": "drop_monster_loot",
-      "line": 1648,
-      "category": "byte_view",
+      "line": 1645,
+      "category": "packed_word",
       "member": "position_word",
       "pointer": null,
-      "code": "((uw_object_hdr_t *)pDropObj)->position_word_low = bVar1;"
+      "code": "uVar6 = (pDropObj->position_word ^ monster->hdr.position_word) & 0x1fff ^"
+    },
+    {
+      "source": "src/ai.c",
+      "function": "drop_monster_loot",
+      "line": 1646,
+      "category": "packed_word",
+      "member": "position_word",
+      "pointer": null,
+      "code": "(uint)monster->hdr.position_word;"
     },
     {
       "source": "src/ai.c",
       "function": "drop_monster_loot",
       "line": 1650,
-      "category": "byte_view",
+      "category": "packed_word",
       "member": "position_word",
       "pointer": null,
-      "code": "((uw_object_hdr_t *)pDropObj)->position_word_high = bVar2;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "drop_monster_loot",
-      "line": 1652,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)pDropObj)->position_word_low = bVar1;"
+      "code": "bVar2 = ((byte)(monster->hdr.position_word >> 8) ^ bVar2) & 0x1c ^ bVar2;"
     },
     {
       "source": "src/ai.c",
       "function": "drop_monster_loot",
       "line": 1653,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)pDropObj)->position_word_high = bVar2;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "drop_monster_loot",
-      "line": 1654,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)pDropObj)->position_word_low = (monster[2] ^ bVar1) & 0x7f ^ bVar1;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "drop_monster_loot",
-      "line": 1655,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)pDropObj)->position_word_high = bVar2;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "drop_monster_loot",
-      "line": 1656,
       "category": "packed_word",
       "member": "chain_word",
       "pointer": null,
-      "code": "uVar6 = ((uw_object_hdr_t *)pDropObj)->chain_word & 0xffe8;"
+      "code": "uVar6 = pDropObj->chain_word & 0xffe8;"
     },
     {
       "source": "src/ai.c",
       "function": "drop_monster_loot",
-      "line": 1657,
-      "category": "byte_view",
-      "member": "chain_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)pDropObj)->chain_word_low = (byte)uVar6 | 0x28;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "drop_monster_loot",
-      "line": 1658,
-      "category": "byte_view",
-      "member": "chain_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)pDropObj)->chain_word_high = (byte)(char)(uVar6 >> 8);"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "drop_monster_loot",
-      "line": 1667,
+      "line": 1663,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
-      "code": "uVar3 = ((uw_object_hdr_t *)pDropObj)->link_word;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "drop_monster_loot",
-      "line": 1669,
-      "category": "byte_view",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)pDropObj)->link_word_low = (*monster ^ bVar1) & 0x3f ^ bVar1;"
-    },
-    {
-      "source": "src/ai.c",
-      "function": "drop_monster_loot",
-      "line": 1670,
-      "category": "byte_view",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)pDropObj)->link_word_high = (byte)(char)((ushort)uVar3 >> 8);"
+      "code": "uVar3 = pDropObj->link_word;"
     },
     {
       "source": "src/ai.c",
       "function": "npc_react_to_nearby_player",
-      "line": 2624,
+      "line": 2619,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -631,7 +568,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_react_to_nearby_player",
-      "line": 2635,
+      "line": 2630,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -640,7 +577,7 @@
     {
       "source": "src/ai.c",
       "function": "detect_npc_wander_proximity",
-      "line": 2694,
+      "line": 2689,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -649,7 +586,7 @@
     {
       "source": "src/ai.c",
       "function": "compute_vertical_aim_offset",
-      "line": 2732,
+      "line": 2727,
       "category": "byte_view",
       "member": "position_word",
       "pointer": null,
@@ -658,7 +595,7 @@
     {
       "source": "src/ai.c",
       "function": "setup_npc_ai_tick_state",
-      "line": 2790,
+      "line": 2785,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -667,7 +604,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_ai_default_tick",
-      "line": 2853,
+      "line": 2848,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -676,7 +613,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_ai_default_tick",
-      "line": 2894,
+      "line": 2889,
       "category": "packed_word",
       "member": "status_word",
       "pointer": null,
@@ -685,7 +622,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_ai_default_tick",
-      "line": 2913,
+      "line": 2908,
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "npc_rec",
@@ -694,7 +631,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_ai_default_tick",
-      "line": 2915,
+      "line": 2910,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -703,7 +640,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_ai_default_tick",
-      "line": 2917,
+      "line": 2912,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -712,7 +649,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_ai_default_tick",
-      "line": 2924,
+      "line": 2919,
       "category": "packed_word",
       "member": "status_word",
       "pointer": null,
@@ -721,7 +658,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_ai_default_tick",
-      "line": 3023,
+      "line": 3018,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -730,7 +667,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_ai_default_tick",
-      "line": 3039,
+      "line": 3034,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -739,7 +676,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_ai_default_tick",
-      "line": 3058,
+      "line": 3053,
       "category": "byte_view",
       "member": "position_word",
       "pointer": null,
@@ -748,7 +685,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_ai_default_tick",
-      "line": 3059,
+      "line": 3054,
       "category": "byte_view",
       "member": "position_word",
       "pointer": null,
@@ -757,7 +694,7 @@
     {
       "source": "src/ai.c",
       "function": "initiate_npc_death",
-      "line": 3206,
+      "line": 3201,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -766,7 +703,7 @@
     {
       "source": "src/ai.c",
       "function": "spawn_rest_interrupt_monster_callback",
-      "line": 3548,
+      "line": 3543,
       "category": "packed_word",
       "member": "tile_word",
       "pointer": null,
@@ -775,7 +712,7 @@
     {
       "source": "src/ai.c",
       "function": "spawn_rest_interrupt_monster_callback",
-      "line": 3559,
+      "line": 3554,
       "category": "byte_view",
       "member": "position_word",
       "pointer": null,
@@ -784,7 +721,7 @@
     {
       "source": "src/ai.c",
       "function": "spawn_rest_interrupt_monster_callback",
-      "line": 3573,
+      "line": 3568,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -793,7 +730,7 @@
     {
       "source": "src/ai.c",
       "function": "alert_npc_to_noise_callback",
-      "line": 3722,
+      "line": 3717,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -802,7 +739,7 @@
     {
       "source": "src/ai.c",
       "function": "alert_npc_to_noise_callback",
-      "line": 3750,
+      "line": 3745,
       "category": "packed_word",
       "member": "status_word",
       "pointer": null,
@@ -811,7 +748,7 @@
     {
       "source": "src/ai.c",
       "function": "emit_noise_alert",
-      "line": 3784,
+      "line": 3779,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -820,7 +757,7 @@
     {
       "source": "src/ai.c",
       "function": "resolve_unique_npc_special_behavior",
-      "line": 3815,
+      "line": 3810,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -829,7 +766,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_set_walk_target",
-      "line": 4034,
+      "line": 4029,
       "category": "packed_word",
       "member": "status_word",
       "pointer": null,
@@ -838,7 +775,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_set_walk_target",
-      "line": 4037,
+      "line": 4032,
       "category": "packed_word",
       "member": "status_word",
       "pointer": null,
@@ -847,7 +784,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_set_walk_target",
-      "line": 4037,
+      "line": 4032,
       "category": "packed_word",
       "member": "status_word",
       "pointer": null,
@@ -856,7 +793,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_idle_behavior_tick",
-      "line": 4152,
+      "line": 4147,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -865,7 +802,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_idle_behavior_tick",
-      "line": 4180,
+      "line": 4175,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -874,7 +811,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_idle_behavior_tick",
-      "line": 4197,
+      "line": 4192,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -883,7 +820,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_idle_behavior_tick",
-      "line": 4212,
+      "line": 4207,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -892,7 +829,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_idle_behavior_tick",
-      "line": 4223,
+      "line": 4218,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -901,7 +838,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_notice_and_idle_tick",
-      "line": 4298,
+      "line": 4293,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -910,7 +847,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_notice_and_idle_tick",
-      "line": 4362,
+      "line": 4357,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -919,7 +856,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_wander_return_home_exact_tick",
-      "line": 4412,
+      "line": 4407,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -928,7 +865,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_clear_special_goal",
-      "line": 4447,
+      "line": 4442,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -937,7 +874,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_clear_special_goal",
-      "line": 4450,
+      "line": 4445,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -946,7 +883,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_clear_special_goal",
-      "line": 4453,
+      "line": 4448,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -955,7 +892,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_clear_special_goal",
-      "line": 4456,
+      "line": 4451,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -964,7 +901,7 @@
     {
       "source": "src/ai.c",
       "function": "npc_clear_special_goal",
-      "line": 4459,
+      "line": 4454,
       "category": "packed_word",
       "member": "status_word",
       "pointer": null,
@@ -973,7 +910,7 @@
     {
       "source": "src/ai.c",
       "function": "build_object_placement_snapshot",
-      "line": 4931,
+      "line": 4926,
       "category": "packed_word",
       "member": "size_weight",
       "pointer": null,
@@ -982,7 +919,7 @@
     {
       "source": "src/ai.c",
       "function": "build_object_placement_snapshot",
-      "line": 4942,
+      "line": 4937,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -991,7 +928,7 @@
     {
       "source": "src/ai.c",
       "function": "build_object_placement_snapshot",
-      "line": 4972,
+      "line": 4967,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -1000,7 +937,7 @@
     {
       "source": "src/ai.c",
       "function": "build_object_placement_snapshot",
-      "line": 4987,
+      "line": 4982,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -1009,7 +946,7 @@
     {
       "source": "src/ai.c",
       "function": "build_object_placement_snapshot",
-      "line": 4992,
+      "line": 4987,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,

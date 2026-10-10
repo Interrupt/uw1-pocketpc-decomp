@@ -1623,7 +1623,7 @@ int activate_area_hazard_object(ushort *hazard, uint tile_x, int tile_y, int dam
 // corpse's own tile; if param_3 (a treasure-category nibble) is nonzero...
 void drop_monster_loot(void *monster_ptr, ushort gold_nibble, ushort item_nibble)
 {
-  byte *monster = (byte *)monster_ptr;
+  uw_mobile_object_t *monster = (uw_mobile_object_t *)monster_ptr;
   int uw_ord2005_rem_12 = 0;
   byte bVar1;
   byte bVar2;
@@ -1634,28 +1634,24 @@ void drop_monster_loot(void *monster_ptr, ushort gold_nibble, ushort item_nibble
   uint uVar6;
   undefined4 uVar7;
   int extraout_r1;
-  char *pDropObj;  /* was `int iVar5`/reused `int iVar4` -- truncated
+  uw_object_hdr_t *pDropObj;  /* was `int iVar5`/reused `int iVar4` -- truncated
                        spawn_new_object's real object pointer in both of
                        this function's drop branches */
 
-  iVar4 = (char *)tilemap_lookup(*(ushort *)(monster + 0x16) >> 10,(*(ushort *)(monster + 0x16) & 0x3f0) >> 4)
+  iVar4 = (char *)tilemap_lookup(monster->npc_xhome,monster->npc_yhome)
   ;
   if (((gold_nibble & 0xff) != 0) &&
-     (pDropObj = (char *)spawn_new_object((short)(gold_nibble & 0xff) + 0xd8,0), pDropObj != NULL)) {
-    uVar6 = (((uw_object_hdr_t *)pDropObj)->position_word ^ *(ushort *)(monster + 2)) & 0x1fff ^
-            (uint)*(ushort *)(monster + 2);
+     (pDropObj = spawn_new_object((short)(gold_nibble & 0xff) + 0xd8,0), pDropObj != NULL)) {
+    uVar6 = (pDropObj->position_word ^ monster->hdr.position_word) & 0x1fff ^
+            (uint)monster->hdr.position_word;
     bVar1 = (byte)uVar6;
-    ((uw_object_hdr_t *)pDropObj)->position_word_low = bVar1;
     bVar2 = (byte)(uVar6 >> 8);
-    ((uw_object_hdr_t *)pDropObj)->position_word_high = bVar2;
-    bVar2 = (monster[3] ^ bVar2) & 0x1c ^ bVar2;
-    ((uw_object_hdr_t *)pDropObj)->position_word_low = bVar1;
-    ((uw_object_hdr_t *)pDropObj)->position_word_high = bVar2;
-    ((uw_object_hdr_t *)pDropObj)->position_word_low = (monster[2] ^ bVar1) & 0x7f ^ bVar1;
-    ((uw_object_hdr_t *)pDropObj)->position_word_high = bVar2;
-    uVar6 = ((uw_object_hdr_t *)pDropObj)->chain_word & 0xffe8;
-    ((uw_object_hdr_t *)pDropObj)->chain_word_low = (byte)uVar6 | 0x28;
-    ((uw_object_hdr_t *)pDropObj)->chain_word_high = (byte)(char)(uVar6 >> 8);
+    pDropObj->xpos = bVar2 >> 5;
+    bVar2 = ((byte)(monster->hdr.position_word >> 8) ^ bVar2) & 0x1c ^ bVar2;
+    pDropObj->ypos = (bVar2 >> 2) & 7;
+    pDropObj->zpos = monster->hdr.zpos;
+    uVar6 = pDropObj->chain_word & 0xffe8;
+    pDropObj->quality = 0x28;
     object_list_insert_head(iVar4 + 2,pDropObj);
     settle_dropped_object(pDropObj,(int)DAT_0010144c,(int)DAT_00101454,1);
   }
@@ -1663,11 +1659,10 @@ void drop_monster_loot(void *monster_ptr, ushort gold_nibble, ushort item_nibble
     uVar7 = ce_rand();
     uw_ord2005_rem_12 = ((int)(uVar7)) % (0x10);
     if ((uw_ord2005_rem_12 < 7) &&
-       (pDropObj = (char *)spawn_new_object((short)(item_nibble & 0xff) + 0xc0,0), pDropObj != NULL)) {
-      uVar3 = ((uw_object_hdr_t *)pDropObj)->link_word;
+       (pDropObj = spawn_new_object((short)(item_nibble & 0xff) + 0xc0,0), pDropObj != NULL)) {
+      uVar3 = pDropObj->link_word;
       bVar1 = (byte)uVar3;
-      ((uw_object_hdr_t *)pDropObj)->link_word_low = (*monster ^ bVar1) & 0x3f ^ bVar1;
-      ((uw_object_hdr_t *)pDropObj)->link_word_high = (byte)(char)((ushort)uVar3 >> 8);
+      pDropObj->owner = monster->hdr.object_id & 0x3f;
       drop_object_near_target(monster,pDropObj,4,0);
     }
   }
