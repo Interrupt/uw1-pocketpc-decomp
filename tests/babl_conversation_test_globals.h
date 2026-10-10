@@ -34,6 +34,9 @@ extern undefined1 DAT_001007a0_backing[2048];
 #define DAT_00100770 DAT_00100770_backing[0]
 #define DAT_001007a0 DAT_001007a0_backing[0]
 extern char *DAT_000bbf80;
+/* babl.h declares this as uw_mobile_object_t * (main's "Use struct property
+   access for NPC record in babl"); the fixture's own copy has to agree or the
+   generated translation unit sees two different types for one symbol. */
 extern uw_mobile_object_t *DAT_00100674;
 extern short *DAT_000bc020, *DAT_000bc000;
 extern short DAT_000bc004, DAT_000bc024;
