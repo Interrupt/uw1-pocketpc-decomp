@@ -7,6 +7,7 @@ ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'tools/coccinelle'))
 from generate_held_drop_rules import generate,converted,changes,ORIGINAL,FUNCTION
 from extract_functions import extract
+from main_diagnostic_removals import without_env_prints
 PATCH=ROOT/'tools/coccinelle/held-drop-fields.json'
 assert PATCH.read_text()==generate()
 actual=extract((ROOT/'src/item_use.c').read_text(),FUNCTION)
@@ -14,7 +15,8 @@ original=ORIGINAL
 if '--reference' in sys.argv:
     original=extract(Path(sys.argv[sys.argv.index('--reference')+1]).read_text(),FUNCTION)
     assert original==ORIGINAL
-assert actual==converted() and actual!=original
+historical=converted()
+assert actual==without_env_prints(historical,'UW_DEBUG_THROW') and actual!=original
 flags=['-fsanitize=address','-fno-omit-frame-pointer'] if '--asan' in sys.argv else []
 with tempfile.TemporaryDirectory() as tmp:
     path=Path(tmp)/'held_drop_functions.c'
@@ -22,7 +24,7 @@ with tempfile.TemporaryDirectory() as tmp:
         result=subprocess.run([sys.executable,str(ROOT/'tools/coccinelle/apply_held_drop_rules.py'),str(path)],capture_output=True,text=True)
         assert result.returncode==0,result.stdout+result.stderr
     path.write_text('#include "src/headers/uw.h"\n#include "src/headers/debug.h"\n'+original); apply()
-    assert extract(path.read_text(),FUNCTION)==actual
+    assert extract(path.read_text(),FUNCTION)==historical
     before=path.read_text(); apply(); assert path.read_text()==before
     for key,old,new in changes():
         if '\n' not in old: continue

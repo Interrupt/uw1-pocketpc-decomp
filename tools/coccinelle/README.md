@@ -1108,3 +1108,30 @@ bytes and callback events/counts/arguments are compared. Use `--reference PATH`
 with the original `combat.c` and `--asan` for AddressSanitizer. The worklist now
 contains 170 byte views (six fewer); retained packed-word captures remain
 intentional.
+
+`generate_light_decay_rules.py` / `light-decay-fields.cocci` convert the
+equipped-light loop in `decay_equipped_light_sources` to a typed header pointer
+and named `quality` stores. The burnt-out ID byte pair becomes one
+`type_flags = (ushort)(uVar2 - 4)` store: the guarded original ID nibble is
+4..7, so subtraction changes only that nibble and restores every captured
+flag exactly as the original two stores did. A fresh `object_id` write alone
+would preserve current flags rather than the captured flags. Full scalar
+snapshots and both tick-phase/bulk-elapsed division paths remain intact.
+
+The complete-body rule and test verify generation, exact conversion,
+idempotence and rejection of intervening callbacks, volatile/escaping
+captures and changed masks/ranges. The 802,880 before/after cases cover all
+16-bit type/chain patterns, signed elapsed ticks and decay intervals, empty
+slots, repeated references, depletion boundaries, callback-mutated records,
+redraws and ambient updates. Record/guard bytes, return values and callback
+events/counts/arguments are compared. Use `--reference PATH` with the original
+`player.c` and `--asan` for AddressSanitizer. After incorporating the latest
+main and refreshing the audits, the worklist contains 165 byte views, 441
+packed-word uses, seven raw audited accesses and nine signed-word views.
+
+Main's diagnostic removal is accounted for in the held-drop and blood-splat
+tests by removing only the known environment-gated `fprintf` statements from
+their historical expected bodies. Current bodies still require an exact
+match (C tokens for blood splats); historical rule application and executable
+before/after references remain unchanged. The conversation fixture now sets
+its temporary data directory through the runtime options API used by main.

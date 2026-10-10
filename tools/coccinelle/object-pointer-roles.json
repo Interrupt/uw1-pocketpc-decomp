@@ -148,7 +148,7 @@
               "name": "iVar6",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "UW1 object struct member access",
+              "evidence": "object accessor / proven object alias",
               "current_mobile_alias": false
             }
           ],
@@ -453,21 +453,7 @@
     },
     {
       "source": "src/automap.c",
-      "functions": [
-        {
-          "function": "automap_reveal_byte",
-          "roles": [
-            {
-              "name": "pp",
-              "type": "ushort *",
-              "parameter": false,
-              "evidence": "UW1 object struct member access",
-              "current_mobile_alias": false
-            }
-          ],
-          "requires_review": []
-        }
-      ]
+      "functions": []
     },
     {
       "source": "src/inventory.c",
@@ -530,6 +516,19 @@
               "type": "ushort *",
               "parameter": false,
               "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": []
+        },
+        {
+          "function": "redraw_lit_light_source_widgets",
+          "roles": [
+            {
+              "name": "object",
+              "type": "ushort *",
+              "parameter": false,
+              "evidence": "object accessor / proven object alias",
               "current_mobile_alias": false
             }
           ],
@@ -923,6 +922,10 @@
       "functions": []
     },
     {
+      "source": "src/lights.c",
+      "functions": []
+    },
+    {
       "source": "src/player.c",
       "functions": [
         {
@@ -950,13 +953,6 @@
         {
           "function": "refresh_player_equipment_effects",
           "roles": [
-            {
-              "name": "_o",
-              "type": "ushort *",
-              "parameter": false,
-              "evidence": "UW1 object struct member access",
-              "current_mobile_alias": false
-            },
             {
               "name": "equipped",
               "type": "ushort *",
@@ -998,9 +994,9 @@
           "roles": [
             {
               "name": "puVar6",
-              "type": "ushort *",
+              "type": "uw_object_hdr_t *",
               "parameter": false,
-              "evidence": "UW1 object struct member access",
+              "evidence": "typed UW1 object pointer declaration",
               "current_mobile_alias": false
             }
           ],
@@ -1011,19 +1007,6 @@
     {
       "source": "src/tmap.c",
       "functions": [
-        {
-          "function": "process_visible_tile_cell",
-          "roles": [
-            {
-              "name": "_dpp",
-              "type": "ushort *",
-              "parameter": false,
-              "evidence": "UW1 object struct member access",
-              "current_mobile_alias": false
-            }
-          ],
-          "requires_review": []
-        },
         {
           "function": "emit_tile_features",
           "roles": [
@@ -1518,20 +1501,6 @@
           "function": "reallocate_object_to_arena",
           "roles": [
             {
-              "name": "object",
-              "type": "ushort *",
-              "parameter": true,
-              "evidence": "UW1 object struct member access",
-              "current_mobile_alias": false
-            },
-            {
-              "name": "pWalk",
-              "type": "ushort *",
-              "parameter": false,
-              "evidence": "UW1 object struct member access",
-              "current_mobile_alias": false
-            },
-            {
               "name": "puVar2",
               "type": "ushort *",
               "parameter": false,
@@ -1539,9 +1508,9 @@
               "current_mobile_alias": false
             },
             {
-              "name": "pWalk",
+              "name": "object",
               "type": "ushort *",
-              "parameter": false,
+              "parameter": true,
               "evidence": "UW1 object struct member access",
               "current_mobile_alias": false
             }
@@ -3304,21 +3273,7 @@
     },
     {
       "source": "src/level.c",
-      "functions": [
-        {
-          "function": "load_level_object_table",
-          "roles": [
-            {
-              "name": "_obj",
-              "type": "void *",
-              "parameter": false,
-              "evidence": "object accessor / proven object alias",
-              "current_mobile_alias": false
-            }
-          ],
-          "requires_review": []
-        }
-      ]
+      "functions": []
     },
     {
       "source": "src/doors.c",
@@ -3371,7 +3326,15 @@
       "functions": []
     },
     {
+      "source": "src/platform_dosmidi.c",
+      "functions": []
+    },
+    {
       "source": "src/main.c",
+      "functions": []
+    },
+    {
+      "source": "src/options.c",
       "functions": []
     },
     {
@@ -3488,21 +3451,7 @@
     },
     {
       "source": "src/debug_shim.c",
-      "functions": [
-        {
-          "function": "uw_debug_force_item_id_once",
-          "roles": [
-            {
-              "name": "obj",
-              "type": "ushort *",
-              "parameter": false,
-              "evidence": "UW1 object struct member access",
-              "current_mobile_alias": false
-            }
-          ],
-          "requires_review": []
-        }
-      ]
+      "functions": []
     }
   ]
 }
