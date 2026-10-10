@@ -139,8 +139,9 @@ void dbgui_invalidate_region(void)
    command executor, so the console accepts exactly the commands a demofile does. This file stays
    free of any dependency on that: it only knows "call the handler with a line". */
 #define CON_W 320
-#define CON_ROWS 6                        /* log rows shown above the input row */
-#define CON_H (DBGUI_ROW_H * (CON_ROWS + 1) + 4)
+#define CON_ROW_H 8                       /* tighter than the panel's DBGUI_ROW_H */
+#define CON_ROWS 8                        /* log rows shown above the input row */
+#define CON_H (CON_ROW_H * (CON_ROWS + 1) + 4)
 #define CON_LOG_LINES 128
 #define CON_LINE_MAX 120
 #define CON_INPUT_MAX 120
@@ -329,7 +330,7 @@ static void dbgui_con_draw()
     line[sizeof(line) - 1] = 0;
     len = (int)strlen(line);
     while (len > 0 && measure_text_width(line) > CON_W - 6) line[--len] = 0;
-    draw_text_string(line, x0 + 3, y0 + 2 + r * DBGUI_ROW_H);
+    draw_text_string(line, x0 + 3, y0 + 2 + r * CON_ROW_H);
   }
 
   {
@@ -340,7 +341,7 @@ static void dbgui_con_draw()
     /* Keep the tail (where typing happens) visible once the line outgrows the console width. */
     len = (int)strlen(in);
     while (len - skip > 2 && measure_text_width(in + skip) > CON_W - 6) skip++;
-    draw_text_string(in + skip, x0 + 3, y1 - DBGUI_ROW_H);
+    draw_text_string(in + skip, x0 + 3, y1 - CON_ROW_H - 1);
   }
 }
 

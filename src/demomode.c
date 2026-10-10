@@ -493,14 +493,62 @@ static void demo_exec_line(char *p, Uint32 now) {
     }
 
     if (strncasecmp(p, "TELEPORT ", 9) == 0) {
-        int tx = 0, ty = 0;
-        if (sscanf(p + 9, "%d %d", &tx, &ty) != 2) {
+        /* TELEPORT <x> <y> [level] -- with a level, queues the same level change a teleport trap
+           does (teleport_object_to_level_tile: flood-fills a free spot near x,y on the new level
+           and runs the real level transition on the next tick). Without one, moves within the
+           current level directly. */
+        int tx = 0, ty = 0, level = 0;
+        int n = sscanf(p + 9, "%d %d %d", &tx, &ty, &level);
+        if (n < 2) {
             demo_printf("[demo] malformed TELEPORT line '%s', skipping\n", p);
             g_demo_next_tick = now;
             return;
         }
-        demo_printf("[demo] teleporting to tile (%d,%d)\n", tx, ty);
-        set_player_tile_position(tx, ty, 1);
+        if (n == 3) {
+            if (level < 1 || level > 9) {
+                demo_printf("[demo] TELEPORT: level %d out of range 1-9, skipping\n", level);
+                g_demo_next_tick = now;
+                return;
+            }
+            demo_printf("[demo] teleporting to tile (%d,%d) on level %d\n", tx, ty, level);
+            teleport_object_to_level_tile(g_player_object, tx, ty, (short)level);
+            /* Run the queued transition now (the way player.c's own teleports do) rather than
+               waiting for the pending-flag dispatch. */
+            dungeon_view_anim_tick();
+        } else {
+            demo_printf("[demo] teleporting to tile (%d,%d)\n", tx, ty);
+            set_player_tile_position(tx, ty, 1);
+        }
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strncasecmp(p, "GOTOLEVEL ", 10) == 0) {
+        /* GOTOLEVEL <level> -- load another level and put the player on exactly the same tile.
+           Unlike a teleport trap (TELEPORT x y level), which flood-fills for a free spot and kills
+           the player if it finds none, this never moves the player; if that tile happens to be
+           solid on the new level it just says so. */
+        extern short DAT_00201b68;
+        int level = 0;
+        if (sscanf(p + 10, "%d", &level) != 1 || level < 1 || level > 9) {
+            demo_printf("[demo] GOTOLEVEL: need a level number 1-9, got '%s'\n", p + 10);
+        } else if (level == DAT_00201b68) {
+            demo_printf("[demo] already on level %d\n", level);
+        } else {
+            int tx = g_player_object->tile_x, ty = g_player_object->tile_y;
+            demo_printf("[demo] going to level %d at tile (%d,%d)\n", level, tx, ty);
+            if (transition_to_level(DAT_00201b68, level) == 0) {
+                demo_printf("[demo] GOTOLEVEL: level %d failed to load\n", level);
+            } else {
+                DAT_00201b68 = (short)level;
+                set_player_tile_position(tx, ty, 1);
+                unsigned char *tile = (unsigned char *)tilemap_lookup(tx, ty);
+                if (tile && (tile[0] & 0xf) == 0)
+                    demo_printf("[demo] note: tile (%d,%d) is solid on level %d\n", tx, ty, level);
+                full_dungeon_redraw();
+                set_pending_update_flags(0x7ffe);
+            }
+        }
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }
@@ -892,7 +940,8 @@ static void demo_exec_line(char *p, Uint32 now) {
                     "  WAIT <ticks> | DELAY <ms>\n"
                     "mouse: CLICK <x> <y> | SDLCLICK/SDLRCLICK <x> <y>\n"
                     "  SDLDOWN/SDLUP/SDLRDOWN/SDLRUP/SDLMOVE <x> <y>\n"
-                    "world: TELEPORT <x> <y> | OPENMAP | REVEAL | REVEALALL\n"
+                    "world: TELEPORT <x> <y> [level] | GOTOLEVEL <level>\n"
+                    "  OPENMAP | REVEAL | REVEALALL\n"
                     "  SETPLAYERPOS <x> <y> <z> <yaw> <pitch>\n"
                     "  CALLMANTRA | CASTALLSPELLS | TRIGGERSAVE\n"
                     "debug: DUMPOBJSLOT <n> | SCANOBJTYPE <hex> | FINDOBJ <n>\n"
