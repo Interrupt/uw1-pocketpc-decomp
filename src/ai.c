@@ -113,9 +113,9 @@ static byte DAT_00101434;
 /* Was a bare 1-byte `undefined` -- same split-symbol class as DAT_00204980/990/9b0's own
    backing-array fixes just above: build_object_placement_snapshot (called with this as its param_2
    "object state" out-buffer, via DAT_0010172c) writes fields up to offset 0x28 into it... */
-static undefined1 DAT_002048f0_backing[128];
+undefined1 DAT_002048f0_backing[128];
 #define DAT_002048f0 DAT_002048f0_backing[0]
-static undefined1 DAT_00204950_backing[128];
+undefined1 DAT_00204950_backing[128];
 #define DAT_00204950 DAT_00204950_backing[0]
 undefined4 DAT_00101944;
 /* ARM UU.exe 0x853d8: sixteen little-endian attack-strength scales.
@@ -2697,8 +2697,8 @@ LAB_000323ac:
          (iVar5 = check_fine_line_of_sight(DAT_00101910,DAT_0010141c,
                                (ushort)(byte) g_object_type_props[(((uw_object_hdr_t *)puVar7)->object_id)].height +
                                (uVar3 & 0x7f),DAT_00101908,DAT_00101418,
-                               (ushort)(byte) g_object_type_props[(*DAT_00101400 & 0x1ff)].height +
-                               ((byte)DAT_00101400[1] & 0x7f)), puVar7 = DAT_0010190c, iVar5 != 0))
+                               (ushort)(byte) g_object_type_props[(*(ushort *)DAT_00101400 & 0x1ff)].height +
+                               (((byte)DAT_00101400[2]) & 0x7f)), puVar7 = DAT_0010190c, iVar5 != 0))
       {
         DAT_0010190c->npc_ai_flags = DAT_0010190c->npc_ai_flags | 1;
         goto LAB_000323ac;

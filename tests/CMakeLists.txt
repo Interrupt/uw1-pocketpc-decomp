@@ -364,6 +364,14 @@ add_fixture_game_unit_test(weapon_ready
   src/weapon_swing.c:advance_action_animation_frame
   src/weapon_swing.c:weapon_swing_draw_tick)
 
+# The weapon charge state machine (tick_weapon_swing_state) with a controlled clock and button.
+add_fixture_game_unit_test(weapon_charge
+  src/weapon_swing.c:@DAT_000870e4
+  src/weapon_swing.c:@DAT_00084f0b_backing src/weapon_swing.c:%DAT_00084f0b
+  src/combat.c:@DAT_00084eff_backing
+  src/weapon_swing.c:tick_weapon_swing_state src/weapon_swing.c:reset_weapon_swing_state
+  src/weapon_swing.c:update_weapon_ready_hud_icon)
+
 add_fixture_game_unit_test(head_bob
   src/movement.c:@DAT_00086e38_backing src/movement.c:@DAT_00086e48_backing
   src/player.c:@DAT_00086e58_backing
@@ -695,6 +703,7 @@ add_game_test_library(uw_test_npc_ai
   src/ai.c:npc_set_walk_target
   src/combat.c:npc_combat_engage_close_tick
   src/combat.c:npc_combat_engage_wide_tick
+  src/combat.c:try_npc_special_ability_alt
   src/combat.c:npc_combat_set_stance
   src/combat.c:load_monster_combat_stats)
 target_sources(uw_test_npc_ai PRIVATE support/npc_ai_fixture.c)
@@ -1265,3 +1274,6 @@ add_game_test_library(uw_test_save_inventory
 target_compile_options(uw_test_save_inventory PRIVATE
   -include "${CMAKE_CURRENT_SOURCE_DIR}/save_inventory_test_globals.h")
 add_supported_game_unit_test(save_inventory uw_test_save_inventory uw_test_division)
+
+# NPC collision-response profiles must be populated in the buffers the sweep actually reads.
+add_fixture_game_unit_test(collision_profiles src/movement.c:init_collision_response_profiles)

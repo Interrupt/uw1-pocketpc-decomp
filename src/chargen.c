@@ -203,10 +203,17 @@ LAB_00025468:
         sVar8 = sVar8 + 1;
         break;
       case 3:
-        /* (int)&local_5c truncated a real stack address; and (int*)(field_records+0x42) is the same
-           never-written, never-zeroed record field skipped in advance_skill_tree_node above --
-           always take the fallback instead of reading through arbitrary heap garbage. */
-        local_5c_buf[local_64[0] + 3] = 0;
+        /* ARM 0x25198-0x251d4: record the skill the player just picked from the branch menu --
+           picked[cursor-1] = list[choice*2] - 0x1f, where list is the string-id list
+           advance_skill_tree_node filled in for this record (record+6, relative to
+           &DAT_000fb8f0, same field draw_chargen_field_options reads). This was `= 0`, written
+           off as a "never-written" field, so the chosen skill was always discarded and never
+           added to the character's skill list (the slot kept the 0 and then applied nothing
+           useful / skill 0). */
+        {
+          char *picked_list = (char *)&DAT_000fb8f0 + *(int *)(field_records + 0x3c + 6);
+          local_5c_buf[local_64[0] + 3] = picked_list[uVar1 * 2] - 0x1f;
+        }
         DAT_001005c0 = apply_confirmed_skill_picks((int)DAT_001005c0,local_5c_buf + 4);
         decrement_cursor_hide_depth();
         restore_captured_grtile_backdrop(local_60);
