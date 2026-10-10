@@ -111,11 +111,22 @@ Its final coverage assertion checks that every opcode actually executed.
 
 Input selects controlled menu responses through the real wait loop. Storage,
 string expansion, drawing, RNG and inventory-list services are controlled at
-fixture boundaries; these tests do not run complete CNV.ARK conversations or
-cover every native builtin. Additional cases exercise quest-dependent dialogue,
+fixture boundaries; these tests use hand-written bytecode, not CNV.ARK, and do
+not cover every native builtin. Additional cases exercise quest-dependent dialogue,
 NPC state on reentry, accepted/rejected/declined trades, 16-bit preferences and
 barter cache initialization/invalidation. A tick budget makes endless dialogue
 or input waits fail instead of hanging the test process.
+
+`uw_test_babl_conversation` runs whole CNV.ARK conversations through the real
+`start_npc_conversation`: script loader, STRINGS.PAK text, bglobals.dat
+persistence, quest flags, menus and barter rules, with level-1 NPC records.
+Drawing, scroll output and the object-world builtins are controlled. A test
+queues the player's menu answers with `conv_pick("text", hook)` (first entry
+containing the text; `hook` runs just before the choice, e.g. to stage barter
+items), then calls `conv_talk`/`conv_talk_as`. A menu with no queued answer, or a
+script that never finishes, fails the test. Set `CONV_DUMP=1` to print each
+test's transcript. `test_babl_conversation.c` covers Ketchaval/Retichall and the
+barter loop (offer, demand, think it over, leave).
 
 Recovered suites from `unit-testing-framework` use the same prebuilt fixture
 libraries. The `*_fixture_reset`/`*_fixture_dispose` functions own setup and cleanup;

@@ -145,6 +145,10 @@ static char s_genhead_00084fd8[] = "genhead";
 static char s_charhead_00084fe0[] = "charhead";
 static char s_heads_00084fec[] = "heads";
 static char s_converse_00084ff4[] = "converse";
+/* HACK: "barter UI is up". The original exit_talk_mode tests this before calling end_barter_ui, but
+   nothing in the decompile or the ARM disassembly ever sets it, so items left in the barter slots
+   when a conversation ended were never returned. init_barter_ui now sets it and exit_talk_mode
+   clears it after the cleanup. */
 static short DAT_001006d0;
 static char s_take_id_from_npc_0008519c[] = "take_id_from_npc";
 static char s_take_from_npc_000851b0[] = "take_from_npc";
@@ -2488,13 +2492,20 @@ int babl_menu(char *args)
     }
     if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] UW_DEBUG_AUTO_FAREWELL: auto-selecting item %d (\"%s\")\n", _far_pick, *(char **)(&DAT_00100680 + _far_pick * 8));
     select_babl_menu_response((short)_far_pick);
-    return (int)*(short *)(&DAT_001007a0 + DAT_00100788 * 2);
+    return (int)DAT_00100788;
   }
   select_msg_scroll_mode_normal();
   DAT_0010078c = 1;
   DAT_00250718 = 1;
   run_babl_menu_wait_loop();
-  return (int)*(short *)(&DAT_001007a0 + DAT_00100788 * 2);
+  /* ARM 0x29348 (`ldrsh r0, [r4, #0x18]`) returns the selected 1-based menu POSITION,
+     DAT_00100788, directly. Scripts compare babl_menu's result against 1, 2, ... to pick a branch
+     (Ketchaval's "consent of my bride" menu tests for 1 and 2). This was `DAT_001007a0[position]`,
+     the chosen entry's string id -- correct only for babl_fmenu (whose ARM tail at 0x29598 really
+     does index DAT_001007a0), copied here by mistake. With an id like 58 no branch matched, so
+     the dialogue fell out of its menu handler and carried on into the next topic instead of ending
+     or answering. */
+  return (int)DAT_00100788;
 }
 
 
@@ -3642,6 +3653,7 @@ void init_barter_ui()
     iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
   } while (iVar7 < 4);
   DAT_000bc008 = 0;
+  DAT_001006d0 = 1;
   uVar3 = encode_object_slot_index(DAT_00100674);
   ce_srand(uVar3);
   DAT_000bc024 = randomize_value_pct((g_monster_type_props[(iVar6) / 0x30].trade_patience & 0xf) * '\x06',
@@ -5215,6 +5227,7 @@ void exit_talk_mode()
   }
   if (DAT_001006d0 != 0) {
     end_barter_ui();
+    DAT_001006d0 = 0;
   }
   pick_random_pending_music_track();
   g_active_hud_panel = DAT_00100678;

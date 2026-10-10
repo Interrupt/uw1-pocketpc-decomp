@@ -16,7 +16,7 @@ undefined2 DAT_000bbfe8_backing[8];
 undefined2 DAT_000bbfd0_backing[8];
 undefined4 DAT_000bc010_backing[4];
 undefined4 DAT_000bc028_backing[4];
-short DAT_0010078c;
+short DAT_0010078c, DAT_001006d0;
 short DAT_00100794;
 undefined1 DAT_00100680_backing[8192];
 undefined2 DAT_00100790;

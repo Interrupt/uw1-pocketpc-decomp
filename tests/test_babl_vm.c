@@ -402,7 +402,7 @@ static void test_menu_returns_choice_then_dialogue_continues(void)
                 0x16, 3, 0x27, 0x15);
     TEST_ASSERT_EQUAL_STRING("Trade", babl_reply);
     TEST_ASSERT_EQUAL_STRING("Goodbye", babl_speech);
-    TEST_ASSERT_EQUAL_INT(4, DAT_000bbf1c);
+    TEST_ASSERT_EQUAL_INT(1, DAT_000bbf1c); /* first entry's position; its string id is 4 */
     TEST_ASSERT_EQUAL_INT(0, DAT_000bbf78);
     TEST_ASSERT_EQUAL_INT(0, DAT_0010078c);
     TEST_ASSERT_EQUAL_INT(2, babl_frees);
@@ -554,7 +554,8 @@ static void test_menu_wait_ignores_invalid_selection_then_accepts_leave(void)
     babl_words[10] = 4; babl_words[11] = 5;
     babl_input_polls = 0; babl_invalid_first_choice = 1; babl_next_choice = 2;
     short args[] = {10, 0};
-    TEST_ASSERT_EQUAL_INT(5, babl_menu((char *)(args + 1)));
+    /* babl_menu returns the chosen entry's 1-based position (not its string id, 5). */
+    TEST_ASSERT_EQUAL_INT(2, babl_menu((char *)(args + 1)));
     TEST_ASSERT_EQUAL_INT(2, babl_input_polls);
     TEST_ASSERT_EQUAL_INT(0, DAT_0010078c);
     TEST_ASSERT_EQUAL_INT(0, DAT_00100790);
