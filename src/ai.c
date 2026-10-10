@@ -2697,8 +2697,8 @@ LAB_000323ac:
          (iVar5 = check_fine_line_of_sight(DAT_00101910,DAT_0010141c,
                                (ushort)(byte) g_object_type_props[(((uw_object_hdr_t *)puVar7)->object_id)].height +
                                (uVar3 & 0x7f),DAT_00101908,DAT_00101418,
-                               (ushort)(byte) g_object_type_props[(*DAT_00101400 & 0x1ff)].height +
-                               ((byte)DAT_00101400[1] & 0x7f)), puVar7 = DAT_0010190c, iVar5 != 0))
+                               (ushort)(byte) g_object_type_props[(*(ushort *)DAT_00101400 & 0x1ff)].height +
+                               (((byte)DAT_00101400[2]) & 0x7f)), puVar7 = DAT_0010190c, iVar5 != 0))
       {
         DAT_0010190c->npc_ai_flags = DAT_0010190c->npc_ai_flags | 1;
         goto LAB_000323ac;
