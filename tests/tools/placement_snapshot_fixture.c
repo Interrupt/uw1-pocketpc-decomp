@@ -4,6 +4,7 @@
 static _Alignas(4) byte arena[128];
 char *DAT_002046c4 = (char *)arena + 64;
 short DAT_0010144c, DAT_00101454;
+struct uw_options g_opts;
 uw_object_type_props_t g_object_type_props[512];
 static unsigned random_state, random_calls;
 static unsigned read16(const byte *p) { return p[0] + p[1] * 256u; }

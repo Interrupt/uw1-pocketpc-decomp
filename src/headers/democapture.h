@@ -1,13 +1,13 @@
 /* Records real (non-synthetic) input events to a demo-format file as they happen during a live
    session, so a gameplay sequence -- including a crash -- can be handed back to demomode.c as a
-   UW_DEMO_FILE and replayed exactly. */
+   --demo-file and replayed exactly. */
 #ifndef DEMOCAPTURE_H
 #define DEMOCAPTURE_H
 
 #include <SDL.h>
 
 /* Call once after SDL is initialized (same point as demomode_init). No-op
- * if recording is disabled (see UW_RECORD_DEMOFILE's own comment). */
+ * if recording is disabled (see --record-demofile's own comment). */
 void democapture_init();
 
 /* Call once per real uw_pump_events() invocation (i.e. once per actual game tick), BEFORE the SDL

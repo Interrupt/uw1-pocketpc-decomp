@@ -5,6 +5,10 @@ add_link_options(-Wl,-no_warn_duplicate_libraries)
 add_custom_target(unit_tests)
 add_library(unity STATIC "${PROJECT_SOURCE_DIR}/third_party/unity/src/unity.c")
 target_include_directories(unity PUBLIC "${PROJECT_SOURCE_DIR}/third_party/unity/src")
+# The runtime options struct (g_opts) is used by most of the game code the suites extract.
+add_library(uw_options STATIC "${PROJECT_SOURCE_DIR}/src/options.c")
+target_include_directories(uw_options PUBLIC "${PROJECT_SOURCE_DIR}")
+target_link_libraries(unity PUBLIC uw_options)
 
 # Generate isolated test units from the original function bodies. Game
 # functions stay in their existing files, and tests never keep code copies.
@@ -210,7 +214,8 @@ target_compile_options(uw_test_npc_combat PUBLIC
   -include "${CMAKE_CURRENT_SOURCE_DIR}/combat_test_globals.h")
 add_supported_game_unit_test(npc_combat uw_test_npc_combat)
 
-add_fixture_game_unit_test(traps src/traps.c:dispatch_trap_type_effect)
+add_fixture_game_unit_test(traps src/traps.c:dispatch_trap_type_effect
+  src/traps.c:dispatch_quest_event_code src/traps.c:apply_quest_event_numeric_effect)
 add_fixture_game_unit_test(hotspot_marker src/babl.c:draw_hotspot_crosshair_marker)
 add_fixture_game_unit_test(noise
   src/ai.c:alert_npc_to_noise_callback src/ai.c:emit_noise_alert)
@@ -389,6 +394,7 @@ add_library(uw_test_static_strings STATIC "${static_strings_source}")
 uw_configure_test_target(uw_test_static_strings)
 target_include_directories(uw_test_static_strings PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/support")
 add_supported_game_unit_test(static_strings uw_test_static_strings)
+add_supported_game_unit_test(options)
 
 add_fixture_game_unit_test(scroll_messages
   src/hud.c:@s_Not_a_spell_00085a80 src/item_use.c:@DAT_000878ec_backing
@@ -761,6 +767,9 @@ add_game_test_library(uw_test_lighting
   src/visibility.c:load_shading_level_config
   src/visibility.c:build_visibility_light_grid
   src/math.c:integer_sqrt
+  src/lights.c:%UW_EYE_TO_LIGHT_UNITS src/lights.c:@g_extra_light_sources src/lights.c:%UW_EXTRA_LIGHT_SOURCE_COUNT
+  src/lights.c:extra_light_add src/lights.c:extra_lights_reset src/lights.c:extra_lights_consider_object
+  src/lights.c:shade_span_pixel
   src/3d.c:raster_textured_span src/3d.c:update_fullbright_palette_mask
   src/graphics.c:build_shade_lut
   src/graphics.c:get_ambient_bias_reduction

@@ -2,6 +2,7 @@
    loading/selection. Split out of uw.c (the original monolithic decompile) once these functions'
    real roles were confirmed. */
 #include "headers/text.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 #include <dlfcn.h>
 #include <stdio.h>
@@ -60,9 +61,9 @@ static undefined4 DAT_0020250c;
 // was FUN_00011060
 void draw_text_string(char *text, short x, short y)
 {
-  /* Opt-in trace (UW_DIAG_TEXT=1): every text draw's calling function (via dladdr on the return
+  /* Opt-in trace (--diag-text=1): every text draw's calling function (via dladdr on the return
      address), position, and content. Zero cost when unset. */
-  if (getenv("UW_DIAG_TEXT")) {
+  if (g_opts.diag_text) {
     Dl_info _dli;
     const char *_caller = "?";
     if (dladdr(__builtin_return_address(0), &_dli) && _dli.dli_sname) {
@@ -91,7 +92,7 @@ void draw_text_string(char *text, short x, short y)
   iVar2 = ce_strlen(text);
   uVar3 = measure_text_width(text);
   uVar10 = (uint)g_font_line_height;
-  if (getenv("UW_DIAG_TEXT"))
+  if (g_opts.diag_text)
     fprintf(stderr, "[diag11060] measured_width=%u line_height(g_font_line_height)=%u alloc=%u\n",
             uVar3, uVar10, (uVar3 & 0xffff) * uVar10);
   pcVar4 = (char *)ce_malloc((uVar3 & 0xffff) * uVar10);
@@ -115,7 +116,7 @@ void draw_text_string(char *text, short x, short y)
             undefined4 _r = unpack_glyph_bitmap(auStack_40,
                        (DAT_000a85b8 + 1) * (int)(byte)*pcVar9 + g_font_row_stride * iVar11 + g_font_glyph_data_base,
                        _fmt);
-            if (getenv("UW_DIAG_TEXT"))
+            if (g_opts.diag_text)
               fprintf(stderr, "[diag11060] glyph '%c' fmt=%d(0x%x) rowbytes(g_font_row_stride)=%d ret=%d width(sVar1)=%d auStack_40[0..3]=%d,%d,%d,%d\n",
                       *pcVar9, _fmt, _fmt, (int)g_font_row_stride, (int)_r, (int)sVar1,
                       (int)auStack_40[0], (int)auStack_40[1], (int)auStack_40[2], (int)auStack_40[3]);
@@ -166,7 +167,6 @@ void draw_text_string(char *text, short x, short y)
   if (pcVar4 != (char *)0x0) {
     LocalFree(pcVar4);
   }
-  debug_framebuffer_dump("draw_text_string");
 }
 
 

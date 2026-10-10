@@ -40,7 +40,7 @@ static struct {
   uw_blob xmi;
 
   int seq;                  /* the registered sequence handle, -1 for none */
-  int prefer_wav;           /* UW_AUDIO_MODE=hybrid: sample where we have one */
+  int prefer_wav;           /* --audio-mode=hybrid: sample where we have one */
   int music_volume;         /* percent, applied to the sequence only */
 
   /* One tick's worth of chip output, consumed by the resampler below. */
@@ -67,13 +67,13 @@ static struct {
    from (see platform_dos_prefer_wav_effects). */
 static int dos_mode_requested(void)
 {
-  const char *mode = getenv("UW_AUDIO_MODE");
+  const char *mode = g_opts.audio_mode;
   return (mode && (strcasecmp(mode, "dos") == 0 || strcasecmp(mode, "hybrid") == 0)) ? 1 : 0;
 }
 
 static int hybrid_mode_requested(void)
 {
-  const char *mode = getenv("UW_AUDIO_MODE");
+  const char *mode = g_opts.audio_mode;
   return (mode && strcasecmp(mode, "hybrid") == 0) ? 1 : 0;
 }
 
@@ -117,9 +117,9 @@ int platform_dosmidi_init(int out_rate)
     return 1;
   }
 
-  const char *root = getenv("UW_DOS_DATA_DIR");
+  const char *root = g_opts.dos_data_dir;
   if (!root || !*root) {
-    DEBUG(WARN, "[audio] UW_AUDIO_MODE=dos but UW_DOS_DATA_DIR is unset -- "
+    DEBUG(WARN, "[audio] --audio-mode=dos but --dos-data-dir is unset -- "
                 "falling back to the converted .MOD music\n");
     return 0;
   }
@@ -191,9 +191,8 @@ int platform_dosmidi_init(int out_rate)
    * 100% gives 8368, 90% 4368, 85% 3374, 80% 2595, 75% 2029, 70% 1490,
    * 50% just 577. 80 leaves the music about twice an effect, which is
    * roughly where continuous music against transient effects wants to be.
-   * UW_DOS_MUSIC_VOLUME overrides it without a rebuild. */
-  const char *vol = getenv("UW_DOS_MUSIC_VOLUME");
-  g.music_volume = vol ? atoi(vol) : 80;
+   * --dos-music-volume overrides it without a rebuild. */
+  g.music_volume = g_opts.dos_music_volume;
   if (g.music_volume < 0) g.music_volume = 0;
   if (g.music_volume > 100) g.music_volume = 100;
   for (int i = 0; i < (int)(sizeof(g.sfx) / sizeof(g.sfx[0])); i++) {
@@ -226,7 +225,7 @@ fail:
 
 int platform_dosmidi_xmi_path(const char *win_mod_path, char *out, unsigned int out_sz)
 {
-  const char *root = getenv("UW_DOS_DATA_DIR");
+  const char *root = g_opts.dos_data_dir;
   if (!root || !*root || !win_mod_path || !out || out_sz == 0) {
     return 0;
   }

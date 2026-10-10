@@ -6,6 +6,8 @@
 char *DAT_00086df8, *DAT_0023be74, *DAT_0024fa2c, *DAT_0023cca0;
 uw_object_hdr_t *g_scratch_object_ptr;
 unsigned char g_fullbright_palette_mask[256];
+uw_extra_light_t g_extra_lights[UW_MAX_EXTRA_LIGHTS];
+int g_extra_light_count;
 byte lighting_span_shade = 88;
 char *g_selected_object;
 undefined1 DAT_00086da8;
@@ -70,12 +72,14 @@ void *ce_memset(void *p, int value, unsigned n) { return memset(p, value, n); }
 char *ce_strcat(char *p, char *s) { return strcat(p, s); }
 void lighting_fixture_reset(void)
 {
-    setenv("UW_DATA_DIR", UW_TEST_DATA_DIR, 1);
-    unsetenv("UW_LIGHT_MODE");
-    unsetenv("UW_FULLBRIGHT");
+    options_set("data-dir", UW_TEST_DATA_DIR);
+    options_unset("light-mode");
+    options_unset("fullbright");
+    options_unset("extralights");
+    extra_lights_reset();
     lighting_span_shade = 88;
-    setenv("UW_DITHER", "0", 1); /* Isolate undithered falloff assertions. */
-    unsetenv("UW_AMBIENT_BIAS_REDUCTION");
+    options_set("dither", "0"); /* Isolate undithered falloff assertions. */
+    options_unset("ambient-bias-reduction");
     g_ambient_bias_reduction = 0;
     memset(player, 0, sizeof player); memset(stats, 0, sizeof stats);
     memset(slots, 0, sizeof slots); memset(lights, 0, sizeof lights);
@@ -98,10 +102,11 @@ void lighting_fixture_reset(void)
 }
 void lighting_fixture_dispose(void)
 {
-    unsetenv("UW_LIGHT_MODE");
-    unsetenv("UW_DITHER");
-    unsetenv("UW_AMBIENT_BIAS_REDUCTION");
-    unsetenv("UW_FULLBRIGHT");
+    options_unset("light-mode");
+    options_unset("dither");
+    options_unset("ambient-bias-reduction");
+    options_unset("fullbright");
+    options_unset("extralights");
 }
 void assert_mode(int mode, int falloff, int initial, int offset)
 {

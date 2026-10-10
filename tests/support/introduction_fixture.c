@@ -34,7 +34,7 @@ int audio_always_true_stub(void) { return voice_enabled; }
 
 void introduction_fixture_reset(void)
 {
-    setenv("UW_DATA_DIR", UW_TEST_DATA_DIR, 1);
+    options_set("data-dir", UW_TEST_DATA_DIR);
     DAT_0024bf98 = uw_file_open_read("\\DATA\\STRINGS.PAK");
     TEST_ASSERT_GREATER_THAN_INT(0, DAT_0024bf98);
     TEST_ASSERT_EQUAL_INT(2, uw_file_read(DAT_0024bf98, &tree_count, 2));

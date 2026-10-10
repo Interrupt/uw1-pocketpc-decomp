@@ -1,6 +1,7 @@
 /* NPC melee combat AI: approach/engage/position/disengage tick states and stance selection. Split
    out of uw.c (the original monolithic decompile) once these functions' real roles were confirmed. */
 #include "headers/combat.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -880,7 +881,6 @@ void spawn_blood_splat_object(int object_slot, int step_count, byte *snapshot)
   DAT_00202c6c[0xb] = 0;
   local_18 = (short)((uint)((int)*(short *)DAT_00202c6c << 0x14) >> 0x10);
   local_16 = (short)((uint)((int)*(short *)(DAT_00202c6c + 2) << 0x14) >> 0x10);
-  if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[blood-splat] spawn_blood_splat_object ENTRY object_slot=%d step_count=%d\n", (int)object_slot, step_count);
   while (collision_build_height_field(0),
         ((*(ushort *)(DAT_00202c6c + 0xe) | *(ushort *)(DAT_00202c6c + 0xc)) & 0x300) == 0) {
     project_position_by_heading(object_slot,0x10,&local_18,&local_16);
@@ -890,14 +890,11 @@ void spawn_blood_splat_object(int object_slot, int step_count, byte *snapshot)
     DAT_00202c6c[2] = (byte)((int)local_16 >> 4);
     DAT_00202c6c[3] = (byte)((uint)((int)local_16 >> 4) >> 8);
     if (step_count * 0x10000 >> 0x10 < 1) {
-      if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[blood-splat] spawn_blood_splat_object: no floor/ceiling boundary found within range, bailing\n");
       return;
     }
   }
-  if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[blood-splat] spawn_blood_splat_object: spawning object 0x1cb\n");
   iVar7 = spawn_new_object(0x1cb, 0);
   if (iVar7 == (uw_object_hdr_t *)0x0) {
-    if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[blood-splat] spawn_blood_splat_object: spawn_new_object FAILED (returned NULL)\n");
     return;
   }
   uVar3 = iVar7->position_word;
@@ -917,14 +914,11 @@ void spawn_blood_splat_object(int object_slot, int step_count, byte *snapshot)
   uVar8 = encode_object_slot_index(iVar7);
   sVar6 = scheduler_add_entry(uVar8,2,0,(int)sVar4 >> 3 & 0xff,(char)((int)sVar5 >> 3));
   if (sVar6 == -1) {
-    if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[blood-splat] spawn_blood_splat_object: scheduler_add_entry queue full, freeing slot\n");
     free_object_slot(iVar7);
     return;
   }
   iVar9 = tilemap_lookup((int)sVar4 >> 3,(int)sVar5 >> 3);
-  if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[blood-splat] spawn_blood_splat_object: tilemap_lookup(%d,%d)=%p, appending\n", (int)sVar4>>3, (int)sVar5>>3, (void*)iVar9);
   object_list_append_tail(iVar9 + 2,iVar7);
-  if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[blood-splat] spawn_blood_splat_object: SUCCESS, splat placed\n");
 }
 
 
@@ -980,10 +974,8 @@ int resolve_melee_swing_hit()
   iVar5 = ((byte)puVar6[0xc] & 0x1f) + ((puVar6[1] & 0x380) >> 2);
   project_position_by_heading(iVar5,uVar7 + 3,&local_3c,&local_3a);
   collision_height_envelope(0,1);
-  if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[hit-test] resolve_melee_swing_hit: blocked=%d\n", (int)*(char *)((char *)DAT_00202c6c + 0x14));
   if (*(char *)((char *)DAT_00202c6c + 0x14) == '\0') {
     collision_build_height_field(0);
-    if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[hit-test] resolve_melee_swing_hit: no-block path, height field bits=0x%x\n", (unsigned)(*(ushort *)((char *)DAT_00202c6c + 0xe) | *(ushort *)((char *)DAT_00202c6c + 0xc)));
     if (((*(ushort *)((char *)DAT_00202c6c + 0xe) | *(ushort *)((char *)DAT_00202c6c + 0xc)) & 0x300) != 0
        ) {
       iVar4 = ((puVar6[0xb] & 0xfc00) >> 7) + (uint)(*(byte *)((char *)puVar6 + 3) >> 5);
@@ -992,17 +984,14 @@ int resolve_melee_swing_hit()
       iVar4 = ((*(byte *)((char *)puVar6 + 3) & 0x1c) >> 2) + ((puVar6[0xb] & 0x3f0) >> 1);
       *(char *)((char *)DAT_00202c6c + 2) = (char)iVar4;
       *(char *)((char *)DAT_00202c6c + 3) = (char)((uint)iVar4 >> 8);
-      if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[hit-test] resolve_melee_swing_hit: calling spawn_blood_splat_object (wall splat) with iVar5=%d DAT_001005f4=%d\n", iVar5, (int)DAT_001005f4);
       spawn_blood_splat_object(iVar5,DAT_001005f4 + 3,DAT_00202c6c);
     }
   }
   else {
     sort_collision_candidates();
-    if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[hit-test] resolve_melee_swing_hit: blocked path, creature_hit_flag=%d\n", (int)*(char *)((char *)DAT_00202c6c + 0x15));
     if (*(char *)((char *)DAT_00202c6c + 0x15) != '\0') {
       /* ARM 0x263c0..0x263d0 passes the current collision record in r0. */
       sVar3 = find_nearest_hit_target((short *)DAT_00202c6c);
-      if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[hit-test] resolve_melee_swing_hit: find_nearest_hit_target returned %d\n", (int)sVar3);
       if (-1 < sVar3) {
         iVar5 = sVar3 * 6;
         DAT_00100624 = resolve_combat_hit_zone((&DAT_00202c39)[iVar5],(&DAT_00202c38)[iVar5],
@@ -1010,7 +999,6 @@ int resolve_melee_swing_hit()
                                     (uint)*(byte *)((char *)DAT_00202c6c + 9) +
                                     (int)*(short *)((char *)DAT_00202c6c + 4));
         DAT_00100620 = *(ushort *)(&DAT_00202c3a + iVar5) >> 6;
-        if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[hit-test] resolve_melee_swing_hit: HIT target slot=%d\n", (int)DAT_00100620);
         return 1;
       }
     }
@@ -1582,21 +1570,7 @@ int resolve_npc_melee_attack(void *npc_ptr, short tile_x, byte tile_y, short off
     uVar4 = ce_rand();
     DAT_0010061c = DAT_0010061c + (short)(uVar4 % 0xc) + 4;
   }
-  if (getenv("UW_DEBUG_NPC_WANDER")) {
-    ushort _pos = *(ushort *)(npc + 0x16);
-    fprintf(stderr, "[npc-wander] obj=%p tile_x=%d tile_y=%d offset_x=%d offset_y=%d"
-            " base_iVar5=%d bVar1=%d DAT_00100608=%d DAT_0010061c=%d src_tile=(%u,%u)\n",
-            (void *)npc, (int)(short)tile_x, (int)tile_y, (int)offset_x, (int)offset_y,
-            iVar5, (int)bVar1, (int)DAT_00100608, (int)DAT_0010061c,
-            (unsigned)(_pos >> 10), (unsigned)((_pos & 0x3f0) >> 4));
-  }
   iVar5 = process_melee_attack_swing();
-  if (getenv("UW_DEBUG_NPC_WANDER")) {
-    ushort _pos = *(ushort *)(npc + 0x16);
-    fprintf(stderr, "[npc-wander] process_melee_attack_swing returned %d DAT_00100620=%d dst_tile=(%u,%u)\n",
-            iVar5, (int)DAT_00100620,
-            (unsigned)(_pos >> 10), (unsigned)((_pos & 0x3f0) >> 4));
-  }
   if ((iVar5 != 0) && (DAT_00100620 == 1)) {
     if (((short)(*(byte *)(DAT_00086df8 + 0x5f) >> 2 & 0xf) < offset_y) &&
        (cVar2 = resolve_damage_type_resistance(g_player_object,1,0x10), cVar2 != '\0')) {

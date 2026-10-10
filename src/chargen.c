@@ -2,6 +2,7 @@
    portrait, difficulty, name, confirm), its resource-loading setup, and the critical-section entry
    wrapper. */
 #include "headers/chargen.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 
 #define DAT_000fb860 DAT_000fb860_backing[0]
@@ -117,7 +118,6 @@ int character_generator_loop(char *tree_data, char *scratch_data, char *field_re
 // Fires once per chargen screen (sex/handedness/class/skill/portrait/ difficulty/name/confirm
     // are states 0-7, in that order) -- state is whatever the previous iteration's switch-case just
     // advanced sVar8 to (or reset it to 0 for, on a "back"/cancel).
-    DEBUG(TRACE, "[chargen] screen advancing to state=%d", iVar12);
     pcVar_rec = field_records + iVar12 * 0x14;
     iVar4 = *(int *)(pcVar_rec + 6);
     pcVar_name = (char *)&DAT_000fb8f0 + iVar4;
@@ -271,7 +271,7 @@ LAB_00025468:
         hi_word = extraout_r1_00;
         if (*pcVar5 != '\0') {
           /* Regression-verification hook only (see bugfix/lowercase-text- universal): no other
-             UW_DEBUG_* trace in this file surfaces the committed name-entry text... */
+             other trace in this file surfaces the committed name-entry text... */
           DEBUG(TRACE, "[chargen] name field committed: \"%s\"", pcVar5);
           ce_strncpy(DAT_00086df8,pcVar5,0x1d);
           hi_word = extraout_r1_01;
@@ -486,11 +486,9 @@ int character_generator_start()
 {
   undefined4 uVar1;
 
-  DEBUG(TRACE, "[chargen] character generation starting");
   init_new_character_record(1);
   uVar1 = run_character_generator();
   load_weapon_combat_maneuver_data();
-  DEBUG(TRACE, "[chargen] character generation returning, result=%u", uVar1);
   return uVar1;
 }
 
@@ -570,10 +568,6 @@ void init_new_character_record(int mode)
   *(undefined1 *)(DAT_00086df8 + 0x66) = 0;
   *(undefined1 *)(DAT_00086df8 + 0x67) = 0;
   *(undefined1 *)(DAT_00086df8 + 0x68) = 0;
-  if (getenv("UW_DEBUG_FORCE_QUEST_TEST")) {
-    *(unsigned int *)(DAT_00086df8 + 0x65) = 0x12345678;
-    fprintf(stderr, "[quest-persist] forced test quest_bits=0x%x at new-game init\n", *(unsigned int *)(DAT_00086df8 + 0x65));
-  }
   *(undefined1 *)(DAT_00086df8 + 0x6e) = 0;
   *(undefined1 *)(DAT_00086df8 + 0x6f) = 0;
   uVar5 = *(ushort *)(DAT_00086df8 + 0xb6) & 0xfff8;
@@ -1344,7 +1338,7 @@ LAB_00024dd4:
         sVar5 = field[5];
         uVar14 = CONCAT44(iVar7,(int)sVar5);
         if (iVar7 < sVar5) {
-          if (getenv("UW_DIAG_TEXT")) {
+          if (g_opts.diag_text) {
             fprintf(stderr, "[diagnav] key=0x%x uVar10(new)=%u uVar12(old)=%u itemcount=%d\n", uVar6, uVar10, uVar12, sVar5);
           }
           uVar14 = draw_chargen_field_options(field,uVar10 & 0xff,uVar12 & 0xff);
@@ -1365,7 +1359,6 @@ LAB_00024dd4:
         item_text = get_message_string(*(byte *)(((char *)&DAT_000fb8f0 + *(int *)(field + 3)) + uVar10 * 2) | 0x400);
       }
       char *field_label = (*field != 0) ? get_message_string((int)*field | 0x400) : "";
-      DEBUG(TRACE, "[chargen] button selected: index=%u text=\"%s\" label=\"%s\"", uVar10, item_text, field_label);
     }
   }
   else {
