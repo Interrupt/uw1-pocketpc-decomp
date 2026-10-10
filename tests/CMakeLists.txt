@@ -1265,3 +1265,6 @@ add_game_test_library(uw_test_save_inventory
 target_compile_options(uw_test_save_inventory PRIVATE
   -include "${CMAKE_CURRENT_SOURCE_DIR}/save_inventory_test_globals.h")
 add_supported_game_unit_test(save_inventory uw_test_save_inventory uw_test_division)
+
+# NPC collision-response profiles must be populated in the buffers the sweep actually reads.
+add_fixture_game_unit_test(collision_profiles src/movement.c:init_collision_response_profiles)
