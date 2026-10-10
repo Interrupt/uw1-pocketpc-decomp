@@ -200,12 +200,12 @@ void attach_picked_up_object_to_cursor(ushort *object)
 // was FUN_0004a69c
 int drop_held_object_near_player(void *held_object_ptr, int force)
 {
-  ushort *held_object = (ushort *)held_object_ptr;
+  uw_object_hdr_t *held_object = (uw_object_hdr_t *)held_object_ptr;
   byte bVar1;
   ushort uVar2;
   bool bVar3;
   int iVar4;
-  ushort *puVar5;
+  uw_projectile_object_t *puVar5;
   uint uVar6;
   int iVar7;
   int iVar8;
@@ -222,43 +222,38 @@ int drop_held_object_near_player(void *held_object_ptr, int force)
   if ((*(short *)(DAT_00085a6c + 8) == 1) && (iVar4 = compute_drop_aim_from_cursor(), iVar4 != 0)) {
     DAT_00202a54 = 1;
     DAT_00202a44 = g_player_object;
-    DAT_00202a38 = *held_object & 0x1ff;
+    DAT_00202a38 = held_object->object_id;
     DAT_00202a48 = 0xf;
-    puVar5 = (ushort *)spawn_object_near_player();
-    if (puVar5 != (ushort *)0x0) {
-      uVar6 = (((uw_object_hdr_t *)puVar5)->type_flags ^ *held_object) & 0x7fff ^ (uint)*held_object;
-      ((uw_object_hdr_t *)puVar5)->type_flags = (ushort)uVar6;
-      uVar2 = held_object[3];
+    puVar5 = (uw_projectile_object_t *)spawn_object_near_player();
+    if (puVar5 != (uw_projectile_object_t *)0x0) {
+      uVar6 = (puVar5->hdr.type_flags ^ held_object->type_flags) & 0x7fff ^ (uint)held_object->type_flags;
+      puVar5->hdr.is_quant = (uVar6 >> 15) & 1;
+      uVar2 = held_object->link_word;
       bVar1 = (byte)uVar2;
-      ((uw_object_hdr_t *)puVar5)->link_word_low = ((byte)((uw_object_hdr_t *)puVar5)->link_word ^ bVar1) & 0x3f ^ bVar1;
-      ((uw_object_hdr_t *)puVar5)->link_word_high = (byte)(char)(uVar2 >> 8);
-      bVar1 = *(byte *)((char *)held_object + 1);
-      ((uw_object_hdr_t *)puVar5)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar5)->type_flags;
-      ((uw_object_hdr_t *)puVar5)->type_flags_high =
-          (bVar1 ^ ((uw_object_hdr_t *)puVar5)->type_flags_high) & 0x1e ^ ((uw_object_hdr_t *)puVar5)->type_flags_high;
-      ((uw_projectile_object_t *)puVar5)->lifetime = ((uw_object_hdr_t *)held_object)->quality;
-      ((uw_object_hdr_t *)puVar5)->link_word_low = ((byte)held_object[3] ^ (byte)((uw_object_hdr_t *)puVar5)->link_word) & 0x3f ^ (byte)((uw_object_hdr_t *)puVar5)->link_word;
-      ((uw_object_hdr_t *)puVar5)->link_word_high = ((uw_object_hdr_t *)puVar5)->link_word_high;
-      bVar1 = *(byte *)((char *)held_object + 1);
-      ((uw_object_hdr_t *)puVar5)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar5)->type_flags;
-      ((uw_object_hdr_t *)puVar5)->doordir = (bVar1 >> 5) & 0x1;
-      if (((*held_object & 0x1c0) != 0x140) && ((g_object_type_props[(*held_object & 0x1ff)].class_flags & 3) != 2)) {
-        ((uw_projectile_object_t *)puVar5)->original_heading = ((uw_object_hdr_t *)held_object)->heading;
+      puVar5->hdr.link = uVar2 >> 6;
+      bVar1 = (byte)(held_object->type_flags >> 8);
+      puVar5->hdr.flags_res = (bVar1 >> 1) & 7;
+      puVar5->hdr.enchanted = (bVar1 >> 4) & 1;
+      puVar5->lifetime = held_object->quality;
+      puVar5->hdr.owner = held_object->owner;
+      bVar1 = (byte)(held_object->type_flags >> 8);
+      puVar5->hdr.doordir = (bVar1 >> 5) & 0x1;
+      if (((held_object->object_id & 0x1c0) != 0x140) && ((g_object_type_props[(held_object->object_id)].class_flags & 3) != 2)) {
+        puVar5->original_heading = held_object->heading;
       }
       free_object_slot(held_object);
-      held_object = (ushort *)0x0;
+      held_object = (uw_object_hdr_t *)0x0;
     }
   }
-  if (held_object != (ushort *)0x0) {
+  if (held_object != (uw_object_hdr_t *)0x0) {
     local_28 = (ushort)(g_player_object->hdr.xpos) + DAT_00202a4c * 8;
     local_26 = (short)(g_player_object->hdr.ypos) + DAT_00202a50 * 8;
-    *(byte *)(held_object + 1) = ((byte) g_player_object->hdr.position_word ^ (byte)held_object[1]) & 0x7f ^ (byte)held_object[1];
-    *(byte *)((char *)held_object + 3) = *(byte *)((char *)held_object + 3);
-    cVar9 = (g_object_type_props[((ushort)*held_object & 0x1ff)].collision_radius) + (g_object_type_props[(g_player_object->hdr.object_id)].collision_radius) + '\x01';
+    held_object->zpos = g_player_object->hdr.zpos;
+    cVar9 = (g_object_type_props[(held_object->object_id)].collision_radius) + (g_object_type_props[(g_player_object->hdr.object_id)].collision_radius) + '\x01';
     project_position_by_heading((g_player_object->npc_heading) + ((g_player_object->hdr.heading << 7) >> 2),
                                 cVar9,&local_28
                                 ,&local_26);
-    iVar4 = check_object_placement_clearance(*held_object & 0x1ff,0,(int)(short)local_28,(int)(short)local_26,
+    iVar4 = check_object_placement_clearance(held_object->object_id,0,(int)(short)local_28,(int)(short)local_26,
                          g_player_object->hdr.zpos,1,cVar9);
     if (iVar4 == 0) {
       bVar3 = true;
@@ -267,7 +262,7 @@ int drop_held_object_near_player(void *held_object_ptr, int force)
       project_position_by_heading((g_player_object->npc_heading) + ((g_player_object->hdr.heading << 7) >> 2),
                                   3,&local_28,
                                   &local_26);
-      iVar4 = check_object_placement_clearance(*held_object & 0x1ff,0,(int)(short)local_28,(int)(short)local_26,
+      iVar4 = check_object_placement_clearance(held_object->object_id,0,(int)(short)local_28,(int)(short)local_26,
                            g_player_object->hdr.zpos,1,
                            cVar9);
       bVar3 = true;
@@ -288,19 +283,16 @@ int drop_held_object_near_player(void *held_object_ptr, int force)
       play_sound_effect_with_pan(0xf,0x40,0xf6);
       return 0;
     }
-    uVar2 = held_object[1];
-    *(byte *)(held_object + 1) = (byte)(uVar2 & 0x3ff);
-    *(byte *)((char *)held_object + 3) =
-         (byte)((uVar2 & 0x3ff) >> 8) |
-         (byte)(((local_26 & 7 | (local_28 & 0x1fff) << 3) << 10) >> 8);
+    uVar2 = held_object->position_word;
+    held_object->xpos = local_28 & 7;
+    held_object->ypos = local_26 & 7;
     DEBUG(INFO, "[drop] object id=0x%03x landed at tile=(%d,%d)\n",
-          (unsigned)(*held_object & 0x1ff), iVar7 >> 3, iVar8 >> 3);
-    object_list_append_tail((byte *)(pDropTile + 2),(char *)held_object);
-    uVar2 = *held_object;
+          (unsigned)(held_object->object_id), iVar7 >> 3, iVar8 >> 3);
+    object_list_append_tail((byte *)(pDropTile + 2),held_object);
+    uVar2 = held_object->type_flags;
     if ((((uVar2 & 0x1f0) == 0x90) && (3 < (uVar2 & 0xf))) && ((uVar2 & 0xf) < 7)) {
       bVar1 = (byte)uVar2;
-      *(byte *)held_object = (bVar1 - 4 ^ bVar1) & 0xf ^ bVar1;
-      *(byte *)((char *)held_object + 1) = (byte)(uVar2 >> 8);
+      held_object->object_id = (uVar2 & 0x1ff) - 4;
       set_ambient_bias_without_light(0);
     }
     /* Preserve the original placement path; moving objects settle during

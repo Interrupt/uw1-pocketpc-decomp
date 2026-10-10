@@ -863,8 +863,10 @@ void spawn_blood_splat_object(int object_slot, int step_count, byte *snapshot)
   short sVar4;
   short sVar5;
   short sVar6;
-  char *iVar7;  /* was `int` -- truncated spawn_new_object's real object
-                   pointer, latent while that function always returned 0 */
+
+  /* was `int` -- truncated spawn_new_object's real object
+      pointer, latent while that function always returned 0 */
+  uw_object_hdr_t *iVar7;
   undefined4 uVar8;
   char *iVar9;  /* was `int` -- truncated tilemap_lookup's real `void *` return (same class as iVar7 above and this
    whole file's dominant bug). */
@@ -891,24 +893,21 @@ void spawn_blood_splat_object(int object_slot, int step_count, byte *snapshot)
       return;
     }
   }
-  iVar7 = (char *)spawn_new_object(0x1cb,0);
-  if (iVar7 == (char *)0x0) {
+  iVar7 = spawn_new_object(0x1cb, 0);
+  if (iVar7 == (uw_object_hdr_t *)0x0) {
     return;
   }
-  uVar3 = ((uw_object_hdr_t *)iVar7)->position_word;
+  uVar3 = iVar7->position_word;
   uVar10 = uVar3 & 0x1fff;
   bVar1 = (byte)(((*DAT_00202c6c & 7) << 0xd) >> 8);
-  ((uw_object_hdr_t *)iVar7)->position_word_low = (byte)(char)uVar10;
-  ((uw_object_hdr_t *)iVar7)->position_word_high = (byte)(uVar10 >> 8) | bVar1;
+  iVar7->xpos = bVar1 >> 5;
   uVar10 = uVar3 & 0x3ff;
   bVar1 = (byte)(uVar10 >> 8) | bVar1 | (byte)(((DAT_00202c6c[2] & 7) << 10) >> 8);
   bVar2 = (byte)uVar10;
-  ((uw_object_hdr_t *)iVar7)->position_word_low = bVar2;
-  ((uw_object_hdr_t *)iVar7)->position_word_high = bVar1;
+  iVar7->ypos = (bVar1 >> 2) & 7;
   sVar4 = *(short *)DAT_00202c6c;
   sVar5 = *(short *)(DAT_00202c6c + 2);
-  ((uw_object_hdr_t *)iVar7)->position_word_low = (DAT_00202c6c[4] + 8 ^ bVar2) & 0x7f ^ bVar2;
-  ((uw_object_hdr_t *)iVar7)->position_word_high = bVar1;
+  iVar7->zpos = (DAT_00202c6c[4] + 8) & 0x7f;
   if (DAT_00100610 == 1) {
     play_positional_sound_effect(7,*(undefined2 *)DAT_00202c6c,*(undefined2 *)(DAT_00202c6c + 2),0);
   }
@@ -2086,6 +2085,7 @@ int apply_typed_damage_to_object(ushort *target, ushort *attacker, int tile_x, s
 /* damaging actor, forwarded to the destruction trigger */
 bool apply_object_durability_damage(ushort *object, ushort *attacker, short damage, int tile_x, short tile_y)
 {
+  uw_object_hdr_t *object_hdr = (uw_object_hdr_t *)object;
   int iVar1;
   ushort uVar2;
   bool bVar3;
@@ -2093,31 +2093,28 @@ bool apply_object_durability_damage(ushort *object, ushort *attacker, short dama
   int iVar5;
   uint uVar6;
   
-  if (((((uw_object_hdr_t *)object)->doordir == 0) &&
-       (uVar6 = ((byte) g_object_type_props[(((uw_object_hdr_t *)object)->object_id)].quality_flags & 0xc) >> 2, (short)uVar6 != 3)) &&
+  if (((object_hdr->doordir == 0) && (uVar6 = ((byte)g_object_type_props[(object_hdr->object_id)].quality_flags & 0xc) >> 2, (short)uVar6 != 3)) &&
       (iVar5 = (int)damage >> uVar6, 0 < (short)iVar5)) {
-    iVar4 = object_ptr_in_arena(object);
+    iVar4 = object_ptr_in_arena(object_hdr);
     if (iVar4 == 0) {
-      if ((0x13f < (((uw_object_hdr_t *)object)->object_id)) && ((((uw_object_hdr_t *)object)->object_id) < 0x148)) {
-        uVar2 = ((uw_object_hdr_t *)object)->link_word;
+      if ((0x13f < (object_hdr->object_id)) && ((object_hdr->object_id) < 0x148)) {
+        uVar2 = object_hdr->link_word;
         if (((uVar2 & 1) != 0) && ((uVar2 & 0x3e) != 0)) {
           uVar6 = (uVar2 >> 1 & 0x1f) - iVar5;
           if ((int)(uVar6 * 0x10000) >> 0x10 < 1) {
             uVar6 = 0;
           }
-          ((uw_object_hdr_t *)object)->link_word_low = (byte)(uVar2 & 0xffc1) | (byte)((uVar6 & 0x1f) << 1);
-          ((uw_object_hdr_t *)object)->link_word_high = (byte)(char)((uVar2 & 0xffc1) >> 8);
+          object_hdr->owner = (uVar2 & 1) | ((uVar6 & 0x1f) << 1);
           return false;
         }
       }
-      uVar2 = ((uw_object_hdr_t *)object)->chain_word;
+      uVar2 = object_hdr->chain_word;
       iVar5 = ((int)(short)uVar2 & 0x3fU) - iVar5;
       iVar1 = iVar5 * 0x10000 >> 0x10;
       if (iVar1 < 1) {
         iVar5 = 0;
       }
-      ((uw_object_hdr_t *)object)->chain_word_low = ((byte)uVar2 ^ (byte)iVar5) & 0x3f ^ (byte)uVar2;
-      ((uw_object_hdr_t *)object)->chain_word_high = (byte)(char)(uVar2 >> 8);
+      object_hdr->quality = iVar5 & 0x3f;
     }
     else {
       iVar5 = (uint)((uw_mobile_object_t *)object)->hit_points - iVar5;
