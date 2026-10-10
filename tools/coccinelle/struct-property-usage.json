@@ -1,7 +1,7 @@
 {
   "scope": "Named packed views and existing audited object-pointer roles in src/*.c; unrecorded aliases and other structures still require independent auditing.",
   "counts": {
-    "byte_view": 176,
+    "byte_view": 170,
     "packed_word": 462,
     "raw_audited_object_access": 7,
     "signed_word_view": 9
@@ -2071,70 +2071,16 @@
     {
       "source": "src/combat.c",
       "function": "spawn_blood_splat_object",
-      "line": 901,
+      "line": 903,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
-      "code": "uVar3 = ((uw_object_hdr_t *)iVar7)->position_word;"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "spawn_blood_splat_object",
-      "line": 904,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)iVar7)->position_word_low = (byte)(char)uVar10;"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "spawn_blood_splat_object",
-      "line": 905,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)iVar7)->position_word_high = (byte)(uVar10 >> 8) | bVar1;"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "spawn_blood_splat_object",
-      "line": 909,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)iVar7)->position_word_low = bVar2;"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "spawn_blood_splat_object",
-      "line": 910,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)iVar7)->position_word_high = bVar1;"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "spawn_blood_splat_object",
-      "line": 913,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)iVar7)->position_word_low = (DAT_00202c6c[4] + 8 ^ bVar2) & 0x7f ^ bVar2;"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "spawn_blood_splat_object",
-      "line": 914,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)iVar7)->position_word_high = bVar1;"
+      "code": "uVar3 = iVar7->position_word;"
     },
     {
       "source": "src/combat.c",
       "function": "resolve_weapon_hit_skill_check",
-      "line": 1045,
+      "line": 1044,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -2143,7 +2089,7 @@
     {
       "source": "src/combat.c",
       "function": "apply_melee_damage",
-      "line": 1126,
+      "line": 1125,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -2152,7 +2098,7 @@
     {
       "source": "src/combat.c",
       "function": "apply_melee_damage",
-      "line": 1164,
+      "line": 1163,
       "category": "byte_view",
       "member": "status_word",
       "pointer": null,
@@ -2161,7 +2107,7 @@
     {
       "source": "src/combat.c",
       "function": "process_melee_attack_swing",
-      "line": 1392,
+      "line": 1391,
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "puAttacker",
@@ -2170,7 +2116,7 @@
     {
       "source": "src/combat.c",
       "function": "process_melee_attack_swing",
-      "line": 1392,
+      "line": 1391,
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "puTarget",
@@ -2179,7 +2125,7 @@
     {
       "source": "src/combat.c",
       "function": "resolve_equipped_weapon_attack",
-      "line": 1427,
+      "line": 1426,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -2188,7 +2134,7 @@
     {
       "source": "src/combat.c",
       "function": "resolve_equipped_weapon_attack",
-      "line": 1443,
+      "line": 1442,
       "category": "packed_word",
       "member": "size_weight",
       "pointer": null,
@@ -2197,7 +2143,7 @@
     {
       "source": "src/combat.c",
       "function": "try_npc_special_ability_no_los",
-      "line": 1703,
+      "line": 1702,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -2206,7 +2152,7 @@
     {
       "source": "src/combat.c",
       "function": "try_npc_special_ability_ranged",
-      "line": 1751,
+      "line": 1750,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -2215,7 +2161,7 @@
     {
       "source": "src/combat.c",
       "function": "try_npc_special_ability_alt",
-      "line": 1786,
+      "line": 1785,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -2224,7 +2170,7 @@
     {
       "source": "src/combat.c",
       "function": "check_npc_target_alignment",
-      "line": 1871,
+      "line": 1870,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -2233,7 +2179,7 @@
     {
       "source": "src/combat.c",
       "function": "check_npc_target_alignment",
-      "line": 1888,
+      "line": 1887,
       "category": "byte_view",
       "member": "position_word",
       "pointer": null,
@@ -2242,7 +2188,7 @@
     {
       "source": "src/combat.c",
       "function": "check_npc_target_alignment",
-      "line": 1889,
+      "line": 1888,
       "category": "byte_view",
       "member": "position_word",
       "pointer": null,
@@ -2251,7 +2197,7 @@
     {
       "source": "src/combat.c",
       "function": "check_npc_fine_facing_alignment",
-      "line": 1920,
+      "line": 1919,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -2260,7 +2206,7 @@
     {
       "source": "src/combat.c",
       "function": "check_npc_fine_facing_alignment",
-      "line": 1964,
+      "line": 1963,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -2269,7 +2215,7 @@
     {
       "source": "src/combat.c",
       "function": "check_npc_fine_facing_alignment",
-      "line": 1965,
+      "line": 1964,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -2278,7 +2224,7 @@
     {
       "source": "src/combat.c",
       "function": "apply_object_durability_damage",
-      "line": 2128,
+      "line": 2127,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -2287,7 +2233,7 @@
     {
       "source": "src/combat.c",
       "function": "apply_object_durability_damage",
-      "line": 2138,
+      "line": 2137,
       "category": "packed_word",
       "member": "chain_word",
       "pointer": null,
@@ -2296,7 +2242,7 @@
     {
       "source": "src/combat.c",
       "function": "damage_equipped_item_in_slot",
-      "line": 2227,
+      "line": 2226,
       "category": "byte_view",
       "member": "chain_word",
       "pointer": null,
@@ -2305,7 +2251,7 @@
     {
       "source": "src/combat.c",
       "function": "damage_equipped_item_in_slot",
-      "line": 2256,
+      "line": 2255,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -2314,7 +2260,7 @@
     {
       "source": "src/combat.c",
       "function": "damage_equipped_item_in_slot",
-      "line": 2257,
+      "line": 2256,
       "category": "byte_view",
       "member": "type_flags",
       "pointer": null,
@@ -2323,7 +2269,7 @@
     {
       "source": "src/combat.c",
       "function": "damage_equipped_item_in_slot",
-      "line": 2258,
+      "line": 2257,
       "category": "byte_view",
       "member": "type_flags",
       "pointer": null,
@@ -2332,7 +2278,7 @@
     {
       "source": "src/combat.c",
       "function": "resolve_collision_candidate_interaction",
-      "line": 2458,
+      "line": 2457,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,

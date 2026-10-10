@@ -862,8 +862,10 @@ void spawn_blood_splat_object(int object_slot, int step_count, byte *snapshot)
   short sVar4;
   short sVar5;
   short sVar6;
-  char *iVar7;  /* was `int` -- truncated spawn_new_object's real object
-                   pointer, latent while that function always returned 0 */
+
+  /* was `int` -- truncated spawn_new_object's real object
+      pointer, latent while that function always returned 0 */
+  uw_object_hdr_t *iVar7;
   undefined4 uVar8;
   char *iVar9;  /* was `int` -- truncated tilemap_lookup's real `void *` return (same class as iVar7 above and this
    whole file's dominant bug). */
@@ -893,25 +895,22 @@ void spawn_blood_splat_object(int object_slot, int step_count, byte *snapshot)
     }
   }
   if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[blood-splat] spawn_blood_splat_object: spawning object 0x1cb\n");
-  iVar7 = (char *)spawn_new_object(0x1cb,0);
-  if (iVar7 == (char *)0x0) {
+  iVar7 = spawn_new_object(0x1cb, 0);
+  if (iVar7 == (uw_object_hdr_t *)0x0) {
     if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[blood-splat] spawn_blood_splat_object: spawn_new_object FAILED (returned NULL)\n");
     return;
   }
-  uVar3 = ((uw_object_hdr_t *)iVar7)->position_word;
+  uVar3 = iVar7->position_word;
   uVar10 = uVar3 & 0x1fff;
   bVar1 = (byte)(((*DAT_00202c6c & 7) << 0xd) >> 8);
-  ((uw_object_hdr_t *)iVar7)->position_word_low = (byte)(char)uVar10;
-  ((uw_object_hdr_t *)iVar7)->position_word_high = (byte)(uVar10 >> 8) | bVar1;
+  iVar7->xpos = bVar1 >> 5;
   uVar10 = uVar3 & 0x3ff;
   bVar1 = (byte)(uVar10 >> 8) | bVar1 | (byte)(((DAT_00202c6c[2] & 7) << 10) >> 8);
   bVar2 = (byte)uVar10;
-  ((uw_object_hdr_t *)iVar7)->position_word_low = bVar2;
-  ((uw_object_hdr_t *)iVar7)->position_word_high = bVar1;
+  iVar7->ypos = (bVar1 >> 2) & 7;
   sVar4 = *(short *)DAT_00202c6c;
   sVar5 = *(short *)(DAT_00202c6c + 2);
-  ((uw_object_hdr_t *)iVar7)->position_word_low = (DAT_00202c6c[4] + 8 ^ bVar2) & 0x7f ^ bVar2;
-  ((uw_object_hdr_t *)iVar7)->position_word_high = bVar1;
+  iVar7->zpos = (DAT_00202c6c[4] + 8) & 0x7f;
   if (DAT_00100610 == 1) {
     play_positional_sound_effect(7,*(undefined2 *)DAT_00202c6c,*(undefined2 *)(DAT_00202c6c + 2),0);
   }

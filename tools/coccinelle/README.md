@@ -1085,3 +1085,26 @@ destruction callbacks. Header/extension/guard/actor bytes, return values and
 callback events/counts are compared. Use `--reference PATH` with the original
 `combat.c` and `--asan` for AddressSanitizer. The refreshed worklist contains
 176 byte views (four fewer); the full captured words remain intentional.
+
+`generate_blood_splat_rules.py` / `blood-splat-fields.cocci` convert the newly
+allocated blood-splat header in `spawn_blood_splat_object` to a typed pointer
+and named `xpos`, `ypos` and `zpos` stores. The full position-word and byte
+captures remain intact. The x/y writes use the already captured high-byte
+values; the z write retains the fresh collision-snapshot read. Coordinate
+captures before sound/scheduler callbacks, search retries, allocation failure,
+scheduler failure and insertion order remain unchanged. Collision-snapshot
+offsets are outside this object-header conversion.
+
+The complete-body rule rejects changed callbacks, volatile/escaping captures,
+altered masks and intervening writes. Generation strips comments when forming
+the semantic patch and explicitly re-emits the historical pointer-truncation
+comment beside the typed declaration. The test requires the exact expected C
+tokens and an actual change, checks generation/idempotence/rejection guards,
+and compares 917,504 before/after executions. Cases cover every packed position
+word, signed snapshot coordinates, both boundary flags, search retries and
+exhaustion, spawn/scheduler failures, sound gates, callback-mutated records
+and replacement of the shared snapshot pointer. Record/guard/snapshot/tile
+bytes and callback events/counts/arguments are compared. Use `--reference PATH`
+with the original `combat.c` and `--asan` for AddressSanitizer. The worklist now
+contains 170 byte views (six fewer); retained packed-word captures remain
+intentional.
