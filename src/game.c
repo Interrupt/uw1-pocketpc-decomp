@@ -833,26 +833,42 @@ void set_custom_view_target(short mode)
 // was FUN_00067b98 -- moves the "custom view target" position (DAT_0023be90/be92, set up by
 // set_custom_view_target) based on the live mouse cursor position relative to the game-view rect
 // (DAT_0023bd80/be88 from register_game_view_interact_zones)...
+/* Far sight's per-step camera deltas were tuned for the original device's slow main loop, and this
+   runs once per 60Hz game frame (see handle_game_view_click_hold) -- about this many times faster.
+   Each delta is divided down, keeping the remainder so slow movement still accumulates. */
+#define FAR_SIGHT_TURN_DIVISOR 5
+#define FAR_SIGHT_MOVE_DIVISOR 20
+
+static int far_sight_scale_step(int *remainder, int delta, int divisor)
+{
+  int total = *remainder + delta;
+  int out = total / divisor;
+  *remainder = total - out * divisor;
+  return out;
+}
+
 void move_custom_view_target(int unused)
 {
+  /* The facing delta wraps mod 0x10000 (0x40 * 0x400), so it is a signed turn -- it must be
+     divided as a signed value or a small left turn becomes a large right one. */
+  static int rem_facing, rem_x, rem_y;
   short *psVar1;
   short sVar2;
   uint uVar3;
   int iVar4;
-  undefined1 local_14;
-  char cStack_13;
-  undefined1 local_12;
-  char cStack_11;
+  short far_sine;    /* was local_14/cStack_13: angle_to_screen_delta's 2-byte outputs */
+  short far_cosine;  /* was local_12/cStack_11 */
   
   psVar1 = DAT_00085a6c;
   sVar2 = ordint_divmod((int)DAT_0023be88,DAT_00085a6c[1] * 3).quot;
   uVar3 = ordint_divmod((int)DAT_0023bd80,*psVar1 * 3).quot;
-  iVar4 = (uint)DAT_0023bf00 + ((uVar3 & 0xffff) + 0x3f) * 0x400;
+  iVar4 = (uint)DAT_0023bf00 +
+          far_sight_scale_step(&rem_facing, (short)(((uVar3 & 0xffff) + 0x3f) * 0x400), FAR_SIGHT_TURN_DIVISOR);
   DAT_0023bf00 = (ushort)iVar4;
   if (sVar2 != 1) {
-    angle_to_screen_delta(iVar4,&local_14,&local_12);
-    DAT_0023be90 = (short)cStack_13 * (sVar2 + -1) + DAT_0023be90;
-    DAT_0023be92 = (short)cStack_11 * (sVar2 + -1) + DAT_0023be92;
+    angle_to_screen_delta(iVar4,&far_sine,&far_cosine);
+    DAT_0023be90 = far_sight_scale_step(&rem_x, (far_sine >> 8) * (sVar2 + -1), FAR_SIGHT_MOVE_DIVISOR) + DAT_0023be90;
+    DAT_0023be92 = far_sight_scale_step(&rem_y, (far_cosine >> 8) * (sVar2 + -1), FAR_SIGHT_MOVE_DIVISOR) + DAT_0023be92;
   }
   if (DAT_0023be90 < 0x180) {
     DAT_0023be90 = 0x180;
@@ -1020,7 +1036,15 @@ void handle_game_view_click_hold()
     DAT_0023bf0c = '\x02';
   }
   else {
-    move_custom_view_target(0);
+    /* This handler runs once per main-loop poll, which on a modern host is far faster than the
+       original device's loop -- step the far-sight camera once per game frame instead (the same
+       clock the player's own movement is paced by). */
+    static unsigned int last_step_clock = ~0u;
+    unsigned int now = uw_frame_clock_ms();
+    if (now != last_step_clock) {
+      last_step_clock = now;
+      move_custom_view_target(0);
+    }
   }
   return;
 }

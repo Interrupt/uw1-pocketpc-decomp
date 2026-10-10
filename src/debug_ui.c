@@ -158,6 +158,7 @@ static int g_con_hist_count = 0;
 static int g_con_hist_pos = -1;           /* -1 = editing a fresh line */
 static unsigned g_con_frame = 0;          /* caret blink */
 static void (*g_con_handler)(const char *line) = 0;
+static void (*g_con_close_hook)(void) = 0;
 static unsigned short g_con_saved_px[CON_W * CON_H];
 static int g_con_saved_valid = 0;
 
@@ -178,13 +179,28 @@ static void dbgui_con_restore_backing()
   if (!fb || !g_con_saved_valid) return;
   for (y = 0; y < CON_H && y < DBGUI_FB_HEIGHT; y++)
     memcpy(&fb[y * DBGUI_FB_STRIDE], &g_con_saved_px[y * CON_W], CON_W * sizeof(unsigned short));
-  dirty_rect_union(0, CON_W, 0, CON_H);
+  /* dirty_rect_union takes the portrait "hardware" frame (left, bottom, right, top) =
+     (landscape y0, y1, x0, x1) -- the console spans the whole screen width. */
+  dirty_rect_union(0, CON_H, 0, CON_W);
   g_con_saved_valid = 0;
 }
 
 void dbgui_console_set_handler(void (*handler)(const char *line))
 {
   g_con_handler = handler;
+}
+
+void dbgui_console_set_close_hook(void (*hook)(void))
+{
+  g_con_close_hook = hook;
+}
+
+/* The saved pixels were captured when the console opened, so anything the game redrew underneath
+   since (the inventory panel above all) would come back stale or black -- let the game repaint the
+   region it owns. */
+static void dbgui_con_close_redraw(void)
+{
+  if (g_con_close_hook) g_con_close_hook();
 }
 
 static void dbgui_con_add_line(const char *s, size_t n)
@@ -238,6 +254,7 @@ static void dbgui_console_close_to_panel(void)
   if (!g_console_open) return;
   dbgui_con_restore_backing();
   g_console_open = 0;
+  dbgui_con_close_redraw();
   dbgui_save_backing();
 }
 
@@ -275,6 +292,16 @@ static void dbgui_con_set_input(const char *s)
   strncpy(g_con_input, s, CON_INPUT_MAX - 1);
   g_con_input[CON_INPUT_MAX - 1] = 0;
   g_con_input_len = (int)strlen(g_con_input);
+}
+
+/* Positive = back toward older lines. Clamped to what the log holds. */
+void dbgui_console_scroll(int lines)
+{
+  int max_scroll = g_con_log_count < CON_LOG_LINES ? g_con_log_count : CON_LOG_LINES;
+  max_scroll = max_scroll > CON_ROWS ? max_scroll - CON_ROWS : 0;
+  g_con_scroll += lines;
+  if (g_con_scroll > max_scroll) g_con_scroll = max_scroll;
+  if (g_con_scroll < 0) g_con_scroll = 0;
 }
 
 static void dbgui_con_feed_key(int key)
@@ -580,6 +607,7 @@ void dbgui_toggle()
   if (g_console_open) {
     dbgui_con_restore_backing();
     g_console_open = 0;
+    dbgui_con_close_redraw();
   }
   g_visible = !g_visible;
   g_editing = 0;

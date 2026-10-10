@@ -45,6 +45,12 @@ static char s_You_died_000857b8[] = "    You died\n";
 static byte DAT_00085730;
 code *DAT_00201c9c;
 byte DAT_0020208c;
+/* Debug-console overrides (FLY / FARSIGHT / NOCLIP in demomode.c). The real effects live in
+   DAT_0020208c / DAT_002020d8, which reset_player_derived_state zeroes on every effects refresh, so
+   it re-applies these after the reset. g_debug_noclip is read by sweep_apply_collision. */
+int g_debug_fly;
+int g_debug_farsight;
+int g_debug_noclip;
 undefined2 DAT_00203304;
 undefined1 DAT_00203303;
 short DAT_00202078;
@@ -780,6 +786,14 @@ LAB_000669a8:
   }
   else {
     load_shading_level_config(6);
+    /* Far sight lights the view at level 6 regardless of carried light (the shading config above
+       is all the ARM build does); without a matching ambient bias the port's view stays dark. */
+    {
+      const char *light_mode = g_opts.light_mode;
+      if (!light_mode || strcasecmp(light_mode, "dos") != 0) {
+        set_ambient_bias_without_light(6 * 16);
+      }
+    }
   }
   update_screen_flicker_effect((*(byte *)(DAT_00086df8 + 0x61) & 0xc) != 0);
   force_locomotion_state_refresh();
@@ -924,6 +938,8 @@ void reset_player_derived_state()
     DAT_000858c4 = 400;
   }
   DAT_002046cc = 0;
+  if (g_debug_fly) DAT_0020208c |= 0x10;   /* same bit a real flying effect sets (hover, gravity off) */
+  if (g_debug_farsight) DAT_002020d8 = 1;  /* same flag the far-sight (free camera) effect sets */
   return;
 }
 

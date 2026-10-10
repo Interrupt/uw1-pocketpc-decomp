@@ -107,6 +107,7 @@ extern char s_and_00087310[];
 extern char DAT_0023c27c;
 extern short DAT_00202078;
 extern byte DAT_0020208c;
+extern int g_debug_fly, g_debug_farsight, g_debug_noclip;
 extern undefined4 DAT_002020d4;
 extern undefined2 DAT_00201b60;
 extern short DAT_00201b64;

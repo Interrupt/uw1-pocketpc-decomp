@@ -432,7 +432,12 @@ void uw_pump_events(void) {
                    not meant to be driven simultaneously with normal gameplay input. Route and
                    swallow rather than also forwarding to the game. */
                 if (dbgui_visible() && !(dbgui_console_active() && ev.key.keysym.unused == UW_SYNTH_KEY)) {
-                    if (ev.type == SDL_KEYDOWN && !ev.key.repeat) {
+                    if (ev.type == SDL_KEYDOWN && dbgui_console_active() &&
+                        (ev.key.keysym.mod & KMOD_SHIFT) &&
+                        (ev.key.keysym.sym == SDLK_UP || ev.key.keysym.sym == SDLK_DOWN)) {
+                        /* SHIFT+UP/DOWN scroll the console a line (held key repeats). */
+                        dbgui_console_scroll(ev.key.keysym.sym == SDLK_UP ? 1 : -1);
+                    } else if (ev.type == SDL_KEYDOWN && !ev.key.repeat) {
                         dbgui_feed_key((int)ev.key.keysym.sym);
                     }
                     return;
