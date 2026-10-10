@@ -120,20 +120,41 @@
  * outline is a genuine, concave 24-gon. The port's part record holds a count
  * plus only 23 index slots (stride 0x60, count at 0xc14 + p*0x60, indices
  * from 0xc18), so a face's 24th index lands at 0xc18 + p*0x60 + 23*4, which
- * is exactly the NEXT record's count field: that face then reads indices from
- * outside its own record and draws triangles off into space.
+ * is exactly the NEXT record's count field.
  *
- * An earlier version of this comment claimed the port's own .E files carry
- * faces of up to 50 vertices (ROCKBIG.E, 40LOTUS.E) and that the overrun was
- * therefore harmless and pre-existing. BOTH halves were wrong, and they are
- * corrected here because they sent one debugging pass down the wrong path.
- * Measured across every shipped DATA3D/<name>.E: the widest face anywhere is
- * FIVE vertices (one in CHAIRSIM.E); ROCKBIG.E is 52 faces all of which are
- * triangles, and 40LOTUS.E is 6 quads. The 50 came from a scan that matched
- * the 50-entry CLUSTERS list rather than a PARTS line. So the renderer has
- * only ever been fed quads and triangles, nothing overran anything, and the
- * DOS path is the first thing to hand it a wider face. That is why wide faces
- * are split here (see uw_dos_model_script) rather than passed through. */
+ * That does NOT corrupt the neighbour, though, and an earlier version of this
+ * comment claiming it did was wrong: parse_e_model_file writes a part's
+ * indices before its count and works through parts in ascending order, so the
+ * next part's own count write restores the slot. Verified by scanning the
+ * parsed shrine buffer with the split disabled -- every record reads back a
+ * sane count except the 24-gon's own, which is legitimately 24.
+ *
+ * The real cost is at DRAW time: that face's 24th index IS the neighbouring
+ * count field, so the polygon is drawn with one corner taken from a small
+ * integer (3 or 4) used as a vertex number. One visibly wrong corner on that
+ * face, not wreckage spread across the model.
+ *
+ *
+ * An earlier version of this comment also claimed the port's own .E files
+ * carry faces of up to 50 vertices (ROCKBIG.E, 40LOTUS.E). That was wrong,
+ * and it is corrected here because it sent one debugging pass down the wrong
+ * path. Measured across every shipped DATA3D/<name>.E: the widest face
+ * anywhere is FIVE vertices (one in CHAIRSIM.E); ROCKBIG.E is 52 faces all of
+ * which are triangles, and 40LOTUS.E is 6 quads. The 50 came from a scan that
+ * matched the 50-entry CLUSTERS list rather than a PARTS line.
+ *
+ * So the renderer has only ever been handed quads and triangles, and the DOS
+ * path is the first thing to give it anything wider. uw_dos_model_script
+ * therefore splits every face wider than a QUAD, not merely those over 23.
+ * Only the over-23 case is a correctness bug; 5..23 is split as well because
+ * emit_catalog_object gives a face UVs and shading from its first FOUR
+ * vertices only (it reads _face_rec + 4/8/0xc/0x10 and caps its shade loop at
+ * _ci < 4), so a wider face is lit from a part of itself. Splitting keeps DOS
+ * output inside the envelope the port's renderer was actually built against,
+ * and gives the painter's-order sort in emit_catalog_object finer granularity
+ * to work with. The cost is face count -- the boulder goes 61 -> 65 and the
+ * shrine 51 -> 118 -- which is why that sort's silent 64-face cutoff had to
+ * go; see its comment in models.c. */
 #define DOS_MAX_VERTS 256
 #define DOS_MAX_FACES 128
 #define DOS_MAX_FACE_VERTS 24
@@ -1023,12 +1044,15 @@ int uw_dos_model_script(int dos_index, char *out, unsigned int out_sz)
        0x60-byte stride (count at 0xc14 + p*0x60, indices from 0xc18), so a
        24-vertex face writes its last index at 0xc18 + p*0x60 + 23*4 -- which
        is exactly where the NEXT record's count lives. The shrine does that:
-       model 0x0b has a 24- and a 23-vertex ring, and the 24 overwrote the
-       following face's vertex count with a vertex index, after which that
-       face read indices from outside its own record and drew triangles off
-       into space. Narrower n-gons avoid the overrun but still only get UVs
-       and shading for their first four vertices (emit_catalog_object reads
-       _face_rec + 4/8/0xc/0x10 and caps its shade loop at _ci < 4).
+       model 0x0b has a 24- and a 23-vertex ring. The parser restores the
+       trampled count when it writes the next part's own (indices go in
+       before counts, parts in ascending order), so nothing is corrupted --
+       but at draw time that face's 24th index IS the neighbouring count
+       field, so it draws one corner from a small integer used as a vertex
+       number. Narrower n-gons avoid that entirely and are still split,
+       because a face gets UVs and shading from its first four vertices only
+       (emit_catalog_object reads _face_rec + 4/8/0xc/0x10 and caps its shade
+       loop at _ci < 4); see this file's header comment.
 
        Splitting is what the port's own art already does: not one shipped .E
        face exceeds five vertices (ROCKBIG.E is 52 triangles where DOS model
