@@ -1368,3 +1368,34 @@ or extension. Guarded records, local/external scratch bytes, callback arguments/
 events/counts and return values are compared. Use `--reference PATH` with the
 original `object_actions.c` and `--asan` for AddressSanitizer. The audit now
 contains 85 byte views (six fewer) and 11 raw object accesses (four newly found).
+
+`generate_slot_fit_rules.py` / `slot-fit-fields.json` convert
+`check_object_fits_in_slot` with the exact-source applier. Source, resolved
+slot and ancestor-container objects use common-header pointers. ID category,
+subclass and nibble calculations read `object_id`; their masks remain numeric
+ID classifiers. The stack gate reads `is_quant` and the ten-bit `link` value:
+it rejects quantities greater than one and below 512. Extinguish/restore
+writes update only the ID nibble using the captured full type word and the
+original captured nibble. The container-weight helper receives the named
+`link_word` address. API signatures, live intermediates, recursion, capacity/
+acceptance rules, messages and temporary container-link swaps remain intact.
+UI container-record offsets have no defined UW1 object struct layout and are
+outside this conversion.
+
+The rule test requires exact generation/conversion and idempotence and
+rejects changed callbacks, volatile/escaping captures, masks, intervening
+stores, excluded scopes, quoted bodies and ambiguous definitions. Its
+14,680,064 original/current executions cover all type words and flags,
+fourteen equipment/backpack/container slots, nested/root/missing containers,
+capacity and signed acceptance masks, food results, light slots, recursive
+extinguishing and failed retries, and full signed weight results. Callbacks
+mutate source class/flags/link words, inventory-table and container pointers,
+player status and scratch-object identity. Guarded records, container/table/
+status bytes, globals, messages, callback arguments/events/counts and return
+values are compared. The reference's recursive retry calls the reference
+function throughout. Separate assertions check quantity boundaries
+0/1/2/511/512/1023, nibble restoration and missing-container behavior.
+Use `--reference PATH` with the original `item_use.c` and `--asan` for
+AddressSanitizer. All four newly audited raw accesses are converted, leaving
+seven raw object accesses and 85 byte views. Three additional packed accesses
+are now visible: two intentional full-type captures and the named link address.

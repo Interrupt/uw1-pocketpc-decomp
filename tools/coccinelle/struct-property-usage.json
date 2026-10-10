@@ -2,8 +2,8 @@
   "scope": "Named packed views and existing audited object-pointer roles in src/*.c; unrecorded aliases and other structures still require independent auditing.",
   "counts": {
     "byte_view": 85,
-    "packed_word": 440,
-    "raw_audited_object_access": 11,
+    "packed_word": 443,
+    "raw_audited_object_access": 7,
     "signed_word_view": 9
   },
   "records": [
@@ -2611,38 +2611,29 @@
     {
       "source": "src/item_use.c",
       "function": "check_object_fits_in_slot",
-      "line": 3097,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "object",
-      "code": "if ((((*object & 0x8000) != 0) && ((object[3] & 0x8000) == 0)) &&"
+      "line": 3113,
+      "category": "packed_word",
+      "member": "type_flags",
+      "pointer": null,
+      "code": "uVar1 = header->type_flags;"
     },
     {
       "source": "src/item_use.c",
       "function": "check_object_fits_in_slot",
-      "line": 3098,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "object",
-      "code": "(0x40 < (object[3] & 0xffc0))) {"
+      "line": 3121,
+      "category": "packed_word",
+      "member": "type_flags",
+      "pointer": null,
+      "code": "uVar1 = header->type_flags;"
     },
     {
       "source": "src/item_use.c",
       "function": "check_object_fits_in_slot",
-      "line": 3115,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "object",
-      "code": "*(byte *)((char *)object + 1) = (byte)(uVar1 >> 8);"
-    },
-    {
-      "source": "src/item_use.c",
-      "function": "check_object_fits_in_slot",
-      "line": 3124,
-      "category": "raw_audited_object_access",
-      "member": null,
-      "pointer": "object",
-      "code": "*(byte *)((char *)object + 1) = (byte)(uVar1 >> 8);"
+      "line": 3156,
+      "category": "packed_word",
+      "member": "link_word",
+      "pointer": null,
+      "code": "sum_container_weight(&puVar11->link_word,local_54);"
     },
     {
       "source": "src/level.c",
