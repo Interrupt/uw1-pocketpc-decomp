@@ -1218,3 +1218,27 @@ Header/guard/argument/variable bytes and callback events/counts are compared.
 Use `--reference PATH` with the original `babl.c` and `--asan` for
 AddressSanitizer. The worklist now contains 120 byte views (fifteen fewer);
 retained full-word captures remain intentional.
+
+`generate_approach_rules.py` / `approach-fields.json` convert
+`npc_combat_approach_tick` using the exact-source applier. Its current-NPC
+alias uses a mobile pointer. Named animation frame, speed, home-tile x/y and
+header x/y/z writes replace byte reconstruction. The frame still advances
+modulo four, gravity remains intact when speed is cleared, and the far-range
+position still centers x/y at four and derives z from the destination tile.
+All captured words, arithmetic intermediates and callbacks remain in place.
+The six remaining packed-word operations in this function are retained
+captures. The `animation_flags & 0xc1 | 1` and `attack_pitch & 0xfc | 4`
+updates affect undocumented animation/attack-state bits; no semantic property
+is invented for them.
+
+The rule test requires exact generation/conversion and idempotence, and
+rejects callbacks, volatile/escaping captures, changed masks, intervening
+stores, excluded scopes, quoted bodies and ambiguous definitions. Its
+4,718,592 original/current executions cover all packed goal, home-tile and
+position words, all motion/animation/pitch bytes, distance thresholds of
+0/2/3/64/65/65535, active/inactive combat and signed coordinate arithmetic.
+Callbacks mutate records and rebind the current NPC; destination tile pointers
+also alias position or home-tile words. Full guarded records, tiles, globals,
+callback arguments/events/counts are compared. Use `--reference PATH` with
+the original `combat.c` and `--asan` for AddressSanitizer. The audited worklist
+now contains 110 byte views (ten fewer).

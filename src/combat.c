@@ -105,7 +105,7 @@ void npc_combat_approach_tick()
   char cVar3;
   short sVar4;
   int iVar5;
-  char *iVar5_rec;
+  uw_mobile_object_t *iVar5_rec;
   byte *pbVar6;
   uint extraout_r1;
   uint uVar7;
@@ -115,14 +115,12 @@ void npc_combat_approach_tick()
   if (DAT_00101900 < 3) {
     if (DAT_00101734 != 0) {
       DAT_0010190c->animation_flags = DAT_0010190c->animation_flags & 0xc1 | 1;
-      iVar5_rec = (char *)DAT_0010190c;
+      iVar5_rec = DAT_0010190c;
       uVar1 = DAT_0010190c->goal_word;
       uw_ord2005_rem_40 = ((int)((uVar1 >> 0xc) + 1)) % (4);
       uVar7 = uVar1 & 0xfff;
-      ((uw_mobile_object_t *)iVar5_rec)->goal_word_low = (byte)(char)uVar7;
-      DAT_0010190c->goal_word_high = (byte)(uVar7 >> 8) | (byte)(((uw_ord2005_rem_40 & 0xf) << 0xc) >> 8)
-        ;
-      DAT_0010190c->motion_flags = DAT_0010190c->motion_flags & 0x80;
+      iVar5_rec->npc_animation_frame = uw_ord2005_rem_40 & 0xf;
+      DAT_0010190c->speed = 0;
       uVar7 = compute_movement_heading((int)(char)DAT_00101444,(int)(char)DAT_00101448);
       DAT_0010190c->hdr.heading = uVar7 & 0x7;
       DAT_0010190c->attack_pitch = DAT_0010190c->attack_pitch & 0xfc | 4;
@@ -156,21 +154,16 @@ void npc_combat_approach_tick()
       object_list_insert_head(pbVar6 + 2,DAT_0010190c);
     }
     uVar7 = DAT_0010190c->tile_word & 0x3ff;
-    DAT_0010190c->tile_word_low = (byte)(char)uVar7;
-    DAT_0010190c->tile_word_high =
-      (byte)(uVar7 >> 8) | (byte)((((int)(char)((uint)(uintptr_t)iVar5 >> 0x18) & 0x3fU) << 10) >> 8);
+    DAT_0010190c->npc_xhome = (int)(char)((uint)(uintptr_t)iVar5 >> 0x18) & 0x3fU;
     uVar7 = DAT_0010190c->tile_word & 0xfc0f |
             ((int)(char)((uint)iVar8 >> 0x18) & 0x3fU) << 4;
-    DAT_0010190c->tile_word = (ushort)uVar7;
+    DAT_0010190c->npc_yhome = (uVar7 >> 4) & 0x3f;
     uVar7 = DAT_0010190c->hdr.position_word & 0x1fff;
-    DAT_0010190c->hdr.position_word_low = (byte)(char)uVar7;
-    DAT_0010190c->hdr.position_word_high = (byte)(uVar7 >> 8) | 0x80;
+    DAT_0010190c->hdr.xpos = 4;
     uVar7 = DAT_0010190c->hdr.position_word & 0xf3ff;
-    DAT_0010190c->hdr.position_word_low = (byte)(char)uVar7;
-    DAT_0010190c->hdr.position_word_high = (byte)(uVar7 >> 8) | 0x10;
+    DAT_0010190c->hdr.ypos = 4;
     uVar7 = DAT_0010190c->hdr.position_word & 0xff80;
-    DAT_0010190c->hdr.position_word_low = *pbVar6 >> 1 & 0x78 | (byte)uVar7;
-    DAT_0010190c->hdr.position_word_high = (byte)(char)(uVar7 >> 8);
+    DAT_0010190c->hdr.zpos = *pbVar6 >> 1 & 0x78;
   }
 }
 

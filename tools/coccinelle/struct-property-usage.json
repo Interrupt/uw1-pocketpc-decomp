@@ -1,8 +1,8 @@
 {
   "scope": "Named packed views and existing audited object-pointer roles in src/*.c; unrecorded aliases and other structures still require independent auditing.",
   "counts": {
-    "byte_view": 120,
-    "packed_word": 443,
+    "byte_view": 110,
+    "packed_word": 442,
     "raw_audited_object_access": 7,
     "signed_word_view": 9
   },
@@ -1378,25 +1378,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_approach_tick",
-      "line": 122,
-      "category": "byte_view",
-      "member": "goal_word",
-      "pointer": null,
-      "code": "((uw_mobile_object_t *)iVar5_rec)->goal_word_low = (byte)(char)uVar7;"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "npc_combat_approach_tick",
-      "line": 123,
-      "category": "byte_view",
-      "member": "goal_word",
-      "pointer": null,
-      "code": "DAT_0010190c->goal_word_high = (byte)(uVar7 >> 8) | (byte)(((uw_ord2005_rem_40 & 0xf) << 0xc) >> 8)"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "npc_combat_approach_tick",
-      "line": 158,
+      "line": 156,
       "category": "packed_word",
       "member": "tile_word",
       "pointer": null,
@@ -1405,25 +1387,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_approach_tick",
-      "line": 159,
-      "category": "byte_view",
-      "member": "tile_word",
-      "pointer": null,
-      "code": "DAT_0010190c->tile_word_low = (byte)(char)uVar7;"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "npc_combat_approach_tick",
-      "line": 160,
-      "category": "byte_view",
-      "member": "tile_word",
-      "pointer": null,
-      "code": "DAT_0010190c->tile_word_high ="
-    },
-    {
-      "source": "src/combat.c",
-      "function": "npc_combat_approach_tick",
-      "line": 162,
+      "line": 158,
       "category": "packed_word",
       "member": "tile_word",
       "pointer": null,
@@ -1432,16 +1396,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_approach_tick",
-      "line": 164,
-      "category": "packed_word",
-      "member": "tile_word",
-      "pointer": null,
-      "code": "DAT_0010190c->tile_word = (ushort)uVar7;"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "npc_combat_approach_tick",
-      "line": 165,
+      "line": 161,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -1450,25 +1405,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_approach_tick",
-      "line": 166,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "DAT_0010190c->hdr.position_word_low = (byte)(char)uVar7;"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "npc_combat_approach_tick",
-      "line": 167,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "DAT_0010190c->hdr.position_word_high = (byte)(uVar7 >> 8) | 0x80;"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "npc_combat_approach_tick",
-      "line": 168,
+      "line": 163,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -1477,25 +1414,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_approach_tick",
-      "line": 169,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "DAT_0010190c->hdr.position_word_low = (byte)(char)uVar7;"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "npc_combat_approach_tick",
-      "line": 170,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "DAT_0010190c->hdr.position_word_high = (byte)(uVar7 >> 8) | 0x10;"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "npc_combat_approach_tick",
-      "line": 171,
+      "line": 165,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -1503,26 +1422,8 @@
     },
     {
       "source": "src/combat.c",
-      "function": "npc_combat_approach_tick",
-      "line": 172,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "DAT_0010190c->hdr.position_word_low = *pbVar6 >> 1 & 0x78 | (byte)uVar7;"
-    },
-    {
-      "source": "src/combat.c",
-      "function": "npc_combat_approach_tick",
-      "line": 173,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "DAT_0010190c->hdr.position_word_high = (byte)(char)(uVar7 >> 8);"
-    },
-    {
-      "source": "src/combat.c",
       "function": "npc_combat_engage_close_tick",
-      "line": 217,
+      "line": 210,
       "category": "packed_word",
       "member": "status_word",
       "pointer": null,
@@ -1531,7 +1432,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_engage_close_tick",
-      "line": 249,
+      "line": 242,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -1540,7 +1441,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_engage_close_tick",
-      "line": 252,
+      "line": 245,
       "category": "byte_view",
       "member": "goal_word",
       "pointer": null,
@@ -1549,7 +1450,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_engage_close_tick",
-      "line": 253,
+      "line": 246,
       "category": "byte_view",
       "member": "goal_word",
       "pointer": null,
@@ -1558,7 +1459,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_set_stance",
-      "line": 395,
+      "line": 388,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -1567,7 +1468,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_set_stance",
-      "line": 396,
+      "line": 389,
       "category": "byte_view",
       "member": "goal_word",
       "pointer": null,
@@ -1576,7 +1477,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_set_stance",
-      "line": 399,
+      "line": 392,
       "category": "packed_word",
       "member": "target_word",
       "pointer": null,
@@ -1585,7 +1486,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_set_stance",
-      "line": 401,
+      "line": 394,
       "category": "byte_view",
       "member": "target_word",
       "pointer": null,
@@ -1594,7 +1495,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_set_stance",
-      "line": 402,
+      "line": 395,
       "category": "byte_view",
       "member": "target_word",
       "pointer": null,
@@ -1603,7 +1504,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_set_stance",
-      "line": 408,
+      "line": 401,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -1612,7 +1513,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_set_stance",
-      "line": 412,
+      "line": 405,
       "category": "byte_view",
       "member": "goal_word",
       "pointer": null,
@@ -1621,7 +1522,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_set_stance",
-      "line": 414,
+      "line": 407,
       "category": "byte_view",
       "member": "goal_word",
       "pointer": null,
@@ -1630,7 +1531,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_engage_wide_tick",
-      "line": 450,
+      "line": 443,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -1639,7 +1540,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_engage_wide_tick",
-      "line": 453,
+      "line": 446,
       "category": "byte_view",
       "member": "goal_word",
       "pointer": null,
@@ -1648,7 +1549,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_engage_wide_tick",
-      "line": 454,
+      "line": 447,
       "category": "byte_view",
       "member": "goal_word",
       "pointer": null,
@@ -1657,7 +1558,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_position_tick",
-      "line": 513,
+      "line": 506,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -1666,7 +1567,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_position_tick",
-      "line": 541,
+      "line": 534,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -1675,7 +1576,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_position_tick",
-      "line": 544,
+      "line": 537,
       "category": "byte_view",
       "member": "goal_word",
       "pointer": null,
@@ -1684,7 +1585,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_position_tick",
-      "line": 545,
+      "line": 538,
       "category": "byte_view",
       "member": "goal_word",
       "pointer": null,
@@ -1693,7 +1594,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_position_tick",
-      "line": 596,
+      "line": 589,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -1702,7 +1603,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_position_tick",
-      "line": 599,
+      "line": 592,
       "category": "byte_view",
       "member": "goal_word",
       "pointer": null,
@@ -1711,7 +1612,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_position_tick",
-      "line": 600,
+      "line": 593,
       "category": "byte_view",
       "member": "goal_word",
       "pointer": null,
@@ -1720,7 +1621,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_position_tick",
-      "line": 633,
+      "line": 626,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -1729,7 +1630,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_position_tick",
-      "line": 636,
+      "line": 629,
       "category": "byte_view",
       "member": "goal_word",
       "pointer": null,
@@ -1738,7 +1639,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_position_tick",
-      "line": 637,
+      "line": 630,
       "category": "byte_view",
       "member": "goal_word",
       "pointer": null,
@@ -1747,7 +1648,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_disengage_tick",
-      "line": 668,
+      "line": 661,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -1756,7 +1657,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_disengage_tick",
-      "line": 669,
+      "line": 662,
       "category": "byte_view",
       "member": "goal_word",
       "pointer": null,
@@ -1765,7 +1666,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_disengage_tick",
-      "line": 670,
+      "line": 663,
       "category": "byte_view",
       "member": "goal_word",
       "pointer": null,
@@ -1774,7 +1675,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_disengage_tick",
-      "line": 682,
+      "line": 675,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -1783,7 +1684,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_disengage_tick",
-      "line": 685,
+      "line": 678,
       "category": "byte_view",
       "member": "goal_word",
       "pointer": null,
@@ -1792,7 +1693,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_disengage_tick",
-      "line": 686,
+      "line": 679,
       "category": "byte_view",
       "member": "goal_word",
       "pointer": null,
@@ -1801,7 +1702,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_disengage_tick",
-      "line": 699,
+      "line": 692,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -1810,7 +1711,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_disengage_tick",
-      "line": 702,
+      "line": 695,
       "category": "byte_view",
       "member": "goal_word",
       "pointer": null,
@@ -1819,7 +1720,7 @@
     {
       "source": "src/combat.c",
       "function": "npc_combat_disengage_tick",
-      "line": 703,
+      "line": 696,
       "category": "byte_view",
       "member": "goal_word",
       "pointer": null,
@@ -1828,7 +1729,7 @@
     {
       "source": "src/combat.c",
       "function": "find_nearest_hit_target",
-      "line": 810,
+      "line": 803,
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "puVar6",
@@ -1837,7 +1738,7 @@
     {
       "source": "src/combat.c",
       "function": "spawn_blood_splat_object",
-      "line": 900,
+      "line": 893,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -1846,7 +1747,7 @@
     {
       "source": "src/combat.c",
       "function": "resolve_weapon_hit_skill_check",
-      "line": 1032,
+      "line": 1025,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -1855,7 +1756,7 @@
     {
       "source": "src/combat.c",
       "function": "apply_melee_damage",
-      "line": 1113,
+      "line": 1106,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -1864,7 +1765,7 @@
     {
       "source": "src/combat.c",
       "function": "apply_melee_damage",
-      "line": 1151,
+      "line": 1144,
       "category": "byte_view",
       "member": "status_word",
       "pointer": null,
@@ -1873,7 +1774,7 @@
     {
       "source": "src/combat.c",
       "function": "process_melee_attack_swing",
-      "line": 1379,
+      "line": 1372,
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "puAttacker",
@@ -1882,7 +1783,7 @@
     {
       "source": "src/combat.c",
       "function": "process_melee_attack_swing",
-      "line": 1379,
+      "line": 1372,
       "category": "raw_audited_object_access",
       "member": null,
       "pointer": "puTarget",
@@ -1891,7 +1792,7 @@
     {
       "source": "src/combat.c",
       "function": "resolve_equipped_weapon_attack",
-      "line": 1414,
+      "line": 1407,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -1900,7 +1801,7 @@
     {
       "source": "src/combat.c",
       "function": "resolve_equipped_weapon_attack",
-      "line": 1430,
+      "line": 1423,
       "category": "packed_word",
       "member": "size_weight",
       "pointer": null,
@@ -1909,7 +1810,7 @@
     {
       "source": "src/combat.c",
       "function": "try_npc_special_ability_no_los",
-      "line": 1676,
+      "line": 1669,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -1918,7 +1819,7 @@
     {
       "source": "src/combat.c",
       "function": "try_npc_special_ability_ranged",
-      "line": 1724,
+      "line": 1717,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -1927,7 +1828,7 @@
     {
       "source": "src/combat.c",
       "function": "try_npc_special_ability_alt",
-      "line": 1759,
+      "line": 1752,
       "category": "packed_word",
       "member": "goal_word",
       "pointer": null,
@@ -1936,7 +1837,7 @@
     {
       "source": "src/combat.c",
       "function": "check_npc_target_alignment",
-      "line": 1844,
+      "line": 1837,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -1945,7 +1846,7 @@
     {
       "source": "src/combat.c",
       "function": "check_npc_target_alignment",
-      "line": 1861,
+      "line": 1854,
       "category": "byte_view",
       "member": "position_word",
       "pointer": null,
@@ -1954,7 +1855,7 @@
     {
       "source": "src/combat.c",
       "function": "check_npc_target_alignment",
-      "line": 1862,
+      "line": 1855,
       "category": "byte_view",
       "member": "position_word",
       "pointer": null,
@@ -1963,7 +1864,7 @@
     {
       "source": "src/combat.c",
       "function": "check_npc_fine_facing_alignment",
-      "line": 1893,
+      "line": 1886,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -1972,7 +1873,7 @@
     {
       "source": "src/combat.c",
       "function": "check_npc_fine_facing_alignment",
-      "line": 1937,
+      "line": 1930,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -1981,7 +1882,7 @@
     {
       "source": "src/combat.c",
       "function": "check_npc_fine_facing_alignment",
-      "line": 1938,
+      "line": 1931,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -1990,7 +1891,7 @@
     {
       "source": "src/combat.c",
       "function": "apply_object_durability_damage",
-      "line": 2101,
+      "line": 2094,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -1999,7 +1900,7 @@
     {
       "source": "src/combat.c",
       "function": "apply_object_durability_damage",
-      "line": 2111,
+      "line": 2104,
       "category": "packed_word",
       "member": "chain_word",
       "pointer": null,
@@ -2008,7 +1909,7 @@
     {
       "source": "src/combat.c",
       "function": "damage_equipped_item_in_slot",
-      "line": 2200,
+      "line": 2193,
       "category": "byte_view",
       "member": "chain_word",
       "pointer": null,
@@ -2017,7 +1918,7 @@
     {
       "source": "src/combat.c",
       "function": "damage_equipped_item_in_slot",
-      "line": 2229,
+      "line": 2222,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -2026,7 +1927,7 @@
     {
       "source": "src/combat.c",
       "function": "damage_equipped_item_in_slot",
-      "line": 2230,
+      "line": 2223,
       "category": "byte_view",
       "member": "type_flags",
       "pointer": null,
@@ -2035,7 +1936,7 @@
     {
       "source": "src/combat.c",
       "function": "damage_equipped_item_in_slot",
-      "line": 2231,
+      "line": 2224,
       "category": "byte_view",
       "member": "type_flags",
       "pointer": null,
@@ -2044,7 +1945,7 @@
     {
       "source": "src/combat.c",
       "function": "resolve_collision_candidate_interaction",
-      "line": 2431,
+      "line": 2424,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
