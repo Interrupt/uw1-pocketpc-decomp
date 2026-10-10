@@ -219,7 +219,13 @@ add_fixture_game_unit_test(traps src/traps.c:dispatch_trap_type_effect
 add_fixture_game_unit_test(hotspot_marker src/babl.c:draw_hotspot_crosshair_marker)
 add_fixture_game_unit_test(noise
   src/ai.c:alert_npc_to_noise_callback src/ai.c:emit_noise_alert)
-add_fixture_game_unit_test(keyboard src/input.c:handle_keyboard_message)
+add_fixture_game_unit_test(keyboard
+  src/input.c:handle_keyboard_message src/input.c:movement_latch_is_free)
+# Jumping while a movement key is held: the shared key latch and the jump key's dispatch.
+add_fixture_game_unit_test(jump_walking
+  src/input.c:@DAT_00086e70_backing src/input.c:%DAT_00086e70
+  src/input.c:handle_keyboard_message src/input.c:move_command_dispatch
+  src/input.c:latch_held_movement_code src/input.c:movement_latch_is_free)
 add_fixture_game_unit_test(visibility_walk
   src/visibility.c:@DAT_00086af0_arr
   src/visibility.c:@DAT_00086af8_region
@@ -859,6 +865,7 @@ target_compile_definitions(test_gx_pacing PRIVATE UW_TEST_DATA_DIR="${PROJECT_SO
 
 add_game_test_library(uw_test_look_pacing
   src/gx_stub.c:poll_dungeon_movement_keys
+  src/input.c:latch_held_movement_code src/input.c:movement_latch_is_free
   src/gx_stub.c:@uw_frame_pacing
   src/gx_stub.c:@g_display_pacing
   src/gx_stub.c:@g_game_pacing

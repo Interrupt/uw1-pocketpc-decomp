@@ -85,6 +85,9 @@ extern int DAT_000876c8;              /* set by WM_KEYUP; main loop then clears 
 extern short DAT_0024af6c;            /* held-key repeat accelerator (turn/move rate scale) */
 extern short DAT_0023beb4;            /* view pitch (1/256 deg); sync_camera_from_player -> DAT_000db448 */
 extern unsigned int g_uw_frame_clock_units; /* GX elapsed-time sample for movement; see movement.c */
+extern short g_movement_mode;             /* pending movement command (6/7 jump) */
+extern void uw_set_analog_move_turn(int fwd_held, int turn_dir);
+extern void latch_held_movement_code(unsigned short held_code, unsigned short latch_code);
 
 /* OR'd into the real SDL_GetKeyboardState() so scripted tests (SDLHOLD /
    uw_inject_key_down/up) can drive the same movement path -- SDL_PushEvent
@@ -224,15 +227,20 @@ static void poll_dungeon_movement_keys(int game_frame_due)
         if (turning && forward) {
             /* Diagonal: set both rates directly and skip the single-code dispatch entirely --
                movement_tick only calls decode_movement_command() while g_movement_mode == 0, so
-               setting it to 1 here (inside uw_set_analog_move_turn) pre-empts that for this tick. */
-            DAT_0023c448 = 0;
-            uw_set_analog_move_turn(1, turning);
+               setting it to 1 here (inside uw_set_analog_move_turn) pre-empts that for this tick.
+               A jump waiting to be run (mode 6/7) must not be turned back into a walk. */
+            latch_held_movement_code(0x8d, 0);
+            if (g_movement_mode != 6 && g_movement_mode != 7)
+                uw_set_analog_move_turn(1, turning);
         } else {
-            DAT_0023c448 = (unsigned short)code;
+            latch_held_movement_code((unsigned short)code, (unsigned short)code);
         }
     } else if (active) {
         DAT_000876c8 = 1;   /* release: main loop clears DAT_0023c448 -> stop */
         active = 0;
+        latch_held_movement_code(0, 0);
+    } else {
+        latch_held_movement_code(0, 0);
     }
 }
 
