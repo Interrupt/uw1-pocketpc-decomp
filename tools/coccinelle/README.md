@@ -1399,3 +1399,30 @@ Use `--reference PATH` with the original `item_use.c` and `--asan` for
 AddressSanitizer. All four newly audited raw accesses are converted, leaving
 seven raw object accesses and 85 byte views. Three additional packed accesses
 are now visible: two intentional full-type captures and the named link address.
+
+`generate_scheduler_finish_rules.py` / `scheduler-finish-fields.json` convert
+`scheduler_finish_entry` with the exact-source applier. The resolved object
+uses its native common-header pointer. The door subtype reads the upper two
+owner bits; blocked closure writes `owner`, completion writes `zpos` and
+`object_id`, clears `owner` while preserving `link`, and writes the computed
+`flags_res`/`enchanted` fields. Full word and byte captures remain in place,
+as do callback order, the captured door class and height, early returns,
+queue compaction, and the legacy delay-helper API. The ID/subtype masks
+classify values, and the final flag arithmetic still computes a live full
+word. The six-byte scheduler table has a separate layout; its byte copies
+are outside the object-header conversion.
+
+The rule test checks exact generation/conversion and idempotence, rejects
+changed callbacks, volatile/escaping captures, masks, intervening stores,
+excluded scopes, quoted bodies and duplicate definitions. Its 1,572,864
+original/current cases sweep all 16-bit seeds through type, position, chain
+and link words, covering unresolved entries, non-doors, opening/closing,
+blocked closure, catch-up and despawn gates, and queue removal/compaction.
+Callbacks mutate header words, tile globals and queue pointer identity;
+guarded object bytes, both queue buffers, globals, callback arguments/events
+and counts are compared. Independent assertions check unresolved entries,
+blocked owner restoration and link preservation, and owner clearing after
+completion. Use `--reference PATH` with the original `scheduler.c` and
+`--asan` for AddressSanitizer. The audit contains 79 byte views (six fewer),
+440 packed accesses (three fewer), seven raw object accesses and nine signed
+word views. This batch does not resolve the five excluded broad catalog tests.

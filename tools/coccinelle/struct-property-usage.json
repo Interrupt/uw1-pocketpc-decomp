@@ -1,8 +1,8 @@
 {
   "scope": "Named packed views and existing audited object-pointer roles in src/*.c; unrecorded aliases and other structures still require independent auditing.",
   "counts": {
-    "byte_view": 85,
-    "packed_word": 443,
+    "byte_view": 79,
+    "packed_word": 440,
     "raw_audited_object_access": 7,
     "signed_word_view": 9
   },
@@ -3997,115 +3997,34 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_finish_entry",
-      "line": 124,
-      "category": "packed_word",
-      "member": "link_word",
-      "pointer": null,
-      "code": "uVar10 = (byte)((byte)((uw_object_hdr_t *)puVar4)->link_word >> 4) & 3;"
-    },
-    {
-      "source": "src/scheduler.c",
-      "function": "scheduler_finish_entry",
       "line": 145,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
-      "code": "uVar1 = ((uw_object_hdr_t *)puVar4)->link_word;"
+      "code": "uVar1 = puVar4->link_word;"
     },
     {
       "source": "src/scheduler.c",
       "function": "scheduler_finish_entry",
-      "line": 147,
-      "category": "byte_view",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar4)->link_word_low = (bVar3 ^ (byte)uVar5) & 0x3f ^ bVar3;"
-    },
-    {
-      "source": "src/scheduler.c",
-      "function": "scheduler_finish_entry",
-      "line": 148,
-      "category": "byte_view",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar4)->link_word_high = (byte)(uVar1 >> 8);"
-    },
-    {
-      "source": "src/scheduler.c",
-      "function": "scheduler_finish_entry",
-      "line": 157,
+      "line": 156,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
-      "code": "uVar2 = ((uw_object_hdr_t *)puVar4)->position_word;"
+      "code": "uVar2 = puVar4->position_word;"
     },
     {
       "source": "src/scheduler.c",
       "function": "scheduler_finish_entry",
       "line": 159,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar4)->position_word_low = (bVar3 ^ (byte)uVar8) & 0x7f ^ bVar3;"
-    },
-    {
-      "source": "src/scheduler.c",
-      "function": "scheduler_finish_entry",
-      "line": 160,
-      "category": "byte_view",
-      "member": "position_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar4)->position_word_high = (byte)(uVar2 >> 8);"
-    },
-    {
-      "source": "src/scheduler.c",
-      "function": "scheduler_finish_entry",
-      "line": 161,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
-      "code": "uVar10 = ((uw_object_hdr_t *)puVar4)->type_flags & 0xff4f | (uVar10 | 0x14) << 4;"
-    },
-    {
-      "source": "src/scheduler.c",
-      "function": "scheduler_finish_entry",
-      "line": 163,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar4)->type_flags_low = (byte)uVar5;"
-    },
-    {
-      "source": "src/scheduler.c",
-      "function": "scheduler_finish_entry",
-      "line": 164,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar4)->type_flags_high = (byte)(uVar10 >> 8);"
-    },
-    {
-      "source": "src/scheduler.c",
-      "function": "scheduler_finish_entry",
-      "line": 166,
-      "category": "packed_word",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar4)->link_word = (ushort)uVar10;"
-    },
-    {
-      "source": "src/scheduler.c",
-      "function": "scheduler_finish_entry",
-      "line": 174,
-      "category": "packed_word",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar4)->type_flags = (ushort)uVar8;"
+      "code": "uVar10 = puVar4->type_flags & 0xff4f | (uVar10 | 0x14) << 4;"
     },
     {
       "source": "src/scheduler.c",
       "function": "scheduler_add_entry",
-      "line": 250,
+      "line": 248,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -4114,7 +4033,7 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_add_entry",
-      "line": 251,
+      "line": 249,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -4123,7 +4042,7 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_add_entry",
-      "line": 254,
+      "line": 252,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -4132,7 +4051,7 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_add_entry",
-      "line": 260,
+      "line": 258,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -4141,7 +4060,7 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_step_entry",
-      "line": 302,
+      "line": 300,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -4150,7 +4069,7 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_step_entry",
-      "line": 311,
+      "line": 309,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -4159,7 +4078,7 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_step_entry",
-      "line": 316,
+      "line": 314,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -4168,7 +4087,7 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_step_entry",
-      "line": 332,
+      "line": 330,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -4177,7 +4096,7 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_step_entry",
-      "line": 334,
+      "line": 332,
       "category": "byte_view",
       "member": "position_word",
       "pointer": null,
@@ -4186,7 +4105,7 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_step_entry",
-      "line": 335,
+      "line": 333,
       "category": "byte_view",
       "member": "position_word",
       "pointer": null,
@@ -4195,7 +4114,7 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_step_entry",
-      "line": 337,
+      "line": 335,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -4204,7 +4123,7 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_step_entry",
-      "line": 339,
+      "line": 337,
       "category": "byte_view",
       "member": "type_flags",
       "pointer": null,
@@ -4213,7 +4132,7 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_step_entry",
-      "line": 339,
+      "line": 337,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -4222,7 +4141,7 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_step_entry",
-      "line": 340,
+      "line": 338,
       "category": "byte_view",
       "member": "type_flags",
       "pointer": null,
@@ -4231,7 +4150,7 @@
     {
       "source": "src/scheduler.c",
       "function": "spawn_scheduled_effect_object",
-      "line": 427,
+      "line": 425,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -4240,7 +4159,7 @@
     {
       "source": "src/scheduler.c",
       "function": "spawn_scheduled_effect_object",
-      "line": 427,
+      "line": 425,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -4249,7 +4168,7 @@
     {
       "source": "src/scheduler.c",
       "function": "spawn_scheduled_effect_object",
-      "line": 427,
+      "line": 425,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -4258,7 +4177,7 @@
     {
       "source": "src/scheduler.c",
       "function": "spawn_scheduled_effect_object",
-      "line": 431,
+      "line": 429,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -4267,7 +4186,7 @@
     {
       "source": "src/scheduler.c",
       "function": "spawn_scheduled_effect_object",
-      "line": 435,
+      "line": 433,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -4276,7 +4195,7 @@
     {
       "source": "src/scheduler.c",
       "function": "spawn_scheduled_effect_object",
-      "line": 441,
+      "line": 439,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -4285,7 +4204,7 @@
     {
       "source": "src/scheduler.c",
       "function": "spawn_scheduled_effect_object",
-      "line": 445,
+      "line": 443,
       "category": "packed_word",
       "member": "position_word",
       "pointer": null,
@@ -4294,7 +4213,7 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_advance_effect",
-      "line": 552,
+      "line": 550,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
@@ -4303,7 +4222,7 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_advance_effect",
-      "line": 566,
+      "line": 564,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
@@ -4312,7 +4231,7 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_advance_effect",
-      "line": 572,
+      "line": 570,
       "category": "byte_view",
       "member": "type_flags",
       "pointer": null,
@@ -4321,7 +4240,7 @@
     {
       "source": "src/scheduler.c",
       "function": "scheduler_advance_effect",
-      "line": 573,
+      "line": 571,
       "category": "byte_view",
       "member": "type_flags",
       "pointer": null,
