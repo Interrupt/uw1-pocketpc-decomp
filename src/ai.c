@@ -113,9 +113,9 @@ static byte DAT_00101434;
 /* Was a bare 1-byte `undefined` -- same split-symbol class as DAT_00204980/990/9b0's own
    backing-array fixes just above: build_object_placement_snapshot (called with this as its param_2
    "object state" out-buffer, via DAT_0010172c) writes fields up to offset 0x28 into it... */
-static undefined1 DAT_002048f0_backing[128];
+undefined1 DAT_002048f0_backing[128];
 #define DAT_002048f0 DAT_002048f0_backing[0]
-static undefined1 DAT_00204950_backing[128];
+undefined1 DAT_00204950_backing[128];
 #define DAT_00204950 DAT_00204950_backing[0]
 undefined4 DAT_00101944;
 /* ARM UU.exe 0x853d8: sixteen little-endian attack-strength scales.
