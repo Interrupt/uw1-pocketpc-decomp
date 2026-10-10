@@ -1157,3 +1157,23 @@ Record/guard/player/status bytes and callback arguments/events/counts are
 compared. Use `--reference PATH` with the original `player.c` and `--asan` for
 AddressSanitizer. The worklist now contains 155 byte views (ten fewer); full
 position captures remain intentional.
+
+`generate_ranged_rules.py` / `ranged-fields.json` convert `fire_ranged_weapon`
+using the exact-source applier. The spawned pointer uses the projectile layout
+constructed by `spawn_object_near_player`; the extracted ammo uses the common
+header returned through `extract_ammo_and_refresh`. Named quantity, link,
+owner, flag, lifetime and original-heading writes replace byte reconstruction
+and self-stores. Complete type/link/high-byte captures and callback order
+remain intact. The original caller still launches after a false aim result.
+
+The test requires generation consistency and an actual exact conversion,
+checks idempotence and guards against callbacks, volatile/escaping captures,
+changed masks, intervening writes, excluded scopes, quoted bodies and ambiguous
+definitions. Its 2,621,440 before/after executions cover every source type word,
+all source link words, every ammo selector, signed/high-bit/full-width ammo
+results, spawn failure, false aim results, callback-mutated ammo/projectile
+records, heading gates and sound-producing weapon types. Header/projectile/
+guard/player bytes, launch globals and callback events/counts are compared.
+Use `--reference PATH` with the original `weapon_swing.c` and `--asan` for
+AddressSanitizer. The worklist now contains 145 byte views (ten fewer); full
+captured words remain intentional.

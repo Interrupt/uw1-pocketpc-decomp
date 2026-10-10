@@ -1,8 +1,8 @@
 {
   "scope": "Named packed views and existing audited object-pointer roles in src/*.c; unrecorded aliases and other structures still require independent auditing.",
   "counts": {
-    "byte_view": 155,
-    "packed_word": 442,
+    "byte_view": 145,
+    "packed_word": 441,
     "raw_audited_object_access": 7,
     "signed_word_view": 9
   },
@@ -5378,151 +5378,52 @@
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
-      "code": "uVar8 = (*puVar7 ^ ((uw_object_hdr_t *)puVar6)->type_flags) & 0x7fff ^ (uint)*puVar7;"
+      "code": "uVar8 = (puVar7->type_flags ^ puVar6->hdr.type_flags) & 0x7fff ^ (uint)puVar7->type_flags;"
     },
     {
       "source": "src/weapon_swing.c",
       "function": "fire_ranged_weapon",
-      "line": 780,
+      "line": 779,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->type_flags = (ushort)uVar8;"
+      "code": "uVar8 = (puVar7->type_flags ^ puVar6->hdr.type_flags) & 0x7fff ^ (uint)puVar7->type_flags;"
     },
     {
       "source": "src/weapon_swing.c",
       "function": "fire_ranged_weapon",
-      "line": 783,
-      "category": "byte_view",
-      "member": "link_word",
+      "line": 779,
+      "category": "packed_word",
+      "member": "type_flags",
       "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->link_word_low = ((byte)((uw_object_hdr_t *)puVar6)->link_word ^ bVar2) & 0x3f ^ bVar2;"
+      "code": "uVar8 = (puVar7->type_flags ^ puVar6->hdr.type_flags) & 0x7fff ^ (uint)puVar7->type_flags;"
     },
     {
       "source": "src/weapon_swing.c",
       "function": "fire_ranged_weapon",
-      "line": 783,
+      "line": 781,
       "category": "packed_word",
       "member": "link_word",
       "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->link_word_low = ((byte)((uw_object_hdr_t *)puVar6)->link_word ^ bVar2) & 0x3f ^ bVar2;"
+      "code": "uVar4 = puVar7->link_word;"
     },
     {
       "source": "src/weapon_swing.c",
       "function": "fire_ranged_weapon",
       "line": 784,
-      "category": "byte_view",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->link_word_high = (byte)(char)(uVar4 >> 8);"
-    },
-    {
-      "source": "src/weapon_swing.c",
-      "function": "fire_ranged_weapon",
-      "line": 786,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar6)->type_flags;"
-    },
-    {
-      "source": "src/weapon_swing.c",
-      "function": "fire_ranged_weapon",
-      "line": 786,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar6)->type_flags;"
+      "code": "bVar2 = (byte)(puVar7->type_flags >> 8);"
     },
     {
       "source": "src/weapon_swing.c",
       "function": "fire_ranged_weapon",
-      "line": 787,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->type_flags_high ="
-    },
-    {
-      "source": "src/weapon_swing.c",
-      "function": "fire_ranged_weapon",
-      "line": 788,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "(bVar2 ^ ((uw_object_hdr_t *)puVar6)->type_flags_high) & 0x1e ^ ((uw_object_hdr_t *)puVar6)->type_flags_high;"
-    },
-    {
-      "source": "src/weapon_swing.c",
-      "function": "fire_ranged_weapon",
-      "line": 788,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "(bVar2 ^ ((uw_object_hdr_t *)puVar6)->type_flags_high) & 0x1e ^ ((uw_object_hdr_t *)puVar6)->type_flags_high;"
-    },
-    {
-      "source": "src/weapon_swing.c",
-      "function": "fire_ranged_weapon",
-      "line": 790,
-      "category": "byte_view",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->link_word_low = ((byte)puVar7[3] ^ (byte)((uw_object_hdr_t *)puVar6)->link_word) & 0x3f ^ (byte)((uw_object_hdr_t *)puVar6)->link_word;"
-    },
-    {
-      "source": "src/weapon_swing.c",
-      "function": "fire_ranged_weapon",
-      "line": 790,
-      "category": "packed_word",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->link_word_low = ((byte)puVar7[3] ^ (byte)((uw_object_hdr_t *)puVar6)->link_word) & 0x3f ^ (byte)((uw_object_hdr_t *)puVar6)->link_word;"
-    },
-    {
-      "source": "src/weapon_swing.c",
-      "function": "fire_ranged_weapon",
-      "line": 790,
-      "category": "packed_word",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->link_word_low = ((byte)puVar7[3] ^ (byte)((uw_object_hdr_t *)puVar6)->link_word) & 0x3f ^ (byte)((uw_object_hdr_t *)puVar6)->link_word;"
-    },
-    {
-      "source": "src/weapon_swing.c",
-      "function": "fire_ranged_weapon",
-      "line": 791,
-      "category": "byte_view",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->link_word_high = ((uw_object_hdr_t *)puVar6)->link_word_high;"
-    },
-    {
-      "source": "src/weapon_swing.c",
-      "function": "fire_ranged_weapon",
-      "line": 791,
-      "category": "byte_view",
-      "member": "link_word",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->link_word_high = ((uw_object_hdr_t *)puVar6)->link_word_high;"
-    },
-    {
-      "source": "src/weapon_swing.c",
-      "function": "fire_ranged_weapon",
-      "line": 793,
-      "category": "byte_view",
-      "member": "type_flags",
-      "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar6)->type_flags;"
-    },
-    {
-      "source": "src/weapon_swing.c",
-      "function": "fire_ranged_weapon",
-      "line": 793,
+      "line": 789,
       "category": "packed_word",
       "member": "type_flags",
       "pointer": null,
-      "code": "((uw_object_hdr_t *)puVar6)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar6)->type_flags;"
+      "code": "bVar2 = (byte)(puVar7->type_flags >> 8);"
     }
   ]
 }

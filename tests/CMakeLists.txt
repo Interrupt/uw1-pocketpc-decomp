@@ -1238,6 +1238,9 @@ if(UW_SPATCH_EXECUTABLE)
   add_test(NAME starvation_fields
     COMMAND "${Python3_EXECUTABLE}" -B
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_starvation_fields.py")
+  add_test(NAME ranged_fields
+    COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_ranged_fields.py")
   find_program(UW_CLANG_EXECUTABLE clang)
   if(UW_CLANG_EXECUTABLE)
     add_test(NAME current_object_aliases
