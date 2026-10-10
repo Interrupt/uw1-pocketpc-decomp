@@ -201,8 +201,13 @@ has been given and adapts:
   and is converted at load time (`src/chargen.c`).
 - Cutscene speech ships as Creative `SOUND/NN.VOC` rather than RIFF
   `SOUND/VOCnn.wav`; `src/platform_voice.c` reads either.
-- Music and sound effects come from the DOS `SOUND` set via
-  `UW_AUDIO_MODE` — see the audio section below.
+- Music and sound effects come from the DOS `SOUND` set automatically: with
+  no `UW_AUDIO_MODE` set, a data directory that is a DOS install (detected by
+  `SOUND/UW.AD`, the timbre bank) selects `hybrid`, because such a directory
+  has no `.MOD` music or WAVE effects to fall back on. Set `UW_AUDIO_MODE`
+  explicitly — including `arm` — to override. `UW_DOS_DATA_DIR` is now only
+  needed to borrow DOS music *while playing the Pocket PC assets*; it does
+  not by itself turn DOS audio on.
 - The 3D models are read out of `UW.EXE` itself, where DOS kept them
   compiled as bytecode. There is no `DATA3D/` in a DOS install and no `.E`
   source anywhere in the executable, so there is nothing for the `.E`
