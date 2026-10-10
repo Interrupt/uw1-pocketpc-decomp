@@ -279,6 +279,35 @@ static void type_line(const char *text)
     dbgui_feed_key(DBGUI_KEY_RETURN);
 }
 
+static int g_close_hook_calls;
+static void count_close_hook(void) { g_close_hook_calls++; }
+
+void test_console_close_calls_redraw_hook_for_esc_and_toggle(void)
+{
+    g_close_hook_calls = 0;
+    dbgui_console_set_close_hook(count_close_hook);
+    open_console();
+    dbgui_feed_key(DBGUI_KEY_ESCAPE);
+    TEST_ASSERT_EQUAL_INT(1, g_close_hook_calls);
+    dbgui_console_open();
+    dbgui_toggle();
+    TEST_ASSERT_EQUAL_INT(2, g_close_hook_calls);
+    dbgui_console_set_close_hook(0);
+}
+
+void test_console_scroll_api_clamps_and_moves(void)
+{
+    int i;
+    char buf[16];
+    open_console();
+    for (i = 0; i < 30; i++) { snprintf(buf, sizeof(buf), "line %d", i); dbgui_console_print(buf); }
+    dbgui_console_scroll(-1);   /* already at the newest line: no underflow */
+    dbgui_console_scroll(1000); /* clamps to the oldest page */
+    dbgui_console_scroll(-1);
+    dbgui_draw();
+    TEST_ASSERT_TRUE(dbgui_console_active());
+}
+
 void test_console_button_style_open_makes_console_active(void)
 {
     TEST_ASSERT_FALSE(dbgui_console_active());
@@ -390,6 +419,8 @@ int main(void)
     RUN_TEST(test_console_ignores_backtick_text_and_does_not_edit_panel_fields);
     RUN_TEST(test_console_escape_returns_to_panel_and_backtick_closes_all);
     RUN_TEST(test_console_open_requires_visible_panel);
+    RUN_TEST(test_console_scroll_api_clamps_and_moves);
+    RUN_TEST(test_console_close_calls_redraw_hook_for_esc_and_toggle);
     RUN_TEST(test_console_draw_does_not_crash_with_long_output);
     return UNITY_END();
 }

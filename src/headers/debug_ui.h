@@ -80,6 +80,11 @@ void dbgui_console_open(void);
 int dbgui_console_active(void);
 void dbgui_console_print(const char *text);
 void dbgui_console_set_handler(void (*handler)(const char *line));
+/* Called after the console closes and its saved pixels are put back, so the game can repaint what
+   it owns under that region (the inventory panel) instead of leaving the console's black behind. */
+/* Scrolls the scrollback by `lines` (positive = older). SHIFT+UP/DOWN call this with +/-1. */
+void dbgui_console_scroll(int lines);
+void dbgui_console_set_close_hook(void (*hook)(void));
 
 /* Test-only accessors (tests/test_debug_ui.c) -- never called by game
  * code. dbgui_test_reset() clears all panel/selection/edit state back

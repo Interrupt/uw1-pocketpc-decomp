@@ -62,4 +62,5 @@ short * g_sweep_velocity;
 
 ushort DAT_00202084;
 byte DAT_0020208c;
+int g_debug_noclip;
 short DAT_00085890, DAT_00202074, DAT_00202078, DAT_0020207a, DAT_0020207c;

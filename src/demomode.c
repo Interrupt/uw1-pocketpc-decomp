@@ -95,6 +95,25 @@ static int demo_console_pop(char *out, size_t n) {
     return 1;
 }
 
+/* "NAME" or "NAME <arg>" (any case) -> 1 and *arg = the trimmed argument ("" if none). */
+static int demo_match_cmd(const char *p, const char *name, const char **arg) {
+    size_t n = strlen(name);
+    if (strncasecmp(p, name, n) != 0) return 0;
+    if (p[n] != '\0' && p[n] != ' ' && p[n] != '\t') return 0;
+    p += n;
+    while (*p == ' ' || *p == '\t') p++;
+    *arg = p;
+    return 1;
+}
+
+/* Optional on/off argument for the mode commands: none toggles. Returns -1 if unparseable. */
+static int demo_parse_onoff(const char *arg, int current) {
+    if (*arg == '\0') return !current;
+    if (strcasecmp(arg, "on") == 0 || strcmp(arg, "1") == 0) return 1;
+    if (strcasecmp(arg, "off") == 0 || strcmp(arg, "0") == 0) return 0;
+    return -1;
+}
+
 static int demo_translate_vk(const char *name) {
     if (strcasecmp(name, "UP") == 0) return VK_UP;
     if (strcasecmp(name, "DOWN") == 0) return VK_DOWN;
@@ -151,8 +170,14 @@ static int demo_translate_sdlkey(const char *name) {
     return 0;
 }
 
+/* The console's black covers part of the inventory panel; repaint it (no-op off the compass HUD). */
+static void demomode_console_closed(void) {
+    redraw_container_icon_slot();
+}
+
 void demomode_init(void) {
     dbgui_console_set_handler(demomode_console_submit);
+    dbgui_console_set_close_hook(demomode_console_closed);
     const char *path = g_opts.demo_file;
     if (!path) return;
 
@@ -933,21 +958,78 @@ static void demo_exec_line(char *p, Uint32 now) {
         return;
     }
 
+    {
+        const char *arg;
+        int want;
+        if (demo_match_cmd(p, "FLY", &arg)) {
+            /* FLY [on|off] -- the player's real hover/fly movement state (the bit a flying effect
+               sets in the movement-effect mask: gravity off, K/L fly down/up). */
+            if ((want = demo_parse_onoff(arg, g_debug_fly)) < 0) {
+                demo_printf("[demo] usage: FLY [on|off]\n");
+            } else {
+                g_debug_fly = want;
+                refresh_player_equipment_effects();
+                demo_printf("[demo] fly %s\n", want ? "on" : "off");
+            }
+            g_demo_next_tick = now;
+            return;
+        }
+        if (demo_match_cmd(p, "FARSIGHT", &arg)) {
+            /* FARSIGHT [on|off] -- the far sight spell's free-camera mode (what dispatch_player_
+               command 7 does), held until switched off instead of expiring. */
+            if ((want = demo_parse_onoff(arg, g_debug_farsight)) < 0) {
+                demo_printf("[demo] usage: FARSIGHT [on|off]\n");
+            } else {
+                g_debug_farsight = want;
+                if (want) {
+                    refresh_player_equipment_effects();
+                    set_custom_view_target(0);
+                    set_view_subject_by_command(-1);
+                } else {
+                    set_view_subject_by_command(1);
+                    refresh_player_equipment_effects();
+                }
+                demo_printf("[demo] farsight %s\n", want ? "on" : "off");
+            }
+            g_demo_next_tick = now;
+            return;
+        }
+        if (demo_match_cmd(p, "NOCLIP", &arg)) {
+            /* NOCLIP [on|off] -- fly mode on, and the player ignores walls/objects. Turning it off
+               puts collisions back and drops fly only if NOCLIP was what turned it on. */
+            static int fly_was_off_before_noclip;
+            if ((want = demo_parse_onoff(arg, g_debug_noclip)) < 0) {
+                demo_printf("[demo] usage: NOCLIP [on|off]\n");
+            } else {
+                if (want && !g_debug_noclip) fly_was_off_before_noclip = !g_debug_fly;
+                g_debug_noclip = want;
+                if (want) g_debug_fly = 1;
+                else if (fly_was_off_before_noclip) g_debug_fly = 0;
+                refresh_player_equipment_effects();
+                demo_printf("[demo] noclip %s (fly %s)\n", want ? "on" : "off", g_debug_fly ? "on" : "off");
+            }
+            g_demo_next_tick = now;
+            return;
+        }
+    }
+
     if (strcasecmp(p, "HELP") == 0) {
         /* Mainly for the debug console; harmless in a demofile. */
-        demo_printf("keys: <KEY> | SDLHOLD <KEY> <ticks> | HOLD <KEY> <ticks>\n"
+        demo_printf(
+                    "debug: DUMPOBJSLOT <n> | SCANOBJTYPE <hex> | FINDOBJ <n>\n"
+                    "  DUMPTILEOBJS | DUMPPLAYERINV | PICKBUFDRIFT\n"
+                    "  SCREENSHOT <path>\n"
+                    "keys: <KEY> | SDLHOLD <KEY> <ticks> | HOLD <KEY> <ticks>\n"
                     "  RAWKEY <KEY> | SDLKEYDOWN/SDLKEYUP <KEY> | TYPE <text>\n"
                     "  WAIT <ticks> | DELAY <ms>\n"
                     "mouse: CLICK <x> <y> | SDLCLICK/SDLRCLICK <x> <y>\n"
                     "  SDLDOWN/SDLUP/SDLRDOWN/SDLRUP/SDLMOVE <x> <y>\n"
                     "world: TELEPORT <x> <y> [level] | GOTOLEVEL <level>\n"
                     "  OPENMAP | REVEAL | REVEALALL\n"
+                    "  FLY | FARSIGHT | NOCLIP  (each takes optional on/off)\n"
                     "  SETPLAYERPOS <x> <y> <z> <yaw> <pitch>\n"
                     "  CALLMANTRA | CASTALLSPELLS | TRIGGERSAVE\n"
-                    "debug: DUMPOBJSLOT <n> | SCANOBJTYPE <hex> | FINDOBJ <n>\n"
-                    "  DUMPTILEOBJS | DUMPPLAYERINV | PICKBUFDRIFT\n"
-                    "  SCREENSHOT <path>\n"
-                    "console: CLEAR | HELP | PgUp/PgDn scroll | Up/Down history\n"
+                    "console: CLEAR | HELP | PgUp/PgDn/Shift+Up/Down scroll | Up/Down history\n"
                     "  ESC back to panel | ` close\n");
         g_demo_next_tick = now;
         return;

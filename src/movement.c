@@ -1185,6 +1185,11 @@ void sweep_apply_collision()
      reads it from -- undefined behavior, latent since this line predates any work this session. */
   uVar1 = collision_flags_to_locomotion_code(local_14[0]);
   *(undefined1 *)(DAT_00204874 + 0x28) = uVar1;
+  /* Debug noclip: the player ignores wall/object/step blocking. The map border (0x8000) still
+     stops the move. */
+  if (g_debug_noclip && DAT_00204874 == (char *)&DAT_00204880 && (local_14[0] & 0x8000) == 0) {
+    return;
+  }
   if ((local_14[0] & 0xc000) == 0) {
     local_14[0] = local_14[0] & ~*(ushort *)DAT_002048bc;
     if (local_14[0] == 0) {

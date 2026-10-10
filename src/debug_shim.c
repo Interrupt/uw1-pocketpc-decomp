@@ -197,6 +197,7 @@ void populate_debug_panel(void)
     return;
   }
   dbgui_begin("Debug Panel");
+  dbgui_field_button("console", dbgui_console_open);
   dbgui_field_toggle("hide_walls", &g_uw_hide_walls);
   if (g_uw_3d_objects_enabled < 0) g_uw_3d_objects_enabled = (!g_opts.disable_3d_objects);
   /* Field names kept short (DBGUI_PANEL_W, debug_ui.c, is a fixed 140
@@ -207,7 +208,6 @@ void populate_debug_panel(void)
   dbgui_field_toggle("npc_tick", &g_npc_tick_enabled);
   dbgui_field_toggle("pick_diag", &g_uw_debug_pick_diag);
   dbgui_field_toggle("pick_view", &g_opts.debug_pick_view);
-  dbgui_field_button("console", dbgui_console_open);
   dbgui_end();
 }
 
