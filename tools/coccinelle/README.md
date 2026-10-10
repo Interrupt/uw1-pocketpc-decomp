@@ -1334,3 +1334,37 @@ counts are compared. Assertions separately check target preservation, frame
 advancement, near/far branches and an actual conversation callback. Use
 `--reference PATH` with the original `combat.c` and `--asan` for AddressSanitizer.
 The audited worklist now contains 91 byte views (six fewer).
+
+`generate_drop_height_rules.py` / `drop-height-fields.json` convert
+`check_object_drop_height` with the exact-source applier. Its sole caller
+constructs a projectile in arena 1, so the input alias uses that layout and
+the reference uses a common header. The test checks that caller provenance.
+Named tile x/y and header x/y writes replace paired byte reconstruction and
+the packed tile-word store. Full word/byte captures, callback order and the
+order of scratch-buffer reads remain intact, including the X write before
+the Y read. Three remaining packed-word reads are intentional captures.
+The heading shift converts direction units. Raw collision-buffer offsets
+remain explicit because that contiguous scratch buffer has no defined UW1
+object struct layout.
+
+The role audit now recognizes incoming parameters cast into typed object
+aliases, using the same evidence as a cast followed by member access. It does
+not infer NPC extensions or approve locals with unproven buffer origins.
+Existing reassignment checks still remove parameters reused for unrelated
+buffers and their aliases; the AST regression checks both cases. This also
+restores alias evidence in earlier loot/drop/debris conversions. Regenerated
+scoped rules expose four previously unrecorded raw accesses in
+`check_object_fits_in_slot`, which remain on the worklist for conversion.
+
+The drop-height test requires exact generation/conversion, idempotence and
+rejection of callbacks, volatile/escaping captures, changed masks, intervening
+stores, excluded scopes, quoted bodies and ambiguous definitions. Its
+4,194,304 original/current executions cover every type, tile and fine-position
+word, full signed/high-bit X/Y projection results, reference aliasing,
+collision flags, candidate sorting and both placement results. Callbacks
+mutate objects and rebind the scratch pointer during projection, envelope,
+height-field and sorting calls, including scratch storage aliasing the header
+or extension. Guarded records, local/external scratch bytes, callback arguments/
+events/counts and return values are compared. Use `--reference PATH` with the
+original `object_actions.c` and `--asan` for AddressSanitizer. The audit now
+contains 85 byte views (six fewer) and 11 raw object accesses (four newly found).

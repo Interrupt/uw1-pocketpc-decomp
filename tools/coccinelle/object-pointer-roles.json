@@ -1682,16 +1682,28 @@
           "function": "drop_monster_loot",
           "roles": [
             {
+              "name": "monster",
+              "type": "uw_mobile_object_t *",
+              "parameter": false,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            },
+            {
               "name": "pDropObj",
               "type": "uw_object_hdr_t *",
               "parameter": false,
               "evidence": "typed UW1 object pointer declaration",
               "current_mobile_alias": false
+            },
+            {
+              "name": "monster_ptr",
+              "type": "void *",
+              "parameter": true,
+              "evidence": "incoming UW1 object pointer cast",
+              "current_mobile_alias": false
             }
           ],
-          "requires_review": [
-            "monster"
-          ]
+          "requires_review": []
         },
         {
           "function": "reset_npc_path_cache",
@@ -2512,16 +2524,28 @@
           "function": "drop_held_object_near_player",
           "roles": [
             {
+              "name": "held_object",
+              "type": "uw_object_hdr_t *",
+              "parameter": false,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            },
+            {
               "name": "puVar5",
               "type": "uw_projectile_object_t *",
               "parameter": false,
               "evidence": "typed UW1 object pointer declaration",
               "current_mobile_alias": false
+            },
+            {
+              "name": "held_object_ptr",
+              "type": "void *",
+              "parameter": true,
+              "evidence": "incoming UW1 object pointer cast",
+              "current_mobile_alias": false
             }
           ],
-          "requires_review": [
-            "held_object"
-          ]
+          "requires_review": []
         },
         {
           "function": "use_light_source",
@@ -2619,6 +2643,13 @@
           "function": "place_object_in_equipment_slot",
           "roles": [
             {
+              "name": "equip_object",
+              "type": "ushort *",
+              "parameter": true,
+              "evidence": "incoming UW1 object pointer cast",
+              "current_mobile_alias": false
+            },
+            {
               "name": "puVar5",
               "type": "ushort *",
               "parameter": false,
@@ -2629,13 +2660,6 @@
               "name": "puVar6",
               "type": "ushort *",
               "parameter": false,
-              "evidence": "object accessor / proven object alias",
-              "current_mobile_alias": false
-            },
-            {
-              "name": "equip_object",
-              "type": "ushort *",
-              "parameter": true,
               "evidence": "object accessor / proven object alias",
               "current_mobile_alias": false
             }
@@ -2690,6 +2714,13 @@
               "type": "uw_object_hdr_t *",
               "parameter": false,
               "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "stack_object",
+              "type": "ushort *",
+              "parameter": true,
+              "evidence": "incoming UW1 object pointer cast",
               "current_mobile_alias": false
             }
           ],
@@ -2760,6 +2791,13 @@
           "function": "place_object_in_backpack_slot",
           "roles": [
             {
+              "name": "pack_object",
+              "type": "ushort *",
+              "parameter": true,
+              "evidence": "incoming UW1 object pointer cast",
+              "current_mobile_alias": false
+            },
+            {
               "name": "iVar4",
               "type": "char *",
               "parameter": false,
@@ -2804,6 +2842,13 @@
               "type": "byte *",
               "parameter": false,
               "evidence": "UW1 object struct member access",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "object",
+              "type": "ushort *",
+              "parameter": true,
+              "evidence": "incoming UW1 object pointer cast",
               "current_mobile_alias": false
             }
           ],
@@ -3002,6 +3047,19 @@
           "requires_review": []
         },
         {
+          "function": "check_object_carry_weight",
+          "roles": [
+            {
+              "name": "object",
+              "type": "ushort *",
+              "parameter": true,
+              "evidence": "incoming UW1 object pointer cast",
+              "current_mobile_alias": false
+            }
+          ],
+          "requires_review": []
+        },
+        {
           "function": "dispatch_object_action_dup",
           "roles": [
             {
@@ -3018,17 +3076,31 @@
           "function": "check_object_drop_height",
           "roles": [
             {
+              "name": "projectile",
+              "type": "uw_projectile_object_t *",
+              "parameter": false,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "reference_header",
+              "type": "uw_object_hdr_t *",
+              "parameter": false,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            },
+            {
               "name": "object",
               "type": "ushort *",
               "parameter": true,
-              "evidence": "UW1 object struct member access",
+              "evidence": "incoming UW1 object pointer cast",
               "current_mobile_alias": false
             },
             {
               "name": "reference",
               "type": "ushort *",
               "parameter": true,
-              "evidence": "UW1 object struct member access",
+              "evidence": "incoming UW1 object pointer cast",
               "current_mobile_alias": false
             }
           ],
@@ -3207,11 +3279,23 @@
               "parameter": false,
               "evidence": "typed UW1 object pointer declaration",
               "current_mobile_alias": false
+            },
+            {
+              "name": "template",
+              "type": "uw_object_hdr_t *",
+              "parameter": false,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            },
+            {
+              "name": "template_ptr",
+              "type": "void *",
+              "parameter": true,
+              "evidence": "incoming UW1 object pointer cast",
+              "current_mobile_alias": false
             }
           ],
-          "requires_review": [
-            "template"
-          ]
+          "requires_review": []
         },
         {
           "function": "init_monster_spawn_defaults",

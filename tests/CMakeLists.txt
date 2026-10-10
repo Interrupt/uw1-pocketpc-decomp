@@ -1259,6 +1259,9 @@ if(UW_SPATCH_EXECUTABLE)
   add_test(NAME disengage_fields
     COMMAND "${Python3_EXECUTABLE}" -B
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_disengage_fields.py")
+  add_test(NAME drop_height_fields
+    COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_drop_height_fields.py")
   find_program(UW_CLANG_EXECUTABLE clang)
   if(UW_CLANG_EXECUTABLE)
     add_test(NAME current_object_aliases

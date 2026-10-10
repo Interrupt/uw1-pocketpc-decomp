@@ -114,6 +114,22 @@ def inspect(entry):
             if '*' in typ and '**' not in typ and any(t in typ for t in (
                     'uw_object_hdr_t', 'uw_mobile_object_t', 'uw_projectile_object_t')):
                 seeds[ident] = 'typed UW1 object pointer declaration'
+        # A typed alias initializer carries the same incoming-pointer evidence
+        # as a cast directly followed by a struct member access. Seed only
+        # parameters here; locals with unproven buffer origins still need review.
+        # Later assignment checks also reject a parameter reused for a buffer.
+        for n in nodes:
+            if n.get('kind') != 'CStyleCastExpr' or not n.get('inner'):
+                continue
+            typ = n.get('type', {}).get('qualType', '')
+            if '*' in typ and '**' not in typ and any(t in typ for t in (
+                    'uw_object_hdr_t', 'uw_mobile_object_t', 'uw_projectile_object_t')):
+                ref = decl(n['inner'][-1])
+                if (ref and ref['id'] in declarations
+                        and declarations[ref['id']]['kind'] == 'ParmVarDecl'
+                        and pointer(declarations[ref['id']])
+                        and '**' not in declarations[ref['id']]['type']['qualType']):
+                    seeds.setdefault(ref['id'], 'incoming UW1 object pointer cast')
         for n in nodes:
             if n.get('kind') == 'VarDecl' and n.get('init') and pointer(n):
                 assignments.setdefault(n['id'], []).append(n['inner'][-1])
