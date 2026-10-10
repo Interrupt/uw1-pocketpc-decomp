@@ -1596,6 +1596,13 @@
           "function": "settle_mobile_to_immobile",
           "roles": [
             {
+              "name": "header",
+              "type": "uw_object_hdr_t *",
+              "parameter": false,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            },
+            {
               "name": "object",
               "type": "ushort *",
               "parameter": true,
@@ -1604,9 +1611,9 @@
             },
             {
               "name": "puVar9",
-              "type": "ushort *",
+              "type": "uw_object_hdr_t *",
               "parameter": false,
-              "evidence": "UW1 object struct member access",
+              "evidence": "typed UW1 object pointer declaration",
               "current_mobile_alias": false
             }
           ],

@@ -1242,3 +1242,34 @@ also alias position or home-tile words. Full guarded records, tiles, globals,
 callback arguments/events/counts are compared. Use `--reference PATH` with
 the original `combat.c` and `--asan` for AddressSanitizer. The audited worklist
 now contains 110 byte views (ten fewer).
+
+`generate_settle_rules.py` / `settle-fields.json` convert
+`settle_mobile_to_immobile` using the exact-source applier. A common-header
+alias covers the input, and the allocated immobile record uses a header
+pointer; API signatures remain intact. Named z-position, link, object ID and
+quality writes replace paired byte stores. Debris keeps the captured low-byte
+position arithmetic, extinguishing changes only the ID nibble, and quality
+receives the low six bits of the shared hit-points/lifetime byte. The special
+effect ID update also uses the named ID property. Captured words/bytes,
+callbacks, return values and hazard/discard order remain intact.
+
+The input's mobile/projectile extension casts remain explicit because this
+routine handles both layouts; no NPC interpretation is applied to projectile
+coordinate words. The four complete header-word copies intentionally preserve
+the entire header. Other packed words remain captures or class gates; the
+owner-flags probability slice has no documented property name. Player-state
+offsets are outside this object-layout conversion.
+
+The rule test requires exact generation/conversion, idempotence and rejection
+of changed callbacks, volatile/escaping captures, masks, intervening stores,
+excluded scopes, quoted bodies and ambiguous definitions. Its 6,291,456
+original/current executions cover complete type/position/chain/link words,
+all lifetime/heading/source bytes, movement modes, destruction rolls,
+debris counters and center-distance boundaries, extinguishing and class gates,
+off-map tiles, allocation failures, scheduler relinking and hazard success/
+failure. Callbacks mutate source/destination records, player state and tile
+coordinates; allocation can alias the source and tile links can share its
+guard storage. Guarded records, tiles, player bytes, globals, callback
+arguments/events/counts and returned pointers are compared. Use
+`--reference PATH` with the original `ai.c` and `--asan` for AddressSanitizer.
+The audited worklist now contains 102 byte views (eight fewer).

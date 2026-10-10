@@ -1182,7 +1182,8 @@ ushort *settle_mobile_to_immobile(ushort *object)
   undefined4 uVar7;
   int iVar8;
   char *pbTile;
-  ushort *puVar9;
+  uw_object_hdr_t *puVar9;
+  uw_object_hdr_t *header = (uw_object_hdr_t *)object;
   int iVar10;
   short extraout_r1;
   short extraout_r1_00;
@@ -1192,7 +1193,7 @@ ushort *settle_mobile_to_immobile(ushort *object)
   byte local_2c;
   
   bVar3 = true;
-  bVar13 = (byte) g_object_type_props[(((uw_object_hdr_t *)object)->object_id)].owner_flags >> 1 & 0xf;
+  bVar13 = (byte) g_object_type_props[(header->object_id)].owner_flags >> 1 & 0xf;
   bVar5 = (((uw_mobile_object_t *)object)->movement_mode << 4);
   if (bVar5 == 0x10) {
     bVar13 = 8;
@@ -1218,16 +1219,15 @@ ushort *settle_mobile_to_immobile(ushort *object)
         set_pending_update_flags(0x400);
       }
       else {
-        uVar11 = ((uw_object_hdr_t *)object)->type_flags & 0xffc2 | 0x1c2;
-        ((uw_object_hdr_t *)object)->type_flags = (ushort)uVar11;
+        uVar11 = header->type_flags & 0xffc2 | 0x1c2;
+        header->object_id = uVar11 & 0x1ff;
         if (*(byte *)(DAT_00086df8 + 0x6d) < 9) {
           iVar8 = 8;
           do {
             bVar4 = ce_rand();
-            uVar1 = ((uw_object_hdr_t *)object)->position_word;
+            uVar1 = header->position_word;
             bVar5 = (byte)uVar1;
-            ((uw_object_hdr_t *)object)->position_word_low = ((bVar4 & 7) + bVar5 + 4 ^ bVar5) & 0x7f ^ bVar5;
-            ((uw_object_hdr_t *)object)->position_word_high = (byte)(uVar1 >> 8);
+            header->zpos = ((bVar4 & 7) + bVar5 + 4) & 0x7f;
             uVar6 = ce_rand();
             uVar7 = ce_rand();
             /* Was `ordint_divmod(3,uVar6); ... extraout_r1_00` / same for uVar7/extraout_r1 -- the
@@ -1262,39 +1262,36 @@ ushort *settle_mobile_to_immobile(ushort *object)
     return (ushort *)0x0;
   }
   pbTile = pbTile + 2;
-  if ((bVar3) && (puVar9 = (ushort *)alloc_object_slot(0), puVar9 != (ushort *)0x0)) {
-    ((uw_object_hdr_t *)puVar9)->type_flags = ((uw_object_hdr_t *)object)->type_flags;
-    ((uw_object_hdr_t *)puVar9)->position_word = ((uw_object_hdr_t *)object)->position_word;
-    ((uw_object_hdr_t *)puVar9)->chain_word = ((uw_object_hdr_t *)object)->chain_word;
-    ((uw_object_hdr_t *)puVar9)->link_word = ((uw_object_hdr_t *)object)->link_word;
-    ((uw_object_hdr_t *)object)->link_word_low = ((uw_object_hdr_t *)object)->owner;
-    ((uw_object_hdr_t *)object)->link_word_high = 0;
-    uVar1 = ((uw_object_hdr_t *)puVar9)->type_flags;
+  if ((bVar3) && (puVar9 = alloc_object_slot(0), puVar9 != (uw_object_hdr_t *)0x0)) {
+    puVar9->type_flags = header->type_flags;
+    puVar9->position_word = header->position_word;
+    puVar9->chain_word = header->chain_word;
+    puVar9->link_word = header->link_word;
+    header->link = 0;
+    uVar1 = puVar9->type_flags;
     if ((uVar1 & 0x1c0) == 0x1c0) {
       scheduler_relink_entry(puVar9,object);
     }
     else if ((((uVar1 & 0x1f0) == 0x90) && (3 < (uVar1 & 0xf))) && ((uVar1 & 0xf) < 7)) {
       bVar5 = (byte)uVar1;
-      ((uw_object_hdr_t *)puVar9)->type_flags_low = (bVar5 - 4 ^ bVar5) & 0xf ^ bVar5;
-      ((uw_object_hdr_t *)puVar9)->type_flags_high = (byte)(uVar1 >> 8);
+      puVar9->object_id = (uVar1 & 0x1f0) | ((bVar5 - 4) & 0xf);
       set_ambient_bias_without_light(0);
     }
-    uVar1 = ((uw_object_hdr_t *)puVar9)->chain_word;
-    ((uw_object_hdr_t *)puVar9)->chain_word_low = ((uw_mobile_object_t *)object)->hit_points & 0x3f | (byte)(uVar1 & 0xffc0);
-    ((uw_object_hdr_t *)puVar9)->chain_word_high = (byte)((uVar1 & 0xffc0) >> 8);
-    uVar12 = (uint)(ushort)((uw_object_hdr_t *)puVar9)->type_flags;
+    uVar1 = puVar9->chain_word;
+    puVar9->quality = ((uw_mobile_object_t *)object)->hit_points & 0x3f;
+    uVar12 = (uint)(ushort)puVar9->type_flags;
     uVar11 = uVar12 & 0x1c0;
     if (((uVar11 != 0x140) && (uVar11 != 0x180)) &&
        ((g_object_type_props[(uVar12 & 0x1ff)].class_flags & 3) != 2)) {
-      ((uw_object_hdr_t *)puVar9)->heading = ((uw_projectile_object_t *)object)->original_heading & 7;
-      uVar11 = ((uw_object_hdr_t *)puVar9)->position_word;
+      puVar9->heading = ((uw_projectile_object_t *)object)->original_heading & 7;
+      uVar11 = puVar9->position_word;
     }
   }
   else {
-    puVar9 = (ushort *)0x0;
+    puVar9 = (uw_object_hdr_t *)0x0;
   }
   if (bVar13 == 9) {
-    if ((((uw_object_hdr_t *)object)->object_id & 0x1c0) == 0x40) {
+    if ((header->object_id & 0x1c0) == 0x40) {
       local_2c = 0;
     }
     else {
@@ -1302,14 +1299,14 @@ ushort *settle_mobile_to_immobile(ushort *object)
     }
   }
   discard_misplaced_object(pbTile,object,1);
-  if (puVar9 != (ushort *)0x0) {
+  if (puVar9 != (uw_object_hdr_t *)0x0) {
     object_list_insert_head(pbTile,puVar9);
   }
   if ((bVar13 == 9) &&
-     (iVar10 = activate_area_hazard_object(puVar9,(int)DAT_0010144c,(int)DAT_00101454,local_2c), iVar10 == 0)) {
-    puVar9 = (ushort *)discard_misplaced_object(pbTile,puVar9,0);
+     (iVar10 = activate_area_hazard_object((ushort *)puVar9,(int)DAT_0010144c,(int)DAT_00101454,local_2c), iVar10 == 0)) {
+    puVar9 = (uw_object_hdr_t *)discard_misplaced_object(pbTile,(ushort *)puVar9,0);
   }
-  return puVar9;
+  return (ushort *)puVar9;
 }
 
 
