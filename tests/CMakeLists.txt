@@ -703,6 +703,7 @@ add_game_test_library(uw_test_npc_ai
   src/ai.c:npc_set_walk_target
   src/combat.c:npc_combat_engage_close_tick
   src/combat.c:npc_combat_engage_wide_tick
+  src/combat.c:try_npc_special_ability_alt
   src/combat.c:npc_combat_set_stance
   src/combat.c:load_monster_combat_stats)
 target_sources(uw_test_npc_ai PRIVATE support/npc_ai_fixture.c)
