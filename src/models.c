@@ -2048,6 +2048,49 @@ void scale_model_part_offsets(void *model_block_ptr, int scale_x, int scale_y, i
    origin. See emit_face_order there. */
 static void load_model_slot(int slot, char *e_path, byte *out_buffer, int flip_winding)
 {
+  /* UW_DEBUG_FORCE_MODEL=<name>: load DATA3D/<name>.E into EVERY model slot,
+     so one model can be looked at wherever objects appear instead of hunting
+     the dungeon for the one object that uses it. Written for the Lotus Turbo
+     Esprit easter egg (UW_DEBUG_FORCE_MODEL=40LOTUS), which is catalog 4 --
+     a slot the DOS executable leaves empty, so it otherwise never renders at
+     all from a DOS install.
+
+     Needs a DATA3D directory, so it is a Pocket PC asset (or mixed) tool: it
+     deliberately bypasses the UW.EXE decoder below, because the point is to
+     see the .E art.
+
+     Winding defaults to unflipped, which is what 26 of the 29 slots use;
+     UW_DEBUG_FORCE_MODEL_FLIP=1 reverses it, which is worth a try if the
+     forced model looks inside out.
+
+     The NODES reset below is needed and is debug-path only. DAT_000db4d8
+     counts nodes across EVERY model ever parsed and is never reset -- not a
+     dropped reset, the original does the same (its counter is the same
+     0x000db4d8, read twice and written nowhere in UU.exe's own
+     parse_e_model_file), and DAT_000c9540 holds 22 bytes per node in 512, so
+     23 nodes is the budget for the whole asset set. The real set peaks at 7,
+     so it never bites; forcing one NODES-bearing model into all 29 slots
+     blows it immediately, which ASan catches as a global-buffer-overflow at
+     the NODES write. Resetting per forced load costs nothing real, since that
+     array is per-parse scratch that only ever holds the last model's nodes
+     either way.
+
+     Fair warning even so: 40LOTUS.E has faces of up to 50 vertices where a
+     part record holds 23 indices, so forcing it everywhere leans hard on the
+     separate pre-existing overflow documented at DOS_MAX_FACE_VERTS in
+     src/models_dos.c. Expect some mangled faces; that is the data's own
+     problem, not the forcing. */
+  const char *forced = getenv("UW_DEBUG_FORCE_MODEL");
+  if (forced && forced[0]) {
+    char forced_path[128];
+    snprintf(forced_path, sizeof forced_path, "\\DATA3D\\%s.E", forced);
+    DEBUG(INFO, "[models] slot %d forced to %s (instead of %s)\n",
+          slot, forced_path, e_path);
+    DAT_000db4d8 = 0;
+    parse_e_model_file(forced_path, out_buffer, getenv("UW_DEBUG_FORCE_MODEL_FLIP") ? 1 : 0);
+    return;
+  }
+
   if (uw_dos_models_available()) {
     /* Largest real model is the shrine, 80 vertices and 43 faces; 64KB is
        ample for any of them as text. Static rather than stack: this runs once
