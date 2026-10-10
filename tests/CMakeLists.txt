@@ -515,6 +515,116 @@ add_fixture_game_unit_test(babl_vm
   src/babl.c:select_babl_menu_response
   src/ordinal_stubs.c:ce_strcmp src/ordinal_stubs.c:ce_tolower)
 
+# Run complete CNV.ARK conversations: the real script loader, interpreter,
+# menus, NPC/quest variable bridge and barter rules, driven through
+# start_npc_conversation. Presentation, input and the unrelated object-world
+# builtins are controlled at fixture boundaries.
+add_fixture_game_unit_test(babl_conversation
+  src/resources.c:get_message_string src/resources.c:decode_strings_pak_entry
+  src/resources.c:walk_strings_pak_huffman_tree src/resources.c:read_strings_pak_bit
+  src/interact.c:@s__DATA_cnv_ark_00084fc8
+  src/babl.c:@DAT_00085230_backing src/babl.c:%DAT_00085230
+  src/babl.c:@DAT_00085234_backing src/babl.c:%DAT_00085234
+  src/babl.c:@DAT_0008523c_backing src/babl.c:%DAT_0008523c
+  src/babl.c:@DAT_000845b8_backing src/babl.c:%DAT_000845b8 src/babl.c:%DAT_000845ba
+  src/babl.c:%PTR_DAT_000845c8
+  src/babl.c:@DAT_000845d8_backing src/babl.c:%DAT_000845d8 src/babl.c:%DAT_000845da
+  src/babl.c:%DAT_000845e8
+  src/babl.c:@DAT_000845a8
+  src/babl.c:@s__SAVE0_bglobals_dat_00084538
+  src/babl.c:@s__DATA_babglobs_dat_0008454c
+  src/babl.c:@s_val_00084560
+  src/babl.c:@s_length_00084564
+  src/babl.c:@s_find_0008456c
+  src/babl.c:@s_copy_00084574
+  src/babl.c:@s_append_0008457c
+  src/babl.c:@s_contains_00084584
+  src/babl.c:@s_plural_00084590
+  src/babl.c:@s_random_00084598
+  src/babl.c:@s_compare_000845a0
+  src/babl.c:@s_respond_000845ac
+  src/babl.c:@s_npc_attitude_000845f8
+  src/babl.c:@s_genhead_00084fd8
+  src/babl.c:@s_charhead_00084fe0
+  src/babl.c:@s_heads_00084fec
+  src/babl.c:@s_converse_00084ff4
+  src/babl.c:@s_take_id_from_npc_0008519c
+  src/babl.c:@s_take_from_npc_000851b0
+  src/babl.c:@s_find_inv_000851c0
+  src/babl.c:@s_give_to_npc_000851cc
+  src/babl.c:@s_show_inv_000851d8
+  src/babl.c:@s_print_000851e4
+  src/babl.c:@s_babl_ask_000851ec
+  src/babl.c:@s_sex_000851f8
+  src/babl.c:@s_set_quest_000851fc
+  src/babl.c:@s_get_quest_00085208
+  src/babl.c:@s_babl_fmenu_00085214
+  src/babl.c:@s_babl_menu_00085220
+  src/babl.c:@s_give_ptr_npc_00085000
+  src/babl.c:@s_find_barter_total_00085010
+  src/babl.c:@s_find_barter_00085024
+  src/babl.c:@s_x_obj_pos_00085030
+  src/babl.c:@s_x_obj_stuff_0008503c
+  src/babl.c:@s_x_traps_00085048
+  src/babl.c:@s_x_skills_00085050
+  src/babl.c:@s_remove_talker_0008505c
+  src/babl.c:@s_place_object_0008506c
+  src/babl.c:@s_add_to_npc_inv_0008507c
+  src/babl.c:@s_take_from_npc_inv_0008508c
+  src/babl.c:@s_set_race_attitude_000850a0
+  src/babl.c:@s_set_attitude_000850b4
+  src/babl.c:@s_gronk_door_000850c4
+  src/babl.c:@s_count_inv_000850d0
+  src/babl.c:@s_set_inv_quality_000850dc
+  src/babl.c:@s_check_inv_quality_000850ec
+  src/babl.c:@s_do_inv_delete_00085100
+  src/babl.c:@s_do_inv_create_00085110
+  src/babl.c:@s_set_likes_dislikes_00085120
+  src/babl.c:@s_pause_00085134
+  src/babl.c:@s_setup_to_barter_0008513c
+  src/babl.c:@s_end_barter_0008514c
+  src/babl.c:@s_do_judgement_00085158
+  src/babl.c:@s_do_decline_00085168
+  src/babl.c:@s_do_demand_00085174
+  src/babl.c:@s_do_offer_00085180
+  src/babl.c:@s_identify_inv_0008518c
+  src/babl.c:@s_npc_talkedto_00085340
+  src/babl.c:@s_npc_gtarg_00085350
+  src/babl.c:@s_npc_goal_0008535c
+  src/babl.c:@s_npc_power_00085368
+  src/babl.c:@s_npc_arms_00085374
+  src/babl.c:@s_npc_hp_00085380
+  src/babl.c:@s_npc_health_00085388
+  src/babl.c:@s_npc_hunger_00085394
+  src/babl.c:@s_npc_whoami_000853a0
+  src/babl.c:@s_play_name_0008524c
+  src/babl.c:@s_play_drawn_00085258
+  src/babl.c:@s_play_poison_00085264
+  src/babl.c:@s_play_sex_00085270
+  src/babl.c:@s_new_player_exp_0008527c
+  src/babl.c:@s_game_days_0008528c
+  src/babl.c:@s_game_mins_00085298
+  src/babl.c:@s_game_time_000852a4
+  src/babl.c:@s_dungeon_level_000852b0
+  src/babl.c:@s_play_level_000852c0
+  src/babl.c:@s_play_mana_000852cc
+  src/babl.c:@s_play_power_000852d8
+  src/babl.c:@s_play_arms_000852e4
+  src/babl.c:@s_play_hp_000852f0
+  src/babl.c:@s_play_health_000852f8
+  src/babl.c:@s_play_hunger_00085304
+  src/babl.c:@s_npc_name_00085310
+  src/babl.c:@s_npc_yhome_0008531c
+  src/babl.c:@s_npc_xhome_00085328
+  src/babl.c:@s_npc_level_00085334
+  src/babl.c:babl_expand_string_refs src/babl.c:parse_babl_string_ref_expr src/babl.c:babl_resize
+  src/resources.c:register_interned_string src/resources.c:overwrite_interned_string
+  src/resources.c:reset_string_resource_page src/ordinal_stubs.c:ce_strchr src/ordinal_stubs.c:ce_strncpy src/text.c:@s_0123456789ABCDEF_00084a28 src/text.c:itoa_radix
+  src/babl.c:start_npc_conversation src/babl.c:exit_talk_mode src/babl.c:load_npc_conversation_record src/babl.c:build_babl_symbol_table src/babl.c:babl_vm_load_script src/babl.c:load_npc_conversation_variables src/babl.c:save_npc_conversation_variables src/babl.c:init_conv_var_terminator_record src/babl.c:seed_conversation_globals_for_new_game src/babl.c:run_babl_bytecode_interpreter src/babl.c:babl_register_builtin src/babl.c:babl_set_variable src/babl.c:babl_get_variable src/babl.c:init_babl_variable_defaults src/babl.c:babl_var_word_addr src/babl.c:babl_read_var_word src/babl.c:babl_write_var_word src/babl.c:babl_read_frame_word src/babl.c:babl_builtin_default_handler src/babl.c:babl_op_add src/babl.c:babl_op_negate src/babl.c:babl_op_mul src/babl.c:babl_op_sub src/babl.c:babl_op_div src/babl.c:babl_op_mod src/babl.c:babl_op_or src/babl.c:babl_op_and src/babl.c:babl_op_gt src/babl.c:babl_op_ge src/babl.c:babl_op_lt src/babl.c:babl_op_le src/babl.c:babl_op_eq src/babl.c:babl_op_ne src/babl.c:babl_op_call src/babl.c:babl_op_return src/babl.c:babl_op_push_var_raw src/babl.c:babl_op_combine_index src/babl.c:babl_op_set_var src/babl.c:babl_op_call_builtin src/babl.c:babl_op_string_eq src/babl.c:babl_op_say src/babl.c:babl_op_respond src/babl.c:babl_builtin_compare src/babl.c:babl_builtin_random src/babl.c:babl_builtin_plural src/babl.c:babl_builtin_contains src/babl.c:babl_builtin_append src/babl.c:babl_builtin_copy src/babl.c:babl_builtin_find src/babl.c:babl_builtin_length src/babl.c:babl_builtin_val src/babl.c:babl_builtin_say src/babl.c:babl_builtin_respond src/babl.c:echo_selected_conversation_choice src/babl.c:babl_builtin_print src/babl.c:babl_builtin_pause src/babl.c:babl_builtin_get_quest src/babl.c:babl_builtin_set_quest src/babl.c:babl_builtin_sex src/babl.c:babl_builtin_do_offer src/babl.c:babl_builtin_do_demand src/babl.c:babl_builtin_do_decline src/babl.c:babl_builtin_do_judgement src/babl.c:babl_builtin_set_likes_dislikes src/babl.c:babl_builtin_setup_to_barter src/babl.c:babl_builtin_find_barter src/babl.c:babl_builtin_find_barter_total src/babl.c:babl_builtin_count_inv src/babl.c:babl_builtin_check_inv_quality src/babl.c:babl_builtin_set_inv_quality src/babl.c:babl_menu src/babl.c:babl_fmenu src/babl.c:run_babl_menu_wait_loop src/babl.c:select_babl_menu_response src/babl.c:sync_conv_vars_from_npc src/babl.c:sync_conv_vars_to_npc src/babl.c:check_npc_item_preference src/babl.c:barter_offer_is_empty src/babl.c:sum_barter_offer_value src/babl.c:compute_barter_item_value src/babl.c:finalize_npc_barter_items src/babl.c:finalize_player_barter_items src/babl.c:init_barter_ui src/babl.c:end_barter_ui src/babl.c:collect_included_player_barter_items src/babl.c:give_barter_item_by_item_id src/babl.c:add_item_to_npc_inventory src/babl.c:remove_item_from_npc_inventory_by_id
+  src/ordinal_stubs.c:orduint_divmod src/ordinal_stubs.c:ce_strcmp src/ordinal_stubs.c:ce_tolower
+  src/ordinal_stubs.c:ce_atoi src/ordinal_stubs.c:ce_memmove src/ordinal_stubs.c:ce_strstr
+  src/ordinal_stubs.c:_strlwr src/ordinal_stubs.c:_isctype)
+
 add_game_test_library(uw_test_cursor
   src/hud.c:uw_always_show_cursor src/hud.c:uw_composite_desktop_cursor
   src/hud.c:set_cursor_sprite_id

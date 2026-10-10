@@ -483,9 +483,12 @@ long GetStockObject(long object_id)
     return 0;
 }
 
+/* atoi. This was a stub returning 0, so every numeric "@GS8"-style string reference in a
+   conversation read variable 0 (the player's name showed as blank), and babl's `val` builtin and
+   the numeric text prompts always saw 0. */
 int ce_atoi(const char *text)
 {
-    return 0;
+    return text ? atoi(text) : 0;
 }
 
 /* cos(x): x is a double bit-pattern arriving in the return/first-arg register (chained from
