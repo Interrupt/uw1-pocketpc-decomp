@@ -3,6 +3,7 @@
    textured model geometry, and door animation-frame emission. */
 #include "headers/models.h"
 #include "headers/models_dos.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 #include "headers/debug_ui.h"
 #include <stdio.h>
@@ -33,11 +34,11 @@ static undefined DAT_0018959f_backing[256];
    catalogs resets the rotation adjustment so it cannot carry between models. */
 static double g_tune_rotation_offset = 0.0;
 static int g_tune_last_catalog = -1;
-/* Debug-panel toggle (dbgui_field_toggle) for pick_object_under_cursor's own UW_PICK_DIAG trace --
+/* Debug-panel toggle (dbgui_field_toggle) for pick_object_under_cursor's own --pick-diag trace --
    lets the pick stencil/object-resolution trace be flipped on live from the object tuner panel
    instead of needing a relaunch with the env var set. */
 int g_uw_debug_pick_diag = 0;
-/* Debug-panel toggle for tick_anim_record's own UW_DISABLE_3D_OBJECTS
+/* Debug-panel toggle for tick_anim_record's own --disable-3d-objects
    gate -- see that function's own comment. -1 = env var not yet
    checked this process; resolved to a real 0/1 on first read (by
    tick_anim_record or by the general debug panel, whichever runs
@@ -456,7 +457,7 @@ static undefined1 DAT_000d977b_backing[256];
 #define DAT_000d977b DAT_000d977b_backing[0]
 static undefined1 DAT_000d977c_backing[256];
 #define DAT_000d977c DAT_000d977c_backing[0]
-/* Sizing pass: live instrumentation (UW_DEBUG_MODEL_PARSE_HWM) across the full 19-script regression
+/* Sizing pass: live instrumentation across the full 19-script regression
    suite (29 real .E model files loaded) showed a real high-water mark of 8 chars for the unbounded
    %[a-z] token this feeds. Sized to 64 bytes for headroom above that. */
 static undefined1 DAT_000d98c8_backing[64];
@@ -680,7 +681,7 @@ void *tick_anim_record(short catalog)
      now-removed g_model_map hack (which defaulted off). g_uw_3d_objects_enabled is a real global
      (not a function-local static) so the general debug panel (main_loop_hud_flush, hud.c) can
      flip it live instead of only at launch. */
-  if (g_uw_3d_objects_enabled < 0) g_uw_3d_objects_enabled = (getenv("UW_DISABLE_3D_OBJECTS") == NULL);
+  if (g_uw_3d_objects_enabled < 0) g_uw_3d_objects_enabled = (!g_opts.disable_3d_objects);
   if (g_uw_3d_objects_enabled && catalog > 0 && catalog < 30 && g_anim_model_slot[catalog] != 0) {
     void *dest = g_anim_model_scratch[catalog];
     memcpy(dest, g_anim_model_slot[catalog], 16384);
@@ -791,9 +792,6 @@ void emit_catalog_object(byte catalog, void *obj_ptr, char heading, short frame_
   catalog_u = (uint)catalog;
   iVar1 = catalog_u * 4;
   catalog_flags = (&DAT_00086c08)[iVar1];
-  if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[door] emit_catalog_object: catalog_idx=%d heading(heading)=%d frame_or_texid(frame_or_id)=%d DAT_00086c08[idx]=0x%02x\n",
-            (int)catalog, (int)heading, (int)frame_or_texid, (unsigned)catalog_flags);
   *DAT_00110fc0 = 2;
   local_7a = 0xffff;
   DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -819,10 +817,6 @@ void emit_catalog_object(byte catalog, void *obj_ptr, char heading, short frame_
           *DAT_00110fc0 =
                (ushort)(byte)(&DAT_00086c09)[iVar29 + iVar1] +
                (ushort)DAT_0023bc88 * DAT_00086b30 * 0x100;
-          if (getenv("UW_DEBUG_DOOR"))
-            fprintf(stderr, "[billboard] static sub-frame %d: mesh_slot=0x%04x pushed_val=0x%04x (catalog_byte=0x%02x)\n",
-                    iVar29, (unsigned)tex_w, (unsigned)*DAT_00110fc0,
-                    (unsigned)(byte)(&DAT_00086c09)[iVar29 + iVar1]);
           puVar25 = (ushort *)(DAT_00110fc0 + 1);
           DAT_00110fc0 = (char *)puVar25;
           (&DAT_00189570)[iVar29] =
@@ -938,16 +932,9 @@ void emit_catalog_object(byte catalog, void *obj_ptr, char heading, short frame_
         if (cVar9 != '\0') {
           extraout_r1_00 = (short)ordint_divmod(cVar9,*(byte *)(obj + 1) >> 1 & 0xf).rem;
           iVar29 = (bVar5 & 0x1f) + (int)extraout_r1_00 + (uint)DAT_00202734 + 0x10;
-          if (getenv("UW_DEBUG_DOOR"))
-            fprintf(stderr, "[billboard] extra-frame: bVar5=0x%02x cVar9=%d extraout_r1_00=%d DAT_00202734=%d -> iVar29=%d\n",
-                    (unsigned)bVar5, (int)cVar9, (int)extraout_r1_00, (int)DAT_00202734, iVar29);
         }
       }
     }
-    if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[billboard] extra-frame check: iVar29=%d (short)(ushort)iVar29=%d -> %s\n",
-              iVar29, (int)(short)(ushort)iVar29,
-              (-1 < (short)(ushort)iVar29) ? "PUSHED" : "SKIPPED");
     if (-1 < (short)(ushort)iVar29) {
       *puVar25 = 0xc0;
       DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -979,9 +966,6 @@ void emit_catalog_object(byte catalog, void *obj_ptr, char heading, short frame_
     puVar25 = (ushort *)(DAT_00110fc0 + 1);
     DAT_00110fc0 = (char *)puVar25;
   }
-  if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[billboard] position anchor: DAT_0023b904=%d DAT_0023b91c=%d DAT_0023b920=%d\n",
-            (int)(short)DAT_0023b904, (int)(short)DAT_0023b91c, (int)(short)DAT_0023b920);
   *puVar25 = 0x18;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = DAT_0023b904;
@@ -1056,9 +1040,6 @@ void emit_catalog_object(byte catalog, void *obj_ptr, char heading, short frame_
       texptr = (byte *)(pcVar15 + 5);
     }
     else {
-      if (getenv("UW_DEBUG_DUMP_GR")) {
-        fprintf(stderr, "[gr-remap] DAT_00202520 bank=%u\n", (unsigned)(byte)pcVar15[3]);
-      }
       texptr = (byte *)decompress_gr_bitmap(pcVar15 + 4,&DAT_00202520 + (uint)(byte)pcVar15[3] * 0x10,*pcVar15);  /* compression-mode byte: same dropped-3rd-arg bug fixed at every sibling call site */
     }
   }
@@ -1087,35 +1068,6 @@ void emit_catalog_object(byte catalog, void *obj_ptr, char heading, short frame_
       if (*_x == -128.0f) *_x = _left;
       else if (*_x == 128.0f) *_x = _right;
     }
-  }
-  if (getenv("UW_DEBUG_FACE51") && catalog == 7) {
-    static int _dumped_once = 0;
-    if (!_dumped_once) {
-      _dumped_once = 1;
-      int _kk;
-      fprintf(stderr, "[face51] model dump: catalog=%d faces_remaining=%d\n", (int)catalog, faces_remaining);
-      for (_kk = 0; _kk < faces_remaining; _kk++) {
-        int _pc = *(int *)(_anim + 0xc14 + _kk * 0x60);
-        fprintf(stderr, "[face51] model k=%d point_count=%d\n", _kk, _pc);
-      }
-    }
-  }
-  if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[billboard] tick_anim_record(catalog=%d) -> _anim=%p point_count=%d face_count(faces_remaining)=%d\n",
-            (int)catalog, (void *)_anim, *(int *)_anim, faces_remaining);
-  if (getenv("UW_DEBUG_DOOR_POS")) {
-    int _pc2 = *(int *)_anim;
-    float _minx = 0.0f, _maxx = 0.0f;
-    int _pj;
-    for (_pj = 0; _pj < _pc2; _pj++) {
-      float _x = *(float *)(_anim + 8 + _pj*0xc);
-      if (_pj == 0 || _x < _minx) _minx = _x;
-      if (_pj == 0 || _x > _maxx) _maxx = _x;
-    }
-    fprintf(stderr, "[doorpos] catalog=%d anchor=(%d,%d,%d) heading=%d local_X=[%g,%g] bbox_minX=%g bbox_extX=%g\n",
-            (int)catalog, (int)(short)DAT_0023b904, (int)(short)DAT_0023b91c, (int)(short)DAT_0023b920,
-            (int)heading, (double)_minx, (double)_maxx,
-            (double)*(float *)(_anim + 0x3c1c), (double)*(float *)(_anim + 0x3c20));
   }
   _model_minz = 0.0f;
   _model_extz = 1.0f;
@@ -1566,16 +1518,11 @@ LAB_000640ec:
     }
   }
   if ((catalog_u == 0xe) || (catalog_u == 0xf)) {
-    if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[door] swing: catalog=%d DAT_0018957a=%d local_7c(before)=%d\n",
-              (int)catalog_u, (int)(short)DAT_0018957a, (int)(short)local_7c);
     uVar17 = ordfloat_int_to_float2((int)(short)DAT_0018957a);
     uVar19 = ordfloat_int_to_float2((int)(short)local_7c);
     /* ARM 0x6415c: each softfloat return is the next call's r0. */
     uVar17 = ordfloat_add(uVar17,uVar19);
     local_7c = ordfloat_uint_to_float(uVar17);
-    if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[door] swing: local_7c(after)=%d\n", (int)(short)local_7c);
   }
   uVar17 = ordfloat_int_to_float2((int)(short)local_7c);
   uVar17 = ordfloat_mul(uVar17,0x38000000);
@@ -1608,9 +1555,6 @@ LAB_000640ec:
   transform_points_by_matrix(&DAT_000a85d0,_anim);
   DAT_0023b83c = DAT_000a85d4;
   DAT_0023b838 = DAT_000a85d0;
-  if (getenv("UW_DEBUG_DOOR_POS"))
-    fprintf(stderr, "[doorpos] catalog=%d emitted records [%d,%d) vtx [%d,%d) faces_remaining_was=%d\n",
-            (int)catalog, _rec_start, (int)DAT_0023b83c, _vtx_start, (int)DAT_0023b838, faces_remaining);
   /* transform_points_by_matrix is original, unmodified code -- it has no idea g_tile_texptr_emit[]
      exists. */
   { int _ti; for (_ti = _rec_start; _ti < DAT_0023b83c; _ti++) {
@@ -1620,7 +1564,7 @@ LAB_000640ec:
   /* QA report: "backwards object model face sorting in a boulder object... a portion of the floor
      shows through the boulder, because far faces are drawn but near faces are hidden." This engine
      has no z-buffer and no backface culling (confirmed repeatedly this session)... */
-  if (getenv("UW_MODEL_NO_DEPTH_SORT") == 0 && DAT_0023b83c > _rec_start) {
+  if (!g_opts.model_no_depth_sort && DAT_0023b83c > _rec_start) {
     double _eye_x = *(float *)&DAT_000db438, _eye_y = *(float *)&DAT_000db43c, _eye_z = *(float *)&DAT_000db440;
     int _n = DAT_0023b83c - _rec_start;
     if (_n <= 64) {
@@ -1644,12 +1588,6 @@ LAB_000640ec:
         double dx = cx - _eye_x, dy = cy - _eye_y, dz = cz - _eye_z;
         _dist[_k] = dx*dx + dy*dy + dz*dz;
         _order[_k] = _k;
-        if (getenv("UW_DEBUG_FACE51") && (_k == 50 || _k == 51 || _k == 52)) {
-          fprintf(stderr, "[face51] catalog=%d k=%d iv=(%d,%d,%d,%d) p0=(%g,%g,%g) p1=(%g,%g,%g) p2=(%g,%g,%g) p3=(%g,%g,%g)\n",
-                  (int)catalog, _k, iv0, iv1, iv2, iv3,
-                  p0[0], p0[1], p0[2], p1[0], p1[1], p1[2],
-                  p2[0], p2[1], p2[2], p3[0], p3[1], p3[2]);
-        }
       }
       /* Small N -- plain insertion sort, descending distance (farthest
          first, so nearer faces paint last and correctly cover them). */
@@ -1660,15 +1598,6 @@ LAB_000640ec:
           while (_b >= 0 && _dist[_order[_b]] < _od) { _order[_b+1] = _order[_b]; _b--; }
           _order[_b+1] = _oi;
         }
-      }
-      if (getenv("UW_DEBUG_MODEL")) {
-        int _changed = 0, _kk;
-        for (_kk = 0; _kk < _n; _kk++) if (_order[_kk] != _kk) _changed = 1;
-        fprintf(stderr, "[model-depthsort] catalog=%d n=%d order_changed=%d order=[", (int)catalog, _n, _changed);
-        for (_kk = 0; _kk < _n; _kk++) fprintf(stderr, "%d ", _order[_kk]);
-        fprintf(stderr, "] dist=[");
-        for (_kk = 0; _kk < _n; _kk++) fprintf(stderr, "%.0f ", _dist[_kk]);
-        fprintf(stderr, "]\n");
       }
       /* Apply via cycle-sort in place, whole-record memcpy plus the
          parallel g_tile_texptr_emit[] side channel. */
@@ -1693,9 +1622,6 @@ LAB_000640ec:
           g_tile_texptr_emit[_rec_start+_cur] = _tmp_tex;
         }
       }
-      if (getenv("UW_DEBUG_MODEL"))
-        fprintf(stderr, "[model-depthsort] catalog=%d rec=[%d,%d) eye=(%g,%g,%g)\n",
-                (int)catalog, _rec_start, (int)DAT_0023b83c, _eye_x, _eye_y, _eye_z);
     }
   }
   }
@@ -1753,9 +1679,6 @@ void emit_anim_object_frames(uint door_type, ushort *obj)
   short sVar2;
   
   door_type = door_type & 7;
-  if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[door] emit_anim_object_frames: door_type(cond_idx)=%d rec_word0=0x%04x rec_b1=0x%02x\n",
-            door_type, (unsigned)*obj, (unsigned)*(byte *)((char *)obj + 1));
   local_38 = '\0';
   local_37 = '\x01';
   local_34 = -1;
@@ -1773,9 +1696,6 @@ void emit_anim_object_frames(uint door_type, ushort *obj)
     *DAT_00110fc0 = *(byte *)((char *)obj + 1) >> 1 & 7;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     DAT_0018957a = (undefined2)((*(byte *)((char *)obj + 1) & 0xe) >> 1);
-    if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[door] anim_frames(type6): obj0=0x%04x bVar1=0x%02x DAT_0018957a=%d\n",
-              (unsigned)*obj, (unsigned)*(byte *)((char *)obj + 1), (int)(short)DAT_0018957a);
     *DAT_00110fc0 = 0x4c;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = 0;
@@ -1804,10 +1724,6 @@ void emit_anim_object_frames(uint door_type, ushort *obj)
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = (ushort)((uint)(iVar8 * 0x10000000) >> 0x10);
     DAT_0018957a = (undefined2)((iVar8 * 0x10000 >> 0x10) << 0xc);
-    if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[door] anim_frames: door_type=%u obj0=0x%04x bVar4(obj+1)=0x%02x openbits=%d sign=%d iVar8=%d DAT_0018957a=%d quality(obj[3]&0x3f)=%d obj[3]=0x%04x\n",
-              door_type, (unsigned)*obj, (unsigned)bVar4, (bVar4 >> 1 & 7), (bVar4 >> 5 & 1), iVar8, (int)(short)DAT_0018957a,
-              (int)(obj[3] & 0x3f), (unsigned)obj[3]);
   }
   local_36 = 0x330 - sVar1;
   DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -1953,15 +1869,9 @@ LAB_00064cdc:
             uVar11 = 20000 + door_type;
             uVar9 = 0xe;
           }
-          if (getenv("UW_DEBUG_DOOR"))
-            fprintf(stderr, "[door] emit_anim_object_frames: local_34=%d local_28=%d -> emit_catalog_object(catalog=%d, heading=%d, frame_or_id=%d)\n",
-                    (int)local_34, (int)local_28, (int)uVar9, (int)((obj[1] >> 7 & 7) << 1), (int)uVar11);
           goto LAB_00064cdc;
         }
         DAT_0023b91c = local_34;
-        if (getenv("UW_DEBUG_DOOR"))
-          fprintf(stderr, "[door] emit_anim_object_frames: local_34=%d -> emit_catalog_object(catalog=0xc, heading=%d, frame_or_id=0)\n",
-                  (int)local_34, (int)((obj[1] >> 7 & 7) << 1));
         emit_catalog_object(0xc,obj,(obj[1] >> 7 & 7) << 1,0);
         DAT_0023b91c = local_32;
       }
@@ -2294,9 +2204,6 @@ void parse_e_model_file(char *path, byte *out_buffer, int flip_winding)
   /* Sizing-pass instrumentation (NEEDS_LIVE_INSTRUMENTATION): the %[a-z] conversion above has no
      width limit, so DAT_000d98c8's real need is whatever the longest actual token in the shipped .E
      model files is, not a value derivable from the format string alone. */
-  if (getenv("UW_DEBUG_MODEL_PARSE_HWM")) {
-    fprintf(stderr, "[model-parse-hwm] DAT_000d98c8 token_len=%d\n", (int)ce_strlen(&DAT_000d98c8));
-  }
   pcVar2 = pcVar15;
   if (DAT_000db45c == (undefined1 *)0x0) {
     do {
@@ -2323,8 +2230,6 @@ void parse_e_model_file(char *path, byte *out_buffer, int flip_winding)
         local_260[0] = '{';
       }
     }
-    if (getenv("UW_DEBUG_MODEL_TOKENS"))
-      fprintf(stderr, "[model-token] file=%s iVar4=%d token='%s' delim='%c'\n", path, iVar4, auStack_1c8, local_260[0]);
     if (((iVar4 == -1) && (iVar5 = ce_strncmp(auStack_1c8,&DAT_000849c8,3), iVar5 == 0)) ||
        ((iVar4 != 0 && (iVar5 = ce_strcmp(auStack_1c8,&DAT_000849c8), iVar5 == 0))))
     goto LAB_0002263c;
@@ -2431,13 +2336,6 @@ LAB_00022604:
             out_buffer[iVar19 * 0xc + 0x12] = (char)((uint)uVar7 >> 0x10);
             out_buffer[iVar19 * 0xc + 0x13] = (char)((uint)uVar7 >> 0x18);
             g_model_parse_point_count = g_model_parse_point_count + 1;
-            if (getenv("UW_DEBUG_MODEL_PARSE_HWM")) {
-              static int hwm_points = -1;
-              if (g_model_parse_point_count > hwm_points) {
-                hwm_points = g_model_parse_point_count;
-                fprintf(stderr, "[model-parse-hwm] points: %d\n", hwm_points);
-              }
-            }
             if (600 < g_model_parse_point_count) {
               NKDbgPrintfW(s_Too_many_points___d__00084968);
               goto LAB_0002263c;
@@ -2596,8 +2494,6 @@ LAB_000218b8:
                     _flip_lo++; _flip_hi--;
                   }
                 }
-                if (getenv("UW_DEBUG_EPARSE"))
-                  fprintf(stderr, "[eparse] %s part=%d vertcount=%d\n", path, g_model_parse_part_count, iVar5);
                 iVar5 = *(int *)(out_buffer + g_model_parse_part_count * 0x60 + 0xc18);
                 iVar10 = *(int *)(out_buffer + g_model_parse_part_count * 0x60 + 0xc20);
                 vec3_sub(out_buffer + iVar5 * 0xc + 8,
@@ -2637,13 +2533,6 @@ LAB_000218b8:
                   }
                 }
                 g_model_parse_part_count = g_model_parse_part_count + 1;
-                if (getenv("UW_DEBUG_MODEL_PARSE_HWM")) {
-                  static int hwm_parts = -1;
-                  if (g_model_parse_part_count > hwm_parts) {
-                    hwm_parts = g_model_parse_part_count;
-                    fprintf(stderr, "[model-parse-hwm] parts: %d\n", hwm_parts);
-                  }
-                }
                 if (0x15e < g_model_parse_part_count) {
                   NKDbgPrintfW(s_Too_many_polys_000848f8);
                   goto LAB_0002263c;
@@ -2680,13 +2569,6 @@ LAB_00021838:
                   goto LAB_0002263c;
                 }
                 g_model_parse_part_count = g_model_parse_part_count + 1;
-                if (getenv("UW_DEBUG_MODEL_PARSE_HWM")) {
-                  static int hwm_parts = -1;
-                  if (g_model_parse_part_count > hwm_parts) {
-                    hwm_parts = g_model_parse_part_count;
-                    fprintf(stderr, "[model-parse-hwm] parts: %d\n", hwm_parts);
-                  }
-                }
                 if (0x15e < g_model_parse_part_count) {
                   NKDbgPrintfW(s_Too_many_polys_000848f8);
                   goto LAB_0002263c;
@@ -2877,13 +2759,6 @@ LAB_0002226c:
               if (iVar4 == 2) {
                 *(undefined4 *)(&DAT_000c8b08 + DAT_000db4d0 * 4) = local_1d0;
                 DAT_000db4d0 = DAT_000db4d0 + 1;
-                if (getenv("UW_DEBUG_MODEL_PARSE_HWM")) {
-                  static int hwm_intersections = -1;
-                  if (DAT_000db4d0 > hwm_intersections) {
-                    hwm_intersections = DAT_000db4d0;
-                    fprintf(stderr, "[model-parse-hwm] intersections: %d\n", hwm_intersections);
-                  }
-                }
               }
             } while (local_260[0] == ',');
           }
@@ -2977,13 +2852,6 @@ LAB_0002226c:
                   (&DAT_000d976f)[iVar4] = (char)((uint)iVar5 >> 0x18);
                   NKDbgPrintfW(s___d__00084728,iVar5);
                   DAT_000db4e0 = DAT_000db4e0 + 1;
-                  if (getenv("UW_DEBUG_MODEL_PARSE_HWM")) {
-                    static int hwm_animate = -1;
-                    if (DAT_000db4e0 > hwm_animate) {
-                      hwm_animate = DAT_000db4e0;
-                      fprintf(stderr, "[model-parse-hwm] animate records: %d\n", hwm_animate);
-                    }
-                  }
                   iVar4 = ce_fscanf(pvVar_fh,&DAT_000849a8,local_260);
                   if (iVar4 != 1) break;
                 }
@@ -3021,24 +2889,6 @@ LAB_check_clusters:
                 } while (local_260[0] == ',');
                 **(char **)(&DAT_000dab90 + DAT_000db4d4 * 4) = cVar18;
                 DAT_000db4d4 = DAT_000db4d4 + 1;
-                if (getenv("UW_DEBUG_MODEL_PARSE_HWM")) {
-                  static int hwm_clusters = -1;
-                  static long hwm_names_bytes = -1, hwm_conn_elems = -1;
-                  long names_used = (long)((char *)local_258 - (char *)&DAT_000da480);
-                  long conn_used = (long)(puVar8 - (undefined4 *)&DAT_000c8ca0);
-                  if (DAT_000db4d4 > hwm_clusters) {
-                    hwm_clusters = DAT_000db4d4;
-                    fprintf(stderr, "[model-parse-hwm] clusters: %d\n", hwm_clusters);
-                  }
-                  if (names_used > hwm_names_bytes) {
-                    hwm_names_bytes = names_used;
-                    fprintf(stderr, "[model-parse-hwm] NAMES bytes used: %ld\n", names_used);
-                  }
-                  if (conn_used > hwm_conn_elems) {
-                    hwm_conn_elems = conn_used;
-                    fprintf(stderr, "[model-parse-hwm] cluster-connection undefined4 elements used: %ld\n", conn_used);
-                  }
-                }
                 iVar4 = ce_fscanf(pvVar_fh,&DAT_000849a8,local_260);
                 if (iVar4 != 1) break;
               }
@@ -3116,13 +2966,6 @@ LAB_check_clusters:
                   iVar10 = DAT_000db4d8;
                 }
                 DAT_000db4d8 = iVar10 + 1;
-                if (getenv("UW_DEBUG_MODEL_PARSE_HWM")) {
-                  static int hwm_nodes = -1;
-                  if (DAT_000db4d8 > hwm_nodes) {
-                    hwm_nodes = DAT_000db4d8;
-                    fprintf(stderr, "[model-parse-hwm] nodes: %d\n", hwm_nodes);
-                  }
-                }
               }
             } while (local_260[0] == ';');
           }

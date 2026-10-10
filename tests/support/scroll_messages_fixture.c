@@ -17,7 +17,7 @@ char *g_selected_object;
 undefined2 g_cursor_holding_state;
 char *DAT_00202098;
 code *DAT_002020b8;
-undefined1 DAT_00202c90_backing[8192];
+uw_object_type_props_t g_object_type_props[512];
 undefined2 DAT_0023ae58_backing[48];
 undefined2 DAT_0023adb8_backing[16];
 
@@ -27,7 +27,7 @@ void scroll_messages_fixture_reset(void)
     memset(font, 0, sizeof font);
     memset(lines, 0, sizeof lines);
     memset(character, 0, sizeof character);
-    memset(DAT_00202c90_backing, 0, sizeof DAT_00202c90_backing);
+    memset(((byte *)g_object_type_props), 0, sizeof g_object_type_props);
     g_object_type_props[0x80].has_look_description = 1;
     g_object_type_props[0x81].has_look_description = 1;
     g_object_type_props[0x40].has_look_description = 1;
@@ -114,7 +114,7 @@ char *get_message_string(ushort id)
 int append_object_property_tag(ushort *object, short mode, char *buffer) { return 0; }
 int append_object_special_name(void *object, short mode, char *buffer) { return 0; }
 void describe_special_object_property(ushort *object, short mode) {}
-int identify_mushroom_type(ushort *object, char *properties) { return 0; }
+int identify_mushroom_type(ushort *object, const uw_object_type_props_t *properties) { return 0; }
 void look_at_inscribed_object(ushort *object, short mode) { TEST_FAIL_MESSAGE("Unexpected inscription"); }
 byte *format_object_display_name(byte *name, int article, int mode)
 {

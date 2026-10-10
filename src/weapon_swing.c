@@ -2,6 +2,7 @@
    redraw. Split out of uw.c (the original monolithic decompile) once these functions' real roles
    were confirmed. */
 #include "headers/weapon_swing.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +16,11 @@ static short DAT_00100618;
 // Original ARM .data defaults: idle frame counter and pending action.
 short DAT_000870e4 = -1;
 static short DAT_001005e8;
-static undefined DAT_001005f0;
+/* Was a 1-byte `undefined`: ARM 0x278ac/0x278e8 store the whole 32-bit clock reading here (`str`)
+   and 0x278c4 reloads its low 16 bits (`ldrsh`) to get the elapsed time. With only the low byte
+   kept, the delta was clock - (0..255) -- garbage -- so the charge advanced in random jumps (often
+   straight to full) instead of one step per 16 clock units. */
+static uint DAT_001005f0;
 static byte DAT_00100614;
 /* Was a lone `undefined` scalar, same bug as DAT_00084eff just above -- tick_weapon_swing_state
    indexes it as `(&DAT_00084f0b)[iVar5]` with iVar5 = attack-type/3 (0-3), selecting which of a
@@ -73,9 +78,6 @@ void *weapon_swing_frame_alloc(unsigned int byte_count)
 // item's melee-weapon-stats byte 6, or 3 for empty-handed/fist)...
 void request_weapon_swing_graphic(char category)
 {
-  if (getenv("UW_DEBUG_COMBAT")) {
-    fprintf(stderr, "[weapon-gfx] request_weapon_swing_graphic(category=%d) DAT_000870dc(loaded)=%d\n", (int)category, (int)DAT_000870dc);
-  }
   DAT_000870d8 = category;
   if (((-1 < category) && (category < '\x04')) || (DAT_000870dc != category)) {
     DAT_0023c1dc = DAT_0023c1dc | 0x100;
@@ -102,10 +104,6 @@ byte load_weapon_swing_sprites()
   int iVar8;
   char acStack_118 [260];
   
-  if (getenv("UW_DEBUG_COMBAT")) {
-    fprintf(stderr, "[weapon-gfx] load_weapon_swing_sprites ENTRY: DAT_000870dc(loaded)=%d DAT_000870d8(requested)=%d\n",
-            (int)DAT_000870dc, (int)DAT_000870d8);
-  }
   if (DAT_000870dc == DAT_000870d8) {
     bVar2 = 1;
   }
@@ -143,9 +141,6 @@ byte load_weapon_swing_sprites()
     else {
       bVar2 = 0;
     }
-  }
-  if (getenv("UW_DEBUG_COMBAT")) {
-    fprintf(stderr, "[weapon-gfx] load_weapon_swing_sprites RESULT: bVar2=%d\n", (int)bVar2);
   }
   return bVar2;
 }
@@ -192,19 +187,11 @@ void weapon_swing_draw_tick()
        literal recompile" idiom as every other dropped-argument bug in this file).
        decode_gr_entry_bitmap needs the raw entry buffer just resolved above; without it... */
     uVar2 = (g_weapon_swing_current_frame == 0) ? 0 : decode_gr_entry_bitmap(g_weapon_swing_current_frame);
-    if (getenv("UW_DEBUG_COMBAT")) {
-      fprintf(stderr, "[wswing] DAT_0023c130=%d DAT_000870e4=%d sVar1=%d frame=%p drawn=%d\n",
-              (int)DAT_0023c130, (int)DAT_000870e4, (int)sVar1, (void *)g_weapon_swing_current_frame,
-              uVar2 != 0);
-    }
     if (uVar2 != 0) {
       bitmap_blit_to_framebuffer((uint)(byte)(&g_weapon_swing_frame_x_offset)[sVar1] + (int)DAT_0023c1ec + 0x34,
                    0x83 - (uint)(byte)(&g_weapon_swing_frame_y_offset)[sVar1],uVar2,*(undefined1 *)(g_weapon_swing_current_frame + 2),
                    *(undefined1 *)(g_weapon_swing_current_frame + 1),0,0,1);
     }
-  } else if (getenv("UW_DEBUG_COMBAT")) {
-    fprintf(stderr, "[wswing] SKIPPED: DAT_0023c130=%d DAT_000870e4=%d DAT_000870dc=%d g_weapon_overlay_enabled=%d\n",
-            (int)DAT_0023c130, (int)DAT_000870e4, (int)DAT_000870dc, (int)g_weapon_overlay_enabled);
   }
   draw_hud_icon_sprite(0x107f,0x3e,3);
   draw_hud_icon_sprite(0x1080,0,0xd);
@@ -460,7 +447,7 @@ int find_and_consume_ammo(short weapon_type)
   ushort local_44 [4];
   char acStack_3c [52];
   
-  cVar1 = (&DAT_002027d2)[weapon_type * 3];
+  cVar1 = g_ranged_type_props[weapon_type].ammo_damage_selector;
   found_item = find_equipped_item_by_category(0,1,(int)cVar1,4,(ushort *)local_4c);
   if (found_item == 0) {
     local_44[0] = ((short)cVar1 + 0x10U ^ local_44[0]) & 0x1ff ^ local_44[0];
@@ -561,11 +548,6 @@ void tick_weapon_swing_state(short attack_direction)
   bVar2 = true;
 LAB_00027754:
   pRecord = DAT_001005e4;
-  if (getenv("UW_DEBUG_COMBAT") && (attack_direction != 0 || DAT_000870e4 != -1 || DAT_0010062c != 0)) {
-    fprintf(stderr, "[swing] attack_direction=%d flags5f=0x%x DAT_000870e4=%d DAT_0010062c=%d bVar2=%d pRecord=%p DAT_00100618=%d DAT_001005ec=%u DAT_001005e8=%d\n",
-            (int)attack_direction, (unsigned)*(byte *)(DAT_00086df8 + 0x5f), (int)DAT_000870e4,
-            (int)DAT_0010062c, (int)bVar2, (void *)pRecord, (int)DAT_00100618, DAT_001005ec, (int)DAT_001005e8);
-  }
   if (DAT_0010062c < 1) {
     if (DAT_0010062c < 0) {
       if ((-1 < DAT_000870e4) || (-10 < DAT_0010062c)) {
@@ -784,12 +766,12 @@ void fire_ranged_weapon(short weapon_type)
   uVar5 = find_and_consume_ammo(weapon_type);
   if (-1 < (short)uVar5) {
     iVar1 = (int)weapon_type;
-    cVar3 = (&DAT_002027d2)[iVar1 * 3];
-    DAT_00202a48 = (ushort)(byte)(&DAT_002027d1)[(short)cVar3 * 3];
+    cVar3 = g_ranged_type_props[iVar1].ammo_damage_selector;
+    DAT_00202a48 = (ushort)(byte) g_ranged_type_props[(short)cVar3].projectile_speed;
     DAT_00202a38 = cVar3 + 0x10;
-    DAT_00202a4c = (ushort)(*(byte *)((char *)g_player_object + 0x17) >> 2);
+    DAT_00202a4c = (ushort)(g_player_object->npc_xhome);
     DAT_00202a44 = g_player_object;
-    DAT_00202a50 = (undefined2)((*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4);
+    DAT_00202a50 = (undefined2)(g_player_object->npc_yhome);
     DAT_00202a54 = 1;
     compute_drop_aim_from_cursor();
     puVar6 = (ushort *)spawn_object_near_player();
@@ -798,27 +780,25 @@ void fire_ranged_weapon(short weapon_type)
     }
     else {
       puVar7 = (ushort *)extract_ammo_and_refresh(0,1,(int)cVar3,uVar5);
-      uVar8 = (*puVar7 ^ *puVar6) & 0x7fff ^ (uint)*puVar7;
-      *(char *)puVar6 = (char)uVar8;
-      *(char *)((char *)puVar6 + 1) = (char)(uVar8 >> 8);
+      uVar8 = (*puVar7 ^ ((uw_object_hdr_t *)puVar6)->type_flags) & 0x7fff ^ (uint)*puVar7;
+      ((uw_object_hdr_t *)puVar6)->type_flags = (ushort)uVar8;
       uVar4 = puVar7[3];
       bVar2 = (byte)uVar4;
-      *(byte *)(puVar6 + 3) = ((byte)puVar6[3] ^ bVar2) & 0x3f ^ bVar2;
-      *(char *)((char *)puVar6 + 7) = (char)(uVar4 >> 8);
+      ((uw_object_hdr_t *)puVar6)->link_word_low = ((byte)((uw_object_hdr_t *)puVar6)->link_word ^ bVar2) & 0x3f ^ bVar2;
+      ((uw_object_hdr_t *)puVar6)->link_word_high = (byte)(char)(uVar4 >> 8);
       bVar2 = *(byte *)((char *)puVar7 + 1);
-      *(char *)puVar6 = (char)*puVar6;
-      *(byte *)((char *)puVar6 + 1) =
-           (bVar2 ^ *(byte *)((char *)puVar6 + 1)) & 0x1e ^ *(byte *)((char *)puVar6 + 1);
-      *(byte *)(puVar6 + 4) = (byte)puVar7[2] & 0x3f;
-      *(byte *)(puVar6 + 3) = ((byte)puVar7[3] ^ (byte)puVar6[3]) & 0x3f ^ (byte)puVar6[3];
-      *(undefined1 *)((char *)puVar6 + 7) = *(undefined1 *)((char *)puVar6 + 7);
+      ((uw_object_hdr_t *)puVar6)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar6)->type_flags;
+      ((uw_object_hdr_t *)puVar6)->type_flags_high =
+          (bVar2 ^ ((uw_object_hdr_t *)puVar6)->type_flags_high) & 0x1e ^ ((uw_object_hdr_t *)puVar6)->type_flags_high;
+      ((uw_projectile_object_t *)puVar6)->lifetime = ((uw_object_hdr_t *)puVar7)->quality;
+      ((uw_object_hdr_t *)puVar6)->link_word_low = ((byte)puVar7[3] ^ (byte)((uw_object_hdr_t *)puVar6)->link_word) & 0x3f ^ (byte)((uw_object_hdr_t *)puVar6)->link_word;
+      ((uw_object_hdr_t *)puVar6)->link_word_high = ((uw_object_hdr_t *)puVar6)->link_word_high;
       bVar2 = *(byte *)((char *)puVar7 + 1);
-      *(char *)puVar6 = (char)*puVar6;
-      *(byte *)((char *)puVar6 + 1) =
-           (bVar2 ^ *(byte *)((char *)puVar6 + 1)) & 0x20 ^ *(byte *)((char *)puVar6 + 1);
+      ((uw_object_hdr_t *)puVar6)->type_flags_low = (byte)(char)((uw_object_hdr_t *)puVar6)->type_flags;
+      ((uw_object_hdr_t *)puVar6)->doordir = (bVar2 >> 5) & 0x1;
       if ((*puVar7 & 0x1c0) != 0x140) {
-        if (((&DAT_00202c9a)[(*puVar7 & 0x1ff) * 0xd] & 3) != 2) {
-          *(byte *)(puVar6 + 0xd) = (byte)(puVar7[1] >> 7) & 7;
+        if ((g_object_type_props[(*puVar7 & 0x1ff)].class_flags & 3) != 2) {
+          ((uw_projectile_object_t *)puVar6)->original_heading = ((uw_object_hdr_t *)puVar7)->heading;
         }
       }
       /* Was a dropped argument -- free_object_slot(weapon_type) always takes the object pointer to free

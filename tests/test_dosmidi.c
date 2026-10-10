@@ -9,6 +9,7 @@
  * real-but-wrong file. The AW set rather than the UW set is deliberate --
  * see platform_dosmidi_xmi_path's own comment. */
 #include "unity.h"
+#include "src/headers/options.h"
 #include "headers/platform_dosmidi.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,7 +48,7 @@ static void make_data_dir(void)
     char sound[320];
     snprintf(sound, sizeof sound, "%s/SOUND", g_data_dir);
     mkdir(sound, 0755);          /* exists, but holds no UW.AD */
-    setenv("UW_DATA_DIR", g_data_dir, 1);
+    options_set("data-dir", g_data_dir);
 
     char tmpl2[] = "/tmp/uw_dosmidi_dos_XXXXXX";
     const char *made2 = mkdtemp(tmpl2);
@@ -65,8 +66,8 @@ static void make_data_dir(void)
 
 void setUp(void)
 {
-    unsetenv("UW_AUDIO_MODE");
-    unsetenv("UW_DOS_DATA_DIR");
+    options_unset("audio-mode");
+    options_unset("dos-data-dir");
     platform_dosmidi_shutdown();
     base_volume_calls = 0;
 }
@@ -74,8 +75,8 @@ void setUp(void)
 void tearDown(void)
 {
     platform_dosmidi_shutdown();
-    unsetenv("UW_AUDIO_MODE");
-    unsetenv("UW_DOS_DATA_DIR");
+    options_unset("audio-mode");
+    options_unset("dos-data-dir");
 }
 
 /* The guarantee the whole feature hangs on: DOS audio does not engage on a
@@ -91,7 +92,7 @@ void tearDown(void)
    not fail this case unless the data dir is present). */
 static void test_dos_mode_is_off_by_default(void)
 {
-    setenv("UW_DOS_DATA_DIR", "/tmp", 1);
+    options_set("dos-data-dir", "/tmp");
     TEST_ASSERT_EQUAL_INT(0, platform_dosmidi_init(44100));
     TEST_ASSERT_FALSE(platform_dos_audio_enabled());
 }
@@ -136,7 +137,7 @@ static void test_dos_data_dir_alone_does_not_change_the_default(void)
     set_data_dir_is_dos_install(0);
     /* g_dos_dir really is a DOS install; the data directory is not. Only the
        latter may move the default, so this must stay OFF. */
-    setenv("UW_DOS_DATA_DIR", g_dos_dir, 1);
+    options_set("dos-data-dir", g_dos_dir);
     TEST_ASSERT_EQUAL_INT_MESSAGE(UW_DOS_AUDIO_OFF, platform_dos_audio_mode(),
         "UW_DOS_DATA_DIR pointing at a DOS install must not switch the default on");
 }
@@ -145,15 +146,15 @@ static void test_dos_data_dir_alone_does_not_change_the_default(void)
 static void test_an_explicit_mode_overrides_the_default(void)
 {
     set_data_dir_is_dos_install(1);
-    setenv("UW_AUDIO_MODE", "arm", 1);
+    options_set("audio-mode", "arm");
     TEST_ASSERT_EQUAL_INT(UW_DOS_AUDIO_OFF, platform_dos_audio_mode());
-    setenv("UW_AUDIO_MODE", "dos", 1);
+    options_set("audio-mode", "dos");
     TEST_ASSERT_EQUAL_INT(UW_DOS_AUDIO_DOS, platform_dos_audio_mode());
 
     set_data_dir_is_dos_install(0);
-    setenv("UW_AUDIO_MODE", "hybrid", 1);
+    options_set("audio-mode", "hybrid");
     TEST_ASSERT_EQUAL_INT(UW_DOS_AUDIO_HYBRID, platform_dos_audio_mode());
-    setenv("UW_AUDIO_MODE", "DOS", 1);          /* case-insensitive */
+    options_set("audio-mode", "DOS");          /* case-insensitive */
     TEST_ASSERT_EQUAL_INT(UW_DOS_AUDIO_DOS, platform_dos_audio_mode());
 }
 
@@ -165,15 +166,15 @@ static void test_a_dos_sound_dir_alone_does_not_enable_dos_audio(void)
 {
     char sound[320];
     snprintf(sound, sizeof sound, "%s/SOUND", g_data_dir);
-    setenv("UW_DOS_DATA_DIR", g_data_dir, 1);
+    options_set("dos-data-dir", g_data_dir);
     TEST_ASSERT_EQUAL_INT(0, platform_dosmidi_init(44100));
     TEST_ASSERT_FALSE(platform_dos_audio_enabled());
 }
 
 static void test_dos_mode_ignores_unrelated_mode_values(void)
 {
-    setenv("UW_AUDIO_MODE", "arm", 1);
-    setenv("UW_DOS_DATA_DIR", "/nonexistent", 1);
+    options_set("audio-mode", "arm");
+    options_set("dos-data-dir", "/nonexistent");
     TEST_ASSERT_EQUAL_INT(0, platform_dosmidi_init(44100));
     TEST_ASSERT_FALSE(platform_dos_audio_enabled());
 }
@@ -182,7 +183,7 @@ static void test_dos_mode_ignores_unrelated_mode_values(void)
    degrade to the normal path, not crash and not half-enable. */
 static void test_dos_mode_requires_a_data_dir(void)
 {
-    setenv("UW_AUDIO_MODE", "dos", 1);
+    options_set("audio-mode", "dos");
     TEST_ASSERT_EQUAL_INT(0, platform_dosmidi_init(44100));
     TEST_ASSERT_FALSE(platform_dos_audio_enabled());
 }
@@ -194,8 +195,8 @@ static void test_dos_mode_requires_a_data_dir(void)
    business shipping.) */
 static void test_dos_mode_requires_the_dos_audio_files(void)
 {
-    setenv("UW_AUDIO_MODE", "DOS", 1);
-    setenv("UW_DOS_DATA_DIR", "/tmp", 1);
+    options_set("audio-mode", "DOS");
+    options_set("dos-data-dir", "/tmp");
     TEST_ASSERT_EQUAL_INT(0, platform_dosmidi_init(44100));
     TEST_ASSERT_FALSE(platform_dos_audio_enabled());
     /* And it must not have published anything either: a failed init leaves
@@ -205,7 +206,7 @@ static void test_dos_mode_requires_the_dos_audio_files(void)
 
 static void test_xmi_path_maps_track_to_the_adlib_xmi(void)
 {
-    setenv("UW_DOS_DATA_DIR", "/dos/UW", 1);
+    options_set("dos-data-dir", "/dos/UW");
     char out[256];
     TEST_ASSERT_EQUAL_INT(1, platform_dosmidi_xmi_path("\\SOUND\\uw01.mod", out, sizeof out));
     TEST_ASSERT_EQUAL_STRING("/dos/UW/SOUND/AW01.XMI", out);
@@ -216,7 +217,7 @@ static void test_xmi_path_maps_track_to_the_adlib_xmi(void)
    mapping untouched. */
 static void test_xmi_path_preserves_the_track_digits(void)
 {
-    setenv("UW_DOS_DATA_DIR", "/dos/UW", 1);
+    options_set("dos-data-dir", "/dos/UW");
     char out[256];
     TEST_ASSERT_EQUAL_INT(1, platform_dosmidi_xmi_path("\\SOUND\\uw15.mod", out, sizeof out));
     TEST_ASSERT_EQUAL_STRING("/dos/UW/SOUND/AW15.XMI", out);
@@ -226,7 +227,7 @@ static void test_xmi_path_preserves_the_track_digits(void)
 
 static void test_xmi_path_accepts_forward_slashes(void)
 {
-    setenv("UW_DOS_DATA_DIR", "/dos/UW", 1);
+    options_set("dos-data-dir", "/dos/UW");
     char out[256];
     TEST_ASSERT_EQUAL_INT(1, platform_dosmidi_xmi_path("/SOUND/uw07.mod", out, sizeof out));
     TEST_ASSERT_EQUAL_STRING("/dos/UW/SOUND/AW07.XMI", out);
@@ -247,14 +248,14 @@ static void test_xmi_path_falls_back_to_the_game_data_directory(void)
 /* Must refuse rather than emit a silently truncated path. */
 static void test_xmi_path_rejects_a_too_small_buffer(void)
 {
-    setenv("UW_DOS_DATA_DIR", "/dos/UW", 1);
+    options_set("dos-data-dir", "/dos/UW");
     char out[8];
     TEST_ASSERT_EQUAL_INT(0, platform_dosmidi_xmi_path("\\SOUND\\uw01.mod", out, sizeof out));
 }
 
 static void test_xmi_path_rejects_a_pathological_path(void)
 {
-    setenv("UW_DOS_DATA_DIR", "/dos/UW", 1);
+    options_set("dos-data-dir", "/dos/UW");
     char out[256];
     TEST_ASSERT_EQUAL_INT(0, platform_dosmidi_xmi_path("\\SOUND\\", out, sizeof out));
     TEST_ASSERT_EQUAL_INT(0, platform_dosmidi_xmi_path("", out, sizeof out));
@@ -313,9 +314,9 @@ static void test_music_volume_is_clamped_to_a_percentage(void)
    rather than reading a stale path. */
 static void test_missing_effect_table_everywhere_declines_cleanly(void)
 {
-    unsetenv("UW_DATA_DIR");
-    setenv("UW_AUDIO_MODE", "dos", 1);
-    setenv("UW_DOS_DATA_DIR", "/tmp", 1);
+    options_unset("data-dir");
+    options_set("audio-mode", "dos");
+    options_set("dos-data-dir", "/tmp");
     TEST_ASSERT_EQUAL_INT(0, platform_dosmidi_init(44100));
     TEST_ASSERT_FALSE(platform_dos_audio_enabled());
 }

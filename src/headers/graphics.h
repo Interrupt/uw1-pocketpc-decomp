@@ -61,6 +61,8 @@ void set_ambient_bias_with_light(char light_level);
 void set_ambient_bias_without_light(char light_level);
 void expand_pals_bytes(char *out_rgb8, char *pals_6bit, int copy_unscaled);
 void build_rgb565_palette(byte *rgb_buffer, short mode);
+unsigned int get_palette_brightness_bits();
+int dungeon_palette_cycle_tick();
 void end_gx_draw_session();
 void palette_cycle_range(uint first_index, uint last_index, int reverse);
 void convert_palette_bgrx_to_rgb(byte *bgrx, byte *rgb);

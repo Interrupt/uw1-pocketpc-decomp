@@ -2,10 +2,12 @@
    blitting into the game's internal software framebuffer, the whole-screen backup/restore save
    state used by transient panels, palette fade in/out... */
 #include "headers/graphics.h"
+#include "headers/options.h"
 #include "headers/gx_stub.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /* Ghidra modeled a single 32-bit pointer, stored straddling the byte ranges of two
    separately-declared globals (_DAT_0023c5ac's upper 16 bits + DAT_0023c5b0's lower 16 bits)... */
@@ -119,7 +121,7 @@ static undefined1 DAT_001005ce;
 static undefined DAT_00088640_backing[768];
 #define DAT_00088640 DAT_00088640_backing[0]
 // HACK: RGB lighting calibration, default 64 when no override is set.
-// UW_AMBIENT_BIAS_REDUCTION=0 retains the ARM formulas.
+// --ambient-bias-reduction=0 retains the ARM formulas.
 static int g_ambient_bias_reduction = 64;
 
 /* Scratch buffer for rect_fill_or_save_restore's save/restore modes -- only ever used within this
@@ -133,7 +135,6 @@ static undefined2 DAT_000879b8_backing[4096];
 // was FUN_00011694
 void set_draw_color(short color_index)
 {
-  DEBUG(TRACE, "[graphics] set draw color to %u", color_index);
   DAT_000a85c0 = color_index;
 }
 
@@ -161,14 +162,7 @@ void rect_fill_or_save_restore(ushort left, uint top, short right, short bottom)
   int iVar14;
   int iVar15;
   
-  DEBUG(TRACE, "[graphics] rect_fill_or_save_restore(%u,%u,%u,%u)", left, top, right, bottom);
 
-  if (DAT_00204848 != 0 && getenv("UW_DEBUG_CURSORCLIP")) {
-    fprintf(stderr, "[cursorclip] request color=%d rect=(%d,%d,%d,%d) clip=(%d,%d,%d,%d)\n",
-            (int)DAT_000a85c0, (int)(short)left, (int)(short)top, (int)right, (int)bottom,
-            (int)(short)DAT_000a85c4, (int)(short)DAT_000a85c8,
-            (int)(short)DAT_000842a4, (int)(short)DAT_000842a8);
-  }
 
   iVar14 = (int)(short)left;
   iVar13 = (right - iVar14) * 0x10000;
@@ -205,10 +199,6 @@ void rect_fill_or_save_restore(ushort left, uint top, short right, short bottom)
           uVar9 = iVar12 + (top & 0xffff);
           iVar13 = 0;
           // DAT_00204848 is only ever set by the mouse-cursor code (save_cursor_background sets it to 1 right before deliberately drawing with color 0x14, to save what's under the cursor), so colors 0x14/0x15 only mean save/restore during that specific sequence -- with DAT_00204848 at its default 0 (every other caller), they're ordinary palette colors and this whole block is skipped in favor of the flat fill below. There are 256 real palette entries (0x100, see the palette-conversion loop), so 20/21 aren't reserved from the palette's own perspective either.
-          if (DAT_00204848 != 0 && getenv("UW_DEBUG_CURSORCLIP")) {
-            fprintf(stderr, "[cursorclip] PROCEEDING color=%d clipped_rect=(%u,%u)-(%u,%u)\n",
-                    (int)DAT_000a85c0, uVar2, uVar5, (uint)left, uVar9);
-          }
           if (DAT_00204848 != 0) {
             if (DAT_000a85c0 == 0x14) {
               // SAVE mode: copy the rect from g_uw_framebuffer into the DAT_000879b8 scratch buffer.
@@ -222,9 +212,6 @@ void rect_fill_or_save_restore(ushort left, uint top, short right, short bottom)
                   /* Sizing-pass instrumentation (NEEDS_LIVE_INSTRUMENTATION): reusing hud.c's
                      save_cursor_background env var -- logs the real pixel count (= elements of
                      DAT_000879b8) written this call... */
-                  if (getenv("UW_DEBUG_CURSORSHOW")) {
-                    fprintf(stderr, "[cursorshow] DAT_000879b8 pixels_written=%d\n", iVar13);
-                  }
                   return;
                 }
                 if (uVar2 < left) {
@@ -242,9 +229,6 @@ void rect_fill_or_save_restore(ushort left, uint top, short right, short bottom)
                 uVar5 = uVar5 + 1;
                 iVar15 = iVar15 + 0x140;
                 if ((int)(uVar9 & 0xffff) <= (int)uVar5) {
-                  if (getenv("UW_DEBUG_CURSORSHOW")) {
-                    fprintf(stderr, "[cursorshow] DAT_000879b8 pixels_written=%d\n", iVar13);
-                  }
                   return;
                 }
               } while( true );
@@ -301,7 +285,6 @@ void rect_fill_or_save_restore(ushort left, uint top, short right, short bottom)
       }
     }
   }
-  debug_framebuffer_dump("rect_fill");
 }
 
 
@@ -331,7 +314,6 @@ void bitmap_blit_to_framebuffer(ushort x, ushort y, char *pixels, short height, 
      OPSCR.BYT load buffer). */
   intptr_t local_34;
   
-  DEBUG(TRACE, "[graphics] bitmap_blit_to_framebuffer(%u,%u,%p,%u,%u,%u,%u)", x, y, (void *)pixels, height, width, src_x, src_y);
 
   sVar13 = 0;
   iVar11 = (int)src_x;
@@ -366,11 +348,6 @@ void bitmap_blit_to_framebuffer(ushort x, ushort y, char *pixels, short height, 
   }
   /* Was a 3-argument call to a K&R-style `dirty_rect_union()` (no prototype, so this compiles
      without error) -- missing its 4th ("right" bound) argument entirely. */
-  if (getenv("UW_DEBUG_BLITRAW")) {
-    fprintf(stderr, "[blitfb] dstX=%d dstY=%d w=%d h=%d -> dirty top=%d bottom=%d left=%d right=%d\n",
-            (int)x, (int)y, (int)iVar9, (int)iVar2,
-            iVar7, iVar7 + iVar2, iVar8, iVar8 + iVar9);
-  }
   dirty_rect_union(iVar7,iVar7 + iVar2,iVar8,iVar8 + iVar9);
   iVar5 = (int)sVar14;
   if (g_blit_transparent_mode == 0) {
@@ -414,7 +391,6 @@ void bitmap_blit_to_framebuffer(ushort x, ushort y, char *pixels, short height, 
       local_34 = iVar11 + local_34;
     } while (iVar5 < iVar2 - sVar12);
   }
-  debug_framebuffer_dump("blit");
 }
 
 
@@ -479,7 +455,6 @@ void screen_backup_restore()
       iVar1 = iVar1 + 2;
     } while (iVar3 != 0);
   } while (iVar1 < 0x1f400);
-  debug_framebuffer_dump("screen_backup_restore");
   flush_dirty_rect_to_display(1);
 }
 
@@ -518,7 +493,6 @@ void screen_backup_restore_rect(uint left, uint top, uint right, uint bottom)
       iVar4 = iVar4 + 0x140;
     } while ((int)top < (int)(bottom & 0xffff));
   }
-  debug_framebuffer_dump("screen_backup_restore_rect");
 }
 
 
@@ -552,8 +526,6 @@ void fade_in(ushort *framebuffer, char *palette, int palette_flag)
   if (palette != 0) apply_palette_buffer(palette,palette_flag);
   ce_memmove(puVar3,framebuffer,0x1f400);
   iVar9 = 1;
-  // HACK: diagnostic addition, not in the original decompile -- timestamps this fade for the TRACE log below.
-  uint diag_t0 = read_realtime_clock_units();
   /* Intentional deviation: hold each step for 40 ms instead of the
      original timed palette fade's 32 ms, making the transition slower. */
   uint fade_step_start = (uint)GetTickCount();
@@ -592,8 +564,6 @@ void fade_in(ushort *framebuffer, char *palette, int palette_flag)
     puVar6 = puVar6 + 1;
   } while (iVar9 != 0);
   flush_dirty_rect_to_display(1);
-  DEBUG(TRACE, "[fade] fade_in total elapsed=%ums", (read_realtime_clock_units() - diag_t0) * 4);
-  debug_framebuffer_dump("fade_in");
   LocalFree(puVar3);
   uw_end_modal_present();
 }
@@ -627,8 +597,6 @@ void fade_out(ushort *framebuffer, char *palette, int palette_flag)
   ce_memmove(puVar4,framebuffer,0x1f400);
   iVar11 = 7;
   iVar10 = 64000;
-  // HACK: diagnostic addition, not in the original decompile -- timestamps this fade for the TRACE log below.
-  uint diag_t0 = read_realtime_clock_units();
   /* Intentional deviation: use 40 ms per step, like fade_in, rather
      than the original timed palette fade's 32 ms interval. */
   uint fade_step_start = (uint)GetTickCount();
@@ -668,8 +636,6 @@ void fade_out(ushort *framebuffer, char *palette, int palette_flag)
   flush_dirty_rect_to_display(1);
   while ((fade_step_elapsed = (uint)GetTickCount() - fade_step_start) < 40)
     Sleep(40 - fade_step_elapsed);
-  DEBUG(TRACE, "[fade] fade_out total elapsed=%ums", (read_realtime_clock_units() - diag_t0) * 4);
-  debug_framebuffer_dump("fade_out");
   LocalFree(puVar4);
   uw_end_modal_present();
 }
@@ -691,6 +657,7 @@ int render_dungeon_view()
   set_draw_color(0);
   rect_fill_or_save_restore(0x34,0x13,0xe0,0x83);
   build_view_matrix();
+  extra_lights_transform_to_eye();
   near_clip_visible_tiles(0,0);
   translate_verts_to_camera_space(&DAT_000a85d0);
   project_verts_through_view_matrix(&DAT_000a85d0);
@@ -732,8 +699,7 @@ void build_shade_lut()
 static int get_ambient_bias_reduction()
 {
   int reduction = g_ambient_bias_reduction;
-  const char *value = getenv("UW_AMBIENT_BIAS_REDUCTION");
-  if (value) reduction = atoi(value);
+  if (UW_OPT_ISSET(g_opts.ambient_bias_reduction)) reduction = g_opts.ambient_bias_reduction;
   return reduction;
 }
 
@@ -745,8 +711,6 @@ static int get_ambient_bias_reduction()
 void set_ambient_bias_with_light(char light_level)
 {
   DAT_000842b0 = -0x20 - light_level + get_ambient_bias_reduction();
-  if (getenv("UW_DEBUG_AMBIENT"))
-    fprintf(stderr, "[ambient] set_ambient_bias_with_light(%d) -> DAT_000842b0=%d\n", (int)light_level, (int)DAT_000842b0);
 }
 
 
@@ -755,8 +719,6 @@ void set_ambient_bias_with_light(char light_level)
 void set_ambient_bias_without_light(char light_level)
 {
   DAT_000842b0 = '\b' - light_level + get_ambient_bias_reduction();
-  if (getenv("UW_DEBUG_AMBIENT"))
-    fprintf(stderr, "[ambient] set_ambient_bias_without_light(%d) -> DAT_000842b0=%d\n", (int)light_level, (int)DAT_000842b0);
 }
 
 
@@ -801,6 +763,20 @@ void expand_pals_bytes(char *out_rgb8, char *pals_6bit, int copy_unscaled)
 
 
 
+/* The original Pocket PC build multiplies every palette channel by 1.5 (clamped at 255) before
+   packing it to RGB565 (ARM 0x22b90/0x22bd8/0x22c20: `mov r1, #0x3fc00000`), presumably to
+   compensate for the handheld LCD; the DOS palettes are shown as-is. HACK: --brightness selects the
+   multiplier (e.g. --brightness=1.5 restores the Pocket PC look); default 1.0 matches DOS. Returns
+   the multiplier as IEEE-754 float bits, the form ordfloat_mul takes. */
+unsigned int get_palette_brightness_bits()
+{
+  float brightness = 1.0f;
+  unsigned int bits;
+  if (g_opts.brightness >= 0.0f) brightness = g_opts.brightness;
+  memcpy(&bits, &brightness, sizeof bits);
+  return bits;
+}
+
 // was build_rgb565_palette -- build g_palette_rgb565 from an RGB buffer (param_1; NULL =
 // built-in default). param_2==0 also builds the 21-level shade ramp DAT_00248418.
 // was FUN_00022b54
@@ -828,8 +804,8 @@ void build_rgb565_palette(byte *rgb_buffer, short mode)
   ushort *puVar20;
   int iVar21;
 
-  DEBUG(TRACE, "[palette] build_rgb565_palette installing g_palette_rgb565, rgb_buffer=%s mode=%d",
-        rgb_buffer ? "buffer" : "NULL(default)", mode);
+  unsigned int brightness_bits = get_palette_brightness_bits();
+
   if (rgb_buffer == (undefined1 *)0x0) {
     puVar20 = &g_palette_rgb565;
     iVar21 = 0x100;
@@ -848,21 +824,21 @@ void build_rgb565_palette(byte *rgb_buffer, short mode)
     iVar21 = 0;
     do {
       uVar7 = ordfloat_int_to_float2(*rgb_buffer);
-      uVar7 = ordfloat_mul(uVar7,0x3fc00000);
+      uVar7 = ordfloat_mul(uVar7,brightness_bits);
       /* ordfloat_uint_to_float(); -- Ghidra dropped the preceding return value. */
       iVar8 = ordfloat_uint_to_float(uVar7);
       if (0xff < iVar8) {
         iVar8 = 0xff;
       }
       uVar7 = ordfloat_int_to_float2(rgb_buffer[1]);
-      uVar7 = ordfloat_mul(uVar7,0x3fc00000);
+      uVar7 = ordfloat_mul(uVar7,brightness_bits);
       /* ordfloat_uint_to_float(); */
       iVar9 = ordfloat_uint_to_float(uVar7);
       if (0xff < iVar9) {
         iVar9 = 0xff;
       }
       uVar7 = ordfloat_int_to_float2(rgb_buffer[2]);
-      uVar7 = ordfloat_mul(uVar7,0x3fc00000);
+      uVar7 = ordfloat_mul(uVar7,brightness_bits);
       /* ordfloat_uint_to_float(); */
       iVar10 = ordfloat_uint_to_float(uVar7);
       if (0xff < iVar10) {
@@ -1091,6 +1067,37 @@ int blit_framebuffer_to_gx_display()
 }
 
 
+// HACK: not in the ARM executable. DOS UW1 animates water and lava by rotating fixed runs of the
+// live palette on a game-clock phase (reference: cimmerianpit/openabyss, src/uw_motion_panel.c
+// palette_cycle): the four 4-colour water groups 0x30/0x34/0x38/0x3c one way, the 5+3 colour fire
+// ramp 0x10/0x15 the other. SHADES.DAT/LIGHT.DAT map those indices onto each other (shaded water
+// stays inside the 0x30-0x3f groups, fire maps to itself), so rotating the palette animates every
+// light level without touching the shade tables. The port re-rasterises the 3D view every main-loop
+// pass, so a rotate + palette rebuild is all that is needed. The DOS clock rate is not known here:
+// one rotation step every --palette-cycle-ms milliseconds (default 250; 0 disables). Returns 1 when
+// it rotated, so the caller can redraw already-drawn HUD pixels that use the cycled colours.
+int dungeon_palette_cycle_tick()
+{
+  static uint last_units;
+  int ms = g_opts.palette_cycle_ms;
+  int interval_units = ms <= 0 ? 0 : (ms + 3) / 4; /* read_realtime_clock_units() counts 4ms units */
+  uint now;
+
+  if (interval_units == 0) return 0;
+  now = read_realtime_clock_units();
+  if ((int)(now - last_units) < interval_units) return 0;
+  last_units = now;
+  palette_cycle_range(0x30,4,0);
+  palette_cycle_range(0x34,4,0);
+  palette_cycle_range(0x38,4,0);
+  palette_cycle_range(0x3c,4,0);
+  palette_cycle_range(0x10,5,1);
+  palette_cycle_range(0x15,3,1);
+  reinstall_active_palette(0x100,0,0);
+  return 1;
+}
+
+
 // was FUN_0007e99c -- re-expand DAT_00088d98 into DAT_00088640 and re-install it as
 // g_palette_rgb565 (real light-level/tint args dropped by Ghidra)
 void reinstall_active_palette(int entry_count, int first_entry, int flag)
@@ -1120,7 +1127,6 @@ void plot_pixel(short x, short y, short color_index)
    ((g_uw_framebuffer) + (iVar1 * 0x140 + (int)x) * 2) =
        (&g_palette_rgb565)[color_index];
   dirty_rect_union(iVar1,iVar1 + 1,(int)x,(int)x + 1);  /* 4th (right) bound was missing: dirty_rect_union takes (top,bottom,left,right) */
-  debug_framebuffer_dump("plot_pixel");
 }
 
 
@@ -1152,7 +1158,6 @@ void draw_horizontal_line(uint x_start, uint y, uint x_end)
       iVar2 = iVar2 + 2;
     } while (iVar3 != 0);
   }
-  debug_framebuffer_dump("draw_horizontal_line");
 }
 
 
@@ -1185,7 +1190,6 @@ void fill_viewport_and_flush()
       iVar5 = iVar5 + 0x140;
     } while (iVar4 < 200 - iVar3);
   }
-  debug_framebuffer_dump("fill_viewport_and_flush");
   flush_dirty_rect_to_display(1);
 }
 
@@ -1262,7 +1266,6 @@ void blit_bitmap_to_framebuffer_clipped(short x, short y, char *pixels, short he
       }
     }
   }
-  debug_framebuffer_dump("blit_bitmap_to_framebuffer_clipped");
 }
 
 
@@ -1316,7 +1319,6 @@ void copy_framebuffer_rect(short src_x, short src_y, short width, short height, 
         iVar7 = iVar10 + iVar7;
       } while (iVar9 < iVar4);
     }
-    debug_framebuffer_dump("copy_framebuffer_rect");
     flush_dirty_rect_to_display(1);
   }
 }
@@ -1385,11 +1387,6 @@ void tick_book_illustration_palette_cycles(ushort *cycle_record)
   
   iVar4 = 0x10;
   do {
-    if (getenv("UW_DEBUG_PALCYCLE_RECORDS") && cycle_record[1] != 0) {
-      fprintf(stderr, "[palcycle] slot=%d last=%u rate=%u start=%d end=%d\n",
-              0x10 - iVar4, (unsigned)*cycle_record, (unsigned)cycle_record[1],
-              (int)(byte)cycle_record[3], (int)*(byte *)((char *)cycle_record + 7));
-    }
     if (cycle_record[1] != 0) {
       uVar2 = read_realtime_clock_units();
       iVar3 = ordint_divmod(cycle_record[1],0x38e).quot;

@@ -1,4 +1,5 @@
 #include "headers/ordinal_stubs.h"
+#include "headers/options.h"
 #include "headers/file_io.h"
 #include "headers/debug.h"
 #include <ctype.h>
@@ -111,7 +112,7 @@ long RemoveDirectoryW()
 
 /* CopyFileW-shaped call (source path, destination path, fail-if-exists). Used to seed SAVE0\lev.ark
    from DATA\lev.ark for a new game, and by older save-slot copy paths. The native conversion
-   adapters retain ANSI paths; uw_file_copy resolves them against UW_DATA_DIR and copies bytes. */
+   adapters retain ANSI paths; uw_file_copy resolves them against --data-dir and copies bytes. */
 long CopyFileW(const char *source, const char *destination, int fail_if_exists)
 {
     if (!source || !destination) return 0;
@@ -348,13 +349,12 @@ long RegSetValueExW(long key, const unsigned short *value_name, long reserved, l
    (run_game_startup_sequence) and app_main_loop's own startup 2000ms pause -- did nothing at all. */
 long Sleep(unsigned int ms)
 {
-    DEBUG(TRACE, "[sleep] Sleep requested ms=%u", ms);
-    /* UW_FAST_SLEEP: debug-only switch to skip the real delay below (splash dwells, app_main_loop's
+    /* --fast-sleep: debug-only switch to skip the real delay below (splash dwells, app_main_loop's
        startup pause, etc. otherwise add up to real wall-clock seconds every run) so
        automated/demo-driven test runs reach gameplay quickly. */
     static int fast = -1;
     if (fast < 0) {
-        fast = getenv("UW_FAST_SLEEP") != NULL;
+        fast = g_opts.fast_sleep;
     }
     if (fast) {
         SDL_PumpEvents();
@@ -483,9 +483,12 @@ long GetStockObject(long object_id)
     return 0;
 }
 
+/* atoi. This was a stub returning 0, so every numeric "@GS8"-style string reference in a
+   conversation read variable 0 (the player's name showed as blank), and babl's `val` builtin and
+   the numeric text prompts always saw 0. */
 int ce_atoi(const char *text)
 {
-    return 0;
+    return text ? atoi(text) : 0;
 }
 
 /* cos(x): x is a double bit-pattern arriving in the return/first-arg register (chained from

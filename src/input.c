@@ -2,6 +2,7 @@
    vectors, directional step, analog turn), mouse state, and click/event waiting. Split out of uw.c
    (the original monolithic decompile) once these functions' real roles were confirmed. */
 #include "headers/input.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -104,10 +105,6 @@ void set_locomotion_state(ushort collision_mask, int mode_flag)
   int iVar3;
   
   uVar1 = (uint)(short)collision_mask;
-  if (getenv("UW_DEBUG_LOCO"))
-    fprintf(stderr, "[loco] collision_mask=0x%x mode_flag=%d DAT_00202084(old)=0x%x fallflag=%d vvel=%d\n",
-            (unsigned)collision_mask, mode_flag, (unsigned)DAT_00202084,
-            (int)g_fall_accel, (int)g_vertical_velocity);
   if ((DAT_00202084 != uVar1) || (mode_flag != 0)) {
     iVar3 = 0;
     uVar2 = 0;
@@ -140,9 +137,6 @@ void set_locomotion_state(ushort collision_mask, int mode_flag)
       iVar3 = apply_swim_wade_pose(collision_mask);
       uVar2 = 1;
     }
-    if (getenv("UW_DEBUG_LOCO"))
-      fprintf(stderr, "[loco] -> uVar2(anim mode)=%d iVar3=%d DAT_0020208c=0x%x\n",
-              (int)uVar2, iVar3, (unsigned)DAT_0020208c);
     apply_movement_mode_profile(uVar2);
     if (iVar3 == 0) {
       *(undefined1 *)(DAT_00086df8 + 0xb9) = 0;
@@ -512,9 +506,7 @@ void poll_input_bindings(void *input_state_ptr)
   short local_28;
   short local_26;
 
-  if (getenv("UW_DEBUG_AUTOMAP_CURSOR")) fprintf(stderr, "[automap-cursor] poll_input_bindings ENTRY DAT_00201b60=%d\n", (int)DAT_00201b60);
   uVar1 = peek_input_event();
-  if (getenv("UW_DEBUG_AUTOMAP_CURSOR")) fprintf(stderr, "[automap-cursor] poll_input_bindings: peek_input_event=%d\n", (int)(short)uVar1);
   if (-1 < (short)uVar1) {
     if ((short)uVar1 < 4) {
       get_click_position(&local_28,&local_26);
@@ -530,17 +522,9 @@ void poll_input_bindings(void *input_state_ptr)
       input_state[5] = 0;
       iVar4 = DAT_00202898 + -1;
       iVar3 = iVar4 * 0x10000 >> 0x10;
-      if (getenv("UW_DEBUG_CLICKREGION"))
-        fprintf(stderr, "[clickregion] click at (%d,%d), scanning %d regions\n", (int)local_28, (int)local_26, (int)DAT_00202898);
       if (-1 < iVar3) {
         do {
           pcVar2 = (char *)DAT_00202890 + iVar3 * 0x12;
-          if (getenv("UW_DEBUG_CLICKREGION"))
-            fprintf(stderr, "[clickregion]   region %d: x1=%d y2=%d x2=%d y1=%d mask=0x%x active_mask=0x%x handler_flag=%d\n",
-                    (int)iVar3, (int)*(short *)(pcVar2 + 6), (int)*(short *)(pcVar2 + 4),
-                    (int)*(short *)(pcVar2 + 2), (int)*(short *)(pcVar2 + 8),
-                    (unsigned)*(ushort *)(pcVar2 + 0xc), (unsigned)*(ushort *)(input_state + 8),
-                    (int)*(int *)(pcVar2 + 0xe));
           if ((((*(short *)(pcVar2 + 6) <= local_28) && (local_26 <= *(short *)(pcVar2 + 8))) &&
               (local_28 <= *(short *)(pcVar2 + 2))) &&
              (((*(short *)(pcVar2 + 4) <= local_26 &&
@@ -555,10 +539,6 @@ void poll_input_bindings(void *input_state_ptr)
               iVar4 = (int)*(short *)((char *)DAT_00202890 + iVar3 + 8) - (int)local_26;
               input_state[2] = (char)iVar4;
               input_state[3] = (char)((uint)iVar4 >> 8);
-              if (getenv("UW_DEBUG_CLICKREGION"))
-                fprintf(stderr, "[clickregion]   MATCHED region %d -> handler=%p local_offset=(%d,%d)\n",
-                        _cri, (void *)(_cri < 128 ? g_click_region_handler[_cri] : 0),
-                        (int)(char)*input_state, (int)(char)input_state[2]);
               /* call the real 64-bit handler, not the truncated in-record
                  pointer (see g_click_region_handler). */
               if ((uint)_cri < 128 && g_click_region_handler[_cri] != 0) {
@@ -1003,8 +983,6 @@ int handle_keyboard_message(int window, int message, uint wparam)
     return 0;
   }
   uVar1 = (ushort)wparam;
-  if (getenv("UW_DEBUG_INPUTEVENT"))
-    fprintf(stderr, "[keymsg] msg=0x%x wparam=0x%x DAT_0023c448_before=0x%x\n", (unsigned int)message, (unsigned int)wparam, (unsigned int)DAT_0023c448);
   if (message != 0x100) {
     if (message == 0x101) {
       DAT_000876c8 = 1;
@@ -1132,10 +1110,6 @@ int handle_mouse_message(int window, uint message, uint wparam, int lparam)
       }
     }
     else {
-      if (getenv("UW_DEBUG_CURSORCLICK")) {
-        fprintf(stderr, "[cursorclick] WM_LBUTTONDOWN before DAT_00204844=%d selected=%p holdstate=%d\n",
-                (int)DAT_00204844, (void *)g_selected_object, (int)g_cursor_holding_state);
-      }
       DAT_00204844 = 1;
       if ((g_cursor_mode != 0) || (g_cursor_holding_state != 0)) {
         DAT_00204844 = 2;
@@ -1150,10 +1124,6 @@ int handle_mouse_message(int window, uint message, uint wparam, int lparam)
     /* An EARLIER attempt at this exact fix (erase before clearing DAT_00204844) was reverted as "no
        measurable effect" -- that test apparently didn't hit the actual failure window. */
     erase_cursor_icon();
-    if (getenv("UW_DEBUG_CURSORCLICK")) {
-      fprintf(stderr, "[cursorclick] WM_LBUTTONUP before DAT_00204844=%d selected=%p mouse=(%d,%d)\n",
-              (int)DAT_00204844, (void *)g_selected_object, (int)g_mouse_x, (int)g_mouse_y);
-    }
     DAT_00204844 = 0;
     if ((g_selected_object == 0) && ((DAT_00201b60 & 2) == 0)) {
       DAT_00204844 = 0;
@@ -1310,11 +1280,6 @@ uint poll_input_event(int peek_only)
     DAT_0023c448 = 0;
   }
   iVar1 = PeekMessageW(auStack_24,0,0,0,1);
-  if (getenv("UW_DEBUG_AUTOMAP_CURSOR")) fprintf(stderr, "[automap-cursor] poll_input_event: PeekMessageW=%d DAT_0023c448=0x%x\n", iVar1, (unsigned)DAT_0023c448);
-  if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[door] poll_input_event(peek=%d): new_os_event(iVar1)=%d DAT_0023c448(before)=0x%x\n",
-            peek_only, iVar1, (unsigned)DAT_0023c448);
-  if (getenv("UW_DEBUG_INPUTEVENT2")) fprintf(stderr, "[inputevent2] poll_input_event(%d): PeekMessageW=%d DAT_00201b60=%d DAT_002506ab=%d\n", peek_only, iVar1, (int)(short)DAT_00201b60, (int)DAT_002506ab);
   if (iVar1 == 0) {
     uVar2 = 0xffffffff;
   }
@@ -1322,15 +1287,9 @@ uint poll_input_event(int peek_only)
     TranslateMessage(auStack_24);
     DispatchMessageW(auStack_24);
     uVar2 = (uint)DAT_0023c448;
-    if (getenv("UW_DEBUG_INPUTEVENT"))
-      fprintf(stderr, "[inputevent] DAT_0023c448=0x%x\n", (unsigned int)DAT_0023c448);
     if (uVar2 == 0) {
       uVar2 = poll_mouse_event();
-      if (getenv("UW_DEBUG_DOOR"))
-        fprintf(stderr, "[door] poll_input_event: fell through to poll_mouse_event() = %u\n", uVar2);
     }
-    if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[door] poll_input_event: resolved event code uVar2=%u (0x%x)\n", uVar2, uVar2);
   }
   return uVar2;
 }
@@ -1399,10 +1358,6 @@ int begin_directional_move(short direction)
 #define local_33 (*(undefined1 *)(local_24 + 7))
 #define local_32 (*(undefined2 *)(local_24 + 8))
   
-  if (getenv("UW_DEBUG_STEPHEIGHT"))
-    fprintf(stderr, "[bdm-entry] direction=%d g_fall_accel=%d g_jump_ascent_timer=%d DAT_00085890=%d z=%d guard=%d\n",
-            (int)direction, (int)g_fall_accel, (int)g_jump_ascent_timer, (int)DAT_00085890, (int)DAT_00204884,
-            (g_fall_accel == 0) && (g_jump_ascent_timer < DAT_00085890));
   if ((g_fall_accel == 0) && (g_jump_ascent_timer < DAT_00085890)) {
     uVar10 = 0;
     if (direction == -2) {
@@ -1426,7 +1381,7 @@ LAB_0003c940:
         iVar7 = iVar7 + 0x1f;
       }
       iVar7 = check_object_placement_clearance(0x7f,1,(int)(short)(iVar7 >> 5),(int)(short)(iVar8 >> 5),
-                           *(byte *)((char *)g_player_object + 2) & 0x7f,uVar5 | uVar10,8);
+                           g_player_object->hdr.zpos,uVar5 | uVar10,8);
       if ((iVar7 == 0) ||
          ((((uVar10 == 0 && (uVar3 = (uint)DAT_00202c68, uVar3 != 1)) && (uVar3 != DAT_00202084)) &&
           ((uVar3 != 0x10 || (uVar5 == 0)))))) goto LAB_0003cdf8;
@@ -1442,35 +1397,22 @@ LAB_0003c940:
         DAT_00202080 = (short)iVar9;
         object_list_insert_head(DAT_002029cc + iVar7 * 4 + 2,g_player_object);
         uVar6 = DAT_00204880 & 0x3f00;
-        uVar5 = *(ushort *)((char *)g_player_object + 0x16) & 0x3ff;
-        *(char *)((char *)g_player_object + 0x16) = (char)uVar5;
-        *(byte *)((char *)g_player_object + 0x17) =
-             (byte)(uVar5 >> 8) | (byte)((uint)(((int)(short)uVar6 >> 8) << 10) >> 8);
-        uVar5 = *(ushort *)((char *)g_player_object + 0x16) & 0xfc0f |
-                ((int)(short)(DAT_00204882 & 0x3f00) >> 8) << 4;
-        *(char *)((char *)g_player_object + 0x16) = (char)uVar5;
-        *(char *)((char *)g_player_object + 0x17) = (char)(uVar5 >> 8);
+        uVar5 = g_player_object->tile_word & 0x3ff;
+        g_player_object->tile_x = (uVar6 >> 8) & 0x3f;
+        g_player_object->tile_y = ((ushort)DAT_00204882 >> 8) & 0x3f;
+        uVar5 = g_player_object->tile_word;
         uVar5 = local_40;
       }
       uVar6 = DAT_00204880 & 0xe0;
-      uVar3 = *(ushort *)((char *)g_player_object + 2) & 0x1fff;
-      *(char *)((char *)g_player_object + 2) = (char)uVar3;
-      *(byte *)((char *)g_player_object + 3) =
-           (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar6 >> 5) << 0xd) >> 8);
+      uVar3 = g_player_object->hdr.position_word & 0x1fff;
+      g_player_object->hdr.xpos = (uVar6 >> 5) & 7;
       uVar6 = DAT_00204882 & 0xe0;
-      uVar3 = *(ushort *)((char *)g_player_object + 2) & 0xe3ff;
-      *(char *)((char *)g_player_object + 2) = (char)uVar3;
-      *(byte *)((char *)g_player_object + 3) =
-           (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar6 >> 5) << 10) >> 8);
-      if (getenv("UW_DEBUG_STEPHEIGHT"))
-        fprintf(stderr, "[stepsnap] uVar10=%u uVar5=%u cur_z=%d DAT_00202c30=%d snap=%d\n",
-                uVar10, uVar5, (int)DAT_00204884, (int)DAT_00202c30,
-                (((uVar10 == 0) && (uVar5 == 0)) || (((int)DAT_00204884 >> 3) + -8 <= (int)DAT_00202c30)));
+      uVar3 = g_player_object->hdr.position_word & 0xe3ff;
+      g_player_object->hdr.ypos = (uVar6 >> 5) & 7;
       if (((uVar10 == 0) && (uVar5 == 0)) || (((int)DAT_00204884 >> 3) + -8 <= (int)DAT_00202c30)) {
-        uVar1 = *(undefined2 *)((char *)g_player_object + 2);
+        uVar1 = g_player_object->hdr.position_word;
         bVar2 = (byte)uVar1;
-        *(byte *)((char *)g_player_object + 2) = (bVar2 ^ (byte)DAT_00202c30) & 0x7f ^ bVar2;
-        *(char *)((char *)g_player_object + 3) = (char)((ushort)uVar1 >> 8);
+        g_player_object->hdr.zpos = (byte)DAT_00202c30 & 0x7f;
         DAT_00204884 = DAT_00202c30 << 3;
       }
       else if (g_fall_accel == 0 && uVar5 == 0) {
@@ -1478,9 +1420,8 @@ LAB_0003c940:
       }
       set_locomotion_state((int)DAT_00202c68,0);
       uVar10 = read_realtime_clock_units();
-      uVar5 = *(ushort *)((char *)g_player_object + 0xb) & 0xfff;
-      *(char *)((char *)g_player_object + 0xb) = (char)uVar5;
-      *(byte *)((char *)g_player_object + 0xc) = (byte)(uVar5 >> 8) | (byte)(((uVar10 & 0xc0) << 6) >> 8);
+      uVar5 = g_player_object->goal_word & 0xfff;
+      g_player_object->npc_animation_frame = (uVar10 >> 6) & 3;
       saved_scratch = DAT_00202c6c;
       DAT_00202c6c = (byte *)&local_3c;
       local_32 = 1;
@@ -1496,7 +1437,7 @@ LAB_0003c940:
         iVar7 = iVar7 + 0x1f;
       }
       local_3a = (undefined2)(iVar7 >> 5);
-      local_38 = *(byte *)((char *)g_player_object + 2) & 0x7f;
+      local_38 = g_player_object->hdr.zpos;
       collision_height_envelope(0,0);
       sort_collision_candidates();
       iVar8 = (int)*(char *)(DAT_00202c6c + 0xb);
@@ -1508,7 +1449,7 @@ LAB_0003c940:
              ARM ABI, where resolve_object_link's caller apparently re-read some other value out of
              r1 right after the call (Ghidra folded it into a fake 64-bit return value, r0:r1). */
           if (uVar11 == 0) break;
-          if ((*uVar11 & 0x1ff) == 0x1a0) {
+          if ((((uw_object_hdr_t *)uVar11)->object_id) == 0x1a0) {
             /* Was followed by `iVar8 = extraout_r1;` -- same bug as the sibling fix just above in
                this function (resolve_object_link's own high-bits carry), but via a different,
                unrelated callee... */
@@ -1536,12 +1477,9 @@ LAB_0003c920:
       else {
         DAT_00201c70 = (DAT_00201c70 & 0xe000) + (ushort)(0 < direction) * 0x2000;
       }
-      uVar10 = *(ushort *)((char *)g_player_object + 2) & 0xfc7f | ((int)(short)DAT_00201c70 >> 0xd & 7U) << 7;
-      *(char *)((char *)g_player_object + 2) = (char)uVar10;
-      *(char *)((char *)g_player_object + 3) = (char)(uVar10 >> 8);
-      *(byte *)((char *)g_player_object + 0x18) =
-           ((byte)(DAT_00201c70 >> 8) ^ *(byte *)((char *)g_player_object + 0x18)) & 0x1f ^
-           *(byte *)((char *)g_player_object + 0x18);
+      g_player_object->hdr.heading = ((ushort)DAT_00201c70 >> 13) & 7;
+      uVar10 = g_player_object->hdr.position_word;
+      g_player_object->fine_heading = ((ushort)DAT_00201c70 >> 8) & 0x1f;
       saved_scratch = DAT_00202c6c;
     }
     DAT_00202c6c = saved_scratch;
@@ -1551,9 +1489,6 @@ LAB_0003c920:
 LAB_0003cdf8:
     uVar4 = 0;
   }
-  if (getenv("UW_DEBUG_STEPHEIGHT"))
-    fprintf(stderr, "[bdm-exit] moved=%d z=%d g_fall_accel=%d bea8=%d be98=%d\n",
-            (int)uVar4, (int)DAT_00204884, (int)g_fall_accel, (int)DAT_0023bea8, (int)DAT_0023be98);
   return uVar4;
 }
 #undef local_3c
@@ -1724,7 +1659,6 @@ int poll_mouse_event()
 {
   short sVar1;
 
-  if (getenv("UW_DEBUG_AUTOMAP_CURSOR")) fprintf(stderr, "[automap-cursor] poll_mouse_event ENTRY\n");
   update_mouse_state();
   if (DAT_00086968 == -1) {
     DAT_0020484c = 0;

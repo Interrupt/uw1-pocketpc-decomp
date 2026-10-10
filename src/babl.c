@@ -2,13 +2,14 @@
    intrinsics (babl_builtin_*), the named script-variable bridge
    (babl_register_builtin/babl_set_variable/ babl_get_variable)... */
 #include "headers/babl.h"
+#include "headers/options.h"
 #include <stdio.h>
 #include <stdlib.h>
 
 #define DAT_00101968 DAT_00101968_backing[0]
 #define DAT_00085460 DAT_00085460_backing[0]
 #define DAT_00085448 DAT_00085448_backing[0]
-ushort *DAT_00100674;
+uw_mobile_object_t *DAT_00100674;
 static uint *DAT_000bbf04;
 static char s__SAVE0_bglobals_dat_00084538[] = "\\SAVE0\\bglobals.dat";
 static char s__DATA_babglobs_dat_0008454c[] = "\\DATA\\babglobs.dat";
@@ -145,6 +146,10 @@ static char s_genhead_00084fd8[] = "genhead";
 static char s_charhead_00084fe0[] = "charhead";
 static char s_heads_00084fec[] = "heads";
 static char s_converse_00084ff4[] = "converse";
+/* HACK: "barter UI is up". The original exit_talk_mode tests this before calling end_barter_ui, but
+   nothing in the decompile or the ARM disassembly ever sets it, so items left in the barter slots
+   when a conversation ended were never returned. init_barter_ui now sets it and exit_talk_mode
+   clears it after the cleanup. */
 static short DAT_001006d0;
 static char s_take_id_from_npc_0008519c[] = "take_id_from_npc";
 static char s_take_from_npc_000851b0[] = "take_from_npc";
@@ -406,10 +411,10 @@ int babl_builtin_take_from_npc(char *args)
       uVar1 = (uint)sVar7;
       do {
         if ((int)uVar1 < 1000) {
-          bVar12 = (*puVar9 & 0x1ff) == uVar1;
+          bVar12 = (((uw_object_hdr_t *)puVar9)->object_id) == uVar1;
         }
         else {
-          bVar12 = uVar1 - 1000 == (uint)(*puVar9 >> 4 & 0x1f);
+          bVar12 = uVar1 - 1000 == (uint)(((uw_object_hdr_t *)puVar9)->object_id >> 4);
         }
         if (bVar12) {
           object_list_unlink((byte *)(iVar8 + 6),(byte *)puVar9);
@@ -443,7 +448,7 @@ int babl_builtin_take_from_npc(char *args)
           else {
             *piVar4 = (intptr_t)puVar9;
             decrement_cursor_hide_depth();
-            push_cursor_icon(*puVar9 & 0x1ff);
+            push_cursor_icon(((uw_object_hdr_t *)puVar9)->object_id);
             DAT_002020c4 = 1;
             cursor_show_idle_tick();
             debug_noop_checkpoint();
@@ -512,7 +517,7 @@ int babl_builtin_take_id_from_npc(char *args)
         else {
           *piVar3 = (intptr_t)puVar9;
           decrement_cursor_hide_depth();
-          push_cursor_icon(*puVar9 & 0x1ff);
+          push_cursor_icon(((uw_object_hdr_t *)puVar9)->object_id);
           DAT_002020c4 = 1;
           cursor_show_idle_tick();
           debug_noop_checkpoint();
@@ -541,15 +546,15 @@ int babl_builtin_do_inv_create(char *args)
     uVar5 = 0;
   }
   else {
-    uVar1 = puVar3[2];
-    *(byte *)(puVar3 + 2) = (byte)uVar1 | 0x3f;
-    *(char *)((char *)puVar3 + 5) = (char)(uVar1 >> 8);
+    uVar1 = ((uw_object_hdr_t *)puVar3)->chain_word;
+    ((uw_object_hdr_t *)puVar3)->chain_word_low = (byte)uVar1 | 0x3f;
+    ((uw_object_hdr_t *)puVar3)->chain_word_high = (byte)(char)(uVar1 >> 8);
     puVar4 = (ushort *)(*piVar2 + 6);
     while (puVar4 = (ushort *)resolve_object_link(puVar4), puVar4 != (ushort *)0x0) {
-      if (((((*puVar3 & 0x8000) != 0) && ((*puVar4 & 0x8000) != 0)) && ((puVar3[3] & 0x8000) == 0))
-         && ((((puVar4[3] & 0x8000) == 0 && (((*puVar4 ^ *puVar3) & 0x1ff) == 0)) &&
-             ((ushort)((puVar4[3] >> 6) + (puVar3[3] >> 6)) < 999)))) {
-        iVar6 = (puVar4[3] & 0xffc0) + (puVar3[3] & 0xffc0);
+      if ((((((uw_object_hdr_t *)puVar3)->is_quant != 0) && ((*puVar4 & 0x8000) != 0)) && ((((uw_object_hdr_t *)puVar3)->link & 0x200) == 0))
+          && ((((puVar4[3] & 0x8000) == 0 && (((*puVar4 ^ ((uw_object_hdr_t *)puVar3)->type_flags) & 0x1ff) == 0)) &&
+               ((ushort)((puVar4[3] >> 6) + (((uw_object_hdr_t *)puVar3)->link)) < 999)))) {
+        iVar6 = (puVar4[3] & 0xffc0) + (((uw_object_hdr_t *)puVar3)->link << 6);
         *(byte *)(puVar4 + 3) = (byte)iVar6 ^ (byte)puVar4[3] & 0x3f;
         *(char *)((char *)puVar4 + 7) = (char)((uint)iVar6 >> 8);
         free_object_slot(puVar3);
@@ -591,7 +596,7 @@ void babl_builtin_set_race_attitude(char *args)
   short sVar4;
   int iVar5;
   uint uVar6;
-  ushort *puVar7;
+  uw_mobile_object_t *puVar7;
   short sVar8;
   int iVar10;
   uint uVar11;
@@ -602,10 +607,10 @@ void babl_builtin_set_race_attitude(char *args)
   iVar5 = babl_read_var_word((int)*(short *)(args + -2));
   uVar2 = babl_read_var_word((int)*(short *)(args + -4));
   uVar3 = babl_read_var_word((int)*(short *)(args + -6));
-  uVar1 = *DAT_00100674;
-  uVar11 = (uint)(*(byte *)((char *)DAT_00100674 + 0x17) >> 2);
+  uVar1 = DAT_00100674->hdr.type_flags;
+  uVar11 = (uint)(DAT_00100674->tile_x);
   iVar13 = uVar11 - iVar5;
-  uVar6 = DAT_00100674[0xb] >> 4 & 0x3f;
+  uVar6 = DAT_00100674->tile_y;
   iVar10 = uVar6 - iVar5;
   if (iVar13 * 0x10000 >> 0x10 < 1) {
     iVar13 = 1;
@@ -632,17 +637,16 @@ void babl_builtin_set_race_attitude(char *args)
         /* was folded into `int iVar5` (reused elsewhere as a loop-index
            int) -- truncated tilemap_lookup's real `void *` return */
         char *_tile5 = (char *)tilemap_lookup(iVar9,iVar10);
-        puVar7 = (ushort *)resolve_object_link(_tile5 + 2);
-        if (puVar7 != (ushort *)0x0) {
+        puVar7 = (uw_mobile_object_t *)resolve_object_link(_tile5 + 2);
+        if (puVar7 != NULL) {
           do {
-            if ((((*puVar7 & 0x1ff) == (int)(short)(uVar1 & 0x1ff)) && ((puVar7[5] & 0x80) == 0)) &&
-               ((byte)(&DAT_001007d9)[(*puVar7 & 0x3f) * 0x30] == uVar3)) {
-              uVar11 = *(ushort *)((char *)puVar7 + 0xd) & 0x3fff;
-              *(char *)((char *)puVar7 + 0xd) = (char)uVar11;
-              *(byte *)(puVar7 + 7) = (byte)(uVar11 >> 8) | (byte)(((uVar2 & 3) << 0xe) >> 8);
+            if ((((puVar7->hdr.object_id) == (int)(short)(uVar1 & 0x1ff)) && ((puVar7->movement_flags & 0x80) == 0)) &&
+                ((byte) g_monster_type_props[(puVar7->hdr.object_id & 0x3f)].race_flags == uVar3)) {
+              uVar11 = puVar7->status_word & 0x3fff;
+              puVar7->npc_attitude = uVar2 & 3;
             }
-            puVar7 = (ushort *)resolve_object_link(puVar7 + 2);
-          } while (puVar7 != (ushort *)0x0);
+            puVar7 = (uw_mobile_object_t *)resolve_object_link(&puVar7->hdr.chain_word);
+          } while (puVar7 != NULL);
         }
         iVar9 = iVar9 + 1;
         iVar5 = iVar9 * 0x10000 >> 0x10;
@@ -710,7 +714,7 @@ int babl_builtin_place_object(char *args)
   puVar4 = (undefined1 *)get_object_record_by_slot_index(uVar3);
   uVar5 = babl_read_var_word((int)*(short *)(args + -4));
   uVar6 = babl_read_var_word((int)*(short *)(args + -2));
-  puVar7 = (ushort *)(DAT_00100674 + 6);
+  puVar7 = (ushort *)((char *)&DAT_00100674->hdr.link_word);
   uVar2 = *puVar7;
   if ((uVar2 & 0xffc0) != 0) {
     do {
@@ -724,14 +728,15 @@ int babl_builtin_place_object(char *args)
     } while ((uVar2 & 0xffc0) != 0);
   }
   if ((*puVar7 & 0xffc0) != 0) {
-    object_list_unlink(DAT_00100674 + 6,puVar4);
+    object_list_unlink((char *)&DAT_00100674->hdr.link_word,puVar4);
   }
   iVar8 = (int)(short)uVar5;
   if (iVar8 < 0) {
     DAT_00202c84 = 1;
-    place_object_in_world(*(ushort *)((char *)g_player_object + 0x16) >> 7 & 0x1f8,
-                 *(ushort *)((char *)g_player_object + 0x16) >> 1 & 0x1f8,*(byte *)((char *)g_player_object + 2) & 0x7f,
-                 puVar4,6,1);
+    place_object_in_world(g_player_object->tile_word >> 7 & 0x1f8,
+                          g_player_object->tile_word >> 1 & 0x1f8,
+                          g_player_object->hdr.zpos,
+                          puVar4,6,1);
     DAT_00202c84 = 0;
 LAB_0001818c:
     uVar3 = 1;
@@ -740,12 +745,14 @@ LAB_0001818c:
     if ((((0 < iVar8) && (iVar8 < 0x40)) && (iVar1 = (int)(short)uVar6, 0 < iVar1)) &&
        (iVar1 < 0x40)) {
       pbVar9 = (byte *)tilemap_lookup(uVar5,uVar6);
-      uVar2 = *(ushort *)(puVar4 + 2);
-      puVar4[2] = (byte)(uVar2 & 0xff80) | *pbVar9 >> 1 & 0x78;
-      puVar4[3] = (char)((uVar2 & 0xff80) >> 8);
-      iVar8 = check_object_placement_clearance(CONCAT11(puVar4[1],*puVar4) & 0x1ff,uVar3,(iVar8 << 0x13) >> 0x10,
-                           (iVar1 << 0x13) >> 0x10,(ushort)(*pbVar9 >> 4) << 3,1,
-                           ((&DAT_00202c91)[(CONCAT11(puVar4[1],*puVar4) & 0x1ff) * 0xd] & 7) + 4);
+      uVar2 = ((uw_object_hdr_t *)puVar4)->position_word;
+      ((uw_object_hdr_t *)puVar4)->position_word_low = (byte)(uVar2 & 0xff80) | *pbVar9 >> 1 & 0x78;
+      ((uw_object_hdr_t *)puVar4)->position_word_high = (char)((uVar2 & 0xff80) >> 8);
+      iVar8 = check_object_placement_clearance(((uw_object_hdr_t *)puVar4)->object_id,
+                                               uVar3,(iVar8 << 0x13) >> 0x10,
+                                               (iVar1 << 0x13) >> 0x10,
+                                               (ushort)(*pbVar9 >> 4) << 3,1,
+                                               (g_object_type_props[(((uw_object_hdr_t *)puVar4)->object_id)].collision_radius) + 4);
       if (iVar8 != 0) {
         object_list_append_tail(pbVar9 + 2,puVar4);
         settle_dropped_object(puVar4,uVar5,uVar6,1);
@@ -769,7 +776,7 @@ ushort babl_builtin_take_from_npc_inv(char *args)
   
   sVar1 = babl_read_var_word((int)*(short *)(args + -2));
   iVar4 = 0;
-  puVar2 = (ushort *)(DAT_00100674 + 6);
+  puVar2 = (ushort *)((char *)&DAT_00100674->hdr.link_word);
   if (0 < sVar1) {
     do {
       if ((*puVar2 & 0xffc0) == 0) break;
@@ -789,7 +796,7 @@ void babl_builtin_add_to_npc_inv(char *args)
   void *uVar1;
 
   uVar1 = get_object_record_by_slot_index(babl_read_var_word((int)*(short *)(args + -2)));  /* r0 passthrough */
-  object_list_append_tail(DAT_00100674 + 6,uVar1);
+  object_list_append_tail((char *)&DAT_00100674->hdr.link_word,uVar1);
 }
 
 
@@ -804,7 +811,6 @@ void babl_builtin_set_quest(char *args)
   
   sVar1 = babl_read_var_word((int)*(short *)(args + -4));
   sVar2 = babl_read_var_word((int)*(short *)(args + -2));
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_builtin_set_quest: idx=%d value=%d\n", (int)sVar1, (int)sVar2);
   uVar3 = (uint)sVar1;
   if (-1 < (int)uVar3) {
     if ((int)uVar3 < 0x20) {
@@ -838,19 +844,15 @@ byte babl_builtin_get_quest(char *args)
   if (-1 < iVar1) {
     if (0x1f < iVar1) {
       if (0x23 < iVar1) {
-        if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_builtin_get_quest: idx=%d -> %d (clamp-high)\n", iVar1, (int)*(undefined1 *)(DAT_00086df8 + 0x6d));
         return *(undefined1 *)(DAT_00086df8 + 0x6d);
       }
-      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_builtin_get_quest: idx=%d -> %d (byte-value slot)\n", iVar1, (int)*(undefined1 *)(iVar1 + DAT_00086df8 + 0x49));
       return *(undefined1 *)(iVar1 + DAT_00086df8 + 0x49);
     }
     sVar2 = babl_read_var_word((int)*(short *)(args + -2));
     if ((*(uint *)(DAT_00086df8 + 0x65) & 1U << ((int)sVar2 & 0xffU)) != 0) {
-      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_builtin_get_quest: idx=%d -> 1 (flag bit set)\n", iVar1);
       return 1;
     }
   }
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_builtin_get_quest: idx=%d -> 0\n", iVar1);
   return 0;
 }
 
@@ -883,9 +885,6 @@ int babl_builtin_gronk_door(char *args)
     DAT_002020a0 = babl_read_var_word((int)*(short *)(args + -6));
     DAT_002020a4 = babl_read_var_word((int)*(short *)(args + -4));
     sVar3 = babl_read_var_word((int)*(short *)(args + -2));
-    if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[door] babl_builtin_gronk_door: sVar3(action)=%d obj0=0x%04x\n",
-              (int)sVar3, (unsigned)*iVar6);
     if (sVar3 == 0) {
       close_door_object(0,iVar6);
     }
@@ -931,73 +930,72 @@ void babl_builtin_x_obj_stuff(char *args)
   puVar11_rec = (ushort *)get_object_record_by_slot_index(babl_read_var_word((int)*(short *)(args + -0x12)));  /* r0 passthrough */
   sVar3 = babl_read_var_word((int)*(short *)(args + -0x10));
   if (sVar3 == 0) {
-    if (((*psVar4 != -1) && ((*puVar11_rec & 0x1c0) != 0x140)) &&
-       (((&DAT_00202c9a)[(*puVar11_rec & 0x1ff) * 0xd] & 3) != 2)) {
-      *psVar4 = (short)((puVar11_rec[1] & 0x380) >> 7);
+    if (((*psVar4 != -1) && ((((uw_object_hdr_t *)puVar11_rec)->object_id & 0x1c0) != 0x140)) &&
+        ((g_object_type_props[(((uw_object_hdr_t *)puVar11_rec)->object_id)].class_flags & 3) != 2)) {
+      *psVar4 = (short)(((uw_object_hdr_t *)puVar11_rec)->heading);
     }
     if (*puVar5 != 0xffff) {
-      *puVar5 = (byte)puVar11_rec[3] & 0x3f;
+      *puVar5 = ((uw_object_hdr_t *)puVar11_rec)->owner;
     }
     if (*psVar6 != -1) {
-      *psVar6 = (short)((*(byte *)((char *)puVar11_rec + 1) & 0x1e) >> 1);
+      *psVar6 = (short)((((uw_object_hdr_t *)puVar11_rec)->type_flags_high & 0x1e) >> 1);
     }
     if (*psVar7 != -1) {
-      *psVar7 = (short)((puVar11_rec[3] & 0x7fc0) >> 6);
+      *psVar7 = (short)(((((uw_object_hdr_t *)puVar11_rec)->link & 0x1ff) << 6) >> 6);
     }
     if (*psVar8 != -1) {
-      *psVar8 = ((short)*(char *)((char *)puVar11_rec + 1) & 4U) << 8;
+      *psVar8 = ((short)(char)((uw_object_hdr_t *)puVar11_rec)->type_flags_high & 4U) << 8;
     }
     if (*psVar9 != -1) {
-      *psVar9 = ((short)*(char *)((char *)puVar11_rec + 1) & 2U) << 8;
+      *psVar9 = ((short)(char)((uw_object_hdr_t *)puVar11_rec)->type_flags_high & 2U) << 8;
     }
     if (*puVar10 != 0xffff) {
-      *puVar10 = (byte)puVar11_rec[2] & 0x3f;
+      *puVar10 = ((uw_object_hdr_t *)puVar11_rec)->quality;
     }
   }
   else {
-    if ((((int)*psVar4 != 0xffffffff) && ((*puVar11_rec & 0x1c0) != 0x140)) &&
-       (((&DAT_00202c9a)[(*puVar11_rec & 0x1ff) * 0xd] & 3) != 2)) {
-      uVar12 = puVar11_rec[1] & 0xfc7f | ((int)*psVar4 & 7U) << 7;
-      *(char *)(puVar11_rec + 1) = (char)uVar12;
-      *(char *)((char *)puVar11_rec + 3) = (char)(uVar12 >> 8);
+    if ((((int)*psVar4 != 0xffffffff) && ((((uw_object_hdr_t *)puVar11_rec)->object_id & 0x1c0) != 0x140)) &&
+        ((g_object_type_props[(((uw_object_hdr_t *)puVar11_rec)->object_id)].class_flags & 3) != 2)) {
+      uVar12 = ((uw_object_hdr_t *)puVar11_rec)->position_word & 0xfc7f | ((int)*psVar4 & 7U) << 7;
+      ((uw_object_hdr_t *)puVar11_rec)->position_word = (ushort)uVar12;
     }
     if (*puVar5 != 0xffff) {
-      uVar1 = puVar11_rec[3];
+      uVar1 = ((uw_object_hdr_t *)puVar11_rec)->link_word;
       bVar2 = (byte)uVar1;
-      *(byte *)(puVar11_rec + 3) = (bVar2 ^ (byte)*puVar5) & 0x3f ^ bVar2;
-      *(char *)((char *)puVar11_rec + 7) = (char)(uVar1 >> 8);
+      ((uw_object_hdr_t *)puVar11_rec)->link_word_low = (bVar2 ^ (byte)*puVar5) & 0x3f ^ bVar2;
+      ((uw_object_hdr_t *)puVar11_rec)->link_word_high = (byte)(char)(uVar1 >> 8);
     }
     sVar3 = *psVar6;
     if ((int)sVar3 != 0xffffffff) {
-      uVar1 = *puVar11_rec;
-      *(char *)puVar11_rec = (char)(uVar1 & 0xe1ff);
-      *(byte *)((char *)puVar11_rec + 1) =
-           (byte)((uVar1 & 0xe1ff) >> 8) | (byte)((((int)sVar3 & 0xfU) << 9) >> 8);
+      uVar1 = ((uw_object_hdr_t *)puVar11_rec)->type_flags;
+      ((uw_object_hdr_t *)puVar11_rec)->type_flags_low = (byte)(char)(uVar1 & 0xe1ff);
+      ((uw_object_hdr_t *)puVar11_rec)->type_flags_high =
+          (byte)((uVar1 & 0xe1ff) >> 8) | (byte)((((int)sVar3 & 0xfU) << 9) >> 8);
     }
     uVar12 = (uint)*psVar7;
     if (uVar12 != 0xffffffff) {
-      *(byte *)(puVar11_rec + 3) = (byte)puVar11_rec[3] & 0x3f | (byte)(uVar12 << 6);
-      *(char *)((char *)puVar11_rec + 7) = (char)((uVar12 & 0x3ffffff | 0xfe00) >> 2);
+      ((uw_object_hdr_t *)puVar11_rec)->link_word_low = ((uw_object_hdr_t *)puVar11_rec)->owner | (byte)(uVar12 << 6);
+      ((uw_object_hdr_t *)puVar11_rec)->link_word_high = (byte)(char)((uVar12 & 0x3ffffff | 0xfe00) >> 2);
     }
     sVar3 = *psVar8;
     if ((int)sVar3 != 0xffffffff) {
-      uVar1 = *puVar11_rec;
-      *(char *)puVar11_rec = (char)(uVar1 & 0xfbff);
-      *(byte *)((char *)puVar11_rec + 1) =
-           (byte)((uVar1 & 0xfbff) >> 8) | (byte)((((int)sVar3 & 1U) << 10) >> 8);
+      uVar1 = ((uw_object_hdr_t *)puVar11_rec)->type_flags;
+      ((uw_object_hdr_t *)puVar11_rec)->type_flags_low = (byte)(char)(uVar1 & 0xfbff);
+      ((uw_object_hdr_t *)puVar11_rec)->type_flags_high =
+          (byte)((uVar1 & 0xfbff) >> 8) | (byte)((((int)sVar3 & 1U) << 10) >> 8);
     }
     sVar3 = *psVar9;
     if ((int)sVar3 != 0xffffffff) {
-      uVar1 = *puVar11_rec;
-      *(char *)puVar11_rec = (char)(uVar1 & 0xfdff);
-      *(byte *)((char *)puVar11_rec + 1) =
-           (byte)((uVar1 & 0xfdff) >> 8) | (byte)((((int)sVar3 & 1U) << 9) >> 8);
+      uVar1 = ((uw_object_hdr_t *)puVar11_rec)->type_flags;
+      ((uw_object_hdr_t *)puVar11_rec)->type_flags_low = (byte)(char)(uVar1 & 0xfdff);
+      ((uw_object_hdr_t *)puVar11_rec)->type_flags_high =
+          (byte)((uVar1 & 0xfdff) >> 8) | (byte)((((int)sVar3 & 1U) << 9) >> 8);
     }
     if (*puVar10 != 0xffff) {
-      uVar1 = puVar11_rec[2];
+      uVar1 = ((uw_object_hdr_t *)puVar11_rec)->chain_word;
       bVar2 = (byte)uVar1;
-      *(byte *)(puVar11_rec + 2) = (bVar2 ^ (byte)*puVar10) & 0x3f ^ bVar2;
-      *(char *)((char *)puVar11_rec + 5) = (char)(uVar1 >> 8);
+      ((uw_object_hdr_t *)puVar11_rec)->chain_word_low = (bVar2 ^ (byte)*puVar10) & 0x3f ^ bVar2;
+      ((uw_object_hdr_t *)puVar11_rec)->chain_word_high = (byte)(char)(uVar1 >> 8);
     }
   }
 }
@@ -1011,8 +1009,8 @@ void babl_builtin_x_obj_pos(char *args)
   ushort *puVar2;
   short *psVar3;
   ushort *puVar4;
-  void *iVar5;
-  byte *pbVar6;
+  uw_object_hdr_t *iVar5;
+  uw_tile_t *pbVar6;
   uint uVar7;
   ushort uVar8;
   
@@ -1023,39 +1021,39 @@ void babl_builtin_x_obj_pos(char *args)
   sVar1 = babl_read_var_word((int)*(short *)(args + -8));
   if (sVar1 == 0) {
     if (*puVar2 != 0xffff) {
-      *puVar2 = (ushort)(*(byte *)(iVar5 + 3) >> 5);
+      *puVar2 = (ushort)(iVar5->xpos);
     }
     if (*psVar3 != -1) {
-      *psVar3 = (short)((*(byte *)(iVar5 + 3) & 0x1c) >> 2);
+      *psVar3 = (short)(iVar5->ypos);
     }
     if (*puVar4 != 0xffff) {
-      *puVar4 = *(byte *)(iVar5 + 2) & 0x7f;
+      *puVar4 = iVar5->zpos;
     }
   }
   else {
     uVar8 = *puVar2;
     if (uVar8 != 0xffff) {
-      uVar7 = *(ushort *)(iVar5 + 2) & 0x1fff;
-      *(char *)(iVar5 + 2) = (char)uVar7;
-      *(byte *)(iVar5 + 3) = (byte)(uVar7 >> 8) | (byte)(((uVar8 & 7) << 0xd) >> 8);
+      uVar7 = iVar5->position_word & 0x1fff;
+      iVar5->xpos = uVar8 & 7;
     }
     sVar1 = *psVar3;
     if ((int)sVar1 != 0xffffffff) {
-      uVar7 = *(ushort *)(iVar5 + 2) & 0xe3ff;
-      *(char *)(iVar5 + 2) = (char)uVar7;
-      *(byte *)(iVar5 + 3) = (byte)(uVar7 >> 8) | (byte)((((int)sVar1 & 7U) << 10) >> 8);
+      uVar7 = iVar5->position_word & 0xe3ff;
+      iVar5->ypos = sVar1 & 7;
     }
     uVar8 = *puVar4;
     if (uVar8 != 0xffff) {
       if ((short)uVar8 < 0x80) {
-        uVar8 = (uVar8 ^ *(ushort *)(iVar5 + 2)) & 0x7f ^ *(ushort *)(iVar5 + 2);
+        iVar5->zpos = uVar8 & 0x7f;
+        uVar8 = iVar5->position_word;
       }
       else {
-        pbVar6 = (byte *)tilemap_lookup((int)(short)*puVar2,(int)*psVar3);
-        uVar8 = *pbVar6 >> 1 & 0x78 | *(ushort *)(iVar5 + 2) & 0xff80;
+        pbVar6 = (uw_tile_t *)tilemap_lookup((int)(short)*puVar2,
+                                             (int)*psVar3);
+        iVar5->zpos = pbVar6->floor_height << 3;
+        uVar8 = iVar5->position_word;
       }
-      *(char *)(iVar5 + 2) = (char)uVar8;
-      *(char *)(iVar5 + 3) = (char)(uVar8 >> 8);
+      iVar5->position_word = uVar8;
     }
   }
 }
@@ -1121,13 +1119,11 @@ void load_npc_conversation_variables(void *buffer, short conversation_id)
   } while (cVar1 != '\0');
   ce_strcat(acStack_11c,s__SAVE0_bglobals_dat_00084538);
   iVar4 = open_file_for_read(acStack_11c);
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] load_npc_conversation_variables: open %s -> handle=%d, wanted conv-id(DAT_001007c4)=%d, want %d shorts\n", acStack_11c, iVar4, (int)DAT_001007c4, (int)conversation_id);
   if (iVar4 != -1) {
     bVar2 = false;
     do {
       uVar5 = read_file_handle(iVar4,local_124_backing,4);
       if ((uVar5 < 4) || ((int)(uint)DAT_001007c4 < (int)local_124)) {
-        if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] load_npc_conversation_variables: scan stopped, uVar5=%u local_124=%d (no matching record found)\n", uVar5, (int)local_124);
         break;
       }
       if ((int)local_124 == (uint)DAT_001007c4) {
@@ -1138,10 +1134,6 @@ void load_npc_conversation_variables(void *buffer, short conversation_id)
         if (uVar5 < (uint)((int)local_122 << 1)) {
           bVar2 = true;
         }
-        if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] load_npc_conversation_variables: MATCH id=%d, restored %u bytes (wanted %d), first 10 shorts: %d %d %d %d %d %d %d %d %d %d\n",
-                (int)local_124, uVar5, (int)local_122 << 1,
-                (int)((short*)buffer)[0], (int)((short*)buffer)[1], (int)((short*)buffer)[2], (int)((short*)buffer)[3], (int)((short*)buffer)[4],
-                (int)((short*)buffer)[5], (int)((short*)buffer)[6], (int)((short*)buffer)[7], (int)((short*)buffer)[8], (int)((short*)buffer)[9]);
       }
       else {
         seek_file_handle(iVar4,(int)local_122 << 1,1);
@@ -1418,7 +1410,6 @@ char *babl_expand_string_refs(char *text)
      NULL regardless of what this function actually computed. */
   char *pcVar_result;
 
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] expand_string_refs(\"%s\")\n", text ? text : "(null)");
   pcVar_result = text;
   if (ce_strchr(text,0x40) != 0) {
     iVar6 = ce_strlen(text);
@@ -1598,7 +1589,6 @@ int build_babl_symbol_table()
       *(char *)(iVar7 + 0x1e) = (char)((uint)iVar2 >> 0x10);
       *(char *)(iVar7 + 0x1f) = (char)((uint)iVar2 >> 0x18);
       bVar12 = (short)((uint)iVar2 >> 0x10) == 0x111;
-      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] symbol table entry %d: name=\"%s\" type=0x%x isvar=%d\n", (int)iVar5, local_64, (unsigned)((uint)iVar2 >> 0x10), (int)bVar12);
       if (bVar12) {
         iVar6 = (int)DAT_000bbf24;
       }
@@ -1660,7 +1650,6 @@ int run_babl_bytecode_interpreter()
       /* Was `DAT_000bbf80 + DAT_000bbf74` (byte offset) -- DAT_000bbf74 is the babl VM's own
          instruction pointer, counted in 16-bit WORDS... */
       psVar7 = (short *)(DAT_000bbf80 + DAT_000bbf74 * 2);
-      if (getenv("UW_DEBUG_OPCODE_TRACE")) fprintf(stderr, "[babl-op] ip=%d opcode=%d operand=%d stack_depth=%d top=%d\n", (int)DAT_000bbf74, (int)*psVar7, (int)psVar7[1], (int)DAT_000bbf78, (int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
       switch(*psVar7) {
       case 0:
         goto LAB_0001a2d8;
@@ -1843,7 +1832,6 @@ void babl_register_builtin(char *name, void *handler)
     pcVar4 = (char *)DAT_000bbf70;
     do {
       if ((cVar2 == *pcVar4) && (iVar3 = ce_strcmp(name,pcVar4), iVar3 == 0)) {
-        if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] register_builtin: \"%s\" -> table idx %d\n", name, (int)*(short *)(pcVar4 + 0x1a));
         *(intptr_t *)(DAT_000bbf00 + *(short *)(pcVar4 + 0x1a) * 8) = (intptr_t)handler; // was `undefined4 ... * 4` -- DAT_000bbf00's own comment (uw.c ~11468)
         return;
       }
@@ -1868,9 +1856,6 @@ void babl_set_variable(char *name, short *value_array, short count)
   short sVar6;
   undefined1 local_34 [28];
 
-  if (getenv("UW_DEBUG_BABL") && name && strcmp(name, "npc_talkedto") == 0) {
-    fprintf(stderr, "[babl] babl_set_variable(\"npc_talkedto\", %d)\n", (int)*(short *)value_array);
-  }
   sVar6 = 0;
   iVar2 = ce_strlen(name); // was a dropped arg -- name itself, matching this same function's own explicit `ce_strlen(name)` call a few lines below
   if (iVar2 != 0) {
@@ -1897,9 +1882,6 @@ void babl_set_variable(char *name, short *value_array, short count)
   }
   if (count < 1) {
     return;
-  }
-  if (getenv("UW_DEBUG_BABL") && name && strcmp(name, "npc_talkedto") == 0) {
-    fprintf(stderr, "[babl] babl_set_variable(\"npc_talkedto\"): resolved DAT_000bbf14 slot base=%d\n", (int)*(short *)(iVar2 + 0x1a));
   }
   iVar4 = 0;
   do {
@@ -1945,9 +1927,6 @@ void babl_get_variable(char *name, short *value_array, short count)
          *(undefined2 *)(DAT_000bbf14 + (iVar1 + *(short *)(iVar2 + 0x1a)) * 2);
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar1 < count);
-  if (getenv("UW_DEBUG_BABL") && name && strcmp(name, "npc_talkedto") == 0) {
-    fprintf(stderr, "[babl] babl_get_variable(\"npc_talkedto\") -> %d\n", (int)*(short *)value_array);
-  }
 }
 
 
@@ -2074,13 +2053,13 @@ int babl_builtin_do_demand(char *args)
   local_28 = babl_read_var_word((int)*(short *)(args + -4));
   local_2a = babl_read_var_word((int)*(short *)(args + -2));
   player_rec = DAT_00086df8;
-  bVar1 = *DAT_00100674;
+  bVar1 = (byte)DAT_00100674->hdr.type_flags;
   if (*(char *)(DAT_0023be74 + 4) == '\0') {
     iVar11 = 1;
   }
   else {
     sVar5 = ordint_divmod(*(char *)(DAT_0023be74 + 4),
-                         ((uint)*(byte *)((char *)g_player_object + 8) - (uint)*(byte *)(DAT_00086df8 + 0x36))
+                         ((uint) g_player_object->npc_hp - (uint)*(byte *)(DAT_00086df8 + 0x36))
                          * 2).quot;
     iVar11 = sVar5 + 2;
   }
@@ -2088,16 +2067,16 @@ int babl_builtin_do_demand(char *args)
   sVar5 = ordint_divmod(6,*(undefined1 *)(player_rec + 0x30)).quot;
   bVar3 = *(byte *)(player_rec + 0x3d);
   sVar6 = sum_barter_offer_value(0,&DAT_000bbfe8,&DAT_000bbff0,&DAT_000bbfc8,DAT_000bbfbc);
-  uVar8 = (uint)(byte)(&g_monster_max_stats_table)[(*DAT_00100674 & 0x3f) * 0x30];
+  uVar8 = (uint)(byte) g_monster_type_props[(DAT_00100674->hdr.object_id & 0x3f)].max_hp;
   if (uVar8 == 0) {
     iVar12 = 1;
   }
   else {
-    sVar7 = ordint_divmod(uVar8,(DAT_00100674[8] - uVar8) * 2).quot;
+    sVar7 = ordint_divmod(uVar8,(DAT_00100674->hit_points - uVar8) * 2).quot;
     iVar12 = sVar7 + 2;
   }
   babl_get_variable(s_npc_attitude_000845f8,&local_2c,1);
-  bVar4 = DAT_00100674[0x19];
+  bVar4 = DAT_00100674->npc_ai_flags;
   if ((bVar4 & 0x40) == 0) {
     iVar10 = 1;
     if (1 < local_2c) {
@@ -2108,8 +2087,8 @@ int babl_builtin_do_demand(char *args)
     iVar10 = -1;
   }
   sVar6 = ordint_divmod(10,(int)sVar6).quot;
-  if (((int)((((byte)(&DAT_001007dd)[(bVar1 & 0x3f) * 0x30] & 0xf) + (int)sVar6 + iVar10 + (int)iVar12) *
-            0x10000) >> 0x10 <
+  if (((int)((((byte) g_monster_type_props[(bVar1 & 0x3f)].trade_level & 0xf) + (int)sVar6 + iVar10 + (int)iVar12) *
+             0x10000) >> 0x10 <
        (int)((((bVar2 & 2) >> 1) + (int)sVar5 + (uint)bVar3 + iVar11) * 0x10000) >> 0x10) ||
      ((bVar4 & 0x40) != 0)) {
     /* Was a dropped register-forwarding argument -- same class as
@@ -2219,17 +2198,17 @@ void enter_conversation_mode_screen()
       } while (cVar1 != '\0');
       draw_text_string(local_44,0x90,3);
       DAT_00100670 = DAT_00100784;
-      if (DAT_00100674[0x1a] == 0) {
+      if (DAT_00100674->npc_whoami == 0) {
         uVar6 = 2;
-        load_gr_resource_entries(s_genhead_00084fd8,*DAT_00100674 & 0x3f,1,&converse_res_bump_alloc_entry,&converse_res_slot_store_callback);
+        load_gr_resource_entries(s_genhead_00084fd8,DAT_00100674->hdr.object_id & 0x3f,1,&converse_res_bump_alloc_entry,&converse_res_slot_store_callback);
       }
       else {
         uVar6 = 2;
-        iVar3 = load_gr_resource_entries(s_charhead_00084fe0,DAT_00100674[0x1a] - 1,1,&converse_res_bump_alloc_entry,
+        iVar3 = load_gr_resource_entries(s_charhead_00084fe0,DAT_00100674->npc_whoami - 1,1,&converse_res_bump_alloc_entry,
                              &converse_res_slot_store_callback);
         if (iVar3 == 0) {
           uVar6 = 2;
-          load_gr_resource_entries(s_genhead_00084fd8,*DAT_00100674 & 0x3f,1,&converse_res_bump_alloc_entry,&converse_res_slot_store_callback);
+          load_gr_resource_entries(s_genhead_00084fd8,DAT_00100674->hdr.object_id & 0x3f,1,&converse_res_bump_alloc_entry,&converse_res_slot_store_callback);
         }
       }
       g_blit_transparent_mode = 1;
@@ -2247,7 +2226,7 @@ void enter_conversation_mode_screen()
       reset_cursor_confine_rect();
       mode_icon_highlight_off(5);
       g_cursor_mode = 0;
-      start_npc_conversation(DAT_00100674[0x1a],*DAT_00100674 & 0x3f);
+      start_npc_conversation(DAT_00100674->npc_whoami,DAT_00100674->hdr.object_id & 0x3f);
       change_game_mode(1);
       return;
     }
@@ -2320,25 +2299,14 @@ void start_npc_conversation(int conversation_id, int npc_type)
     babl_register_builtin(s_give_ptr_npc_00085000,babl_builtin_give_ptr_npc);
     sync_conv_vars_from_npc(DAT_00100674);
     DAT_001007b8 = babl_alloc(0xa0);
-    if ((*(byte *)(DAT_00100674 + 0xe) & 0x10) == 0) {
+    if (!DAT_00100674->npc_loot_spawned) {
       /* Dropped argument -- see babl_builtin_take_from_npc's identical
          call for the full explanation; intended arg is DAT_00100674. */
       spawn_creature_death_loot(DAT_00100674);
     }
     /* Debug-only static dump of every string in this NPC's own compiled conversation, independent
        of which branches a live playthrough happens to reach -- see bragit-talk-again-investigation. */
-    if (getenv("UW_DEBUG_DUMP_CONV_STRINGS")) {
-      int _dump_i;
-      for (_dump_i = 0; _dump_i < 0x200; _dump_i++) {
-        char *_dump_s = get_message_string((ushort)_dump_i);
-        if (_dump_s && *_dump_s) {
-          fprintf(stderr, "[babl] conv string msgid=%d: \"%s\"\n", _dump_i, _dump_s);
-        }
-      }
-    }
-    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] start_npc_conversation: about to call run_babl_bytecode_interpreter()\n");
     run_babl_bytecode_interpreter();
-    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] start_npc_conversation: run_babl_bytecode_interpreter() returned\n");
     uVar3 = 500;
     iVar2 = sync_conv_vars_to_npc((char *)DAT_00100674);
     if ((iVar2 != 0) || (DAT_001007b4 == '\0')) {
@@ -2347,23 +2315,9 @@ void start_npc_conversation(int conversation_id, int npc_type)
     /* Debug-only re-seed, no UI involved: directly proves out the npc_talkedto persistence fix
        (bglobals-dat-readonly-handle-fix) end-to-end without needing to click the NPC a second time
        through a fragile, animation-position-dependent screen coordinate. */
-    if (getenv("UW_DEBUG_TALK_TWICE")) {
-      fprintf(stderr, "[babl] UW_DEBUG_TALK_TWICE: re-seeding from the same object right after natural conversation end\n");
-      sync_conv_vars_from_npc(DAT_00100674);
-    }
     /* Debug-only: re-runs the exact same object-pick the mouse position already used to start this
        conversation would produce, RIGHT as the conversation ends -- same frame, same
        g_mouse_x/g_mouse_y, no real click or screen coordinate involved at all. */
-    if (getenv("UW_DEBUG_PICK_TWICE")) {
-      ushort *_pick2 = pick_object_under_cursor(2);
-      if (_pick2) {
-        fprintf(stderr, "[pick-twice] re-pick at same mouse=(%d,%d) right after conversation end -> objid=0x%03x\n",
-                (int)g_mouse_x, (int)g_mouse_y, (unsigned)(*_pick2 & 0x1ff));
-      } else {
-        fprintf(stderr, "[pick-twice] re-pick at same mouse=(%d,%d) right after conversation end -> NULL\n",
-                (int)g_mouse_x, (int)g_mouse_y);
-      }
-    }
     wait_for_click_to_continue(uVar3,0);
   }
 }
@@ -2399,7 +2353,6 @@ int babl_menu(char *args)
   DAT_00100794 = 1;
   sVar2 = *(short *)(args + -2);
   uVar6 = babl_read_var_word((int)sVar2);
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_menu entry: args=%p sVar2(local-slot-idx)=%d DAT_000bbf78(stack-depth)=%d uVar6(first-msgid)=%u\n", (void *)args, (int)sVar2, (int)DAT_000bbf78, (unsigned)uVar6);
   iVar12 = 1;
   sVar5 = (short)uVar6;
   while (sVar5 != 0) {
@@ -2438,7 +2391,6 @@ int babl_menu(char *args)
     iVar12 = ((int)iVar12 + 1) * 0x10000 >> 0x10;
   } while (iVar12 < 10);
   iVar12 = 1;
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_menu print-loop: DAT_00100794(item_count)=%d\n", (int)DAT_00100794);
   if (1 < DAT_00100794) {
     do {
       pcVar10 = *(char **)(&DAT_00100680 + iVar12 * 8);
@@ -2452,7 +2404,6 @@ int babl_menu(char *args)
         *pcVar11 = cVar1;
         pcVar11 = pcVar11 + 1;
       } while (cVar1 != '\0');
-      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_menu item %d text: \"%s\"\n", iVar12, local_c4);
       ce_strcat(local_c4,&s_scroll_newline_0008522c);
       sVar5 = message_scroll_print_wrapped(local_c4);
       debug_noop_checkpoint();
@@ -2466,34 +2417,18 @@ int babl_menu(char *args)
   /* Debug-only regression-test aid: end-to-end verifying npc_talkedto persistence (see
      bglobals-dat-readonly-handle-fix) needs driving a conversation all the way to a real
      "Farewell"/"Bye" exit... */
-  if (getenv("UW_DEBUG_AUTO_FAREWELL") && (1 < DAT_00100794)) {
-    int _far_i;
-    int _far_pick = 1; /* no farewell offered this turn -- keep the conversation moving */
-    /* UW_DEBUG_AUTO_PICK=N overrides the "no farewell offered" default away from item 1, to explore
-       branches a rigid "always pick 1" playthrough never reaches (e.g. hunting for where a script
-       might call get_quest/set_quest) -- clamped into range... */
-    { const char *_pick_env = getenv("UW_DEBUG_AUTO_PICK");
-      if (_pick_env) {
-        int _pick_n = atoi(_pick_env);
-        if (_pick_n >= 1 && _pick_n < DAT_00100794) _far_pick = _pick_n;
-      }
-    }
-    for (_far_i = 1; _far_i < DAT_00100794; _far_i = (_far_i + 1) * 0x10000 >> 0x10) {
-      char *_far_txt = *(char **)(&DAT_00100680 + _far_i * 8);
-      if (_far_txt && (strcasestr(_far_txt, "farewell") || strcasestr(_far_txt, "bye") || strcasestr(_far_txt, "goodbye"))) {
-        _far_pick = _far_i;
-        break;
-      }
-    }
-    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] UW_DEBUG_AUTO_FAREWELL: auto-selecting item %d (\"%s\")\n", _far_pick, *(char **)(&DAT_00100680 + _far_pick * 8));
-    select_babl_menu_response((short)_far_pick);
-    return (int)*(short *)(&DAT_001007a0 + DAT_00100788 * 2);
-  }
   select_msg_scroll_mode_normal();
   DAT_0010078c = 1;
   DAT_00250718 = 1;
   run_babl_menu_wait_loop();
-  return (int)*(short *)(&DAT_001007a0 + DAT_00100788 * 2);
+  /* ARM 0x29348 (`ldrsh r0, [r4, #0x18]`) returns the selected 1-based menu POSITION,
+     DAT_00100788, directly. Scripts compare babl_menu's result against 1, 2, ... to pick a branch
+     (Ketchaval's "consent of my bride" menu tests for 1 and 2). This was `DAT_001007a0[position]`,
+     the chosen entry's string id -- correct only for babl_fmenu (whose ARM tail at 0x29598 really
+     does index DAT_001007a0), copied here by mistake. With an id like 58 no branch matched, so
+     the dialogue fell out of its menu handler and carried on into the next topic instead of ending
+     or answering. */
+  return (int)DAT_00100788;
 }
 
 
@@ -2596,7 +2531,7 @@ bool babl_builtin_find_barter_total(char *args)
 {
   short sVar1;
   short sVar2;
-  void *iVar3;
+  uw_object_hdr_t *iVar3;
   int iVar4;
   int iVar5;
   int iVar6;
@@ -2615,11 +2550,11 @@ bool babl_builtin_find_barter_total(char *args)
       if (local_4c[iVar5] == sVar1) {
         iVar3 = get_object_record_by_slot_index((int)local_3c[iVar5]);
         local_2c[(short)iVar4] = local_3c[iVar5];
-        if (((*(byte *)(iVar3 + 1) & 0x80) == 0) || ((*(ushort *)(iVar3 + 6) & 0x8000) != 0)) {
+        if ((iVar3->is_quant == 0) || ((iVar3->link & 0x200) != 0)) {
           iVar6 = iVar6 + 1;
         }
         else {
-          iVar6 = iVar6 + (uint)(*(ushort *)(iVar3 + 6) >> 6);
+          iVar6 = iVar6 + (uint)(iVar3->link);
         }
         iVar4 = ((short)iVar4 + 1) * 0x10000 >> 0x10;
       }
@@ -2733,8 +2668,8 @@ int babl_builtin_give_ptr_npc(char *args)
   uVar3 = babl_read_var_word((int)*(short *)(args + -2));
   item_rec = (char *)get_object_record_by_slot_index(uVar1);
   if (-1 < (short)uVar3) {
-    if ((*(byte *)(item_rec + 1) & 0x80) != 0) {
-      if ((*(byte *)(item_rec + 7) & 0x80) == 0) goto LAB_00029efc;
+    if (((uw_object_hdr_t *)item_rec)->is_quant != 0) {
+      if ((((uw_object_hdr_t *)item_rec)->link & 0x200) == 0) goto LAB_00029efc;
     }
   }
   uVar3 = 0xffffffff;
@@ -2773,7 +2708,7 @@ void babl_builtin_find_inv(char *args)
   sVar3 = babl_read_var_word((int)*(short *)(args + -2));
   uVar4 = babl_read_var_word((int)*(short *)(args + -4));
   local_10 = (char *)g_player_object;
-  if ((sVar3 == 0) && (local_10 = (char *)DAT_00100674, (*(byte *)(DAT_00100674 + 0xe) & 0x10) == 0)) {
+  if ((sVar3 == 0) && (local_10 = (char *)DAT_00100674, !DAT_00100674->npc_loot_spawned)) {
     /* Dropped argument -- see babl_builtin_take_from_npc's identical
        call for the full explanation; intended arg is DAT_00100674. */
     spawn_creature_death_loot(DAT_00100674);
@@ -2822,11 +2757,11 @@ int babl_builtin_identify_inv(char *args)
   uVar3 = babl_read_var_word((int)*(short *)(args + -2));
   uVar4 = compute_barter_item_value(1,uVar2,(int)DAT_000bbfbc);
   iVar5 = (char *)get_object_record_by_slot_index(uVar2);
-  if (((*(byte *)(iVar5 + 1) & 0x80) == 0) || ((*(ushort *)(iVar5 + 6) & 0x8000) != 0)) {
+  if ((((uw_object_hdr_t *)iVar5)->is_quant == 0) || ((((uw_object_hdr_t *)iVar5)->link & 0x200) != 0)) {
     uVar9 = 1;
   }
   else {
-    uVar9 = *(ushort *)(iVar5 + 6) >> 6;
+    uVar9 = ((uw_object_hdr_t *)iVar5)->link;
   }
   local_74[0] = '\0';
   local_84[0] = '\0';
@@ -2887,14 +2822,14 @@ LAB_0002a154:
 ushort babl_builtin_count_inv(char *args)
 {
   ushort uVar1;
-  void *iVar2;
+  uw_object_hdr_t *iVar2;
 
   iVar2 = get_object_record_by_slot_index(babl_read_var_word((int)*(short *)(args + -2)));  /* r0 passthrough */
-  if (((*(byte *)(iVar2 + 1) & 0x80) == 0) || ((*(ushort *)(iVar2 + 6) & 0x8000) != 0)) {
+  if ((iVar2->is_quant == 0) || ((iVar2->link & 0x200) != 0)) {
     uVar1 = 1;
   }
   else {
-    uVar1 = *(ushort *)(iVar2 + 6) >> 6;
+    uVar1 = iVar2->link;
   }
   return uVar1;
 }
@@ -2904,10 +2839,10 @@ ushort babl_builtin_count_inv(char *args)
 // was FUN_0002a258
 byte babl_builtin_check_inv_quality(char *args)
 {
-  void *iVar1;
+  uw_object_hdr_t *iVar1;
 
   iVar1 = get_object_record_by_slot_index(babl_read_var_word((int)*(short *)(args + -2)));  /* r0 passthrough */
-  return *(byte *)(iVar1 + 4) & 0x3f;
+  return iVar1->quality;
 }
 
 
@@ -2918,14 +2853,13 @@ int babl_builtin_set_inv_quality(char *args)
   undefined2 uVar1;
   byte bVar2;
   byte bVar3;
-  void *iVar4;
+  uw_object_hdr_t *iVar4;
   
   iVar4 = get_object_record_by_slot_index(babl_read_var_word((int)*(short *)(args + -4)));  /* r0 passthrough */
   bVar3 = babl_read_var_word((int)*(short *)(args + -2));
-  uVar1 = *(undefined2 *)(iVar4 + 4);
+  uVar1 = iVar4->chain_word;
   bVar2 = (byte)uVar1;
-  *(byte *)(iVar4 + 4) = (bVar2 ^ bVar3) & 0x3f ^ bVar2;
-  *(char *)(iVar4 + 5) = (char)((ushort)uVar1 >> 8);
+  iVar4->quality = bVar3 & 0x3f;
   return 1;
 }
 
@@ -2953,27 +2887,27 @@ void sync_conv_vars_from_npc(ushort *npc)
     local_20[0] = 0xc0;
   }
   babl_set_variable(s_npc_hunger_00085394,local_20,1);
-  if ((&g_monster_max_stats_table)[iVar3] == '\0') {
+  if (g_monster_type_props[(iVar3) / 0x30].max_hp == '\0') {
     local_20[0] = 0x80;
   }
   else {
-    local_20[0] = ordint_divmod((&g_monster_max_stats_table)[iVar3],(uint)(byte)npc[4] << 8).quot;
+    local_20[0] = ordint_divmod(g_monster_type_props[(iVar3) / 0x30].max_hp,
+                                (uint)(byte)npc[4] << 8).quot;
   }
   babl_set_variable(s_npc_health_00085388,local_20,1);
   local_20[0] = (ushort)(byte)npc[4];
   babl_set_variable(s_npc_hp_00085380,local_20,1);
-  local_20[0] = (ushort)(char)(&DAT_001007e3)[iVar3];
+  local_20[0] = (ushort)(char) g_monster_type_props[(iVar3) / 0x30].attacks[0].skill;
   babl_set_variable(s_npc_arms_00085374,local_20,1);
-  local_20[0] = (ushort)(byte)(&DAT_001007d5)[iVar3] + (ushort)((byte)(&DAT_001007fd)[iVar3] >> 1);
+  local_20[0] = (ushort)(byte) g_monster_type_props[(iVar3) / 0x30].strength + (ushort)((byte) g_monster_type_props[(iVar3) / 0x30].spell_flags >> 1);
   babl_set_variable(s_npc_power_00085368,local_20,1);
   local_20[0] = *(byte *)((char *)npc + 0xb) & 0xf;
   babl_set_variable(s_npc_goal_0008535c,local_20,1);
   local_20[0] = (ushort)((*(ushort *)((char *)npc + 0xb) & 0xff0) >> 4);
   babl_set_variable(s_npc_gtarg_00085350,local_20,1);
   local_20[0] = (ushort)(((byte)npc[7] & 0x20) >> 5);
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] sync_conv_vars_from_npc: seeding npc_talkedto=%d from object byte@0xe=0x%02x (obj=%p)\n", (int)local_20[0], (unsigned)(byte)npc[7], (void *)npc);
   babl_set_variable(s_npc_talkedto_00085340,local_20,1);
-  local_20[0] = (byte)(&DAT_001007dd)[iVar3] & 0xf;
+  local_20[0] = (byte) g_monster_type_props[(iVar3) / 0x30].trade_level & 0xf;
   babl_set_variable(s_npc_level_00085334,local_20,1);
   local_20[0] = (byte)npc[2] & 0x3f;
   babl_set_variable(s_npc_xhome_00085328,local_20,1);
@@ -3001,19 +2935,20 @@ void sync_conv_vars_from_npc(ushort *npc)
     local_20[0] = 6;
   }
   babl_set_variable(s_npc_attitude_000845f8,local_20,1);
-  bVar1 = *g_player_object;
+  bVar1 = g_player_object->hdr.type_flags;
   local_20[0] = (ushort)*(byte *)(DAT_00086df8 + 0x39);
   babl_set_variable(s_play_hunger_00085304,local_20,1);
-  if ((&g_monster_max_stats_table)[(bVar1 & 0x3f) * 0x30] == '\0') {
+  if (g_monster_type_props[(bVar1 & 0x3f)].max_hp == '\0') {
     local_20[0] = 0x80;
   }
   else {
     /* Was `g_player_object[8]` -- g_player_object is `ushort *`, so the plain-index form reads byte
        offset 16 (8*2), not byte offset 8 where the player's real HP byte lives... */
-    local_20[0] = ordint_divmod((&g_monster_max_stats_table)[(bVar1 & 0x3f) * 0x30],(uint)*(byte *)((char *)g_player_object + 8) << 8).quot;
+    local_20[0] = ordint_divmod(g_monster_type_props[(bVar1 & 0x3f)].max_hp,
+                                (uint) g_player_object->npc_hp << 8).quot;
   }
   babl_set_variable(s_play_health_000852f8,local_20,1);
-  local_20[0] = (ushort)*(byte *)((char *)g_player_object + 8);
+  local_20[0] = (ushort) g_player_object->npc_hp;
   babl_set_variable(s_play_hp_000852f0,local_20,1);
   local_20[0] = (ushort)*(byte *)(DAT_00086df8 + 0x1e) + (ushort)*(byte *)(DAT_00086df8 + 0x21);
   babl_set_variable(s_play_arms_000852e4,local_20,1);
@@ -3060,7 +2995,6 @@ bool sync_conv_vars_to_npc(char *npc)
   ushort local_10;
   undefined2 local_e;
 
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] sync_conv_vars_to_npc: ENTRY npc=%p\n", (void *)npc);
   babl_get_variable(s_npc_hunger_00085394,&local_10,1);
   *(byte *)(npc + 0x19) = ((short)local_10 < 0x20) << 7 | *(byte *)(npc + 0x19) & 0x7f;
   babl_get_variable(s_npc_hp_00085380,&local_10,1);
@@ -3097,11 +3031,10 @@ bool sync_conv_vars_to_npc(char *npc)
   uVar1 = *(undefined2 *)(npc + 0xd);
   *(char *)(npc + 0xd) = (char)uVar1;
   *(byte *)(npc + 0xe) = (byte)((ushort)uVar1 >> 8) | 0x20;
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] sync_conv_vars_to_npc: wrote npc_talkedto bit into object byte@0xe=0x%02x (obj=%p), attitude==0?%d\n", (unsigned)*(byte *)(npc + 0xe), (void *)npc, (int)bVar4);
   babl_get_variable(s_play_hunger_00085304,&local_10,1);
   *(char *)(DAT_00086df8 + 0x39) = (char)local_10;
   babl_get_variable(s_play_hp_000852f0,&local_10,1);
-  *(char *)((char *)g_player_object + 8) = (char)local_10;
+  g_player_object->npc_hp = (byte)(char)local_10;
   babl_get_variable(s_play_mana_000852cc,&local_10,1);
   *(char *)(DAT_00086df8 + 0x37) = (char)local_10;
   babl_get_variable(s_play_poison_00085264,&local_10,1);
@@ -3218,17 +3151,12 @@ void save_npc_conversation_variables()
   } while (cVar1 != '\0');
   ce_strcat(acStack_118,s__SAVE0_bglobals_dat_00084538);
   iVar5 = open_existing_file_rw_alt(acStack_118);
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] save_npc_conversation_variables: open %s -> handle=%d, wanted conv-id(DAT_001007c4)=%d, sVar2(DAT_000bbf7c)=%d, buf(DAT_000bbf14)=%p first10=%d %d %d %d %d %d %d %d %d %d\n",
-          acStack_118, iVar5, (int)DAT_001007c4, (int)sVar2, (void*)uVar3,
-          (int)((short*)uVar3)[0], (int)((short*)uVar3)[1], (int)((short*)uVar3)[2], (int)((short*)uVar3)[3], (int)((short*)uVar3)[4],
-          (int)((short*)uVar3)[5], (int)((short*)uVar3)[6], (int)((short*)uVar3)[7], (int)((short*)uVar3)[8], (int)((short*)uVar3)[9]);
   if (iVar5 != -1) {
     while( true ) {
       uVar6 = read_file_handle(iVar5,local_120_backing,4);
       if ((uVar6 < 4) ||
          (uVar7 = (uint)local_120, uVar6 = (uint)DAT_001007c4,
          uVar7 != uVar6 && (int)uVar6 <= (int)uVar7)) {
-        if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] save_npc_conversation_variables: scan gave up, uVar6=%u local_120=%d (no matching record -- write SKIPPED entirely)\n", uVar6, (int)local_120);
         goto LAB_00019460;
       }
       if (uVar7 == uVar6) break;
@@ -3237,7 +3165,6 @@ void save_npc_conversation_variables()
     if (sVar2 < local_11e) {
       local_11e = sVar2;
     }
-    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] save_npc_conversation_variables: MATCH id=%d, writing %d bytes\n", (int)local_120, (int)local_11e << 1);
     write_file_handle(iVar5,(const void *)(intptr_t)(uVar3),(int)local_11e << 1);
 LAB_00019460:
     CloseHandle(iVar5);
@@ -3258,8 +3185,8 @@ void babl_builtin_remove_talker()
 {
   char *iVar1;  /* was `int` -- truncated tilemap_lookup's real `void *` return */
 
-  iVar1 = (char *)tilemap_lookup(*(ushort *)(DAT_00100674 + 0x16) >> 10,
-                       (*(ushort *)(DAT_00100674 + 0x16) & 0x3f0) >> 4);
+  iVar1 = (char *)tilemap_lookup(DAT_00100674->npc_xhome,
+                       DAT_00100674->npc_yhome);
   discard_misplaced_object(iVar1 + 2,DAT_00100674,1);
   return;
 }
@@ -3539,13 +3466,13 @@ void babl_builtin_setup_to_barter()
   sVar11 = 0;
   bVar2 = false;
   bVar3 = false;
-  if ((*(byte *)((char *)DAT_00100674 + 0xe) & 0x10) == 0) {
+  if (!DAT_00100674->npc_loot_spawned) {
     /* Dropped argument -- see babl_builtin_take_from_npc's identical
        call for the full explanation; intended arg is DAT_00100674. */
     spawn_creature_death_loot(DAT_00100674);
   }
   /* ARM 0x1b2cc uses a byte offset: the NPC inventory head is at +6. */
-  iVar13 = (intptr_t)((char *)DAT_00100674 + 6);
+  iVar13 = (intptr_t)((char *)&DAT_00100674->hdr.link_word);
   puVar6 = (ushort *)resolve_object_link((void *)(intptr_t)(iVar13));
   iVar12 = 0;
   puVar14 = (ushort *)0x0;
@@ -3553,10 +3480,10 @@ void babl_builtin_setup_to_barter()
          (iVar1 = (int)sVar11, sVar11 = (short)((uint)((iVar1 + 1) * 0x10000) >> 0x10), iVar1 < 0x28
          ))) {
     puVar7 = (ushort *)resolve_object_link(puVar6 + 2);
-    if ((((*puVar6 & 0x30) == 0) && (!bVar2)) ||
-       ((*(short *)(&DAT_00202c95 + (*puVar6 & 0x1ff) * 0xd) == 0 ||
-        ((bVar3 && (uVar8 = ce_rand(), (uVar8 & 7) < 5)))))) {
-      uVar4 = *puVar6;
+    if ((((((uw_object_hdr_t *)puVar6)->object_id & 0x30) == 0) && (!bVar2)) ||
+        (((short)g_object_type_props[(((uw_object_hdr_t *)puVar6)->object_id)].monetary_value == 0 ||
+          ((bVar3 && (uVar8 = ce_rand(), (uVar8 & 7) < 5)))))) {
+      uVar4 = ((uw_object_hdr_t *)puVar6)->type_flags;
       puVar6 = puVar7;
       if ((uVar4 & 0x30) == 0) {
         bVar2 = true;
@@ -3570,7 +3497,7 @@ void babl_builtin_setup_to_barter()
           puVar14 = (ushort *)get_object_record_by_slot_index((int)*psVar10);
         }
         uVar9 = get_object_record_by_slot_index((int)*psVar10);
-        object_list_insert_head((char *)DAT_00100674 + 6,uVar9);
+        object_list_insert_head((char *)&DAT_00100674->hdr.link_word,uVar9);
       }
       sVar5 = encode_object_slot_index(puVar6);
       *psVar10 = sVar5;
@@ -3605,7 +3532,7 @@ void init_barter_ui()
   int iVar7;
   
   iVar7 = 0;
-  iVar6 = (*DAT_00100674 & 0x3f) * 0x30;
+  iVar6 = (DAT_00100674->hdr.object_id & 0x3f) * 0x30;
   g_blit_transparent_mode = 1;
   do {
     uVar5 = grtile_alloc_registered(0x10,0x20);
@@ -3640,13 +3567,18 @@ void init_barter_ui()
     iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
   } while (iVar7 < 4);
   DAT_000bc008 = 0;
+  DAT_001006d0 = 1;
   uVar3 = encode_object_slot_index(DAT_00100674);
   ce_srand(uVar3);
-  DAT_000bc024 = randomize_value_pct(((&DAT_001007de)[iVar6] & 0xf) * '\x06',-25,0x19);
-  DAT_000bc004 = randomize_value_pct(*(ushort *)(&DAT_001007dd + iVar6) >> 0xc,-20,100);
-  DAT_000bbfbc = randomize_value_pct((0xf - (uint)((byte)(&DAT_001007dd)[iVar6] >> 4)) * 6,-25,0x32)
+  DAT_000bc024 = randomize_value_pct((g_monster_type_props[(iVar6) / 0x30].trade_patience & 0xf) * '\x06',
+                                     -25,0x19);
+  DAT_000bc004 = randomize_value_pct(g_monster_type_props[(iVar6) / 0x30].trade_patience >> 4,
+                                     -20,100);
+  DAT_000bbfbc = randomize_value_pct((0xf - (uint)((byte) g_monster_type_props[(iVar6) / 0x30].trade_level >> 4)) * 6,
+                                     -25,0x32)
   ;
-  iVar7 = randomize_value_pct(*(ushort *)(&DAT_001007dd + iVar6) & 0xf,-20,0x14);
+  iVar7 = randomize_value_pct(g_monster_type_props[(iVar6) / 0x30].trade_level & 0xf,
+                              -20,0x14);
   DAT_000bbfe0 = (undefined2)iVar7;
   DAT_000bbfb8 = 0;
   bVar2 = *(byte *)(DAT_00086df8 + 0x30);
@@ -3851,17 +3783,17 @@ void handle_barter_slot_click(int is_player_side, int slot, void *counts, void *
         return;
       }
       obj_rec = get_object_record_by_slot_index((int)*(short *)(local_8 + (short)local_c * 2));
-      if (((((*(byte *)(obj_rec + 1) & 0x80) != 0) && ((*(ushort *)(obj_rec + 6) & 0x8000) == 0)) &&
-          ((*(ushort *)(obj_rec + 6) & 0xffc0) != 0x40)) && (split_rec = prompt_split_object_stack((byte *)(intptr_t)(obj_rec)), split_rec == 0))
+      if ((((((uw_object_hdr_t *)obj_rec)->is_quant != 0) && ((((uw_object_hdr_t *)obj_rec)->link & 0x200) == 0)) &&
+           (((uw_object_hdr_t *)obj_rec)->link != 1)) && (split_rec = prompt_split_object_stack((byte *)(intptr_t)(obj_rec)), split_rec == 0))
       {
         return;
       }
       iVar3 = check_object_carry_weight((ushort *)(intptr_t)(obj_rec));
       if (iVar3 == 0) {
         if ((split_rec != 0) && (split_rec != obj_rec)) {
-          iVar3 = (*(ushort *)(obj_rec + 6) & 0xffc0) + (*(ushort *)(split_rec + 6) & 0xffc0);
-          *(byte *)(obj_rec + 6) = (byte)iVar3 ^ (byte)*(ushort *)(obj_rec + 6) & 0x3f;
-          *(char *)(obj_rec + 7) = (char)((uint)iVar3 >> 8);
+          iVar3 = (((uw_object_hdr_t *)obj_rec)->link << 6) + (*(ushort *)(split_rec + 6) & 0xffc0);
+          ((uw_object_hdr_t *)obj_rec)->link_word_low = (byte)iVar3 ^ ((uw_object_hdr_t *)obj_rec)->owner;
+          ((uw_object_hdr_t *)obj_rec)->link_word_high = (byte)(char)((uint)iVar3 >> 8);
           object_list_unlink((void *)(intptr_t)(obj_rec + 4),(void *)(intptr_t)(split_rec));
           free_object_slot((void *)(intptr_t)(split_rec));
         }
@@ -4009,7 +3941,7 @@ void redraw_barter_slot_icon(short side, short slot)
   }
   else {
     psVar6 = (short *)get_object_record_by_slot_index(sVar4);
-    uVar9 = (int)*psVar6 & 0x1ff;
+    uVar9 = (int)((uw_object_hdr_t *)psVar6)->type_flags_signed & 0x1ff;
   }
   puVar10 = &DAT_000845d8;
   iVar1 = iVar3 * 4;
@@ -4026,11 +3958,11 @@ void redraw_barter_slot_icon(short side, short slot)
                  ,0x10,0x10);
   }
   if (sVar4 != 0) {
-    if (((short)(*psVar6 & -0x8000) == 0) || ((psVar6[3] & 0x8000U) != 0)) {
+    if (((short)(((uw_object_hdr_t *)psVar6)->type_flags_signed & -0x8000) == 0) || ((((uw_object_hdr_t *)psVar6)->link_word_signed & 0x8000U) != 0)) {
       uVar8 = 0;
     }
     else {
-      uVar8 = (ushort)psVar6[3] >> 6;
+      uVar8 = (ushort)((uw_object_hdr_t *)psVar6)->link_word_signed >> 6;
     }
     g_blit_transparent_mode = 0;
     if (1 < uVar8) {
@@ -4129,19 +4061,19 @@ int merge_or_swap_barter_slot_item(ushort *held_object, int side, int slot, void
   psVar7 = (short *)(slot_array + (short)slot * 2);
   uVar8 = 0;
   puVar5 = (ushort *)get_object_record_by_slot_index((int)*psVar7);
-  uVar1 = *puVar5;
+  uVar1 = ((uw_object_hdr_t *)puVar5)->type_flags;
   if ((uVar1 & 0x1c0) == 0x80 && (uVar1 & 0x30) == 0) {
     return 0;
   }
   if (((*held_object & 0x8000) != 0) && ((uVar1 & 0x8000) != 0)) {
     uVar2 = held_object[3];
     if ((uVar2 & 0x8000) == 0) {
-      uVar3 = puVar5[3];
+      uVar3 = ((uw_object_hdr_t *)puVar5)->link_word;
       if ((((uVar3 & 0x8000) == 0) && (((*held_object ^ uVar1) & 0x1ff) == 0)) &&
          ((ushort)((uVar3 >> 6) + (uVar2 >> 6)) < 999)) {
         iVar6 = (uVar3 & 0xffc0) + (uVar2 & 0xffc0);
-        *(byte *)(puVar5 + 3) = (byte)iVar6 ^ (byte)uVar3 & 0x3f;
-        *(char *)((char *)puVar5 + 7) = (char)((uint)iVar6 >> 8);
+        ((uw_object_hdr_t *)puVar5)->link_word_low = (byte)iVar6 ^ (byte)uVar3 & 0x3f;
+        ((uw_object_hdr_t *)puVar5)->link_word_high = (byte)(char)((uint)iVar6 >> 8);
         free_object_slot(held_object);
         uVar8 = 1;
         goto LAB_0001c404;
@@ -4229,7 +4161,7 @@ void finalize_npc_barter_items(short skip_included)
   do {
     if ((0 < (short)(&DAT_000bbfe8)[iVar2]) && ((skip_included == 0 || ((&DAT_000bbff0)[iVar2] == 0)))) {
       uVar1 = get_object_record_by_slot_index((int)(short)(&DAT_000bbfe8)[iVar2]);
-      object_list_insert_head((char *)DAT_00100674 + 6,uVar1);
+      object_list_insert_head((char *)&DAT_00100674->hdr.link_word,uVar1);
       restore_captured_grtile_backdrop((&DAT_000bc010)[iVar2]);
       (&DAT_000bbff0)[iVar2] = 0;
       (&DAT_000bbfe8)[iVar2] = 0;
@@ -4268,16 +4200,16 @@ void finalize_player_barter_items()
          slot's item-value, already used the very next line) is the value that belongs here... */
       if (((&DAT_000bbf98)[local_28] != 0) && (sVar1 = check_npc_item_preference(*psVar5), sVar1 != -1)) {
         puVar2 = (ushort *)get_object_record_by_slot_index((int)*psVar5);
-        puVar3 = (ushort *)resolve_object_link((char *)DAT_00100674 + 6);
-        if ((*puVar2 & 0x1ff) == 0xa1) {
+        puVar3 = (ushort *)resolve_object_link((char *)&DAT_00100674->hdr.link_word);
+        if ((((uw_object_hdr_t *)puVar2)->object_id) == 0xa1) {
           for (; puVar3 != (ushort *)0x0; puVar3 = (ushort *)resolve_object_link(puVar3 + 2)) {
-            if (((((*puVar2 & 0x8000) != 0) && ((*puVar3 & 0x8000) != 0)) &&
-                ((puVar2[3] & 0x8000) == 0)) &&
-               ((((puVar3[3] & 0x8000) == 0 && (((*puVar3 ^ *puVar2) & 0x1ff) == 0)) &&
-                ((ushort)((puVar3[3] >> 6) + (puVar2[3] >> 6)) < 999)))) {
-              iVar4 = (puVar3[3] & 0xffc0) + (puVar2[3] & 0xffc0);
-              *(byte *)(puVar3 + 3) = (byte)iVar4 ^ (byte)puVar3[3] & 0x3f;
-              *(char *)((char *)puVar3 + 7) = (char)((uint)iVar4 >> 8);
+            if ((((((uw_object_hdr_t *)puVar2)->is_quant != 0) && (((uw_object_hdr_t *)puVar3)->is_quant != 0)) &&
+                 ((((uw_object_hdr_t *)puVar2)->link & 0x200) == 0)) &&
+                ((((((uw_object_hdr_t *)puVar3)->link & 0x200) == 0 && (((((uw_object_hdr_t *)puVar3)->type_flags ^ ((uw_object_hdr_t *)puVar2)->type_flags) & 0x1ff) == 0)) &&
+                  ((ushort)((((uw_object_hdr_t *)puVar3)->link) + (((uw_object_hdr_t *)puVar2)->link)) < 999)))) {
+              iVar4 = (((uw_object_hdr_t *)puVar3)->link << 6) + (((uw_object_hdr_t *)puVar2)->link << 6);
+              ((uw_object_hdr_t *)puVar3)->link_word_low = (byte)iVar4 ^ ((uw_object_hdr_t *)puVar3)->owner;
+              ((uw_object_hdr_t *)puVar3)->link_word_high = (byte)(char)((uint)iVar4 >> 8);
               free_object_slot(puVar2);
               puVar2 = (ushort *)0x0;
               break;
@@ -4285,7 +4217,7 @@ void finalize_player_barter_items()
           }
         }
         if (puVar2 != (ushort *)0x0) {
-          object_list_insert_head((char *)DAT_00100674 + 6,puVar2);
+          object_list_insert_head((char *)&DAT_00100674->hdr.link_word,puVar2);
         }
         restore_captured_grtile_backdrop((&DAT_000bc028)[local_28]);
         (&DAT_000bbf98)[local_28] = 0;
@@ -4455,29 +4387,29 @@ int compute_barter_item_value(short is_player_side, int item_id, int mode)
   
   puVar4 = (ushort *)get_object_record_by_slot_index(item_id);
   if (is_player_side == 0) {
-    uVar7 = (uint)*puVar4;
-    sVar6 = *(short *)(&DAT_00202c95 + (uVar7 & 0x1ff) * 0xd);
+    uVar7 = (uint)((uw_object_hdr_t *)puVar4)->type_flags;
+    sVar6 = (short)g_object_type_props[(uVar7 & 0x1ff)].monetary_value;
   }
   else {
     sVar2 = check_npc_item_preference(item_id);
     if (sVar2 == -1) {
       return 0;
     }
-    uVar7 = (uint)*puVar4;
-    sVar6 = *(short *)(&DAT_00202c95 + (uVar7 & 0x1ff) * 0xd);
+    uVar7 = (uint)((uw_object_hdr_t *)puVar4)->type_flags;
+    sVar6 = (short)g_object_type_props[(uVar7 & 0x1ff)].monetary_value;
     if (sVar2 != 0) {
       sVar6 = (short)(sVar6 * 3 >> 1);
     }
   }
-  if (((uVar7 & 0x8000) == 0) || ((puVar4[3] & 0x8000) != 0)) {
+  if (((uVar7 & 0x8000) == 0) || ((((uw_object_hdr_t *)puVar4)->link & 0x200) != 0)) {
     uVar3 = 1;
   }
   else {
-    uVar3 = puVar4[3] >> 6;
+    uVar3 = ((uw_object_hdr_t *)puVar4)->link;
   }
   iVar8 = (int)(short)uVar3 * (int)sVar6 * 0x10000 >> 0x10;
   if (0 < iVar8) {
-    iVar1 = (int)(short)((byte)puVar4[2] & 0x3f);
+    iVar1 = (int)(short)(((uw_object_hdr_t *)puVar4)->quality);
     if (iVar1 == 0) {
       iVar8 = 0;
     }
@@ -4527,7 +4459,7 @@ int collect_included_player_barter_items(void *out_item_ids, void *out_values)
       puVar1 = (ushort *)get_object_record_by_slot_index((int)(short)(&DAT_000bbfd0)[iVar2]);
       iVar3 = (int)(short)iVar3;
       *(undefined2 *)(out_values + iVar3 * 2) = (&DAT_000bbfd0)[iVar2];
-      *(ushort *)(out_item_ids + iVar3 * 2) = *puVar1 & 0x1ff;
+      *(ushort *)(out_item_ids + iVar3 * 2) = ((uw_object_hdr_t *)puVar1)->object_id;
       iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
     }
     iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
@@ -4546,7 +4478,7 @@ void add_item_to_npc_inventory(ushort *object)
   int iVar2;
   
   if ((*object & 0x1ff) == 0xa1) {
-    puVar1 = (ushort *)(DAT_00100674 + 6);
+    puVar1 = (ushort *)((char *)&DAT_00100674->hdr.link_word);
     while (puVar1 = (ushort *)resolve_object_link(puVar1), puVar1 != (ushort *)0x0) {
       if (((((*object & 0x8000) != 0) && ((*puVar1 & 0x8000) != 0)) && ((object[3] & 0x8000) == 0)
           ) && ((((puVar1[3] & 0x8000) == 0 && (((*puVar1 ^ *object) & 0x1ff) == 0)) &&
@@ -4562,7 +4494,7 @@ void add_item_to_npc_inventory(ushort *object)
     }
   }
   if (object != (ushort *)0x0) {
-    object_list_insert_head(DAT_00100674 + 6,object);
+    object_list_insert_head((char *)&DAT_00100674->hdr.link_word,object);
   }
 }
 
@@ -4604,11 +4536,11 @@ int remove_item_from_npc_inventory_by_id(short item_id)
   ushort *puVar1;
   void *iVar2;
   
-  iVar2 = DAT_00100674 + 6;
+  iVar2 = (char *)&DAT_00100674->hdr.link_word;
   puVar1 = (ushort *)resolve_object_link(iVar2);
   if (puVar1 != (ushort *)0x0) {
     do {
-      if ((*puVar1 & 0x1ff) == (int)item_id) {
+      if ((((uw_object_hdr_t *)puVar1)->object_id) == (int)item_id) {
         object_list_unlink((void *)(intptr_t)(iVar2),puVar1);
         free_object_slot(puVar1);
         return 1;
@@ -4635,12 +4567,12 @@ int check_npc_item_preference(short item_id)
   int iVar6;
 
   puVar2 = (ushort *)get_object_record_by_slot_index(item_id);
-  if (*(short *)(&DAT_00202c95 + (*puVar2 & 0x1ff) * 0xd) == 0) {
+  if ((short)g_object_type_props[(((uw_object_hdr_t *)puVar2)->object_id)].monetary_value == 0) {
 LAB_0001dbcc:
     uVar3 = 0xffffffff;
   }
   else {
-    uVar1 = *puVar2 & 0x1ff;
+    uVar1 = ((uw_object_hdr_t *)puVar2)->object_id;
     iVar5 = ((int)(short)uVar1 >> 4) + 1000;
     uVar3 = 0;
     if ((DAT_000bc020 != (short *)0x0) && (uVar4 = (uint)*DAT_000bc020, -1 < (int)uVar4)) {
@@ -5015,7 +4947,6 @@ void babl_op_push_var_raw()
   /* Raw "push variable value" VM opcode: indexes DAT_000bbf14 directly by the symbol's compiled-in
      slot number, bypassing babl_get_variable's name-based lookup entirely -- this is the actual
      path a script's own `if npc_talkedto ...` check would read through... */
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] push-var (raw opcode): slot=%d value=%d\n", (int)*psVar1, (int)*(short *)(DAT_000bbf14 + *psVar1 * 2));
   *psVar1 = *(short *)(DAT_000bbf14 + *psVar1 * 2);
   return;
 }
@@ -5064,7 +4995,6 @@ void babl_op_call_builtin()
   undefined2 uVar1;
   
   DAT_000bbf08 = *(short *)(DAT_000bbf80 + DAT_000bbf74 * 2 + 2);
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] call builtin idx=%d stack_depth(DAT_000bbf78)=%d arg_slot=%p\n", (int)DAT_000bbf08, (int)DAT_000bbf78, (void *)(DAT_000bbf0c + DAT_000bbf78 * 2));
   uVar1 = (**(babl_builtin_fn *)(DAT_000bbf00 + DAT_000bbf08 * 8))((void *)(DAT_000bbf0c + DAT_000bbf78 * 2)); // was `* 4` -- DAT_000bbf00's own comment (uw.c ~11468)
   *(undefined2 *)(DAT_000bbf0c + DAT_000bbf78 * 2) = uVar1;
   DAT_000bbf1c = *(undefined2 *)(DAT_000bbf0c + DAT_000bbf78 * 2);
@@ -5131,13 +5061,11 @@ void babl_op_say()
   iVar2 = (intptr_t)babl_expand_string_refs((char *)iVar1);
   DAT_000bbf78 = DAT_000bbf78 + -1;
   iVar4 = DAT_000bbf70;
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_op_say entry: looking for symbol \"%s\" text=\"%s\"\n", (char *)DAT_000845a8, (char *)iVar2);
   do {
     /* Same DAT_000bbf70-uninitialized guard as babl_register_builtin's own
        comment (uw.c ~12260) -- every reader of this babl-symbol table
        shares the same crash when no conversation record was loaded. */
     if (iVar4 == 0 || *(short *)(iVar4 + 0x18) == 0) {
-      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_op_say: NO symbol match, text discarded\n");
 LAB_0001ace8:
       if (iVar2 != iVar1) {
         babl_free((void *)(intptr_t)(iVar2));
@@ -5146,7 +5074,6 @@ LAB_0001ace8:
     }
     iVar3 = ce_strcmp(DAT_000845a8,(const char *)(intptr_t)(iVar4));
     if (iVar3 == 0) {
-      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_op_say: matched symbol \"%s\", calling its bound fn idx=%d\n", (char *)iVar4, (int)*(short *)(iVar4 + 0x1a));
       (**(babl_builtin_fn *)(DAT_000bbf00 + *(short *)(iVar4 + 0x1a) * 8))((void *)iVar2); // was `* 4` -- DAT_000bbf00's own comment (uw.c ~11468)
       goto LAB_0001ace8;
     }
@@ -5174,12 +5101,10 @@ void babl_op_respond()
   iVar2 = (intptr_t)babl_expand_string_refs((char *)iVar1);
   DAT_000bbf78 = DAT_000bbf78 + -1;
   iVar4 = DAT_000bbf70;
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_op_respond entry: looking for symbol \"respond\" text=\"%s\"\n", (char *)iVar2);
   do {
     /* Same DAT_000bbf70-uninitialized guard as babl_register_builtin's own
        comment (uw.c ~12260). */
     if (iVar4 == 0 || *(short *)(iVar4 + 0x18) == 0) {
-      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_op_respond: NO symbol match, text discarded\n");
 LAB_0001ad98:
       if (iVar2 != iVar1) {
         babl_free((void *)(intptr_t)(iVar2));
@@ -5188,7 +5113,6 @@ LAB_0001ad98:
     }
     iVar3 = ce_strcmp(s_respond_000845ac,(const char *)(intptr_t)(iVar4));
     if (iVar3 == 0) {
-      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_op_respond: matched symbol \"%s\", calling its bound fn idx=%d\n", (char *)iVar4, (int)*(short *)(iVar4 + 0x1a));
       (**(babl_builtin_fn *)(DAT_000bbf00 + *(short *)(iVar4 + 0x1a) * 8))((void *)iVar2); // was `* 4` -- DAT_000bbf00's own comment (uw.c ~11468)
       goto LAB_0001ad98;
     }
@@ -5209,6 +5133,7 @@ void exit_talk_mode()
   }
   if (DAT_001006d0 != 0) {
     end_barter_ui();
+    DAT_001006d0 = 0;
   }
   pick_random_pending_music_track();
   g_active_hud_panel = DAT_00100678;
@@ -5965,7 +5890,7 @@ void render_babl_dialog_window(short x, short y, short width, short height, shor
 {
   char *wptr_21485;
   /* WinCE obtained this directory from the registry. Its host stub leaves
-     it empty; resources live in CUTS under UW_DATA_DIR. */
+     it empty; resources live in CUTS under --data-dir. */
   const char *cutscene_directory = DAT_0023c698 ? (char *)&DAT_0023c698 : "\\CUTS";
   ushort *puVar1;
   ushort uVar2;
@@ -6719,7 +6644,7 @@ void record_illustration_discovery_and_display(uint page_id, uint flags)
   } while (cVar1 != '\0');
   ce_strcat(acStack_12c,acStack_144);
   /* Use the installation path just assembled above. The host file wrapper
-     resolves paths under UW_DATA_DIR; the bare name omits CUTS. */
+     resolves paths under --data-dir; the bare name omits CUTS. */
   iVar3 = open_existing_file_rw_alt(acStack_12c);
   iVar4 = seek_file_handle(iVar3,4,0);
   iVar5 = write_file_handle(iVar3,&uStack_c,2);

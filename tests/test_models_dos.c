@@ -11,6 +11,7 @@
  */
 
 #include "unity.h"
+#include "src/headers/options.h"
 #include "src/headers/models_dos.h"
 
 #include <stdio.h>
@@ -395,7 +396,7 @@ static void setup_once(void)
     TEST_ASSERT_EQUAL_UINT(g_exe_len, fwrite(g_exe, 1, g_exe_len, f));
     TEST_ASSERT_EQUAL_INT(0, fclose(f));
 
-    TEST_ASSERT_EQUAL_INT_MESSAGE(0, setenv("UW_DATA_DIR", g_dir, 1), "setenv UW_DATA_DIR");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, options_set("data-dir", g_dir), "options_set data-dir");
 }
 
 /* ---- helpers ------------------------------------------------------------- */

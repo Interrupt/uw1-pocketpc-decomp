@@ -2,6 +2,7 @@
    close_door_object/open_door_object/toggle_door_object were originally
    FUN_0007c580/FUN_0007c708/FUN_0007c814... */
 #include "headers/doors.h"
+#include "headers/options.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -30,9 +31,6 @@ void close_door_object(void *actor_ptr, ushort *door)
   byte low_byte;
   undefined4 sound_id;
 
-  if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[door] close_door_object (close) called: obj0=0x%04x dirbit=%d openbits=%d quality_low4=%d\n",
-            (unsigned)*door, (int)((*door & 0x1000) != 0), (int)((*door >> 9) & 7), (int)(door[3] & 0xf));
   if ((*door & 0x1ff) == 0x1cf) {
     quality_word = door[3];
     if ((quality_word & 0xf) < 8) {
@@ -78,9 +76,6 @@ void open_door_object(void *door_ptr)
   ushort quality_word;
   undefined4 sound_id;
 
-  if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[door] open_door_object called: obj0=0x%04x already_1cf=%d quality_low4=%d\n",
-            (unsigned)*door, (int)((*door & 0x1ff) == 0x1cf), (int)(door[3] & 0xf));
   if ((*door & 0x1ff) == 0x1cf) {
     quality_word = door[3];
     if (7 < (quality_word & 0xf)) {
@@ -106,7 +101,7 @@ void open_door_object(void *door_ptr)
 
 
 
-// was FUN_0007c814 NOTE: for the item_id==0x1cf special-object branch inside
+// was FUN_0007c814 NOTE: for the object_id==0x1cf special-object branch inside
 // close_door_object/open_door_object, this dispatch is provably always a no-op: closed(<8) routes
 // to close_door_object, whose 0x1cf branch only proceeds when quality is ALREADY >=8...
 void toggle_door_object(char *actor, void *door_ptr)
@@ -135,7 +130,7 @@ int spawn_scheduled_door_texture_object()
   undefined4 slot_index;
   ushort *tile;
   int clearance;
-  undefined1 *door_texture;
+  uw_object_hdr_t *door_texture;
   uint object_word;
   undefined2 object_word_low16;
   undefined1 object_word_high_byte;
@@ -160,18 +155,14 @@ int spawn_scheduled_door_texture_object()
                                                  object_word_low16, 0, 0);
     object_word_high_byte = (undefined1)((ushort)object_word_low16 >> 8);
     if (clearance != 0) {
-      door_texture = (undefined1 *)spawn_new_object(0x1ca, 0);
-      tile_word = *(ushort *)(door_texture + 2);
+      door_texture = spawn_new_object(0x1ca, 0);
+      tile_word = door_texture->position_word;
       object_word = (tile_word ^ object_word) & 0x7f ^ (uint)tile_word;
-      door_texture[2] = (char)object_word;
-      door_texture[3] = (char)(tile_word >> 8);
+      door_texture->zpos = object_word & 0x7f;
       position_high_bits = (byte)(((target_x & 7) << 0xd) >> 8);
-      door_texture[2] = (char)(object_word & 0x1fff);
-      door_texture[3] = (byte)((object_word & 0x1fff) >> 8) | position_high_bits;
-      door_texture[2] = (char)(object_word & 0x3ff);
-      door_texture[3] = (byte)((object_word & 0x3ff) >> 8) | position_high_bits | (byte)(((target_y & 7) << 10) >> 8);
-      *door_texture = *door_texture;
-      door_texture[1] = door_texture[1] | 0x20;
+      door_texture->xpos = target_x & 7;
+      door_texture->ypos = target_y & 7;
+      door_texture->doordir = 0x1;
       slot_index = encode_object_slot_index(door_texture);
       tile_type = scheduler_add_entry(slot_index, 0xffffffff, 0, (short)target_x >> 3 & 0xff,
                                       CONCAT11(object_word_high_byte, (char)((short)target_y >> 3)));
@@ -223,18 +214,18 @@ void apply_special_object_use_effect()
 
   if (level_matches != 0) {
     if (*(byte *)(DAT_0023be74 + 4) < 9) {
-      *(byte *)((char *)g_player_object + 8) = *(byte *)(DAT_0023be74 + 4);
+      g_player_object->npc_hp = *(byte *)(DAT_0023be74 + 4);
     }
     else {
       hunger_roll = rand_below(3);
-      *(char *)((char *)g_player_object + 8) = (-2 - hunger_roll) + *(char *)(DAT_0023be74 + 4);
+      g_player_object->npc_hp = (byte)((-2 - hunger_roll) + *(char *)(DAT_0023be74 + 4));
     }
     *(undefined1 *)(DAT_00086df8 + 0x37) = *(undefined1 *)(DAT_00086df8 + 0x38);
     if (8 < *(byte *)(DAT_00086df8 + 0x38)) {
       *(byte *)(DAT_00086df8 + 0x37) =
            (-2 - (*(byte *)(DAT_00086df8 + 0x38) >> 3)) + *(char *)(DAT_00086df8 + 0x37);
     }
-    *(byte *)((char *)g_player_object + 0x15) = *(byte *)((char *)g_player_object + 0x15) & 0xec | 0x2c;
+    g_player_object->animation_flags = g_player_object->animation_flags & 0xec | 0x2c;
     masked_flags = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
     *(char *)(DAT_00086df8 + 0x5f) = (char)masked_flags;
     *(char *)(DAT_00086df8 + 0x60) = (char)(masked_flags >> 8);
@@ -274,13 +265,6 @@ void schedule_door_open_animation(ushort *door)
      scheduler_tick's own `scheduler_finish_entry();` fix just above (see its comment).
      encode_object_slot_index's real signature takes the object pointer it encodes... */
   slot_index = encode_object_slot_index((char *)door);
-  if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[door] schedule_door_open_animation: obj0(before)=0x%04x obj0(after)=0x%04x quality(after)=%d uVar6(anim_type)=%d slot=%d ptr=%p tilefield16=0x%04x doortile_x=%d doortile_y=%d cur_a0=%d cur_a4=%d player_x=%d player_y=%d\n",
-            (unsigned)original_word, (unsigned)updated_word, (int)(((byte)original_word ^ quality_low_byte) & 0x3f ^ quality_low_byte), (int)animation_type, (int)slot_index, (void *)door,
-            (unsigned)*(ushort *)((char *)door + 0x16), (int)(*(ushort *)((char *)door + 0x16) >> 10),
-            (int)((*(ushort *)((char *)door + 0x16) & 0x3f0) >> 4), (int)(short)DAT_002020a0, (int)(short)DAT_002020a4,
-            (int)(*(ushort *)((char *)g_player_object + 0x16) >> 10),
-            (int)((*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4));
   scheduler_add_entry(slot_index, animation_type, 0, (undefined1)DAT_002020a0, (char)DAT_002020a4);
 }
 

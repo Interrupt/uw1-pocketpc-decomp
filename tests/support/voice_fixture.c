@@ -1,4 +1,5 @@
 #include "unity.h"
+#include "src/headers/options.h"
 #include "voice_fixture.h"
 
 #include "src/headers/debug.h"
@@ -123,8 +124,7 @@ const char *voice_fixture_data_dir(void)
     snprintf(path, sizeof path, "%s/05.VOC", sound);
     write_voc(path, 211, 0, g_samples, VOC_SAMPLE_COUNT);
 
-    /* Must be set before anything calls into file_io.c, which caches it. */
-    TEST_ASSERT_EQUAL_INT_MESSAGE(0, setenv("UW_DATA_DIR", g_dir, 1), "setenv UW_DATA_DIR");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, options_set("data-dir", g_dir), "options_set data-dir");
     return g_dir;
 }
 

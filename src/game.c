@@ -2,6 +2,7 @@
    the title/main menu loop. Split out of uw.c (the original monolithic decompile) once these
    functions' real roles were confirmed. */
 #include "headers/game.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 #include <stdarg.h>
 #include <stdio.h>
@@ -325,22 +326,13 @@ int app_main_loop(int instance, int prev_instance, int command_line, int show_co
           DAT_0023c448 = 0;
         }
         {
-          static unsigned int _dbg_t0 = 0, _dbg_t1 = 0;
-          int _dbg = getenv("UW_DEBUG_ITERSPLIT") != NULL;
-          if (_dbg) _dbg_t0 = read_realtime_clock_units() * 4;
           iVar2 = PeekMessageW(auStack_40,0,0,0,1);
           if (iVar2 != 0) {
             if (local_3c == 0x12) break;
             TranslateMessage(auStack_40);
             DispatchMessageW(auStack_40);
           }
-          if (_dbg) _dbg_t1 = read_realtime_clock_units() * 4;
           main_loop_hud_flush();
-          if (_dbg) {
-            unsigned int _dbg_t2 = read_realtime_clock_units() * 4;
-            fprintf(stderr, "[itersplit] ordinal864_ms=%u hudflush_ms=%u\n",
-                    _dbg_t1 - _dbg_t0, _dbg_t2 - _dbg_t1);
-          }
         }
       }
       iVar2 = window_message_noop_handler(instance,local_38);
@@ -451,7 +443,6 @@ void main_menu_loop(int is_first_entry)
         pcVar5 = pcVar5 + 1;
       } while (cVar1 != '\0');
       ce_strcat(acStack_7ec,s__DATA_opscr_byt_00086eec);
-      DEBUG(TRACE, "blitting %s", s__DATA_opscr_byt_00086eec);
       read_buffer_from_file(acStack_7ec,pvVar_buf10000,64000);
       decrement_cursor_hide_depth();
       // HACK: deviation from the real binary -- was load_pals_bank(2, temp_buf),
@@ -470,7 +461,6 @@ void main_menu_loop(int is_first_entry)
         } while (iVar6 < 0x140);
         iVar10 = (iVar10 + 1) * 0x10000 >> 0x10;
       } while (iVar10 < 200);
-      debug_framebuffer_dump("main_menu_loop");
       cursor_show_idle_tick();
       if ((DAT_0023bf70 == 0) ||
          /* Was a literal 0 here (an earlier fix pass believed this mirrored sibling call sites like
@@ -488,7 +478,6 @@ void main_menu_loop(int is_first_entry)
     }
     sVar3 = menu_button_list_navigate(uVar8,DAT_0023bf6c,0,uVar2);
     local_838 = (int)sVar3;
-    if (getenv("UW_DEBUG_TITLEMENU")) fprintf(stderr, "[titlemenu] uVar8=%d uVar2=%d navigate->%d\n", (int)uVar8, (int)uVar2, local_838);
     if (local_838 == -1) {
       run_game_shutdown_sequence(0);
       terminate_process(1);
@@ -608,45 +597,15 @@ void close_panels_before_level_change()
 
 
 
-// was FUN_00066cb4 -- zeroes g_player_object's whole 0x1b-byte record then re-sets it to a fresh
-// blank object header/mobile-record: a default heading/quality pattern, item-id 0x7f (the player's
-// fixed item-id), and clears the container/link/status bitfields.
+// was FUN_00066cb4 -- clears the full mobile record, sets the player's fixed
+// item ID, and restores the original status value. Bits 4-7 in that status
+// value remain unnamed; preserve the complete initial word.
 void reset_player_object_record()
 
 {
-  ushort uVar1;
-
-  ce_memset(g_player_object,0,0x1b);
-  *(byte *)((char *)g_player_object + 3) = (byte)g_player_object[3] & 0x3f;
-  *(undefined1 *)((char *)g_player_object + 7) = 0;
-  *(undefined1 *)((char *)g_player_object + 0xd) = 0xfd;
-  uVar1 = *g_player_object;
-  *(char *)g_player_object = (char)(uVar1 & 0x7fff);
-  *(char *)((char *)g_player_object + 1) = (char)((uVar1 & 0x7fff) >> 8);
-  uVar1 = *g_player_object;
-  *(char *)g_player_object = (char)uVar1;
-  *(byte *)((char *)g_player_object + 1) = (byte)(uVar1 >> 8) | 0x20;
-  uVar1 = *g_player_object;
-  *(char *)g_player_object = (char)(uVar1 & 0xbfff);
-  *(char *)((char *)g_player_object + 1) = (char)((uVar1 & 0xbfff) >> 8);
-  uVar1 = g_player_object[1];
-  *(char *)((char *)g_player_object + 1) = (char)(uVar1 & 0xfc7f);
-  *(char *)((char *)g_player_object + 3) = (char)((uVar1 & 0xfc7f) >> 8);
-  *(byte *)((char *)g_player_object + 0xc) = (byte)g_player_object[0xc] & 0xe0;
-  uVar1 = g_player_object[2];
-  *(char *)((char *)g_player_object + 2) = (char)(uVar1 & 0xffc0);
-  *(char *)((char *)g_player_object + 5) = (char)((uVar1 & 0xffc0) >> 8);
-  *(byte *)((char *)g_player_object + 2) = (byte)g_player_object[2] & 0x3f;
-  *(undefined1 *)((char *)g_player_object + 5) = 0;
-  uVar1 = g_player_object[3];
-  *(char *)((char *)g_player_object + 3) = (char)(uVar1 & 0xffc0);
-  *(char *)((char *)g_player_object + 7) = (char)((uVar1 & 0xffc0) >> 8);
-  *(byte *)((char *)g_player_object + 3) = (byte)g_player_object[3] & 0x3f;
-  *(undefined1 *)((char *)g_player_object + 7) = 0;
-  *(undefined1 *)((char *)g_player_object + 0x11) = 0;
-  uVar1 = *g_player_object;
-  *(undefined1 *)g_player_object = 0x7f;
-  *(byte *)((char *)g_player_object + 1) = (byte)(uVar1 >> 8) & 0xfe;
+  ce_memset(g_player_object, 0, sizeof(*g_player_object));
+  g_player_object->hdr.object_id = 0x7f;
+  g_player_object->status_word = 0x00fd;
   return;
 }
 
@@ -681,7 +640,7 @@ void init_gameplay_session()
   DAT_002048b8 = check_and_reset_landing_state;
   DAT_002048b2 = 0x1100;
   DAT_002048b0 = 0;
-  g_player_object = (ushort *)DAT_0023b82c;
+  g_player_object = (uw_mobile_object_t *)(ushort *)DAT_0023b82c;
   load_shading_level_config(0);
   DAT_0023be8c = 0;
   DAT_00086df8 = &DAT_0023bca8;
@@ -692,9 +651,9 @@ void init_gameplay_session()
      per-tick call sites of scheduler_tick... */
   DAT_000879ac = 1;
   reset_player_object_record();
-  iVar1 = (*g_player_object & 0x3f) * 0x30;
+  iVar1 = (g_player_object->hdr.object_id & 0x3f) * 0x30;
   DAT_0023be74 = &DAT_001007d0 + iVar1;
-  g_player_object[8] = (&g_monster_max_stats_table)[iVar1];
+  ((ushort *)g_player_object)[8] = g_monster_type_props[(iVar1) / 0x30].max_hp;
   if (DAT_00201c74 == 0) {
     DAT_00201c74 = register_interned_string(DAT_00086df8,0x7d);
   }
@@ -858,10 +817,10 @@ void set_custom_view_target(short mode)
   }
   else if (mode < 0x100) {
     iVar1 = get_object_record_by_slot_index(mode);
-    DAT_0023be90 = (*(byte *)(iVar1 + 0x17) & 0xfc) * 0x40 + (*(byte *)(iVar1 + 3) & 0xe0);
-    DAT_0023be92 = (*(byte *)(iVar1 + 3) & 0x1c) * 8 + (*(ushort *)(iVar1 + 0x16) & 0x3f0) * 0x10;
-    DAT_0023be94 = (*(byte *)(iVar1 + 2) & 0x7f) << 3;
-    DAT_0023bf00 = (*(ushort *)(iVar1 + 2) & 0xff80) << 6;
+    DAT_0023be90 = ((((uw_mobile_object_t *)iVar1)->tile_x << 2)) * 0x40 + ((((uw_object_hdr_t *)iVar1)->xpos << 5));
+    DAT_0023be92 = ((((uw_object_hdr_t *)iVar1)->ypos << 2)) * 8 + ((((uw_mobile_object_t *)iVar1)->tile_y << 4)) * 0x10;
+    DAT_0023be94 = (((uw_object_hdr_t *)iVar1)->zpos) << 3;
+    DAT_0023bf00 = (((uw_object_hdr_t *)iVar1)->position_word & 0xff80) << 6;
   }
   if (DAT_0023b82c == 0) {
     set_pending_update_flags(2);
@@ -1203,9 +1162,6 @@ void draw_menu_item_list(short item_count, char *rects, char use_text, short sel
         *DAT_00084298 = uVar3;
         ppcVar5 = (char **)(rects + iVar4 * 8);
         pcVar_str = *ppcVar5;
-        if (getenv("UW_DEBUG_TITLEMENU"))
-          fprintf(stderr, "[titlemenu] draw_menu_item_list text branch: item=%d/%d ptr=%p str='%s'\n",
-                  iVar4, (int)item_count, (void *)pcVar_str, pcVar_str ? pcVar_str : "(null)");
         while (sVar1 = measure_text_width(pcVar_str), 0x13e < sVar1) {
           pcVar_str = *ppcVar5;
           iVar2 = ce_strlen(pcVar_str);
@@ -1362,7 +1318,6 @@ int menu_button_list_navigate(int item_count, void *rects_ptr, byte use_text, in
       advance_menu_music_track();
       animate_title_palette_cycle();
     }
-    if (getenv("UW_DEBUG_TITLEMENU")) fprintf(stderr, "[titlemenu] menu_button_list_navigate: raw event=0x%x selected=%d\n", (int)sVar2, (int)selected);
     sVar1 = (short)item_count;
     iVar3 = selected;
     iVar5 = iVar4;
@@ -1774,8 +1729,7 @@ void debug_print_init()
 void debug_print(char *param_1, ...)
 
 {
-  const char *diag = getenv("UW_DEBUG_PRINT");
-  if ((param_1 != (char *)0x0) && (diag == (char *)0x0 || diag[0] != '0')) {
+  if (param_1 != (char *)0x0) {
     va_list ap;
     fprintf(stderr, "[dbg] ");
     va_start(ap, param_1);
@@ -2207,10 +2161,6 @@ void handle_game_view_click()
 {
   int iVar1;
   uint uVar2;
-  if (getenv("UW_DEBUG_COMBAT")) {
-    fprintf(stderr, "[combat] handle_game_view_click entry: mode=%d btnstate=0x%x\n",
-            (int)*(short *)(DAT_00085a6c + 8), (unsigned)*(ushort *)(DAT_00085a6c + 6));
-  }
   if ((*(ushort *)(DAT_00085a6c + 6) & 1) != 0) {
     handle_game_view_click_hold();
   }
@@ -2225,16 +2175,10 @@ void handle_game_view_click()
     if (g_interact_target == 0) {
       return;
     }
-    if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[door] handle_game_view_click -> interact_use\n");
     interact_use();
     return;
   }
   g_interact_target = 0;
-  if (getenv("UW_DEBUG_COMBAT")) {
-    fprintf(stderr, "[combat] handle_game_view_click past mode gate: DAT_00085a6c[6]=0x%x g_cursor_mode=%d g_cursor_holding_state=%d\n",
-            (unsigned)*(ushort *)(DAT_00085a6c + 6), (int)g_cursor_mode, (int)g_cursor_holding_state);
-  }
   if ((*(ushort *)(DAT_00085a6c + 6) & 2) == 0) {
     g_interact_target = 0;
     return;
@@ -2246,9 +2190,6 @@ void handle_game_view_click()
     }
     else {
       uVar2 = ((int)g_cursor_mode & 0xffU) - 1;
-    }
-    if (getenv("UW_DEBUG_COMBAT")) {
-      fprintf(stderr, "[combat] uVar2=%u bit1=0x%x\n", uVar2, (unsigned)(*(ushort *)(DAT_00085a6c + 6) & 1));
     }
     /* Was `(g_cursor_mode == 0) ? 0 : uVar2` -- a forced index-0 override for the no-mode-selected
        case. */
@@ -2267,9 +2208,6 @@ void handle_game_view_click()
         goto LAB_0003f584;
       }
     }
-    if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[door] handle_game_view_click: about to dispatch table[%u], btnstate=0x%x mode=%d\n",
-              _dispatch & 0xff, (unsigned)*(ushort *)(DAT_00085a6c + 6), (int)*(short *)(DAT_00085a6c + 8));
     if ((_dispatch & 0xff) < 5 && PTR_FUN_000858c8_table[_dispatch & 0xff] != 0) {
       PTR_FUN_000858c8_table[_dispatch & 0xff]();
     }

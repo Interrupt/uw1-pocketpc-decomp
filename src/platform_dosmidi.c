@@ -11,6 +11,7 @@
  * vendored code. */
 #include "headers/platform_dosmidi.h"
 #include "headers/debug.h"
+#include "headers/options.h"
 #include "headers/audio.h"
 #include "headers/file_io.h"
 #include "uw_ail.h"
@@ -40,7 +41,7 @@ static struct {
   uw_blob xmi;
 
   int seq;                  /* the registered sequence handle, -1 for none */
-  int prefer_wav;           /* UW_AUDIO_MODE=hybrid: sample where we have one */
+  int prefer_wav;           /* --audio-mode=hybrid: sample where we have one */
   int music_volume;         /* percent, applied to the sequence only */
 
   /* One tick's worth of chip output, consumed by the resampler below. */
@@ -63,14 +64,14 @@ static struct {
   struct { int channel, note, ticks_left, id; } sfx[4];
 } g;
 
-/* Where a DOS sound file lives. UW_DOS_DATA_DIR still wins, for pointing at
+/* Where a DOS sound file lives. --dos-data-dir still wins, for pointing at
    a DOS install while playing the Pocket PC assets; with it unset the file is
    looked up in the game's own data directory, because when that directory IS
    a DOS install there is nowhere else for it to be -- and this port takes one
    data directory. */
 static int dos_sound_path(const char *name, char *out, unsigned int out_sz)
 {
-  const char *root = getenv("UW_DOS_DATA_DIR");
+  const char *root = g_opts.dos_data_dir;
   if (root && *root) {
     int n = snprintf(out, out_sz, "%s/SOUND/%s", root, name);
     return (n > 0 && (unsigned int)n < out_sz) ? 1 : 0;
@@ -84,7 +85,7 @@ static int dos_sound_path(const char *name, char *out, unsigned int out_sz)
    is the timbre bank: a DOS SOUND directory has it, the Pocket PC one holds
    .MOD and .wav files and no .AD at all.
 
-   Deliberately ignores UW_DOS_DATA_DIR. Pointing that at a DOS install is how
+   Deliberately ignores --dos-data-dir. Pointing that at a DOS install is how
    you borrow its music while playing the Pocket PC assets, and it has never
    by itself switched DOS audio on; that stays true. */
 static int data_dir_is_dos_install(void)
@@ -105,7 +106,7 @@ static int data_dir_is_dos_install(void)
    from (see platform_dos_prefer_wav_effects). */
 int platform_dos_audio_mode(void)
 {
-  const char *mode = getenv("UW_AUDIO_MODE");
+  const char *mode = g_opts.audio_mode;
   if (mode && *mode) {
     if (strcasecmp(mode, "hybrid") == 0) return UW_DOS_AUDIO_HYBRID;
     if (strcasecmp(mode, "dos") == 0)    return UW_DOS_AUDIO_DOS;
@@ -165,6 +166,7 @@ int platform_dosmidi_init(int out_rate)
   if (g.live) {
     return 1;
   }
+
 
   char path[1024];
   uw_ail_synth synth;
@@ -228,10 +230,10 @@ int platform_dosmidi_init(int out_rate)
   g.seq = -1;
   g.prefer_wav = hybrid_mode_requested();
   {
-    const char *env = getenv("UW_AUDIO_MODE");
+    const char *env = g_opts.audio_mode;
     DEBUG(INFO, "[audio] DOS audio enabled: %s%s\n",
           g.prefer_wav ? "hybrid" : "dos",
-          (env && *env) ? "" : " (no UW_AUDIO_MODE set; the data directory is a DOS install)");
+          (env && *env) ? "" : " (no --audio-mode given; the data directory is a DOS install)");
   }
   /* BUG FIX (confirmed live: the music drowned the effects). At their own
    * settings the OPL music peaks about 7x an effect, so the default trims
@@ -243,9 +245,8 @@ int platform_dosmidi_init(int out_rate)
    * 100% gives 8368, 90% 4368, 85% 3374, 80% 2595, 75% 2029, 70% 1490,
    * 50% just 577. 80 leaves the music about twice an effect, which is
    * roughly where continuous music against transient effects wants to be.
-   * UW_DOS_MUSIC_VOLUME overrides it without a rebuild. */
-  const char *vol = getenv("UW_DOS_MUSIC_VOLUME");
-  g.music_volume = vol ? atoi(vol) : 80;
+   * --dos-music-volume overrides it without a rebuild. */
+  g.music_volume = g_opts.dos_music_volume;
   if (g.music_volume < 0) g.music_volume = 0;
   if (g.music_volume > 100) g.music_volume = 100;
   for (int i = 0; i < (int)(sizeof(g.sfx) / sizeof(g.sfx[0])); i++) {

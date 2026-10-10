@@ -1,4 +1,5 @@
 #include "automap_fixture.h"
+#include "src/headers/options.h"
 #include "game_fixture.h"
 #include <sys/stat.h>
 #include <unistd.h>
@@ -107,7 +108,7 @@ void automap_storage_fixture_reset(void)
         TEST_ASSERT_NOT_NULL(mkdtemp(automap_test_directory));
         snprintf(path,sizeof path,"%s/SAVE0",automap_test_directory);
         TEST_ASSERT_EQUAL_INT(0,mkdir(path,0700));
-        setenv("UW_DATA_DIR",automap_test_directory,1);
+        options_set("data-dir", automap_test_directory);
     }
     uint offsets[64]={0};
     offsets[0]=2+sizeof offsets;
@@ -142,6 +143,6 @@ void automap_storage_fixture_finish(void)
     char path[512];
     snprintf(path,sizeof path,"%s/SAVE0",automap_test_directory); rmdir(path);
     rmdir(automap_test_directory);
-    if(prior_data_directory) { setenv("UW_DATA_DIR",prior_data_directory,1); free(prior_data_directory); }
-    else unsetenv("UW_DATA_DIR");
+    if(prior_data_directory) { options_set("data-dir", prior_data_directory); free(prior_data_directory); }
+    else options_unset("data-dir");
 }

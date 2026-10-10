@@ -191,23 +191,33 @@ gitignored, not checked in, since it's copyrighted game data.
 
 ### Running against an original DOS install
 
-`UW_DATA_DIR` is the one and only data directory, and it can point either at
+`--data-dir` is the one and only data directory, and it can point either at
 the extracted Pocket PC assets or straight at a DOS Ultima Underworld 1
-directory. `./run.sh` and `./debug.sh` use the repo's own `data/` only when
-`UW_DATA_DIR` is unset, so `UW_DATA_DIR=/path/to/UW ./run.sh` works. Supply one or the other, not both; the port works out which it
-has been given and adapts:
+directory:
+
+```sh
+./build/uw --data-dir=/path/to/UW1/UW
+./run.sh --data-dir=/path/to/UW1/UW     # or UW_DATA_DIR=/path/to/UW1/UW ./run.sh
+```
+
+`./run.sh` and `./debug.sh` pass the repo's own `data/` by default, seeded
+from `UW_DATA_DIR` when that is set, and forward any further arguments — so a
+`--data-dir` of your own wins, being later on the command line.
+
+Supply one asset set or the other, not both; the port works out which it has
+been given and adapts:
 
 - `DATA/CHRGEN.DAT` uses 18-byte records on DOS instead of the port's 20,
   and is converted at load time (`src/chargen.c`).
 - Cutscene speech ships as Creative `SOUND/NN.VOC` rather than RIFF
   `SOUND/VOCnn.wav`; `src/platform_voice.c` reads either.
 - Music and sound effects come from the DOS `SOUND` set automatically: with
-  no `UW_AUDIO_MODE` set, a data directory that is a DOS install (detected by
-  `SOUND/UW.AD`, the timbre bank) selects `hybrid`, because such a directory
-  has no `.MOD` music or WAVE effects to fall back on. Set `UW_AUDIO_MODE`
-  explicitly — including `arm` — to override. `UW_DOS_DATA_DIR` is now only
-  needed to borrow DOS music *while playing the Pocket PC assets*; it does
-  not by itself turn DOS audio on.
+  no `--audio-mode` given, a data directory that is a DOS install (detected
+  by `SOUND/UW.AD`, the timbre bank) selects `hybrid`, because such a
+  directory has no `.MOD` music or WAVE effects to fall back on. Pass
+  `--audio-mode` explicitly — including `--audio-mode=arm` — to override.
+  `--dos-data-dir` is only needed to borrow DOS music *while playing the
+  Pocket PC assets*; it does not by itself turn DOS audio on.
 - The 3D models are read out of `UW.EXE` itself, where DOS kept them
   compiled as bytecode. There is no `DATA3D/` in a DOS install and no `.E`
   source anywhere in the executable, so there is nothing for the `.E`

@@ -2,6 +2,7 @@
    portrait, difficulty, name, confirm), its resource-loading setup, and the critical-section entry
    wrapper. */
 #include "headers/chargen.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 
 #define DAT_000fb860 DAT_000fb860_backing[0]
@@ -202,7 +203,6 @@ int character_generator_loop(char *tree_data, char *scratch_data, char *field_re
 // Fires once per chargen screen (sex/handedness/class/skill/portrait/ difficulty/name/confirm
     // are states 0-7, in that order) -- state is whatever the previous iteration's switch-case just
     // advanced sVar8 to (or reset it to 0 for, on a "back"/cancel).
-    DEBUG(TRACE, "[chargen] screen advancing to state=%d", iVar12);
     pcVar_rec = field_records + iVar12 * 0x14;
     iVar4 = *(int *)(pcVar_rec + 6);
     pcVar_name = (char *)&DAT_000fb8f0 + iVar4;
@@ -288,10 +288,17 @@ LAB_00025468:
         sVar8 = sVar8 + 1;
         break;
       case 3:
-        /* (int)&local_5c truncated a real stack address; and (int*)(field_records+0x42) is the same
-           never-written, never-zeroed record field skipped in advance_skill_tree_node above --
-           always take the fallback instead of reading through arbitrary heap garbage. */
-        local_5c_buf[local_64[0] + 3] = 0;
+        /* ARM 0x25198-0x251d4: record the skill the player just picked from the branch menu --
+           picked[cursor-1] = list[choice*2] - 0x1f, where list is the string-id list
+           advance_skill_tree_node filled in for this record (record+6, relative to
+           &DAT_000fb8f0, same field draw_chargen_field_options reads). This was `= 0`, written
+           off as a "never-written" field, so the chosen skill was always discarded and never
+           added to the character's skill list (the slot kept the 0 and then applied nothing
+           useful / skill 0). */
+        {
+          char *picked_list = (char *)&DAT_000fb8f0 + *(int *)(field_records + 0x3c + 6);
+          local_5c_buf[local_64[0] + 3] = picked_list[uVar1 * 2] - 0x1f;
+        }
         DAT_001005c0 = apply_confirmed_skill_picks((int)DAT_001005c0,local_5c_buf + 4);
         decrement_cursor_hide_depth();
         restore_captured_grtile_backdrop(local_60);
@@ -356,7 +363,7 @@ LAB_00025468:
         hi_word = extraout_r1_00;
         if (*pcVar5 != '\0') {
           /* Regression-verification hook only (see bugfix/lowercase-text- universal): no other
-             UW_DEBUG_* trace in this file surfaces the committed name-entry text... */
+             other trace in this file surfaces the committed name-entry text... */
           DEBUG(TRACE, "[chargen] name field committed: \"%s\"", pcVar5);
           ce_strncpy(DAT_00086df8,pcVar5,0x1d);
           hi_word = extraout_r1_01;
@@ -577,11 +584,9 @@ int character_generator_start()
 {
   undefined4 uVar1;
 
-  DEBUG(TRACE, "[chargen] character generation starting");
   init_new_character_record(1);
   uVar1 = run_character_generator();
   load_weapon_combat_maneuver_data();
-  DEBUG(TRACE, "[chargen] character generation returning, result=%u", uVar1);
   return uVar1;
 }
 
@@ -661,10 +666,6 @@ void init_new_character_record(int mode)
   *(undefined1 *)(DAT_00086df8 + 0x66) = 0;
   *(undefined1 *)(DAT_00086df8 + 0x67) = 0;
   *(undefined1 *)(DAT_00086df8 + 0x68) = 0;
-  if (getenv("UW_DEBUG_FORCE_QUEST_TEST")) {
-    *(unsigned int *)(DAT_00086df8 + 0x65) = 0x12345678;
-    fprintf(stderr, "[quest-persist] forced test quest_bits=0x%x at new-game init\n", *(unsigned int *)(DAT_00086df8 + 0x65));
-  }
   *(undefined1 *)(DAT_00086df8 + 0x6e) = 0;
   *(undefined1 *)(DAT_00086df8 + 0x6f) = 0;
   uVar5 = *(ushort *)(DAT_00086df8 + 0xb6) & 0xfff8;
@@ -723,7 +724,7 @@ void init_new_character_record(int mode)
   *(undefined1 *)(DAT_00086df8 + 0x4b) = 0;
   uVar4 = ce_rand();
   uw_ord2005_rem_1 = ((int)(uVar4)) % (6);
-  *(char *)((char *)g_player_object + 8) = (-6 - uw_ord2005_rem_1) + *(char *)(DAT_0023be74 + 4);
+  g_player_object->npc_hp = (byte)((-6 - uw_ord2005_rem_1) + *(char *)(DAT_0023be74 + 4));
   DAT_00201b68 = 1;
   refresh_player_equipment_effects();
 }
@@ -923,7 +924,7 @@ void reroll_attributes_for_class_race()
     *(byte *)(DAT_0023be74 + uw_ord2005_rem_2 + 5) = (char)uVar3 + bVar1;
   }
   recalculate_player_stats(1);
-  *(undefined1 *)((char *)g_player_object + 8) = *(undefined1 *)(DAT_0023be74 + 4);
+  g_player_object->npc_hp = *(undefined1 *)(DAT_0023be74 + 4);
 }
 
 
@@ -1061,10 +1062,10 @@ void draw_chargen_field_value(short *field)
           iVar10 = iVar10 + iVar9 + 4;
         }
         sVar7 = (short)uVar12;
-        iVar11 = CONCAT11(*(undefined1 *)((char *)field + 0x13),(char)field[9]) + iVar11 + uVar12;
+        iVar11 = (ushort)field[9] + iVar11 + uVar12;
         /* Investigated as a possible "missing button outline" source this session -- ruled out. */
         bitmap_blit_to_framebuffer(iVar11,iVar10,
-                     (&DAT_000fb880)[CONCAT11(*(undefined1 *)((char *)field + 0xd),(char)field[6])]
+                     (&DAT_000fb880)[(ushort)field[6]]
                      + iVar3,(int)(short)local_2c,sVar7,0,0,0);
         if (field[6] == 0) {
           /* field+3 (byte offset +6 in the record) holds a relative
@@ -1223,7 +1224,7 @@ uint character_generator_touch_select(short *field, uint position)
     sVar7 = 0;
   }
   iVar1 = -(((uint)(sVar4 != 0) +
-            (int)CONCAT11(*(undefined1 *)((char *)field + 0xf),(char)field[7])) * (local_30 + 4));
+            (int)(ushort)field[7]) * (local_30 + 4));
   iVar9 = iVar1 + 200;
   if (iVar9 < 0) {
     iVar9 = iVar1 + 0xc9;
@@ -1435,7 +1436,7 @@ LAB_00024dd4:
         sVar5 = field[5];
         uVar14 = CONCAT44(iVar7,(int)sVar5);
         if (iVar7 < sVar5) {
-          if (getenv("UW_DIAG_TEXT")) {
+          if (g_opts.diag_text) {
             fprintf(stderr, "[diagnav] key=0x%x uVar10(new)=%u uVar12(old)=%u itemcount=%d\n", uVar6, uVar10, uVar12, sVar5);
           }
           uVar14 = draw_chargen_field_options(field,uVar10 & 0xff,uVar12 & 0xff);
@@ -1456,7 +1457,6 @@ LAB_00024dd4:
         item_text = get_message_string(*(byte *)(((char *)&DAT_000fb8f0 + *(int *)(field + 3)) + uVar10 * 2) | 0x400);
       }
       char *field_label = (*field != 0) ? get_message_string((int)*field | 0x400) : "";
-      DEBUG(TRACE, "[chargen] button selected: index=%u text=\"%s\" label=\"%s\"", uVar10, item_text, field_label);
     }
   }
   else {

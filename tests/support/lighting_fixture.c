@@ -4,9 +4,14 @@
 /* Exercise light toggling, equipment selection, real shading data and pixels.
    Inventory/UI services are fixtures; the game functions stay in their files. */
 char *DAT_00086df8, *DAT_0023be74, *DAT_0024fa2c, *DAT_0023cca0;
-ushort *g_scratch_object_ptr;
+uw_object_hdr_t *g_scratch_object_ptr;
+unsigned char g_fullbright_palette_mask[256];
+uw_extra_light_t g_extra_lights[UW_MAX_EXTRA_LIGHTS];
+int g_extra_light_count;
+byte lighting_span_shade = 88;
 char *g_selected_object;
-undefined1 DAT_00086da8, DAT_00202800_backing[256];
+undefined1 DAT_00086da8;
+uw_melee_type_props_t g_melee_type_props[16];
 undefined1 DAT_0023b039_backing[4096];
 undefined4 DAT_000b5638_backing[160];
 undefined1 DAT_0023cca8_backing[1024];
@@ -24,10 +29,10 @@ ushort lights[4][4], *slots[11];
 byte light_records[32];
 int rebuilds, message;
 int g_ambient_bias_reduction;
-void *get_equipped_item_at_slot(short slot) { return slots[slot]; }
+uw_object_hdr_t *get_equipped_item_at_slot(short slot) { return slots[slot]; }
 void *get_scanned_object_class_effect_ptr(void)
 {
-    return light_records + (*g_scratch_object_ptr & 15) * 2;
+    return light_records + (g_scratch_object_ptr->type_flags & 15) * 2;
 }
 int compute_object_weight(ushort *object) { (void)object; return 0; }
 void request_weapon_swing_graphic(char category) {}
@@ -67,10 +72,14 @@ void *ce_memset(void *p, int value, unsigned n) { return memset(p, value, n); }
 char *ce_strcat(char *p, char *s) { return strcat(p, s); }
 void lighting_fixture_reset(void)
 {
-    setenv("UW_DATA_DIR", UW_TEST_DATA_DIR, 1);
-    unsetenv("UW_LIGHT_MODE");
-    setenv("UW_DITHER", "0", 1); /* Isolate undithered falloff assertions. */
-    unsetenv("UW_AMBIENT_BIAS_REDUCTION");
+    options_set("data-dir", UW_TEST_DATA_DIR);
+    options_unset("light-mode");
+    options_unset("fullbright");
+    options_unset("extralights");
+    extra_lights_reset();
+    lighting_span_shade = 88;
+    options_set("dither", "0"); /* Isolate undithered falloff assertions. */
+    options_unset("ambient-bias-reduction");
     g_ambient_bias_reduction = 0;
     memset(player, 0, sizeof player); memset(stats, 0, sizeof stats);
     memset(slots, 0, sizeof slots); memset(lights, 0, sizeof lights);
@@ -89,12 +98,15 @@ void lighting_fixture_reset(void)
     TEST_ASSERT_EQUAL_INT(4096, uw_file_read(h, mappings, 4096)); uw_file_close(h);
     /* Distinct RGB565 entries let assertions identify the exact palette index. */
     for (int i = 0; i < 256; i++) g_palette_rgb565_backing[i] = i + 0x100;
+    update_fullbright_palette_mask();
 }
 void lighting_fixture_dispose(void)
 {
-    unsetenv("UW_LIGHT_MODE");
-    unsetenv("UW_DITHER");
-    unsetenv("UW_AMBIENT_BIAS_REDUCTION");
+    options_unset("light-mode");
+    options_unset("dither");
+    options_unset("ambient-bias-reduction");
+    options_unset("fullbright");
+    options_unset("extralights");
 }
 void assert_mode(int mode, int falloff, int initial, int offset)
 {
@@ -117,7 +129,7 @@ void lighting_draw_span(int reciprocal_w, int x, int y, int count, int clip_left
     left[0x30/4] = reciprocal_w;
     right[0x28/4] = (x + count) << 14;
     raster_textured_span(320, (char *)framebuffer, (char *)gradients,
-                        (char *)left, (char *)right, 1, 1, 0, clip, 88);
+                        (char *)left, (char *)right, 1, 1, 0, clip, lighting_span_shade);
     memcpy(pixels, framebuffer + y * 320 + x, count * sizeof *pixels);
 }
 ushort lighting_draw_texel(int reciprocal_w, int x, int y)

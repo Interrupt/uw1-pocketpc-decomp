@@ -5,10 +5,12 @@ void tearDown(void) { npc_ai_fixture_dispose(); }
 
 static void test_loaded_perception_and_health_fields_share_monster_table(void)
 {
-    TEST_ASSERT_EQUAL_PTR(DAT_001007d0_backing + 4, &g_monster_max_stats_table);
-    TEST_ASSERT_EQUAL_PTR(DAT_001007d0_backing + 0x1d, &DAT_001007ed);
-    TEST_ASSERT_EQUAL_UINT8(DAT_001007d0_backing[8 * 0x30 + 0x1d],
-        (&DAT_001007ed)[8 * 0x30]);
+    TEST_ASSERT_EQUAL_PTR(((byte *)g_monster_type_props) + 4,
+                          &g_monster_type_props[0].max_hp);
+    TEST_ASSERT_EQUAL_PTR(((byte *)g_monster_type_props) + 0x1d,
+                          &g_monster_type_props[0].detection_ranges);
+    TEST_ASSERT_EQUAL_UINT8(g_monster_type_props[8].detection_ranges,
+                            ((byte *)g_monster_type_props)[8 * 0x30 + 0x1d]);
 }
 static void test_hostile_npc_notices_nearby_player_and_chases(void)
 {
@@ -47,7 +49,8 @@ static void test_repeated_walking_preserves_npc_position_and_ai_pointers(void)
         TEST_ASSERT_EQUAL_UINT16((10 << 10) | (10 << 4), npc[0xb]);
         TEST_ASSERT_EQUAL_UINT8(5, npc_bytes()[0xb] & 0xf);
         TEST_ASSERT_EQUAL_UINT8(0x2c, npc_bytes()[0x15] & 0x3f);
-        TEST_ASSERT_EQUAL_UINT8((byte)DAT_00101404[0xc], npc_bytes()[0x13] & 0x7f);
+        TEST_ASSERT_EQUAL_UINT8((byte)*(char *)&DAT_00101404->movement_speed,
+                                npc_bytes()[0x13] & 0x7f);
     }
     TEST_ASSERT_GREATER_THAN_INT(0, chase_steps);
 }
@@ -141,6 +144,42 @@ static void test_friendly_npc_does_not_start_a_chase_or_attack(void)
     TEST_ASSERT_EQUAL_INT(0, attacks);
     TEST_ASSERT_NOT_EQUAL(5, npc_bytes()[0xb] & 0xf);
 }
+/* Critter 0x4d is a goblin with a ranged weapon (weapon_loot[0] bit pattern 0x21). */
+static void become_ranged_goblin(void)
+{
+    npc[0] = 0x4d;
+    DAT_00101404 = &g_monster_type_props[13];
+    npc_bytes()[8] = g_monster_type_props[13].max_hp;
+}
+static void test_ranged_goblin_throws_its_weapon_at_a_player_in_range(void)
+{
+    become_ranged_goblin();
+    ranged_allowed = 1;
+    npc_set_goal(5, 1);
+    set_position(player, 10, 12);
+    for (int tick = 0; tick < 128 && thrown_weapons == 0; tick++) npc_ai_tick();
+    TEST_ASSERT_GREATER_THAN_INT(0, thrown_weapons);
+    TEST_ASSERT_EQUAL_INT(0, attacks);
+    TEST_ASSERT_EQUAL_INT(0, thrown_offset); /* ranged type 0: the sling stone */
+    TEST_ASSERT_EQUAL_INT(g_ranged_type_props[0].projectile_speed, thrown_speed);
+}
+static void test_ranged_line_of_sight_aims_at_the_players_actual_height(void)
+{
+    /* The ARM reads the target's Z from the position word at byte 2 (bits 0-6). */
+    become_ranged_goblin();
+    g_object_type_props[0x4d].height = 10;
+    g_object_type_props[0x7f].height = 20;
+    npc[1] |= 30;    /* goblin standing at z = 30 */
+    player[1] |= 40; /* player at z = 40 */
+    npc_set_goal(5, 1);
+    set_position(player, 10, 12);
+    player[1] |= 40;
+    TEST_ASSERT_EQUAL_INT(1, refresh_npc_target_delta());
+    try_npc_special_ability_alt();
+    TEST_ASSERT_GREATER_THAN_INT(0, los_calls);
+    TEST_ASSERT_EQUAL_INT(10 + 30, los_from_z);
+    TEST_ASSERT_EQUAL_INT(20 + 40, los_to_z);
+}
 int main(void)
 {
     UNITY_BEGIN();
@@ -157,5 +196,7 @@ int main(void)
     RUN_TEST(test_hostile_npc_cannot_notice_player_through_a_wall);
     RUN_TEST(test_hostile_npc_does_not_notice_player_outside_detection_range);
     RUN_TEST(test_friendly_npc_does_not_start_a_chase_or_attack);
+    RUN_TEST(test_ranged_goblin_throws_its_weapon_at_a_player_in_range);
+    RUN_TEST(test_ranged_line_of_sight_aims_at_the_players_actual_height);
     return UNITY_END();
 }

@@ -2,6 +2,7 @@
    capture slots, and door-frame loading. Split out of uw.c (the original monolithic decompile) once
    these functions' real roles were confirmed. */
 #include "headers/resources.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,10 +54,8 @@ static char s_doors_00085a64[] = "doors";
 /* Sizing-audit pass: door-type slot table, explicit loop bound
    `while(iVar3<6)` (load_door_frames). HARD. Down from 8192. */
  undefined1 DAT_0023b840_backing[8];
-/* Sizing-audit pass: `read_file_handle(param_1,&DAT_00202750,0x80)`
-   -- exactly 128 bytes, matching its own nibble*4-stride indexing.
-   HARD exact. Down from 256. */
-undefined1 DAT_00202750_backing[128];
+/* UW1 OBJECTS.DAT wearable rows are loaded unchanged (32 * 4 bytes). */
+uw_armor_type_props_t g_armor_type_props[32];
 static undefined4 *DAT_0023c3fc;  /* grtile registry: 0x11-byte records, first dword = identity key */
 static undefined4 *DAT_0023c404;
 /* Sizing pass: the "grows unboundedly" claim below was wrong from the moment it was written, not
@@ -181,12 +180,8 @@ int open_gr_resource_file(char *path, char flag)
     }
   }
   DAT_00202514 = open_file_for_read(local_114);
-  if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[door] open_gr_resource_file: path='%s' flag=%d open_handle=%d\n", local_114, (int)flag, (int)DAT_00202514);
   if (DAT_00202514 != -1) {
     iVar3 = read_file_handle(DAT_00202514,local_11c,1);
-    if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[door] open_gr_resource_file: header_read=%d header_byte=%d expected=%d\n", iVar3, (int)local_11c[0], (int)uVar1);
     if (((((iVar3 == 1) && (local_11c[0] == uVar1)) &&
          ((uVar1 != 2 || (iVar3 = read_file_handle(DAT_00202514,&DAT_00202518,1), iVar3 == 1)))) &&
         (iVar3 = read_file_handle(DAT_00202514,&DAT_00202728,2), iVar3 == 2)) &&
@@ -226,9 +221,6 @@ void load_door_frames()
        even a successful allocate+read never stores the decoded buffer into lookup_grtile_by_id's
        DAT_0024e090[] pointer table... */
     uint _ok = load_gr_resource_entries(s_doors_00085a64,(&DAT_0023b840)[iVar3],1,&alloc_door_frame_buffer,&register_gr_group_entry);
-    if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[door] load_door_frames: loading doors[%d] slot=%d -> DAT_00202744=%d ok=%u\n",
-              iVar3, (int)(&DAT_0023b840)[iVar3], (int)DAT_00202744, _ok);
     iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
     DAT_00202744 = DAT_00202744 + 1;
   } while (iVar3 < 6);
@@ -565,7 +557,6 @@ int restore_captured_grtile_backdrop(uint key)
       iVar6 = iVar6 + (0x140 - iVar1);
     } while (iVar5 < iVar3);
   }
-  debug_framebuffer_dump("restore_captured_grtile_backdrop");
   return 0;
 }
 
@@ -710,13 +701,6 @@ int register_interned_string(char *string, int page)
     } while (iVar4 < 0x200);
     sVar5 = DAT_0024cfc0;
     DAT_0024cfc0 = (short)((uint)((iVar2 + 1) * 0x10000) >> 0x10);
-    if (getenv("UW_DEBUG_STRING_CACHE")) {
-      static int hwm_pages = -1;
-      if (DAT_0024cfc0 > hwm_pages) {
-        hwm_pages = DAT_0024cfc0;
-        fprintf(stderr, "[string-cache] new high-water page count: %d\n", (int)DAT_0024cfc0);
-      }
-    }
   }
   iVar4 = sVar5 * 0x804;
   uVar3 = *(ushort *)(&DAT_0024c7a2 + iVar4);
@@ -729,15 +713,6 @@ int register_interned_string(char *string, int page)
   (&DAT_0024bfa3)[iVar2] = (char)((uintptr_t)string >> 8);
   (&DAT_0024bfa4)[iVar2] = (char)((uintptr_t)string >> 0x10);
   (&DAT_0024bfa5)[iVar2] = (char)((uintptr_t)string >> 0x18);
-  if (getenv("UW_DEBUG_STRING_CACHE")) {
-    static int hwm_slot = -1;
-    int slot = sVar5 * 0x201 + (int)(short)uVar3;
-    if (slot > hwm_slot) {
-      hwm_slot = slot;
-      fprintf(stderr, "[string-cache] new high-water slot index: %d (page %d sub-index %u, byte-plane byte offset %d)\n",
-              slot, (int)sVar5, (unsigned)uVar3, iVar2);
-    }
-  }
   sVar5 = *(short *)(&DAT_0024c7a2 + iVar4);
   (&DAT_0024c7a2)[iVar4] = (char)(sVar5 + 1);
   (&DAT_0024c7a3)[iVar4] = (char)((uint)(sVar5 + 1) >> 8);
@@ -1165,7 +1140,6 @@ void blit_grtile_to_framebuffer(ushort x, int y, int grtile_key, short height, s
       } while (iVar5 != 0);
     }
   }
-  debug_framebuffer_dump("blit_grtile_to_framebuffer");
 }
 
 
@@ -1686,10 +1660,6 @@ int load_gr_resource_group(char *path)
   _dbg_before = DAT_00202744;
   uVar1 = load_gr_resource_entries(path,0,-1,&gr_resource_bump_alloc_entry,&register_gr_group_entry);
   DAT_00202744 = (short)DAT_00202728 + DAT_00202744;
-  if (getenv("UW_DEBUG_DUMP_GR")) {
-    fprintf(stderr, "[dumpgr] load_gr_resource_group(\"%s\") frames [%d, %d) count=%d ok=%d\n",
-            path, (int)_dbg_before, (int)DAT_00202744, (int)DAT_00202728, (int)uVar1);
-  }
   return uVar1;
 }
 
@@ -1726,10 +1696,6 @@ int load_hud_icon_gr(char *path)
   _dbg_before = DAT_00202744;
   uVar1 = load_gr_resource_entries(path,0,-1,&hud_icon_gr_bump_alloc_entry,register_grtile_entry);
   DAT_00202744 = (short)DAT_00202728 + DAT_00202744;
-  if (getenv("UW_DEBUG_DUMP_GR")) {
-    fprintf(stderr, "[dumpgr] load_hud_icon_gr(\"%s\") frames [%d, %d) count=%d ok=%d\n",
-            path, (int)_dbg_before, (int)DAT_00202744, (int)DAT_00202728, (int)uVar1);
-  }
   return uVar1;
 }
 
@@ -1843,10 +1809,6 @@ uint load_gr_resource_entries(char *path, int first_entry, short count, gr_alloc
           uVar6 = 0;
         }
         else {
-          /* Debug-only hook, not in the original decompile: dumps this
-             entry's raw bytes to a BMP under debug/gr/ when
-             UW_DEBUG_DUMP_GR is set. No-op otherwise. */
-          uw_debug_dump_gr_entry(path,iVar5,(unsigned char *)pvVar_buf,iVar4);
           if (post_process != (gr_entry_fn *)0x0) {
             uVar3 = (*post_process)(pvVar_buf,iVar4,iVar5);
             uVar6 = uVar6 & uVar3;
@@ -1874,17 +1836,10 @@ uint load_gr_resource_entries(char *path, int first_entry, short count, gr_alloc
 // was FUN_00041e40
 void load_armor_variant_tables(int file_handle)
 {
-  read_file_handle(file_handle,&DAT_00202800,0x80);
-  read_file_handle(file_handle,&DAT_002027d0,0x30);
-  read_file_handle(file_handle,&DAT_00202750,0x80);
-  if (getenv("UW_DEBUG_ARMOR_TABLES")) {
-    int _i;
-    for (_i = 0; _i < 32; _i++)
-      fprintf(stderr, "[armor] DAT_00202750[%d] (family%d nibble%d): %02x %02x %02x %02x\n",
-              _i, _i < 16 ? 2 : 3, _i < 16 ? _i : _i - 16,
-              (unsigned char)(&DAT_00202750)[_i*4], (unsigned char)(&DAT_00202750)[_i*4+1],
-              (unsigned char)(&DAT_00202750)[_i*4+2], (unsigned char)(&DAT_00202750)[_i*4+3]);
-  }
+  read_file_handle(file_handle, g_melee_type_props, sizeof g_melee_type_props);
+  read_file_handle(file_handle, g_ranged_type_props,
+                   sizeof g_ranged_type_props);
+  read_file_handle(file_handle, g_armor_type_props, sizeof g_armor_type_props);
 }
 
 
@@ -1902,7 +1857,6 @@ bool load_pals_bank(int bank, void *dest)
   char acStack_420 [264];
   undefined1 auStack_318 [768];
 
-  DEBUG(TRACE, "[palette] load_pals_bank loading pals.dat index=%u", bank);
   pcVar3 = &DAT_0023cca8;
     stack0xffdc2f38_ptr = acStack_420;
   do {
@@ -1975,9 +1929,6 @@ byte *uw_load_critter_page_cached(int param_1, int param_2) {
     } while (cVar2 != '\0');
     ce_strcat(stack0xffdc3238_buf, &DAT_00085920);
     iVar5 = open_file_for_read(stack0xffdc3238_buf);
-    if (getenv("UW_DEBUG_CRITTER"))
-      fprintf(stderr, "[critter] load_critter_page_cached: cache-miss page[%d] type=%d tier=%d file=\"%s\" open=%s\n",
-              iVar1, param_1, param_2, stack0xffdc3238_buf, iVar5 == -1 ? "FAIL" : "ok");
     if (iVar5 == -1) {
       DEBUG(ERR, "[glyphpage] open FAILED, skipping: %s (param_1=%d param_2=%d)\n",
             stack0xffdc3238_buf, param_1, param_2);
@@ -1989,19 +1940,6 @@ byte *uw_load_critter_page_cached(int param_1, int param_2) {
     read_file_handle(iVar5,pbVar11,0x7fff);
     CloseHandle(iVar5);
   }
-  if (getenv("UW_DEBUG_CRITTER_TABLESPAN")) {
-    static int seen[256 * 4];
-    static int seen_n = 0;
-    int key = param_1 * 4 + param_2;
-    int already = 0;
-    for (int _i = 0; _i < seen_n; _i++) if (seen[_i] == key) { already = 1; break; }
-    if (!already && seen_n < (int)(sizeof(seen)/sizeof(seen[0]))) {
-      seen[seen_n++] = key;
-      fprintf(stderr, "[critter-tablespan] page=%d tier=%d base=%d span=%d valid_dir=[%d,%d]\n",
-              param_1, param_2, (int)*pbVar11, (int)pbVar11[1],
-              (int)*pbVar11, (int)*pbVar11 + (int)pbVar11[1] - 1);
-    }
-  }
   return pbVar11;
 }
 
@@ -2009,8 +1947,9 @@ byte *uw_load_critter_page_cached(int param_1, int param_2) {
 // was FUN_0004a02c
 void load_light_food_effect_tables(int file_handle)
 {
-  read_file_handle(file_handle,&g_carry_weight_limit_table,0x30);
-  read_file_handle(file_handle,&g_light_radius_table,0x20);
+  read_file_handle(file_handle, g_container_type_props,
+                   sizeof g_container_type_props);
+  read_file_handle(file_handle, g_light_type_props, sizeof g_light_type_props);
   read_file_handle(file_handle,&g_food_effect_table,0x10);
 }
 

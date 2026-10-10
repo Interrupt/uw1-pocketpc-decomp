@@ -2,6 +2,7 @@
    save/load, and the low-level .ark archive I/O primitives (open/close/read-entry/write-entry)
    those and the level loader build on. */
 #include "headers/saveload.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -404,8 +405,6 @@ int load_game_from_slot(char slot_digit)
     /* Was copy_save_slot_files(acStack_528,acStack_630) -- i.e. (dest="\SAVEn", src="\SAVE0"),
        copying the ACTIVE SESSION onto the chosen slot -- a save-direction copy. */
     iVar4 = copy_save_slot_files(acStack_630,acStack_528);
-    if (getenv("UW_DEBUG_SAVEDESC"))
-      fprintf(stderr, "[savedesc] copy_save_slot_files returned %d, acStack_528=%s\n", iVar4, acStack_528);
     if (iVar4 != 0) {
       print_scroll_message_by_id(0xaa);
       /* An earlier session added a snprintf("Level %d", ...) write-back to this slot's desc file
@@ -615,8 +614,6 @@ bool open_level_archive(void *archive_handle, char *path)
     archive[2] = (char)((uint)iVar3 >> 0x10);
     archive[0xe] = 0;
     bVar8 = (iVar4 == 2 && iVar5 == uVar7 * 4) && iVar6 != -1;
-    if (getenv("UW_DEBUG_INPUTEVENT"))
-      fprintf(stderr, "[archive] iVar4=%d iVar5=%d uVar7=%u iVar6=%d bVar8=%d\n", iVar4, iVar5, uVar7, iVar6, (int)bVar8);
     archive[3] = (char)((uint)iVar3 >> 0x18);
     archive[5] = (char)((uint)iVar6 >> 8);
     iVar3 = 0;
@@ -717,9 +714,6 @@ bool write_archive_entry(void *archive_handle, uint entry_index, void *data, uin
      binary) as the .ark entry-offset table pointer -- see read_archive_entry's matching comment.
      The table is a fixed global; use its real address. */
   uVar15 = *(uint *)((char *)&DAT_000b78b8 + iVar8);
-  if (getenv("UW_DEBUG_INPUTEVENT"))
-    fprintf(stderr, "[15b94] entry_index=%u entrycount=%u uVar15=%u byte_count=%u handle1=%d handle2=%d\n",
-            entry_index, (uint)*(ushort *)(archive + 2), uVar15, byte_count, (int)*archive, (int)archive[1]);
   if ((entry_index & 0xffff) <= (uint)*(ushort *)(archive + 2)) {
     if (uVar15 == 0) {
       /* Zero offsets represent empty entries. An EOF offset for an
@@ -727,8 +721,6 @@ bool write_archive_entry(void *archive_handle, uint entry_index, void *data, uin
       if ((byte_count & 0xffff) == 0) return true;
       uVar4 = seek_file_handle(*archive,0,2);
       uVar15 = write_file_handle(*archive,data,byte_count & 0xffff);
-      if (getenv("UW_DEBUG_INPUTEVENT"))
-        fprintf(stderr, "[15b94] fast-path seek=%d write_wrote=%u want=%u\n", (int)uVar4, uVar15, byte_count & 0xffff);
       *(undefined1 *)((char *)archive + 0xe) = 1;
       *(undefined4 *)((char *)&DAT_000b78b8 + iVar8) = uVar4;
       return uVar15 == (byte_count & 0xffff);
@@ -841,8 +833,6 @@ bool write_archive_entry(void *archive_handle, uint entry_index, void *data, uin
                                    CONCAT11(*(undefined1 *)((char *)archive + 1),*(undefined1 *)archive
                                            ))),uVar15,0);
     uVar15 = write_file_handle(*archive,data,byte_count);
-    if (getenv("UW_DEBUG_INPUTEVENT"))
-      fprintf(stderr, "[15b94] exact-fit path: handle1=%d wrote=%u want=%u\n", (int)*archive, uVar15, byte_count);
     if (uVar15 == byte_count) {
       return true;
     }
@@ -962,27 +952,18 @@ int commit_level_to_save_slot(int level_number)
     object_list_unlink(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
   }
   DAT_00202080 = 0xffff;
-  uVar1 = *g_player_object;
-  *(char *)g_player_object = (char)(uVar1 & 0xfe3f);
-  *(char *)((char *)g_player_object + 1) = (char)((uVar1 & 0xfe3f) >> 8);
+  uVar1 = g_player_object->hdr.type_flags;
+  g_player_object->hdr.type_flags = (ushort)(uVar1 & 0xfe3f);
   iVar2 = open_level_archive(auStack_20,s__SAVE0_lev_ark_000842fc);
-  if (getenv("UW_DEBUG_INPUTEVENT"))
-    fprintf(stderr, "[0006bcd4] open_level_archive=%d\n", iVar2);
   uVar3 = 0;
   if (iVar2 != 0) {
     iVar2 = write_level_tilemap_to_archive(auStack_20,level_number);
-    if (getenv("UW_DEBUG_INPUTEVENT"))
-      fprintf(stderr, "[0006bcd4] write_level_tilemap_to_archive=%d\n", iVar2);
     if (((iVar2 != 0) && (iVar2 = write_level_quest_flags_to_archive(auStack_20,level_number), iVar2 != 0)) &&
        (iVar2 = save_automap_reveal_to_archive(auStack_20,level_number), iVar2 != 0)) {
       iVar2 = close_level_archive(auStack_20);
       uVar3 = 1;
-      if (getenv("UW_DEBUG_INPUTEVENT"))
-        fprintf(stderr, "[0006bcd4] close_level_archive=%d uVar3=%d\n", iVar2, (int)uVar3);
       if (iVar2 != 0) goto LAB_0006bdbc;
     }
-    if (getenv("UW_DEBUG_INPUTEVENT"))
-      fprintf(stderr, "[0006bcd4] falling through to fail, uVar3=0\n");
     uVar3 = 0;
   }
 LAB_0006bdbc:

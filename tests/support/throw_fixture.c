@@ -16,26 +16,26 @@ int bridge_count;
 ushort *thrown;
 short fine(ushort *object, int offset)
 { short value; memcpy(&value, (byte *)object + offset, 2); return value; }
-void *alloc_object_slot(int mobile)
+uw_object_hdr_t *alloc_object_slot(int mobile)
 {
     if (mobile) { mobile_allocations++; return (char *)arena + 0x4000 + 2 * 27; }
     static_allocations++;
     return (char *)arena + 0x5b00 + 8;
 }
-void free_object_slot(void *object) { freed++; }
-int encode_object_slot_index(void *object)
+void free_object_slot(uw_object_hdr_t *object) { freed++; }
+int encode_object_slot_index(const uw_object_hdr_t *object)
 {
     return (char *)object < DAT_002046c4 ? ((char *)object-DAT_002046b8)/27
         : 256+((char *)object-DAT_002046c4)/8;
 }
 void *tilemap_lookup(short x, short y)
 { TEST_ASSERT_TRUE(x>=0 && x<64 && y>=0 && y<64); return (byte *)arena + (y*64+x)*4; }
-void *resolve_object_link(void *head_)
+uw_object_hdr_t *resolve_object_link(ushort *head_)
 { ushort *head = (ushort *)head_;
     unsigned slot=*head>>6;
     return !slot ? NULL : slot<256 ? DAT_002046b8+slot*27 : DAT_002046c4+(slot-256)*8;
 }
-void *get_object_record_by_slot_index(short slot)
+uw_object_hdr_t *get_object_record_by_slot_index(short slot)
 { return slot<256 ? DAT_002046b8+slot*27 : DAT_002046c4+(slot-256)*8; }
 void get_mouse_position(ushort *x, ushort *y) { *x=141; *y=cursor_y; }
 long ce_rand(void) { return 0; }
@@ -77,7 +77,7 @@ void collision_height_envelope(int mode, int collision)
 }
 void resolve_wall_slide_corner(void) { DAT_002049da=9; }
 int check_object_drop_height(ushort *object, ushort *reference) { (void)object; (void)reference; return 1; }
-int object_ptr_in_arena(void *object) { (void)object; return 1; }
+int object_ptr_in_arena(const uw_object_hdr_t *object) { (void)object; return 1; }
 int play_sound_effect_at_object(int sound_id, ushort *object, int volume_bias) { (void)sound_id; (void)object; (void)volume_bias; return 0; }
 int play_sound_effect_with_pan(uint sound_id, byte pan, uint volume_bias) { (void)sound_id; (void)pan; (void)volume_bias; return 0; }
 int apply_typed_damage_to_object(ushort *target, ushort *attacker, int tile_x, short tile_y, byte damage, byte damage_type) { (void)target; (void)attacker; (void)tile_x; (void)tile_y; (void)damage; (void)damage_type; return 0; }
@@ -96,8 +96,9 @@ ushort *discard_misplaced_object(void *list, ushort *object, int destroy)
     free_object_slot(object);
     return NULL;
 }
-ushort *settle_dropped_object(void *object, short x, short y, int mode) { return object; }
-ushort *reallocate_object_to_arena(ushort *object) { (void)object; TEST_FAIL_MESSAGE("Unexpected reallocation during flight"); return NULL; }
+uw_object_hdr_t *settle_dropped_object(void *object, short x, short y,
+				       int mode) { return object; }
+uw_object_hdr_t *reallocate_object_to_arena(ushort *object) { (void)object; TEST_FAIL_MESSAGE("Unexpected reallocation during flight"); return NULL; }
 void project_position_by_heading(int heading, short distance, void *x, void *y) { (void)heading; (void)distance; (void)x; (void)y; TEST_FAIL_MESSAGE("Throw took the ground-drop path"); }
 int check_object_placement_clearance(short catalog_type, short ignore_slot, short position_x, short position_y, short height, int check_mode, byte step_limit) { (void)catalog_type; (void)ignore_slot; (void)position_x; (void)position_y; (void)height; (void)check_mode; (void)step_limit; return 1; }
 
@@ -110,17 +111,17 @@ int resolve_collision_candidate_interaction(short contact, int slot)
     return 4;
 }
 void randomize_settled_snapshot_position(void *snapshot) { (void)snapshot;}
-void object_list_append_tail(void *link_field, void *object) { (void)link_field; (void)object; TEST_FAIL_MESSAGE("Throw took the ground-drop path"); }
+void object_list_append_tail(ushort *link_field, uw_object_hdr_t *object) { (void)link_field; (void)object; TEST_FAIL_MESSAGE("Throw took the ground-drop path"); }
 int play_positional_sound_effect(uint sound_id, short world_x, short world_y, uint volume_bias) { (void)sound_id; (void)world_x; (void)world_y; (void)volume_bias; return 0; }
 
 bool apply_swim_wade_pose(ushort collision_mask) { (void)collision_mask; TEST_FAIL_MESSAGE("Unexpected water"); return false; }
 
 void throw_fixture_reset(void)
 {
-    unsetenv("UW_PLAYER_NO_BOUNCE");
+    options_unset("player-no-bounce");
     memset(arena,0,sizeof arena); memset(held,0,sizeof held);
     memset(character,0,sizeof character); memset(game_mode,0,sizeof game_mode);
-    memset(DAT_00202c90_backing,0,sizeof DAT_00202c90_backing);
+    memset(((byte *)g_object_type_props),0,sizeof g_object_type_props);
     memset(DAT_00204920_backing,0,sizeof DAT_00204920_backing);
     memset(DAT_00086998_backing,0,sizeof DAT_00086998_backing);
     memset(DAT_002049c8_backing,0,sizeof DAT_002049c8_backing);
@@ -128,22 +129,22 @@ void throw_fixture_reset(void)
     DAT_00085a6c=(short *)game_mode; *(short *)(game_mode+16)=1;
     DAT_00086df8=character;
     DAT_002046b8=(char *)arena+0x4000; DAT_002046c4=(char *)arena+0x5b00;
-    g_player_object=(ushort *)(DAT_002046b8+27);
-    g_player_object[0]=0x7f;
-    g_player_object[1]=48 | (4<<13) | (4<<10);
-    g_player_object[0xb]=(10<<10)|(10<<4);
+    g_player_object = (uw_mobile_object_t *)(ushort *)(DAT_002046b8 + 27);
+    ((ushort *)g_player_object)[0]=0x7f;
+    ((ushort *)g_player_object)[1]=48 | (4<<13) | (4<<10);
+    ((ushort *)g_player_object)[0xb]=(10<<10)|(10<<4);
     held[0]=0x80; held[2]=20;
     g_sweep_foot_pos=(short *)DAT_002049c8_backing;
     DAT_002049a8=collision_response_mobile_object;
     /* Use the real COMOBJ properties for the player and thrown sack. */
-    uw_test_load_object_properties(DAT_00202c90_backing, sizeof DAT_00202c90_backing);
+    uw_test_load_object_properties(((byte *)g_object_type_props), sizeof g_object_type_props);
     DAT_000869a8_backing[0]=0; DAT_000869a8_backing[1]=0;
     DAT_000869a8_backing[4]=0; DAT_000869a8_backing[5]=0xc0;
     cursor_y=55; wall=bridge_fixture=false; bridge_count=0;
     mobile_allocations=static_allocations=freed=0;
     thrown=NULL;
 }
-void throw_fixture_dispose(void) { unsetenv("UW_PLAYER_NO_BOUNCE"); }
+void throw_fixture_dispose(void) { options_unset("player-no-bounce"); }
 void launch(void)
 {
     TEST_ASSERT_EQUAL_UINT(1,drop_held_object_near_player(held,1));

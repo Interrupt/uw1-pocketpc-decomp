@@ -37,7 +37,7 @@ void look_at_inscribed_object(ushort *inscribed_object, short look_mode);
 void describe_object_owner(ushort *object, short mode);
 void print_object_flavor_text(ushort *object, short mode);
 void describe_special_object_property(ushort *object, short mode);
-int identify_mushroom_type(ushort *object, char *tile);
+int identify_mushroom_type(ushort *object, const uw_object_type_props_t *properties);
 bool spawn_object_near_actor(ushort *actor, short height_offset);
 int check_object_drop_height(ushort *object, ushort *reference);
 void check_scheduled_object_location_callback();

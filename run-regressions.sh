@@ -27,10 +27,10 @@
 #   OUT_DIR=/tmp/regress_out directory for per-script logs
 #   BIN=build/uw_asan        binary to run (build/uw_dbg for a plain,
 #                            non-ASan build -- see above)
-#   DEBUG_LEVEL=WARN         UW_DEBUG_LEVEL passed to the binary
-#   EXTRA_ENV="UW_DEBUG_INV=1 UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT=1"
-#                            extra env vars (space-separated KEY=VAL pairs)
-#                            forwarded to the binary for every script
+#   EXTRA_ARGS="--container-autoclose-on-drag-out --light-mode=dos"
+#                            extra command-line options forwarded to the binary for every script
+#   EXTRA_ENV="UW_LIGHT_MODE=dos"  legacy form of EXTRA_ARGS: extra env vars (space-separated
+#                            KEY=VAL pairs) forwarded to the binary for every script
 #   SDL_VIDEODRIVER=dummy    SDL video/audio drivers for the runs. Default to SDL's
 #   SDL_AUDIODRIVER=dummy    headless "dummy" drivers so the suite never opens a real window,
 #                            takes focus or plays sound; set them to empty (or e.g. cocoa /
@@ -65,8 +65,8 @@ BUILD="${BUILD:-1}"
 TIMEOUT="${TIMEOUT:-90}"
 OUT_DIR="${OUT_DIR:-/tmp/regress_out}"
 BIN="${BIN:-build/uw_asan}"
-DEBUG_LEVEL="${DEBUG_LEVEL:-WARN}"
 EXTRA_ENV="${EXTRA_ENV:-}"
+EXTRA_ARGS="${EXTRA_ARGS:-}"
 ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=0}"
 # Headless by default. `${VAR-default}` (no colon) so an explicitly empty value means "SDL's own default".
 SDL_VIDEODRIVER="${SDL_VIDEODRIVER-dummy}"
@@ -147,7 +147,7 @@ for s in $SCRIPTS; do
     # process's PID, not a wrapper shell's), race it against a watchdog
     # timer instead of a fixed sleep, then wait for whichever finishes
     # first. No `timeout` command needed, so this works on stock OSX.
-    env ${SDL_VIDEODRIVER:+SDL_VIDEODRIVER="$SDL_VIDEODRIVER"} ${SDL_AUDIODRIVER:+SDL_AUDIODRIVER="$SDL_AUDIODRIVER"} $EXTRA_ENV ASAN_OPTIONS="$ASAN_OPTIONS" UW_DEMO_DELAY_MS=100 UW_DATA_DIR="$script_data_dir" UW_DEBUG_LEVEL="$DEBUG_LEVEL" UW_DEMO_FILE="$(pwd)/$s" UW_FAST_SLEEP=1 "./$BIN" >"$log" 2>&1 &
+    env ${SDL_VIDEODRIVER:+SDL_VIDEODRIVER="$SDL_VIDEODRIVER"} ${SDL_AUDIODRIVER:+SDL_AUDIODRIVER="$SDL_AUDIODRIVER"} $EXTRA_ENV ASAN_OPTIONS="$ASAN_OPTIONS" "./$BIN" --demo-delay-ms=100 --data-dir="$script_data_dir" --demo-file="$(pwd)/$s" --fast-sleep $EXTRA_ARGS >"$log" 2>&1 &
     pid=$!
 
     (

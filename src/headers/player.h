@@ -9,7 +9,7 @@
 extern short DAT_00201c74;
 extern char * DAT_0023be74;
 extern undefined1 DAT_0023bf0c;
-extern ushort * g_player_object;
+extern uw_mobile_object_t *g_player_object;
 /* Globals defined in uw.c but also used by functions that now live in
    player.c (reset_player_derived_state) -- extern'd here so both
    translation units see the same storage. */
@@ -127,8 +127,8 @@ int dungeon_view_anim_tick();
 void apply_level9_random_hazard_tick();
 void set_player_tile_position(uint tile_x, uint tile_y, int flag);
 void commit_player_move();
-void demo_set_player_pos(double x, double y, double z, double yaw_deg, double pitch_deg);
 void debug_print_player_position(const char *label);
+void demo_set_player_pos(double x, double y, double z, double yaw_deg, double pitch_deg);
 void trigger_player_jump_if_grounded(char *object);
 void force_locomotion_state_refresh();
 void apply_vertical_launch_impulse(short strength);

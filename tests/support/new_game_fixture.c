@@ -1,4 +1,5 @@
 #include "game_fixture.h"
+#include "src/headers/options.h"
 #include "new_game_fixture.h"
 
 /* Local service declarations; game function bodies link these mocks. */
@@ -28,7 +29,7 @@ void reset_cursor_confine_rect(void);
 void report_fatal_error_and_exit(ushort error_code);
 void uw_debug_dump_tmap(int level, const unsigned char *data);
 void *tilemap_lookup(short tile_x, short tile_y);
-void *resolve_object_link(void *link_field);
+uw_object_hdr_t *resolve_object_link(ushort *link_field);
 
 unsigned char arena[0x7c08], pristine_level[0x7c08];
 
@@ -212,6 +213,7 @@ void debug_print_player_position(const char *label)
     TEST_ASSERT_EQUAL_STRING("chargen-spawn", label);
 }
 
+
 void save_or_restore_level_special_state(short restore, short slot)
 {
     TEST_ASSERT_EQUAL_INT(1, spawn_calls);
@@ -245,7 +247,7 @@ void uw_debug_dump_tmap(int level, const unsigned char *data)
 
 void *tilemap_lookup(short tile_x, short tile_y) { (void)tile_x; (void)tile_y; return NULL; }
 
-void *resolve_object_link(void *link_field) { (void)link_field; return NULL; }
+uw_object_hdr_t *resolve_object_link(ushort *link_field) { (void)link_field; return NULL; }
 
 void new_game_fixture_reset(void)
 {
@@ -291,7 +293,7 @@ void new_game_fixture_begin(void)
     snprintf(archive_path, sizeof(archive_path), "%s/lev.ark", save_path);
     TEST_ASSERT_EQUAL_INT(0, symlink(UW_TEST_DATA_DIR "/DATA", data_link));
     TEST_ASSERT_EQUAL_INT(0, mkdir(save_path, 0700));
-    TEST_ASSERT_EQUAL_INT(0, setenv("UW_DATA_DIR", workspace, 1));
+    TEST_ASSERT_EQUAL_INT(0, options_set("data-dir", workspace));
 }
 
 void new_game_fixture_end(void)

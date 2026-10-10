@@ -82,3 +82,4 @@ void platform_dosmidi_play_effect(int id, int velocity, int pan);
    are controllable from support/audio_fixture.c. */
 int platform_dos_prefer_wav_effects(void);
 int platform_sfx_has_resource(int resource_id);
+extern uw_monster_type_props_t g_monster_type_props[64];

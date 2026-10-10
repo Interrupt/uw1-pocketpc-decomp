@@ -5,8 +5,8 @@ short DAT_002046b0;
 char *DAT_0020469c, *DAT_002046a8, *DAT_0023b82c;
 undefined1 DAT_00204880_backing[128];
 unsigned char DAT_00085ac8_backing[16];
-undefined1 DAT_002029d8_backing[256];
-undefined1 DAT_00202c90_backing[8192];
+uw_light_type_props_t g_light_type_props[16];
+uw_object_type_props_t g_object_type_props[512];
 char *DAT_00248410, *DAT_0024cff4;
 ushort *DAT_0024cff0;
 undefined4 g_weapon_overlay_enabled, DAT_00202c84;
@@ -67,7 +67,7 @@ uint read_realtime_clock_units(void)
     sleep_fixture.clock += 0x80;
     return sleep_fixture.clock;
 }
-void *get_equipped_item_at_slot(short slot)
+uw_object_hdr_t *get_equipped_item_at_slot(short slot)
 { return slot == 5 && sleep_fixture.torch[0] ? sleep_fixture.torch : NULL; }
 void redraw_backpack_slot_widget(short slot)
 { TEST_ASSERT_EQUAL_INT(5, slot); sleep_fixture.light_slot_redraws++; }
@@ -83,7 +83,7 @@ int resolve_object_variant_or_special_link(void *object, void *out_class, void *
 int dispatch_trap_special_or_tile_action(byte context_x, byte context_y, void *actor, void *target, ushort action_id, byte argument)
 { TEST_FAIL_MESSAGE("Unexpected fountain dispatch"); return 0; }
 
-void *alloc_object_slot(int mobile)
+uw_object_hdr_t *alloc_object_slot(int mobile)
 {
     TEST_ASSERT_EQUAL_INT(1, mobile);
     sleep_fixture.spawn_attempts++;
@@ -134,10 +134,10 @@ void sleep_fixture_reset(void)
     /* Preserve the actual level's linked object lists, including objects far
        from the bedroll that the sleep cleanup will visit. */
     uw_test_load_map(special_use_fixture.map, sizeof special_use_fixture.map, 1);
-    uw_test_load_object_properties(DAT_00202c90_backing, sizeof DAT_00202c90_backing);
+    uw_test_load_object_properties(((byte *)g_object_type_props), sizeof g_object_type_props);
     uw_test_create_character(special_use_fixture.character, special_use_fixture.attributes,
                              special_use_object(1));
-    g_player_object[11] = (18 << 10) | (5 << 4);
+    ((ushort *)g_player_object)[11] = (18 << 10) | (5 << 4);
     DAT_002020a0 = DAT_0023c3dc = 18;
     DAT_002020a4 = DAT_0023c3d8 = 5;
     object_list_insert_head((char *)tilemap_lookup(18, 5) + 2, g_player_object);
@@ -157,7 +157,8 @@ void sleep_fixture_reset(void)
     DAT_0023b82c = NULL;
     memset(DAT_00085ac8_backing, 0, sizeof DAT_00085ac8_backing);
     for (unsigned i = 0; i < 4; i++) DAT_00085ac8_backing[i] = 5 + i;
-    uw_test_read_data("DATA/OBJECTS.DAT", DAT_002029d8_backing, 32, 3426, SEEK_SET);
+    uw_test_read_data("DATA/OBJECTS.DAT", ((byte *)g_light_type_props), 32,
+                      3426, SEEK_SET);
     special_use_fixture.messages = special_use_fixture.health_refreshes = 0;
 }
 
@@ -195,7 +196,7 @@ void sleep_fixture_cleanup_chain(void)
     special_use_empty_area(18, 5);
     /* Small, non-container objects qualify for the original cleanup roll.
        Keep the real property table apart from this controlled size class. */
-    DAT_00202c90_backing[0x10 * 13 + 10] &= (byte)~0x3c;
+    ((byte *)g_object_type_props)[0x10 * 13 + 10] &= (byte)~0x3c;
     ushort *far = (ushort *)tilemap_lookup(35, 20);
     far[1] = (700 << 6) | 0x2b;
     for (unsigned slot = 700; slot <= 703; slot++) {

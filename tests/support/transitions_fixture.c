@@ -311,7 +311,7 @@ void transitions_fixture_reset(void)
     missing_resource = 0;
     memset(allocations, 0, sizeof allocations);
     memset(file_handles, 0, sizeof file_handles);
-    setenv("UW_DATA_DIR", UW_TEST_DATA_DIR, 1);
+    options_set("data-dir", UW_TEST_DATA_DIR);
     memset(image, 0, sizeof image);
     DAT_00101a70 = (uintptr_t)image;
     g_uw_framebuffer = framebuffer;
@@ -498,3 +498,6 @@ void poll_input_bindings(void *input_state)
         TEST_ASSERT_EQUAL_INT(0, g_force_flush);
     }
 }
+
+int dungeon_palette_cycle_tick() { return 0; }
+void redraw_lit_light_source_widgets() {}

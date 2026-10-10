@@ -1,4 +1,5 @@
 #include "unity.h"
+#include "src/headers/options.h"
 #include "cursor_test_globals.h"
 
 short g_mouse_x, g_mouse_y, DAT_00204788, DAT_00204840, DAT_0023c63c;
@@ -235,9 +236,9 @@ static void test_stylus_sprite_change_does_not_queue_desktop_presentation(void)
 int main(int argc,char **argv)
 {
     int stylus=argc>1 && strcmp(argv[1],"--stylus")==0;
-    if(stylus) setenv("UW_ALWAYS_SHOW_CURSOR","0",1);
-    else if(argc>1) setenv("UW_ALWAYS_SHOW_CURSOR","1",1);
-    else unsetenv("UW_ALWAYS_SHOW_CURSOR");
+    if(stylus) options_set("always-show-cursor", "0");
+    else if(argc>1) options_set("always-show-cursor", "1");
+    else options_unset("always-show-cursor");
     UNITY_BEGIN();
     TEST_ASSERT_EQUAL_INT(!stylus,uw_always_show_cursor());
     if(stylus) {

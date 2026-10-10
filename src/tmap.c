@@ -2,6 +2,7 @@
    walk/collection, per-tile wall/floor/object emission, and the final visible-tile-list
    rasterization pass. */
 #include "headers/tmap.h"
+#include "headers/options.h"
 #include <math.h>
 #include "headers/debug.h"
 #include <stdio.h>
@@ -258,7 +259,6 @@ void render_visible_tile_list()
   local_68 = DAT_00084634;
   local_6c = DAT_00084630;
   local_64 = DAT_00084638;
-  DEBUG(TRACE, "[tmap-diag] render_visible_tile_list: DAT_000c8c98 (visible-tile count) = %d", DAT_000c8c98);
   if (0 < DAT_000c8c98) {
     local_98 = &DAT_000c4838;
     iVar15 = DAT_000c8c98;
@@ -270,7 +270,6 @@ void render_visible_tile_list()
       local_54 = ordfloat_int_to_float2(piVar14[0x10]);
       local_50 = ordfloat_int_to_float2(piVar14[0x11]);
       iVar16 = 1;
-      DEBUG(TRACE, "[tmap-diag] record %d: *piVar14 (point count) = %d", local_94, *piVar14);
       if (1 < *piVar14 + -1) {
         uVar6 = ordfloat_div(0x3f800000,iVar17);
         uVar7 = ordfloat_mul(iVar17,0x3a2ec33e);
@@ -314,8 +313,6 @@ void render_visible_tile_list()
           local_34 = ordfloat_sub(0x42a00000,uVar11);
           local_30 = ordfloat_mul(uVar5,0x3a2ec33e);
           DAT_000da47c = (undefined2)piVar14[0x1d];
-          DEBUG(TRACE, "[tmap-diag] raster_triangle call: tex=0x%x x=%.0f y=%.0f w(0x1c)=%d stride(0x1b)=%d",
-                piVar14[0x1e], ((float*)local_60_arr)[0], ((float*)local_60_arr)[1], piVar14[0x1c], piVar14[0x1b]);
           raster_triangle(0x140,g_uw_framebuffer,local_60_arr,piVar14[0x1e],
                        piVar14[0x1b],piVar14[0x1c] * piVar14[0x1b],
                        ((unsigned)local_94 < UW_MAX_VIS_TILES)
@@ -336,7 +333,6 @@ void render_visible_tile_list()
       local_98 = local_98 + 1;
     } while (local_94 < iVar15);
   }
-  debug_framebuffer_dump("render_visible_tile_list");
   { int _dumped = uw_debug_3d_frame_dump_finish();
     if (_dumped >= 0) {
       char _msg[80];
@@ -393,6 +389,7 @@ void walk_visible_tiles()
   DAT_0023b814 = tilemap_lookup(0,0);
   DAT_0023b808 = tilemap_lookup(0x3f,0x3f);
   DAT_0023b83c = 0;
+  extra_lights_reset();
   uVar6 = (uint)(short)(((byte *)pbVar8 - (byte *)DAT_0023b814) >> 2);
   DAT_0023b838 = 0;
   /* Also clear the arena's own count fields (offset 0 = vertex count, offset 4 = record count).
@@ -533,17 +530,6 @@ void process_visible_tile_cell(byte *cell)
   
   bVar25 = *DAT_0023b820;
   local_48 = (uint)(short)(ushort)bVar25;
-  if (getenv("UW_DEBUG_GEOMETRY_DIST")) {
-    intptr_t _dcell = (DAT_0023b4ec - (byte *)DAT_002029cc) / 4;
-    ushort *_dpp = (ushort *)g_player_object;
-    int _dcx = (int)(_dcell & 0x3f), _dcy = (int)(_dcell >> 6);
-    int _dpx = (int)(_dpp[0xb] >> 10), _dpy = (int)((_dpp[0xb] & 0x3f0) >> 4);
-    int _ddx = _dcx - _dpx; if (_ddx < 0) _ddx = -_ddx;
-    int _ddy = _dcy - _dpy; if (_ddy < 0) _ddy = -_ddy;
-    fprintf(stderr, "[geom-dist] bit80=%d rawbyte=0x%02x tile=(%d,%d) player=(%d,%d) dist=%d willreveal=%d\n",
-            (local_48 & 0x80) != 0, (unsigned)bVar25, _dcx, _dcy, _dpx, _dpy, _ddx > _ddy ? _ddx : _ddy,
-            (int)(*cell == 0));
-  }
   if ((local_48 & 0x80) == 0) {
     /* Unreached cells stay unknown. For reached cells without geometry,
        use the tile's shade to distinguish discovered floors from the
@@ -560,7 +546,7 @@ void process_visible_tile_cell(byte *cell)
   }
   /* This branch emits a visible tile's 3D geometry slice for the dungeon viewport. */
   { static int _disabled = -1;
-    if (_disabled < 0) _disabled = (getenv("UW_DISABLE_3D_GEOMETRY") != NULL);
+    if (_disabled < 0) _disabled = (g_opts.disable_3d_geometry);
     /* Arena overflow guard. */
     if (_disabled
         || (int)(uint)DAT_0023b838 >= 512 - 28
@@ -1474,7 +1460,7 @@ LAB_0005e7e0:
   {
     static int _tile_features = -1;
     if (_tile_features < 0)
-      _tile_features = (getenv("UW_DISABLE_TILE_FEATURES") == NULL);
+      _tile_features = (!g_opts.disable_tile_features);
     if (_tile_features) {
       emit_tile_features(puVar23 + 1);
     }
@@ -1804,29 +1790,16 @@ void emit_tile_features(ushort *tile)
             continue;
           }
           iVar7 = cVar8 * 4;
-          if (getenv("UW_DEBUG_OBJPOS") && puVar5 && (*puVar5 & 0x1ff) == 0x166)
-            fprintf(stderr, "[objpos] cVar8=%d iVar7=%d bb99=%d bb9a=%d b4e4=%d b4e8=%d\n",
-                    (int)cVar8, iVar7, (int)(char)(&DAT_0023bb99)[iVar7], (int)(char)(&DAT_0023bb9a)[iVar7],
-                    (int)DAT_0023b4e4, (int)DAT_0023b4e8);
-          if (getenv("UW_DEBUG_DOOR_POS") && puVar5 && (*puVar5 & 0x1f0) == 0x140)
-            fprintf(stderr, "[doorpos] tile-grid: cVar8=%d slot_x=%d slot_z=%d b4e4(tileX)=%d b4e8(tileZ)=%d tile_origin=(%d,%d)\n",
-                    (int)cVar8, (int)(char)(&DAT_0023bb99)[iVar7], (int)(char)(&DAT_0023bb9a)[iVar7],
-                    (int)DAT_0023b4e4, (int)DAT_0023b4e8,
-                    (int)DAT_0023b4e4 * 256, (int)DAT_0023b4e8 * 256);
           DAT_0023b904 = ((short)(char)(&DAT_0023bb99)[iVar7] +
                          (short)((uint)((int)DAT_0023b4e4 << 0x13) >> 0x10)) * 0x20 + 0x10;
           DAT_0023b920 = ((short)(char)(&DAT_0023bb9a)[iVar7] +
                          (short)((uint)((int)DAT_0023b4e8 << 0x13) >> 0x10)) * 0x20 + 0x10;
-          if (((*puVar5 & 0x1c0) == 0x40) || (iVar16 = object_ptr_in_arena(puVar5), iVar16 == 0)) {
-            DAT_0023b91c = ((byte)puVar5[1] & 0x7f) << 3;
+          if (((((uw_object_hdr_t *)puVar5)->object_id & 0x1c0) == 0x40) || (iVar16 = object_ptr_in_arena(puVar5), iVar16 == 0)) {
+            DAT_0023b91c = (((uw_object_hdr_t *)puVar5)->zpos) << 3;
           }
           else {
-            DAT_0023b91c = *(short *)((char *)puVar5 + 0xf);
+            DAT_0023b91c = (short)((uw_projectile_object_t *)puVar5)->precise_z;
           }
-          if (getenv("UW_DEBUG_THROW") && (*puVar5 & 0x1ff) == 0x80)
-            fprintf(stderr, "[throw-scrz] sack DAT_0023b91c=%d cam_ref(DAT_00086e6c+0xe)=%d in_arena=%d\n",
-                    (int)(short)DAT_0023b91c, (int)g_current_view->view_elevation,
-                    (int)object_ptr_in_arena(puVar5));
           if (DAT_0023b830 == '\0') {
             iVar7 = (int)(short)((int)((int)DAT_0023b904 -
                                       ((int)g_current_view->view_x & 0xffU)) >> 5);
@@ -1871,8 +1844,8 @@ void emit_tile_features(ushort *tile)
       }
       return;
     }
-    uVar10 = (uint)(short)(*puVar5 & 0x1ff);
-    if ((uVar10 == 0x164) || (((*puVar5 & 0x1f0) == 0x140 || (uVar10 == 0x1cf)))) {
+    uVar10 = (uint)(short)(((uw_object_hdr_t *)puVar5)->object_id);
+    if ((uVar10 == 0x164) || (((((uw_object_hdr_t *)puVar5)->object_id & 0x1f0) == 0x140 || (uVar10 == 0x1cf)))) {
       uVar2 = local_34 >> 0x10;
       local_34 = CONCAT22((short)uVar2,sVar3 + (short)((uVar10 << 0x16) >> 0x10));
 LAB_0006574c:
@@ -1897,13 +1870,13 @@ LAB_000657b0:
       }
     }
     else {
-      if (((&DAT_00202c91)[uVar10 * 0xd] & 8) == 0) goto LAB_0006574c;
+      if ((((byte)g_object_type_props[uVar10].size_weight) & 8) == 0) goto LAB_0006574c;
       iVar15 = (int)local_38;
       uVar11 = 0;
       iVar7 = iVar15 * 4;
       pcVar14 = &DAT_0023bb98 + iVar7;
       resolve_billboard_corner_offset(pcVar14,puVar5);
-      uVar9 = (byte)(&DAT_00202c91)[uVar10 * 0xd] & 7;
+      uVar9 = (byte)((byte)g_object_type_props[uVar10].size_weight) & 7;
       if ((int)(char)(&DAT_0023bb9a)[iVar7] - (int)(short)uVar9 < 0) {
         uVar11 = 0x4000;
       }
@@ -2048,10 +2021,6 @@ void emit_tile_objects(ushort *tile)
   int iVar35;
   ushort local_54;
   
-  if (getenv("UW_DEBUG_THROW") && ((*tile & 0x1ff) == 0x80 || (*tile & 0x1ff) == 0x16e))
-    fprintf(stderr, "[throw-emit] ENTER tile=%p type=0x%x is_player=%d flag4000=%d in_arena=%d DAT_002046c4=%p\n",
-            (void *)tile, (unsigned)(*tile & 0x1ff), tile == g_player_object,
-            (*tile & 0x4000) == 0x4000, (int)object_ptr_in_arena((char *)tile), (void *)DAT_002046c4);
   if (tile == g_player_object) {
     return;
   }
@@ -2101,28 +2070,31 @@ void emit_tile_objects(ushort *tile)
     DAT_0023b904 = (DAT_0023b904 & 0xff00) + local_54;
     DAT_0023b920 = (DAT_0023b920 & 0xff00) + uVar16;
   }
-  if (getenv("UW_LOOK_SLOT")) {
+  /* --extralights: every visible object is checked for being a light source (campfire, magic
+     projectile, ...) as the tiles are walked; see extra_lights_consider_object. */
+  extra_lights_consider_object(*tile, (short)DAT_0023b904, (short)DAT_0023b920, (short)DAT_0023b91c);
+  if (UW_OPT_ISSET(g_opts.look_slot)) {
     static int _done = 0;
     if (!_done) {
       _done = 1;
-      int _slot = atoi(getenv("UW_LOOK_SLOT"));
+      int _slot = g_opts.look_slot;
       ushort *_rec = (ushort *)(_slot < 0x100 ? (void *)((intptr_t)_slot * 0x1b + (intptr_t)DAT_002046b8)
                                                : (void *)((intptr_t)DAT_002046c4 + (intptr_t)(_slot - 0x100) * 8));
-      ushort _w0 = *_rec;
+      ushort _w0 = ((uw_object_hdr_t *)_rec)->type_flags;
       int _id = _w0 & 0x1ff;
       int _iv = _id * 0xd;
-      int _grp = (byte)(&DAT_00202c9b)[_iv] & 0xf;
-      int _qual = (byte)_rec[2] & 0x3f;
+      int _grp = g_object_type_props[_iv / 0xd].quality_type;
+      int _qual = ((uw_object_hdr_t *)_rec)->quality;
       int _off = 0;
       if (_qual != 0) {
-        _off = (((&DAT_00202c97)[_iv] & 0xc) == 0xc) ? 5 : (((byte)_rec[2] >> 4 & 3) + 1);
+        _off = ((g_object_type_props[_iv / 0xd].quality_flags & 0xc) == 0xc) ? 5 : ((((uw_object_hdr_t *)_rec)->quality >> 4) + 1);
       }
       char *_nm = (char *)get_message_string(_grp * 6 + _off | 0xa00);
       fprintf(stderr, "[lookslot] slot=%d id=0x%03x flags=0x%04x has_lookbit=%d namegrp=%d name='%s'\n",
               _slot, _id, (unsigned)_w0, g_object_type_props[_id].has_look_description, _grp, _nm ? _nm : "(null)");
     }
   }
-  if (getenv("UW_DUMP_OBJECTS")) {
+  if (g_opts.dump_objects) {
     static int _dumped = 0;
     if (!_dumped) {
       _dumped = 1;
@@ -2139,21 +2111,21 @@ void emit_tile_objects(ushort *tile)
           while (_slot != 0 && _guard++ < 64) {
             void *_rec = _slot < 0x100 ? (void *)((intptr_t)_slot * 0x1b + (intptr_t)DAT_002046b8)
                                         : (void *)((intptr_t)DAT_002046c4 + (intptr_t)(_slot - 0x100) * 8);
-            ushort _w = *(ushort *)_rec;
+            ushort _w = ((uw_object_hdr_t *)_rec)->type_flags;
             int _id = _w & 0x1ff;
             if ((_id >= 0x160 && _id <= 0x16f) || _id == 0x140 || _id == 0x141) {
               fprintf(stderr, "[objdump] tile=(%d,%d) slot=%d id=0x%03x flags=0x%04x\n",
                       _tx, _ty, _slot, _id, (unsigned)_w);
             }
             {
-              int _rc = (&DAT_00202c9a)[_id * 0xd] & 3;
+              int _rc = g_object_type_props[_id].class_flags & 3;
               if (_rc == 1) {
                 unsigned char *_recb = (unsigned char *)_rec;
                 fprintf(stderr, "[objdump-critter] tile=(%d,%d) slot=%d id=0x%03x flags=0x%04x b6=0x%02x\n",
                         _tx, _ty, _slot, _id, (unsigned)_w, (unsigned)_recb[6]);
               }
             }
-            ushort _nextw = *(ushort *)((char *)_rec + 6);
+            ushort _nextw = ((uw_object_hdr_t *)_rec)->link_word;
             _slot = (_nextw & 0xffc0) != 0 ? _nextw >> 6 : 0;
           }
         }
@@ -2161,7 +2133,7 @@ void emit_tile_objects(ushort *tile)
       fprintf(stderr, "[objdump] scan complete\n");
     }
   }
-  if (getenv("UW_DUMP_ALL_OBJECTS")) {
+  if (g_opts.dump_all_objects) {
     static int _dumped2 = 0;
     if (!_dumped2) {
       _dumped2 = 1;
@@ -2175,15 +2147,15 @@ void emit_tile_objects(ushort *tile)
           while (_slot != 0 && _guard++ < 64) {
             void *_rec = _slot < 0x100 ? (void *)((intptr_t)_slot * 0x1b + (intptr_t)DAT_002046b8)
                                         : (void *)((intptr_t)DAT_002046c4 + (intptr_t)(_slot - 0x100) * 8);
-            ushort _w = *(ushort *)_rec;
+            ushort _w = ((uw_object_hdr_t *)_rec)->type_flags;
             int _id = _w & 0x1ff;
             int _iv = _id * 0xd;
-            unsigned char *_prop = (unsigned char *)&DAT_00202c90_backing[_iv];
+            unsigned char *_prop = (unsigned char *)&((byte *)g_object_type_props)[_iv];
             fprintf(stderr, "[objdumpall] tile=(%d,%d) slot=%d id=0x%03x flags=0x%04x rc=%d prop=%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
                     _tx, _ty, _slot, _id, (unsigned)_w, _prop[0] & 3,
                     _prop[0], _prop[1], _prop[2], _prop[3], _prop[4], _prop[5], _prop[6],
                     _prop[7], _prop[8], _prop[9], _prop[0xa], _prop[0xb], _prop[0xc]);
-            ushort _nextw = *(ushort *)((char *)_rec + 6);
+            ushort _nextw = ((uw_object_hdr_t *)_rec)->link_word;
             _slot = (_nextw & 0xffc0) != 0 ? _nextw >> 6 : 0;
           }
         }
@@ -2193,11 +2165,11 @@ void emit_tile_objects(ushort *tile)
   }
 // Level-load object census for debugging: every placed object's tile position, id, resolved name,
   // render class, and (if applicable) which DATA3D model it now draws as.
-  if (getenv("UW_DUMP_OBJECTS_FILE")) {
+  if (g_opts.dump_objects_file) {
     static int _dumped_census = 0;
     if (!_dumped_census) {
       _dumped_census = 1;
-      const char *_path = getenv("UW_DUMP_OBJECTS_FILE");
+      const char *_path = g_opts.dump_objects_file;
       FILE *_f = fopen(_path, "w");
       if (_f == NULL) {
         fprintf(stderr, "[objcensus] failed to open '%s' for writing\n", _path);
@@ -2213,23 +2185,23 @@ void emit_tile_objects(ushort *tile)
             while (_slot != 0 && _guard++ < 64) {
               ushort *_rec = _slot < 0x100 ? (ushort *)((intptr_t)_slot * 0x1b + (intptr_t)DAT_002046b8)
                                             : (ushort *)((intptr_t)DAT_002046c4 + (intptr_t)(_slot - 0x100) * 8);
-              ushort _w = _rec[0];
+              ushort _w = ((uw_object_hdr_t *)_rec)->type_flags;
               int _id = _w & 0x1ff;
 // Same field reads emit_tile_objects itself uses (not the objdumpall hook above,
               // which indexed the wrong property byte for render class -- see its own "rc=" column,
               // offset 0 instead of the real 0xa).
-              int _rc = (&DAT_00202c9a)[_id * 0xd] & 3;
-              int _heading = (_rec[1] >> 6) & 7;
-              int _quality = _rec[3] & 0x3f;
+              int _rc = g_object_type_props[_id].class_flags & 3;
+              int _heading = (((uw_object_hdr_t *)_rec)->position_word >> 6) & 7;
+              int _quality = ((uw_object_hdr_t *)_rec)->owner;
 // Page 4 of comobj's string data is the base object-name table, indexed directly by
-              // id (see UW_DUMP_NAMES/this session's findings) -- not the quality-adjective group
-              // table UW_LOOK_SLOT resolves via namegrp*6+offset.
+              // id (see --dump-names/this session's findings) -- not the quality-adjective group
+              // table --look-slot resolves via namegrp*6+offset.
               char *_name = (char *)get_message_string(0x800 | _id);
               fprintf(_f, "%d\t%d\t0x%03x\t%s\t%d\t%d\t%d\t0x%04x\n",
                       _tx, _ty, _id, (_name && _name[0]) ? _name : "(unnamed)",
                       _rc, _heading, _quality, (unsigned)_w);
               _count++;
-              ushort _nextw = *(ushort *)((char *)_rec + 6);
+              ushort _nextw = ((uw_object_hdr_t *)_rec)->link_word;
               _slot = (_nextw & 0xffc0) != 0 ? _nextw >> 6 : 0;
             }
           }
@@ -2239,14 +2211,14 @@ void emit_tile_objects(ushort *tile)
       }
     }
   }
-// Debug tool (UW_DUMP_CONTAINERS_FILE): scan every tile's object chain (correctly, via
-// resolve_object_link + the real "next" field at offset+4 -- NOT UW_DUMP_OBJECTS_FILE's own +6,
+// Debug tool (--dump-containers-file): scan every tile's object chain (correctly, via
+// resolve_object_link + the real "next" field at offset+4 -- NOT --dump-objects-file's own +6,
 // which is actually the "first item inside this container" field)...
-  if (getenv("UW_DUMP_CONTAINERS_FILE")) {
+  if (g_opts.dump_containers_file) {
     static int _dumped_containers = 0;
     if (!_dumped_containers) {
       _dumped_containers = 1;
-      const char *_path = getenv("UW_DUMP_CONTAINERS_FILE");
+      const char *_path = g_opts.dump_containers_file;
       FILE *_f = fopen(_path, "w");
       if (_f == NULL) {
         fprintf(stderr, "[containercensus] failed to open '%s' for writing\n", _path);
@@ -2260,7 +2232,7 @@ void emit_tile_objects(ushort *tile)
             ushort *_rec = (ushort *)resolve_object_link(_headp);
             int _guard = 0;
             while (_rec != NULL && _guard++ < 64) {
-              ushort _w = *_rec;
+              ushort _w = ((uw_object_hdr_t *)_rec)->type_flags;
               int _id = _w & 0x1ff;
               if ((_w & 0x1c0) == 0x80) {
                 ushort *_item = (ushort *)resolve_object_link((ushort *)((char *)_rec + 6));
@@ -2268,7 +2240,7 @@ void emit_tile_objects(ushort *tile)
                 _names[0] = '\0';
                 int _n = 0, _guard2 = 0;
                 while (_item != NULL && _guard2++ < 32) {
-                  int _iid = *_item & 0x1ff;
+                  int _iid = ((uw_object_hdr_t *)_item)->object_id;
                   char *_iname = (char *)get_message_string(0x800 | _iid);
                   strncat(_names, (_iname && _iname[0]) ? _iname : "?", sizeof(_names) - strlen(_names) - 2);
                   strncat(_names, ",", sizeof(_names) - strlen(_names) - 1);
@@ -2289,7 +2261,7 @@ void emit_tile_objects(ushort *tile)
       }
     }
   }
-  if (getenv("UW_DUMP_NAMES")) {
+  if (g_opts.dump_names) {
     static int _dumped3 = 0;
     if (!_dumped3) {
       _dumped3 = 1;
@@ -2306,23 +2278,8 @@ void emit_tile_objects(ushort *tile)
     }
   }
   uVar27 = (uint)*tile;
-  bVar1 = (&DAT_00202c9a)[(uVar27 & 0x1ff) * 0xd];
+  bVar1 = g_object_type_props[(uVar27 & 0x1ff)].class_flags;
   bVar13 = bVar1 & 3;
-  if (getenv("UW_DEBUG_OBJCLASS")) {
-    int _iv = (uVar27 & 0x1ff) * 0xd;
-    int _grp = (byte)(&DAT_00202c9b)[_iv] & 0xf;
-    fprintf(stderr, "[objclass] id=0x%03x renderclass=%d prop_byte=0x%02x quality=%d heading=%d namegrp=%d scrx=%d scry=%d scrz=%d names=",
-            (int)(uVar27 & 0x1ff), (int)bVar13, (int)bVar1,
-            (int)((byte)tile[3] & 0x3f), (int)(tile[1] >> 6 & 7), _grp,
-            (int)(short)DAT_0023b904, (int)(short)DAT_0023b920, (int)(short)DAT_0023b91c);
-    { int _k;
-      for (_k = 0; _k < 6; _k++) {
-        char *_n = (char *)get_message_string(_grp * 6 + _k | 0xa00);
-        fprintf(stderr, "[%d]='%s' ", _k, _n ? _n : "(null)");
-      }
-    }
-    fprintf(stderr, "\n");
-  }
   if ((uVar27 & 0x1c0) == 0x1c0) {
     DAT_0023b804 = 1;
     uVar27 = (byte)tile[3] & 0x3f;
@@ -2346,12 +2303,7 @@ LAB_emit_mesh_sprite_quad:
     /* Same arena-overflow risk as the tile-geometry guard a few hundred lines above this function
        (see its own comment for the full explanation of the ~512-vert/~490-record cap on
        DAT_000a85d0_backing) -- that guard only accounts for wall/floor geometry... */
-    if (getenv("UW_DEBUG_THROW") && uVar27 == 0x80)
-      fprintf(stderr, "[throw-render] sack (id=0x80) reached quad emit: DAT_0023b838(vtx)=%u DAT_0023b83c(rec)=%d cap=(508,489)\n",
-              (unsigned)DAT_0023b838, (int)DAT_0023b83c);
     if ((int)(uint)DAT_0023b838 >= 512 - 4 || (int)DAT_0023b83c >= 490 - 1) {
-      if (getenv("UW_DEBUG_THROW") && uVar27 == 0x80)
-        fprintf(stderr, "[throw-render] sack (id=0x80) -> arena FULL, quad SKIPPED (never emitted)\n");
       return;
     }
     if (g_billboard_angle_override_deg >= 0) {
@@ -2363,8 +2315,8 @@ LAB_emit_mesh_sprite_quad:
       double _rad = (g_billboard_angle_override_deg + 90) * (3.14159265358979 / 180.0);
       int _mag = 16;
       int _sign = 1;
-      { const char *_p = getenv("UW_DECAL_PUSH"); if (_p) _mag = atoi(_p); }
-      { const char *_p = getenv("UW_DECAL_PUSH_SIGN"); if (_p) _sign = atoi(_p); }
+      if (UW_OPT_ISSET(g_opts.decal_push)) _mag = g_opts.decal_push;
+      _sign = g_opts.decal_push_sign;
       DAT_0023b904 = DAT_0023b904 + (short)lround(_sign * _mag * sin(_rad));
       DAT_0023b920 = DAT_0023b920 + (short)lround(_sign * _mag * cos(_rad));
     }
@@ -2388,9 +2340,6 @@ LAB_emit_mesh_sprite_quad:
         _angle_idx = g_billboard_angle_override_deg;
         g_billboard_angle_override_deg = -1;
       }
-      if (getenv("UW_DEBUG_OBJPOS") && (*tile & 0x1ff) == 0x166)
-        fprintf(stderr, "[decalangle] overridden=%d angle_idx=%d cam_yaw=%d\n",
-                _overridden, _angle_idx, (int)DAT_000db44c);
       uVar30 = (&DAT_000d9ed8)[_angle_idx];
       uVar18 = ordfloat_negate((&DAT_000d9930)[_angle_idx]);
     }
@@ -2570,14 +2519,6 @@ LAB_00061d34:
     DAT_0023b83c = DAT_0023b83c + 1;
     DAT_000a85d4 = DAT_0023b83c;
     DAT_000a85d0 = iVar17 + 1;
-    if ((getenv("UW_DEBUG_OBJPOS") && (*tile & 0x1ff) == 0x166) ||
-        (getenv("UW_DEBUG_DOOR") && (*tile & 0x1ff) == 0x140)) {
-      float _fx, _fy, _fz;
-      unsigned int _bx = (unsigned int)uVar22, _by = (unsigned int)uVar19, _bz = (unsigned int)uVar25;
-      memcpy(&_fx, &_bx, 4); memcpy(&_fy, &_by, 4); memcpy(&_fz, &_bz, 4);
-      fprintf(stderr, "[objpos-final] id=0x%03x uVar27(sprite_id)=0x%x vtx_x(float)=%f vtx_y(float)=%f vtx_z(float)=%f DAT_00202508(w)=%d DAT_002022f8(h)=%d\n",
-              (unsigned)(*tile & 0x1ff), uVar27, _fx, _fy, _fz, (int)(short)DAT_00202508, (int)(short)DAT_002022f8);
-    }
     return;
   }
   if (bVar13 == 1) {
@@ -2592,7 +2533,7 @@ LAB_00061d34:
     *DAT_00110fc0 = -8;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     uVar29 = *(byte *)((char *)tile + 0x15) & 0x3f;
-    { const char *_fs = getenv("UW_FORCE_CRITTER_STATE"); if (_fs) uVar29 = (uint)atoi(_fs); }
+    if (UW_OPT_ISSET(g_opts.force_critter_state)) uVar29 = (uint)g_opts.force_critter_state;
     /* Ghidra modelled the divmod's remainder (ARM r1) as `extraout_r1`, which was never assigned ->
        wild index into the 0x20-entry DAT_00086cc0 direction table (crash when an object first came
        into view down a long hallway). It is (that dividend) % 0x20. */
@@ -2603,11 +2544,6 @@ LAB_00061d34:
                  ((int)((int)_col_angle +
                         (uint)*(ushort *)(&DAT_00086a18 + DAT_0023b4a0 * 2)) >> 0xb)) + 0x20;
       bVar13 = (&DAT_00086cc0)[((_dm % 0x20) + 0x20) % 0x20];
-      if (getenv("UW_DEBUG_CRITTER"))
-        fprintf(stderr, "[critter] dirtable: id=0x%03x own_heading_bits=%d col_angle=%d quad_term=%d sum=%d shifted=%d _dm=%d bVar13=%d\n",
-                uVar27 & 0x1ff, (int)(tile[1] >> 5 & 0x1c),
-                (int)_col_angle, (int)_quad_term, (int)_col_angle + (int)(unsigned short)_quad_term,
-                (int)((int)((int)_col_angle + (uint)(unsigned short)_quad_term) >> 0xb), _dm, (int)bVar13);
     }
     if ((ushort)uVar29 < 0x20) {
       /* REVERTED (checked against a fresh disassembly of this exact block, real addresses
@@ -2622,35 +2558,9 @@ LAB_00061d34:
     else {
       uVar29 = (uint)bVar13 + (uVar29 - 0x1c) * 8;
     }
-    if (getenv("UW_DEBUG_CRITTER"))
-      fprintf(stderr, "[critter] emit_tile_objects: id=0x%03x type_idx=%d raw_slot=%d own_heading_bits=%d cam_yaw=%d quadrant=%d dir(uVar29)=%d\n",
-              uVar27 & 0x1ff, uVar27 & 0x3f, *(byte *)((char *)tile + 0x15) & 0x3f,
-              (int)(tile[1] >> 5 & 0x1c), (int)DAT_000db44c, (int)DAT_0023b4a0, (int)uVar29);
-    if (getenv("UW_DEBUG_CRITTER_Z"))
-      fprintf(stderr, "[critter-z] id=0x%03x world_x(b904)=%d world_z(b920)=%d HEIGHT(b91c)=%d raw_b9=%d raw_b13=%d\n",
-              uVar27 & 0x1ff, (int)(short)DAT_0023b904, (int)(short)DAT_0023b920, (int)(short)DAT_0023b91c,
-              (int)*(byte *)((char *)tile + 9), (int)*(byte *)((char *)tile + 0x13));
-    if (getenv("UW_DEBUG_CRITTER_NAME")) {
-      static int _named = 0;
-      if (!_named) {
-        _named = 1;
-        int _id = uVar27 & 0x1ff;
-        int _iv = _id * 0xd;
-        int _grp = (byte)(&DAT_00202c9b)[_iv] & 0xf;
-        int _qual = (byte)tile[2] & 0x3f;
-        int _off = 0;
-        if (_qual != 0) {
-          _off = (((&DAT_00202c97)[_iv] & 0xc) == 0xc) ? 5 : (((byte)tile[2] >> 4 & 3) + 1);
-        }
-        char *_nm = (char *)get_message_string(_grp * 6 + _off | 0xa00);
-        fprintf(stderr, "[critter-name] id=0x%03x namegrp=%d name='%s'\n",
-                _id, _grp, _nm ? _nm : "(null)");
-      }
-    }
     {
       short _frame_arg = (byte)tile[6] >> 4;
-      const char *_ff = getenv("UW_FORCE_CRITTER_FRAME");
-      if (_ff) _frame_arg = (short)atoi(_ff);
+      if (UW_OPT_ISSET(g_opts.force_critter_frame)) _frame_arg = (short)g_opts.force_critter_frame;
       resolve_critter_sprite_tier(uVar27 & 0x3f,uVar29,_frame_arg,(uint)DAT_0023bc88 * (int)DAT_00086b30);
     }
     uVar30 = (&DAT_000d9ed8)[DAT_000db44c];
@@ -2800,10 +2710,6 @@ LAB_00061d34:
       /* Doors. emit_anim_object_frames is the real handler for this branch: it draws through
          emit_catalog_object, whose own tick_anim_record helper resolves a "catalog" id to the same
          29 real .E model buffers loaded at startup... */
-      if (getenv("UW_DEBUG_DOOR_POS"))
-        fprintf(stderr, "[doorpos] anchor=(%d,%d,%d) tile_word0=0x%04x\n",
-                (int)(short)DAT_0023b904, (int)(short)DAT_0023b91c, (int)(short)DAT_0023b920,
-                (unsigned)*tile);
       emit_anim_object_frames(uVar27 & 7, tile);
       return;
     }
@@ -2822,11 +2728,6 @@ LAB_00061d34:
     /* frame_or_texid=-1, exactly as the real call site (FUN_00060aa0: `FUN_00061e60(uVar26 & 0xff,
        tile, -1, -1)`): emit_catalog_object's own catalog-2 branch resolves a_bridge's TMOBJ
        30/31 plank frame (or its flags>=2 floor texture) from the object's flags. */
-    if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[sign] variant=%d table_val=%d heading=%d -> emit_catalog_object(catalog_idx=%d)\n",
-              iVar17, (short)*(ushort *)(&DAT_00086c80 + iVar17 * 2),
-              (int)((tile[1] >> 7 & 7) << 1),
-              (unsigned char)*(ushort *)(&DAT_00086c80 + iVar17 * 2));
     emit_catalog_object((uint)(unsigned char)*(ushort *)(&DAT_00086c80 + iVar17 * 2),
                         tile, (tile[1] >> 7 & 7) << 1, -1);
     return;

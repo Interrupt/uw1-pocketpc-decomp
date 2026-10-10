@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-extern undefined1 DAT_00250730_backing[128];
+extern uw_animation_type_props_t g_animation_type_props[16];
 extern char *g_scheduler_table;
 extern undefined1 g_scheduler_count;
 extern undefined4 DAT_0023b804;
@@ -20,15 +20,17 @@ extern char tiles[3][8];
 extern int freed[3];
 extern ushort corpse[4];
 extern int corpses_spawned, corpses_placed, corpse_type;
-extern ushort *DAT_0010190c;
-extern char *DAT_00101404, *DAT_00101438;
+extern uw_mobile_object_t *DAT_0010190c;
+extern uw_monster_type_props_t *DAT_00101404;
+extern char *DAT_00101438;
 extern void *DAT_0010172c;
-extern undefined1 DAT_001007d0_backing[3072], DAT_00202c90_backing[8192];
+extern uw_monster_type_props_t g_monster_type_props[64];
+extern uw_object_type_props_t g_object_type_props[512];
 extern undefined2 DAT_002048c0_backing[64];
 extern undefined1 DAT_002048f0_backing[128], DAT_00204950_backing[128];
 extern undefined1 DAT_00204980_backing[32];
 extern undefined2 DAT_00204990_backing[16], DAT_002049b0_backing[16];
-extern undefined1 DAT_002027d0_backing[48];
+extern uw_ranged_type_props_t g_ranged_type_props[16];
 
 extern ushort DAT_000853b8, DAT_00101414, DAT_0010141c, DAT_00101910;
 extern short DAT_00101938, DAT_0010193c, DAT_00202a3c;

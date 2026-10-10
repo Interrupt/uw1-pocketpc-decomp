@@ -21,7 +21,7 @@ def extract(source, name):
         name = name[1:]
         pattern = r"^[ \t]*\w[^\n;]*\b" + re.escape(name) + r"[^\n;]*=\s*"
     else:
-        pattern = r"^\w[^\n;]*\b" + re.escape(name) + r"\([^;]*?\)\s*\n"
+        pattern = r"^\w[^\n;]*\b" + re.escape(name) + r"\([^;]*?\)\s*(?=\{)"
     definition = re.search(
         pattern,
         source, re.MULTILINE,
@@ -61,7 +61,7 @@ def main():
                         help="source.c:function_name or source.c:@initialized_object or source.c:%macro")
     args = parser.parse_args()
     chunks = ['/* Generated from original game sources; do not edit. */\n'
-              '#include "src/headers/uw.h"\n#include "src/headers/debug.h"\n#include "src/headers/debug_ui.h"\n#include "src/headers/file_io.h"\n#include <dlfcn.h>\n']
+              '#include "src/headers/uw.h"\n#include "src/headers/debug.h"\n#include "src/headers/debug_ui.h"\n#include "src/headers/file_io.h"\n#include <dlfcn.h>\n#include <ctype.h>\n']
     for entry in args.functions:
         filename, name = entry.split(":", 1)
         source = (args.root / filename).read_text()

@@ -15,7 +15,7 @@ static void test_level1_goblin_loot_is_limited_to_its_actual_template(void)
         spawned = placed = 0;
         rng_state = seed;
         spawn_creature_death_loot(goblin);
-        byte *stats = DAT_001007d0_backing + 13 * 0x30;
+        byte *stats = ((byte *)g_monster_type_props) + 13 * 0x30;
         drop_monster_loot(goblin, stats[8] >> 5, (stats[10] >> 2) & 7);
         drop_creature_inventory_on_death(goblin);
         TEST_ASSERT_GREATER_THAN_UINT(0, placed);
@@ -31,7 +31,7 @@ static void test_level1_goblin_loot_is_limited_to_its_actual_template(void)
 }
 static void test_equipment_drop_quality_uses_the_level_roll_remainder(void)
 {
-    g_despawn_creature_record = (char *)DAT_001007d0_backing + 13 * 0x30;
+    g_despawn_creature_record = (char *)((byte *)g_monster_type_props) + 13 * 0x30;
     rolls[0] = 0; rolls[1] = 3; rolls[2] = 0; rolls[3] = 2;
     roll_count = 4;
     spawn_creature_equipment_drop(goblin);
@@ -41,16 +41,18 @@ static void test_equipment_drop_quality_uses_the_level_roll_remainder(void)
 }
 static void test_level1_goblin_ranged_attack_spawns_a_sling_stone(void)
 {
-    byte *stats = DAT_001007d0_backing + 13 * 0x30;
+    byte *stats = ((byte *)g_monster_type_props) + 13 * 0x30;
     unsigned ammo = (stats[0x20] & 0x1e) >> 1;
     TEST_ASSERT_EQUAL_UINT(0, ammo);
     projectile = (ushort *)(DAT_002046b8 + 255 * 27);
     memset(projectile, 0, 27);
-    spawn_npc_thrown_weapon(goblin, ammo, (&DAT_002027d1)[ammo * 3]);
+    spawn_npc_thrown_weapon(goblin, ammo,
+                            g_ranged_type_props[ammo].projectile_speed);
     TEST_ASSERT_EQUAL_UINT(0, spawned); /* projectiles stay mobile until landing */
     ushort *tile = (ushort *)((byte *)arena + (28 * 64 + 36) * 4);
     TEST_ASSERT_EQUAL_PTR(projectile, resolve_object_link(tile + 1));
-    TEST_ASSERT_EQUAL_UINT(DAT_002027d0_backing[1], projectile[0x13 / 2] >> 8 & 0x7f);
+    TEST_ASSERT_EQUAL_UINT(g_ranged_type_props[0].projectile_speed,
+                           projectile[0x13 / 2] >> 8 & 0x7f);
     TEST_ASSERT_EQUAL_UINT16(0x10, projectile[0] & 0x1ff);
 }
 int main(void)

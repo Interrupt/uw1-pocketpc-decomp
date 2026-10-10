@@ -1,5 +1,6 @@
 /* See demomode.h. */
 #include "headers/demomode.h"
+#include "headers/options.h"
 #include "headers/uw.h"
 
 #include <SDL.h>
@@ -110,18 +111,17 @@ static int demo_translate_sdlkey(const char *name) {
 }
 
 void demomode_init(void) {
-    const char *path = getenv("UW_DEMO_FILE");
+    const char *path = g_opts.demo_file;
     if (!path) return;
 
     g_demo_file = fopen(path, "r");
     if (!g_demo_file) {
-        fprintf(stderr, "[demo] failed to open UW_DEMO_FILE=%s\n", path);
+        fprintf(stderr, "[demo] failed to open --demo-file=%s\n", path);
         return;
     }
 
-    const char *delay_env = getenv("UW_DEMO_DELAY_MS");
-    if (delay_env) {
-        int v = atoi(delay_env);
+    if (UW_OPT_ISSET(g_opts.demo_delay_ms)) {
+        int v = g_opts.demo_delay_ms;
         /* v==0 is a real, meaningful value (see demomode_pump's own
            comment: no wall-clock gate at all, one line per real pump
            call) -- only reject a negative/malformed value, not zero. */
@@ -170,7 +170,7 @@ void demomode_abort(const char *reason) {
 void demomode_pump(void) {
     if (!g_demo_active || g_demo_done) return;
     Uint32 now = SDL_GetTicks();
-    /* g_demo_delay_ms == 0 (via a DELAY 0 line or UW_DEMO_DELAY_MS=0) means tick-native playback:
+    /* g_demo_delay_ms == 0 (via a DELAY 0 line or --demo-delay-ms=0) means tick-native playback:
        no wall-clock gate at all, process exactly one line every real uw_pump_events() call -- the
        same tick source democapture.c's recorder counts against (see its own top comment)... */
     if (g_demo_delay_ms > 0 && now < g_demo_next_tick) return;
@@ -229,13 +229,9 @@ void demomode_pump(void) {
         fclose(g_demo_file);
         g_demo_file = NULL;
         /* Quitting here (instead of idling with the window still open) makes scripted test runs
-           self-terminating -- set UW_DEMO_KEEP_RUNNING=1 to keep the window open after playback
+           self-terminating -- pass --demo-keep-running to keep the window open after playback
            finishes (e.g. to keep manually poking at the resulting state). */
-        const char *keep_running = getenv("UW_DEMO_KEEP_RUNNING");
-        int keep = keep_running && *keep_running != '\0' &&
-                   strcmp(keep_running, "0") != 0 &&
-                   strcasecmp(keep_running, "false") != 0;
-        if (!keep) {
+        if (!g_opts.demo_keep_running) {
             fprintf(stderr, "[demo] end of input, exiting\n");
             exit(0);
         }
@@ -256,7 +252,7 @@ void demomode_pump(void) {
     }
 
     if (strncasecmp(p, "DELAY ", 6) == 0) {
-        /* Sets the per-line pacing (same units/effect as UW_DEMO_DELAY_MS) from WITHIN the file
+        /* Sets the per-line pacing (same units/effect as --demo-delay-ms) from WITHIN the file
            itself, taking effect immediately (this line's own retry, and every line after it, use
            the new value)... */
         int ms = -1;
@@ -480,11 +476,12 @@ void demomode_pump(void) {
         {
             /* Print the player's tile so a scripted TELEPORT/REVEAL sweep
                can be correlated with what's on screen. */
-            extern ushort *g_player_object;
+            extern uw_mobile_object_t *g_player_object;
             unsigned short *pl = (unsigned short *)g_player_object;
             if (pl)
                 fprintf(stderr, "[demo] player tile = (%d,%d)\n",
-                        pl[0x16/2] >> 10, (pl[0x16/2] & 0x3f0) >> 4);
+                        ((uw_mobile_object_t *)pl)->tile_x,
+                        ((uw_mobile_object_t *)pl)->tile_y);
         }
         full_dungeon_redraw();
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
@@ -611,7 +608,8 @@ void demomode_pump(void) {
         if (contents) {
             unsigned short *c = (unsigned short *)contents;
             fprintf(stderr, "[dumpplayerinv] sp_link resolves to obj=%p type=0x%03x word0=0x%04x\n",
-                    contents, c[0] & 0x1ff, c[0]);
+                    contents, ((uw_object_hdr_t *)c)->object_id,
+                    ((uw_object_hdr_t *)c)->type_flags);
             int n = 0;
             unsigned short *next_link = c + 2;
             while (1) {
@@ -619,7 +617,8 @@ void demomode_pump(void) {
                 if (!nx) break;
                 unsigned short *nc = (unsigned short *)nx;
                 fprintf(stderr, "[dumpplayerinv]   +sibling #%d obj=%p type=0x%03x word0=0x%04x\n",
-                        n, nx, nc[0] & 0x1ff, nc[0]);
+                        n, nx, ((uw_object_hdr_t *)nc)->object_id,
+                        ((uw_object_hdr_t *)nc)->type_flags);
                 next_link = nc + 2;
                 if (++n > 32) break;
             }
@@ -646,7 +645,7 @@ void demomode_pump(void) {
         /* Diagnostic/regression hook for the "Spell crashes - test each" bug report: directly
            drives dispatch_special_action (the real per-spell effect dispatcher
            cast_spell_from_rune_combo calls after its mana/skill checks pass) once for each of... */
-        extern ushort *g_player_object;
+        extern uw_mobile_object_t *g_player_object;
         extern undefined DAT_00087530_backing[212];
         int i;
         for (i = 0; i < 48; i++) {
@@ -666,11 +665,11 @@ void demomode_pump(void) {
         /* Diagnostic: walk the current player tile's raw object chain (the same
            tilemap_lookup(row,col)+2 -> resolve_object_link -> +2 shorts -> resolve_object_link ...
            walk object_chain_max_barrier uses) and print each object's raw type/flags words... */
-        extern ushort *g_player_object;
+        extern uw_mobile_object_t *g_player_object;
         unsigned short *pl = (unsigned short *)g_player_object;
         if (pl) {
-            int row = pl[0x16/2] >> 10;
-            int col = (pl[0x16/2] & 0x3f0) >> 4;
+            int row = ((uw_mobile_object_t *)pl)->tile_x;
+            int col = ((uw_mobile_object_t *)pl)->tile_y;
             void *tile_rec = tilemap_lookup(row, col);
             unsigned short *link = (unsigned short *)((char *)tile_rec + 2);
             fprintf(stderr, "[dumptileobjs] tile=(%d,%d) tile_rec=%p raw_link_field=0x%04x\n",
@@ -679,7 +678,9 @@ void demomode_pump(void) {
             unsigned short *obj;
             while ((obj = (unsigned short *)resolve_object_link(link)) != NULL) {
                 fprintf(stderr, "[dumptileobjs]   #%d obj=%p type=0x%03x word0=0x%04x word1=0x%04x\n",
-                        n, (void *)obj, obj[0] & 0x1ff, obj[0], obj[1]);
+                        n, (void *)obj, ((uw_object_hdr_t *)obj)->object_id,
+                        ((uw_object_hdr_t *)obj)->type_flags,
+                        ((uw_object_hdr_t *)obj)->position_word);
                 link = obj + 2;
                 n++;
                 if (n > 64) { fprintf(stderr, "[dumptileobjs]   ...giving up after 64\n"); break; }
@@ -795,13 +796,7 @@ void demomode_pump(void) {
           g_force_flush = 1;
           flush_dirty_rect_to_display(1);
           g_force_flush = 0; }
-        if (getenv("UW_DEBUG_DOOR"))
-          fprintf(stderr, "[demo] SCREENSHOT %s\n", path);
         uw_save_screenshot(path);
-        if (getenv("UW_DEBUG_INV")) {
-            extern void uw_debug_dump_inventory_state(void);
-            uw_debug_dump_inventory_state();
-        }
         g_demo_next_tick = now;
         return;
     }

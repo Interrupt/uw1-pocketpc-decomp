@@ -11,10 +11,6 @@
 void *g_uw_framebuffer;
 int g_text_use_palette_color;
 unsigned short g_text_flat_color;
-/* dbgui_draw's own UW_DEBUG_DBGUI trace reads the active viewport clip
-   rect (src/3d.c's set_viewport_clip_rect); this suite never sets one,
-   so these just need real storage to link, not any particular value. */
-unsigned short DAT_000a85c4, DAT_000a85c8, DAT_000842a4, DAT_000842a8;
 
 /* Records the bottom edge of the panel's own background fill (palette
    0x1a, see debug_ui.c's own comment on that color) so

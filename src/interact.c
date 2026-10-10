@@ -2,6 +2,7 @@
    look, use, attack). Split out of uw.c (the original monolithic decompile) once these functions'
    real roles were confirmed. */
 #include "headers/interact.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,9 +51,6 @@ void interact_default()
   ushort *puVar3;
 
   puVar3 = (ushort *)0x0;
-  if (getenv("UW_DEBUG_INV"))
-    fprintf(stderr, "[inv] interact_default entry: g_interact_target=%p g_cursor_holding_state=%d DAT_002020ec=%d DAT_002020e0=%d\n",
-            (void *)g_interact_target, (int)g_cursor_holding_state, (int)DAT_002020ec, (int)DAT_002020e0);
   iVar1 = target_in_range((int)DAT_000858c4,g_interact_target,DAT_002020b0);
   iVar2 = target_line_of_sight((int)DAT_000858c4,g_interact_target);
   if (DAT_002020ec == 0) {
@@ -62,8 +60,6 @@ void interact_default()
         interact_talk_npc();
         return;
       }
-      if (getenv("UW_DEBUG_DOOR"))
-        fprintf(stderr, "[door] interact_default -> interact_use\n");
       interact_use();
       return;
     }
@@ -77,27 +73,15 @@ void interact_default()
   }
   else {
     if ((iVar1 != 0) && (iVar2 == 0)) {
-      if (getenv("UW_DEBUG_THROW"))
-        fprintf(stderr, "[grab] target=%p type=0x%x bit8000=%d target3=0x%x target3_bit8000=%d target3_qty=0x%x in_arena=%d\n",
-                (void *)g_interact_target, (unsigned)(*g_interact_target & 0x1ff),
-                (int)((*g_interact_target & 0x8000) != 0), (unsigned)g_interact_target[3],
-                (int)((g_interact_target[3] & 0x8000) != 0), (unsigned)(g_interact_target[3] & 0xffc0),
-                (int)object_ptr_in_arena((char *)g_interact_target));
       if (((*g_interact_target & 0x8000) != 0) &&
          (((g_interact_target[3] & 0x8000) == 0 && ((g_interact_target[3] & 0xffc0) != 0x40)))) {
-        if (getenv("UW_DEBUG_THROW") && (*g_interact_target & 0x1ff) == 0x80)
-          fprintf(stderr, "[grab] taking STACK-SPLIT branch, calling prompt_split_object_stack\n");
         /* BUG FIX: was `FUN_000470fc();` -- dropped its only argument. g_interact_target (the
            object this whole "grab" handler is operating on throughout this function) is the obvious
            intended argument -- same dropped-argument idiom fixed repeatedly elsewhere this session. */
         puVar3 = (ushort *)prompt_split_object_stack((undefined1 *)g_interact_target);
         if (puVar3 == (ushort *)0x0) {
-          if (getenv("UW_DEBUG_THROW") && (*g_interact_target & 0x1ff) == 0x80)
-            fprintf(stderr, "[grab] prompt_split_object_stack returned NULL, bailing\n");
           return;
         }
-        if (getenv("UW_DEBUG_THROW") && (*g_interact_target & 0x1ff) == 0x80)
-          fprintf(stderr, "[grab] prompt_split_object_stack returned puVar3=%p (target=%p)\n", (void *)puVar3, (void *)g_interact_target);
         if (puVar3 != g_interact_target) {
           object_list_insert_head(g_interact_target + 2,puVar3);
         }
@@ -199,9 +183,6 @@ void interact_use()
   int iVar1;
 
   DEBUG(INFO, "Interact use");
-  if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[door] interact_use() called: g_interact_target=%p obj0=0x%04x\n",
-            (void *)g_interact_target, g_interact_target ? (unsigned)*g_interact_target : 0);
 
   wait_for_click_release(1);
   iVar1 = target_in_range((int)DAT_000858c4,g_interact_target,DAT_002020b0);
@@ -211,8 +192,6 @@ void interact_use()
     }
   }
   else {
-    if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[door] interact_use() -> use_object_on_target\n");
     use_object_on_target(g_player_object,g_interact_target,0);
   }
 }
@@ -233,8 +212,6 @@ void interact_attack()
   sVar2 = ordint_divmod(DAT_0023be88 + 2,DAT_00085a6c[1] * 3).quot;
   sVar3 = ordint_divmod(DAT_0023bd80 + 2,*psVar1 * 3).quot;
   iVar4 = sVar2 * 3 + (int)sVar3;
-  if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[attack-dir] click=(%d,%d) view=(%d,%d) row=%d col=%d grid=%d -> attack_type=%d\n",
-      (int)*psVar1, (int)DAT_00085a6c[1], (int)DAT_0023bd80, (int)DAT_0023be88, (int)sVar2, (int)sVar3, iVar4, iVar4+1);
   if (iVar4 * 0x10000 >> 0x10 < 2) {
     iVar4 = 2;
   }
@@ -287,10 +264,10 @@ int roll_container_lockpick_check(void *container_ptr, int skill)
   if ((((*(byte *)(container + 1) & 0x80) == 0) &&
       (local_c = (ushort *)(container + 6), (*local_c & 0xffc0) != 0)) &&
      (pbVar1 = (byte *)find_object_in_chain(&local_c,0,6,0xffffffff,0xffff), pbVar1 != (byte *)0x0)) {
-    if (0x1f < (*pbVar1 & 0x30)) {
+    if (0x1f < (((uw_object_hdr_t *)pbVar1)->object_id & 0x30)) {
       pbVar1 = (byte *)resolve_object_link((ushort *)(pbVar1 + 6)); /* confirmed via ARM disassembly, 0x72628 */
     }
-    if ((*pbVar1 & 0x3f) < 3) {
+    if ((((uw_object_hdr_t *)pbVar1)->object_id & 0x3f) < 3) {
       uVar2 = roll_skill_check(skill,8);
       return uVar2;
     }
@@ -329,7 +306,7 @@ int roll_container_trap_disarm_check(void *container_ptr, int skill)
      (local_34[0] = (ushort *)(container + 6), (*local_34[0] & 0xffc0) != 0)) {
     pbVar3 = (byte *)find_object_in_chain(local_34,0,6,0xffffffff,0xffff);
     if (pbVar3 != (byte *)0x0) {
-      if ((*pbVar3 & 0x30) < 0x20) {
+      if ((((uw_object_hdr_t *)pbVar3)->object_id & 0x30) < 0x20) {
         pbVar7 = (byte *)0x0;
         pbVar4 = pbVar3;
       }
@@ -337,7 +314,7 @@ int roll_container_trap_disarm_check(void *container_ptr, int skill)
         pbVar4 = (byte *)resolve_object_link(pbVar3 + 6);
         pbVar7 = pbVar3;
       }
-      if ((*pbVar4 & 0x3f) < 3) {
+      if ((((uw_object_hdr_t *)pbVar4)->object_id & 0x3f) < 3) {
         uVar8 = roll_skill_check(skill,8);
         if ((short)uVar8 < 1) {
           if ((short)uVar8 < 0) {
@@ -519,14 +496,14 @@ void purge_tagged_objects_from_chain(void *link_field_ptr)
   
   for (puVar1 = (ushort *)resolve_object_link(link_field); puVar1 != (ushort *)0x0; /* confirmed via ARM disassembly, 0x7deec */
       puVar1 = (ushort *)resolve_object_link(puVar1 + 2)) {
-    if (((*puVar1 & 0x1f0) == 0x1a0) && ((int)DAT_0024cfd0 == (uint)(puVar1[3] >> 6))) {
+    if (((((uw_object_hdr_t *)puVar1)->object_id & 0x1f0) == 0x1a0) && ((int)DAT_0024cfd0 == (uint)(((uw_object_hdr_t *)puVar1)->link))) {
       object_list_unlink(link_field,puVar1);
       free_object_slot(puVar1);
-      *(byte *)(puVar1 + 3) = (byte)puVar1[3] & 0x3f;
-      *(undefined1 *)((char *)puVar1 + 7) = 0;
+      ((uw_object_hdr_t *)puVar1)->link_word_low = ((uw_object_hdr_t *)puVar1)->owner;
+      ((uw_object_hdr_t *)puVar1)->link_word_high = 0;
       DAT_0024cfd8 = DAT_0024cfd8 + -1;
     }
-    if (((*puVar1 & 0x8000) == 0) && ((puVar1[3] & 0xffc0) != 0)) {
+    if ((((uw_object_hdr_t *)puVar1)->is_quant == 0) && (((uw_object_hdr_t *)puVar1)->link != 0)) {
       purge_tagged_objects_from_chain(puVar1 + 3); /* was called with no argument; confirmed via ARM disassembly, 0x7dfbc */
     }
   }
@@ -587,7 +564,6 @@ void attempt_talk_interaction(void *target_ptr)
   char acStack_114 [260];
   
   uVar6 = *target & 0x1ff;
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] attempt_talk_interaction entry: target=%p uVar6(itemid)=0x%x raw=0x%x classcheck=0x%x\n", (void *)target, (unsigned)uVar6, (unsigned)*target, (unsigned)(*target & 0x1c0));
   if (uVar6 == 0x157) {
     handle_mantra_chant();
     return;
@@ -600,13 +576,11 @@ void attempt_talk_interaction(void *target_ptr)
     return;
   }
   if ((*target & 0x1c0) != 0x40) {
-    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] attempt_talk_interaction: not-a-creature branch (uVar3=0xe00)\n");
     uVar3 = 0xe00;
     goto LAB_0002865c;
   }
   uVar6 = (ushort)(byte)target[0xd];
   DAT_00100674 = target;
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] attempt_talk_interaction: conv-id byte(uVar6)=0x%x uVar5=0x%x flagbits(target+7)=0x%x flagbyte(target+0x19)=0x%x\n", (unsigned)uVar6, (unsigned)(*(ushort *)((char *)target + 0xb) & 0xf), (unsigned)(target[7] & 0xc0), (unsigned)(*(byte *)((char *)target + 0x19) & 0x40));
   if (((uVar6 == 0x16) || (uVar6 == 0x8e)) || (uVar6 == 0xe7)) {
 LAB_000285e4:
     if (uVar6 == 0) {
@@ -683,13 +657,13 @@ int target_in_range(short range_squared, void *actor_ptr, char *target)
     uVar7 = 1;
   }
   else {
-    uVar5 = *(ushort *)((char *)g_player_object + 2);
+    uVar5 = g_player_object->hdr.position_word;
     uVar6 = *(ushort *)(actor + 2);
-    iVar2 = ((((uint)(uVar6 >> 0xd) + (uint)(*(ushort *)((char *)g_player_object + 0x16) >> 10) * -8) -
-             (uint)(uVar5 >> 0xd)) + uVar8 * 8) * 0x10000;
+    iVar2 = ((((uint)(uVar6 >> 0xd) + (uint)(g_player_object->npc_xhome) * -8) -
+              (uint)(uVar5 >> 0xd)) + uVar8 * 8) * 0x10000;
     uVar8 = iVar2 >> 0x1f;
-    iVar3 = (((((uVar6 & 0x1c00) >> 10) + ((*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4) * -8) -
-             ((uVar5 & 0x1c00) >> 10)) + iVar3 * 8) * 0x10000;
+    iVar3 = (((((uVar6 & 0x1c00) >> 10) + (g_player_object->npc_yhome) * -8) -
+              ((uVar5 & 0x1c00) >> 10)) + iVar3 * 8) * 0x10000;
     uVar4 = iVar3 >> 0x1f;
     iVar2 = (int)(((iVar2 >> 0x10 ^ uVar8) - uVar8) * 0x10000) >> 0x10;
     iVar3 = (int)(((iVar3 >> 0x10 ^ uVar4) - uVar4) * 0x10000) >> 0x10;
@@ -748,9 +722,9 @@ int target_line_of_sight(short target_class, void *target_ptr)
   int iVar14;
   
   if (target_class != 0) {
-    uVar2 = *(ushort *)((char *)g_player_object + 0x16) >> 10;
+    uVar2 = g_player_object->npc_xhome;
     uVar9 = (uint)uVar2;
-    uVar10 = (*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4;
+    uVar10 = g_player_object->npc_yhome;
     /* tilemap_lookup returns a 64-bit tile-record pointer; `int iVar5`
        truncated it and the very next line dereferenced the result. Use
        the byte* local this function already has for the same call later. */
@@ -781,7 +755,7 @@ int target_line_of_sight(short target_class, void *target_ptr)
         }
       }
       iVar5 = ((DAT_0023bc94 + 1) * 0x10000 >> 0x10) << 0x13;
-      uVar2 = *(byte *)((char *)g_player_object + 2) & 0x7f;
+      uVar2 = g_player_object->hdr.zpos;
       if (iVar5 >> 0x10 < (int)(short)uVar2) {
         sVar7 = uVar2 - (short)((uint)iVar5 >> 0x10);
       }
@@ -840,7 +814,7 @@ ushort *pick_object_under_cursor(int mode)
      object/texture id buffer DAT_0023cca0 this function reads below is fresh for the current cursor
      position. */
   { static int _rr = -1;
-    if (_rr < 0) _rr = (getenv("UW_DISABLE_PICK_RERENDER") == NULL);
+    if (_rr < 0) _rr = (!g_opts.disable_pick_rerender);
     if (_rr) render_dungeon_view_frame();
   }
   iVar2 = 0;
@@ -853,9 +827,9 @@ ushort *pick_object_under_cursor(int mode)
   }
   bVar1 = *(byte *)(g_mouse_y * 0x140 + (int)g_mouse_x + DAT_0023cca0);
   uVar4 = (uint)bVar1;
-  { const char *_f = getenv("UW_PICK_FORCE_SLOT");   /* debug: force the object branch */
-    if (_f && (uint)DAT_0023b830 > 1) { uVar4 = (uint)atoi(_f); if (uVar4 == 0 || uVar4 >= (uint)DAT_0023b830) uVar4 = 1; bVar1 = (byte)uVar4; } }
-  int _pick_diag = g_uw_debug_pick_diag || (getenv("UW_PICK_DIAG") != NULL);
+  { /* debug: force the object branch */
+    if (UW_OPT_ISSET(g_opts.pick_force_slot) && (uint)DAT_0023b830 > 1) { uVar4 = (uint)g_opts.pick_force_slot; if (uVar4 == 0 || uVar4 >= (uint)DAT_0023b830) uVar4 = 1; bVar1 = (byte)uVar4; } }
+  int _pick_diag = g_uw_debug_pick_diag || g_opts.pick_diag;
   if (_pick_diag)
     fprintf(stderr, "[pick] mx=%d my=%d stencil=0x%02x nobj=%d\n",
             (int)g_mouse_x, (int)g_mouse_y, uVar4, (int)DAT_0023b830);
@@ -876,22 +850,17 @@ ushort *pick_object_under_cursor(int mode)
     puVar3 = (ushort *)get_object_record_by_slot_index(iVar2);
 
     if(puVar3) {
-      DEBUG(INFO, "[pick] found slot=%u -> objid=0x%03x", uVar4, (unsigned)(*puVar3 & 0x1ff));
+      DEBUG(INFO, "[pick] found slot=%u -> objid=0x%03x", uVar4,
+            (unsigned)(((uw_object_hdr_t *)puVar3)->object_id));
       if (_pick_diag)
-        fprintf(stderr, "[pick] found slot=%u -> objid=0x%03x ptr=%p\n", uVar4, (unsigned)(*puVar3 & 0x1ff), (void *)puVar3);
+        fprintf(stderr, "[pick] found slot=%u -> objid=0x%03x ptr=%p\n", uVar4,
+                (unsigned)(((uw_object_hdr_t *)puVar3)->object_id),
+                (void *)puVar3);
     }
 
     DAT_002020a8 = DAT_002020b0 + 2;
-    if (getenv("UW_DEBUG_THROW"))
-      fprintf(stderr, "[pick-grab] puVar3=%p type=0x%x classbit20=%d in_arena=%d off10=0x%x off13=0x%x off14=0x%x off15=0x%x off4000=%d\n",
-              (void *)puVar3, (unsigned)(*puVar3 & 0x1ff),
-              (int)((&DAT_00202c98)[(*puVar3 & 0x1ff) * 0xd] & 0x20),
-              (int)object_ptr_in_arena((char *)puVar3),
-              (unsigned)*(byte *)((char *)puVar3 + 10), (unsigned)*(byte *)((char *)puVar3 + 0x13),
-              (unsigned)*(byte *)((char *)puVar3 + 0x14), (unsigned)*(byte *)((char *)puVar3 + 0x15),
-              (int)((*puVar3 & 0x4000) != 0));
-    if ((((&DAT_00202c98)[(*puVar3 & 0x1ff) * 0xd] & 0x20) != 0) &&
-       (iVar2 = object_ptr_in_arena(puVar3), iVar2 == 0)) {
+    if (((g_object_type_props[(((uw_object_hdr_t *)puVar3)->object_id)].owner_flags & 0x20) != 0) &&
+        (iVar2 = object_ptr_in_arena(puVar3), iVar2 == 0)) {
       DAT_002020ec = 1;
       return puVar3;
     }

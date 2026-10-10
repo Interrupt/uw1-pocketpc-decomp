@@ -8,4 +8,4 @@ cd "$(dirname "$0")"
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build -j
 
-UW_DATA_DIR="${UW_DATA_DIR:-$(pwd)/data}" UW_DEBUG_LEVEL="${UW_DEBUG_LEVEL:-INFO}" ./build/uw_dbg
+./build/uw_dbg --data-dir="${UW_DATA_DIR:-$(pwd)/data}" "$@"

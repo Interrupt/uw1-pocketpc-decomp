@@ -179,9 +179,24 @@ static void test_open_nested_sack_refreshes_inner_contents(void)
     TEST_ASSERT_EQUAL_INT(4, container_arrow_redraws);
 }
 
+static void test_palette_cycle_redraws_only_lit_light_source_icons(void)
+{
+    objects[1][0] = 0x95;  /* lit torch */
+    objects[2][0] = 0x91;  /* unlit torch */
+    objects[3][0] = 0x80;  /* ordinary item */
+    slots[7] = 1 << 6;
+    slots[8] = 2 << 6;
+    slots[9] = 3 << 6;
+    redraw_lit_light_source_widgets();
+    TEST_ASSERT_EQUAL_INT(1, lit_widget_redraws[7]);
+    TEST_ASSERT_EQUAL_INT(0, lit_widget_redraws[8]);
+    TEST_ASSERT_EQUAL_INT(0, lit_widget_redraws[9]);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
+    RUN_TEST(test_palette_cycle_redraws_only_lit_light_source_icons);
     RUN_TEST(test_picked_up_sack_has_inventory_widget);
     RUN_TEST(test_open_sack_finds_contents_through_inventory_widget);
     RUN_TEST(test_lookup_returns_object_and_owning_link);

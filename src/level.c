@@ -2,6 +2,7 @@
    "enter dungeon view"/"load level" entry points. Split out of uw.c (the original monolithic
    decompile) once these functions' real roles were confirmed. */
 #include "headers/level.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -135,44 +136,6 @@ int load_level_object_table(byte *archive_handle, int level_number)
     DAT_0020469c = DAT_002046bc + *(short *)(arena + 0x7c04) * 2;
     DAT_002046c8 = DAT_002046c0 + *(short *)(arena + 0x7c00);
     DAT_002029d0 = 0;
-    /* Debug tool (UW_DEBUG_DUMP_TMAP): dump this level's 64x64 tile map
-       right after a real load, magic marker and all -- see gx_stub.h's
-       comment. */
-    uw_debug_dump_tmap(level_number, (unsigned char *)arena);
-    /* Diagnostic (UW_DEBUG_BAG_TRACE): scan for a type-0x8f (rune bag) object's tile linkage
-       IMMEDIATELY after the raw level block lands in the arena, before any other code
-       (chargen-completion, HUD init, etc.) gets a chance to touch it... */
-    if (getenv("UW_DEBUG_BAG_TRACE")) {
-      int _found = 0;
-      for (int _i = 0x100; _i < 0x100 + 1064; _i++) {
-        unsigned char *_rec = (unsigned char *)DAT_002046c4 + (_i - 0x100) * 8;
-        unsigned _type = (_rec[0] | (_rec[1] << 8)) & 0x1ff;
-        if (_type == 0x8f) {
-          fprintf(stderr, "[bag-trace] post-load large-table slot=%d addr=%p word0=0x%04x word1=0x%04x\n",
-                  _i, (void *)_rec, (unsigned)(_rec[0] | (_rec[1] << 8)), (unsigned)(_rec[2] | (_rec[3] << 8)));
-          _found++;
-          int _hits = 0;
-          for (int _row = 0; _row < 64; _row++) {
-            for (int _col = 0; _col < 64; _col++) {
-              void *_tile_rec = tilemap_lookup(_row, _col);
-              if (!_tile_rec) continue;
-              unsigned short *_link = (unsigned short *)((char *)_tile_rec + 2);
-              void *_obj;
-              int _guard = 0;
-              while ((_obj = resolve_object_link(_link)) != NULL && _guard++ < 64) {
-                if (_obj == (void *)_rec) {
-                  fprintf(stderr, "[bag-trace]   linked on tile (%d,%d)\n", _row, _col);
-                  _hits++;
-                }
-                _link = (unsigned short *)_obj + 2;
-              }
-            }
-          }
-          fprintf(stderr, "[bag-trace]   tile-chain hits=%d\n", _hits);
-        }
-      }
-      if (!_found) fprintf(stderr, "[bag-trace] post-load: no type-0x8f object found at all\n");
-    }
   }
   else {
     report_fatal_error_and_exit(3);
@@ -190,7 +153,7 @@ int load_level_object_table(byte *archive_handle, int level_number)
 // was FUN_00052960
 void reset_level_object_arena()
 {
-  char *free_list_cursor;
+  ushort *free_list_cursor;
   char *tile_record = DAT_002029cc;
   int index = 0;
 
@@ -202,7 +165,7 @@ void reset_level_object_arena()
   } while (index < 0x1000);
   DAT_002046b8 = DAT_002029cc + 0x4000;
   DAT_002046c4 = DAT_002029cc + 0x5b00;
-  free_list_cursor = (DAT_002029cc + 0x7300);
+  free_list_cursor = (ushort *)(DAT_002029cc + 0x7300);
   DAT_002046a8 = DAT_002029cc + 0x74fa;
   DAT_002046bc = DAT_002029cc + 0x74fc;
   DAT_0020469c = DAT_002029cc + 0x7afa;
@@ -214,18 +177,20 @@ void reset_level_object_arena()
   g_scheduler_table = DAT_002029cc + 0x7c08 + 0x3a;
   index = 2;
   DAT_002046a0 = DAT_0020469c;
-  DAT_002046a4 = free_list_cursor;
+  DAT_002046a4 = (char *)free_list_cursor;
   DAT_002046ac = DAT_002046a8;
+  /* Both allocator free lists contain 16-bit slot IDs. A byte cursor
+     left the stationary list uninitialized until a level archive loaded. */
   do {
-    *free_list_cursor = (short)index;
+    *free_list_cursor = (ushort)index;
     index = (index + 1) * 0x10000 >> 0x10;
     free_list_cursor = free_list_cursor + 1;
   } while (index < 0x400);
   if (g_player_object != 0) {
-    *(byte *)((char *)g_player_object + 4) = *(byte *)((char *)g_player_object + 4) & 0x3f;
-    *(undefined1 *)((char *)g_player_object + 5) = 0;
-    *(byte *)((char *)g_player_object + 6) = *(byte *)((char *)g_player_object + 6) & 0x3f;
-    *(undefined1 *)((char *)g_player_object + 7) = 0;
+    g_player_object->hdr.chain_word_low = g_player_object->hdr.quality;
+    g_player_object->hdr.chain_word_high = 0;
+    g_player_object->hdr.link_word_low = g_player_object->hdr.owner;
+    g_player_object->hdr.link_word_high = 0;
     reset_equipment_and_container_state();
   }
   g_scheduler_count = 0;

@@ -87,8 +87,8 @@ static void test_ort_jux_right_click_launches_magic_arrow_and_spends_mana(void)
     TEST_ASSERT_EQUAL_INT(1, fx.links);
     TEST_ASSERT_EQUAL_INT(1, fx.projectile_sounds);
     TEST_ASSERT_EQUAL_UINT8(1, ((byte *)fx.projectile)[0x12]); /* player owner */
-    TEST_ASSERT_EQUAL_UINT8(DAT_002027d0_backing[1+7*3] & 0x7f,
-                           ((byte *)fx.projectile)[0x13] & 0x7f);
+    TEST_ASSERT_EQUAL_UINT8(g_ranged_type_props[7].projectile_speed & 0x7f,
+                            ((byte *)fx.projectile)[0x13] & 0x7f);
     TEST_ASSERT_NOT_EQUAL(0, ((byte *)fx.projectile)[0x13] & 0x7f);
     TEST_ASSERT_EQUAL_INT(-1, DAT_00202a40); /* center cursor aim */
     TEST_ASSERT_EQUAL_INT(0, DAT_00202a3c);

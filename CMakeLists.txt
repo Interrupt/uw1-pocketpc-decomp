@@ -27,6 +27,7 @@ set(UW_SOURCES
   src/combat.c
   src/bitmap.c
   src/3d.c
+  src/lights.c
   src/player.c
   src/tmap.c
   src/objects.c
@@ -59,6 +60,7 @@ set(UW_SOURCES
   src/platform_voice.c
   src/platform_dosmidi.c
   src/main.c
+  src/options.c
   src/gx_stub.c
   src/ordinal_stubs.c
   src/file_io.c
@@ -67,7 +69,7 @@ set(UW_SOURCES
   src/debug.c
   src/debug_ui.c
   third_party/hxcmod/hxcmod.c
-  # The authentic DOS audio path (UW_AUDIO_MODE=dos): OpenAbyss's
+  # The authentic DOS audio path (--audio-mode=dos): OpenAbyss's
   # reverse-engineered ADLIB.ADV driver model, its voice layer and its OPL2.
   # MIT -- see third_party/openabyss/VENDORING.md.
   third_party/openabyss/uw_opl.c

@@ -5,6 +5,10 @@ add_link_options(-Wl,-no_warn_duplicate_libraries)
 add_custom_target(unit_tests)
 add_library(unity STATIC "${PROJECT_SOURCE_DIR}/third_party/unity/src/unity.c")
 target_include_directories(unity PUBLIC "${PROJECT_SOURCE_DIR}/third_party/unity/src")
+# The runtime options struct (g_opts) is used by most of the game code the suites extract.
+add_library(uw_options STATIC "${PROJECT_SOURCE_DIR}/src/options.c")
+target_include_directories(uw_options PUBLIC "${PROJECT_SOURCE_DIR}")
+target_link_libraries(unity PUBLIC uw_options)
 
 # Generate isolated test units from the original function bodies. Game
 # functions stay in their existing files, and tests never keep code copies.
@@ -56,6 +60,14 @@ function(add_supported_game_unit_test name)
   add_dependencies(unit_tests test_${name})
   add_test(NAME ${name} COMMAND test_${name})
 endfunction()
+
+add_game_test_library(uw_test_babl_objects
+  src/babl.c:babl_builtin_x_obj_pos
+  src/babl.c:babl_builtin_count_inv
+  src/babl.c:babl_builtin_check_inv_quality
+  src/babl.c:babl_builtin_set_inv_quality
+  src/babl.c:babl_builtin_find_barter_total)
+add_supported_game_unit_test(babl_objects uw_test_babl_objects)
 
 # Keep service functions in separate archive members so suite-specific mocks
 # override only their own boundary without pulling unrelated definitions.
@@ -193,6 +205,9 @@ set(UW_COMBAT_TEST_FUNCTIONS
 add_fixture_game_unit_test(combat ${UW_COMBAT_TEST_FUNCTIONS})
 # Reuse the combat fixture with real NPC attack, skill and dice calculations.
 add_game_test_library(uw_test_npc_combat ${UW_COMBAT_TEST_FUNCTIONS}
+  src/resources.c:load_armor_variant_tables
+  src/resources.c:load_light_food_effect_tables
+  src/objects.c:load_class7_variant_effect_table
   src/combat.c:resolve_npc_melee_attack src/combat.c:resolve_weapon_hit_skill_check
   src/player.c:roll_skill_check src/math.c:roll_dice_sum src/math.c:rand_below)
 target_sources(uw_test_npc_combat PRIVATE support/combat_fixture.c)
@@ -204,7 +219,8 @@ target_compile_options(uw_test_npc_combat PUBLIC
   -include "${CMAKE_CURRENT_SOURCE_DIR}/combat_test_globals.h")
 add_supported_game_unit_test(npc_combat uw_test_npc_combat)
 
-add_fixture_game_unit_test(traps src/traps.c:dispatch_trap_type_effect)
+add_fixture_game_unit_test(traps src/traps.c:dispatch_trap_type_effect
+  src/traps.c:dispatch_quest_event_code src/traps.c:apply_quest_event_numeric_effect)
 add_fixture_game_unit_test(hotspot_marker src/babl.c:draw_hotspot_crosshair_marker)
 add_fixture_game_unit_test(noise
   src/ai.c:alert_npc_to_noise_callback src/ai.c:emit_noise_alert)
@@ -256,6 +272,7 @@ add_fixture_game_unit_test(illustration_render
   src/graphics.c:expand_pals_bytes
   src/graphics.c:convert_palette_bgrx_to_rgb
   src/graphics.c:build_rgb565_palette
+  src/graphics.c:get_palette_brightness_bits
   src/graphics.c:bitmap_blit_to_framebuffer
   src/graphics.c:fade_in src/graphics.c:fade_out
   src/hud.c:flush_dirty_rect_to_display src/hud.c:dirty_rect_union
@@ -289,7 +306,7 @@ add_fixture_game_unit_test(inventory
   src/item_use.c:complete_use_item_on_player
   src/game.c:handle_game_view_click
   src/containers.c:open_backpack_container src/containers.c:refresh_container_view
-  src/containers.c:sum_container_weight)
+  src/containers.c:sum_container_weight src/inventory.c:redraw_lit_light_source_widgets)
 
 add_fixture_game_unit_test(geometry
   src/3d.c:@DAT_000bc038_backing
@@ -352,6 +369,14 @@ add_fixture_game_unit_test(weapon_ready
   src/weapon_swing.c:advance_action_animation_frame
   src/weapon_swing.c:weapon_swing_draw_tick)
 
+# The weapon charge state machine (tick_weapon_swing_state) with a controlled clock and button.
+add_fixture_game_unit_test(weapon_charge
+  src/weapon_swing.c:@DAT_000870e4
+  src/weapon_swing.c:@DAT_00084f0b_backing src/weapon_swing.c:%DAT_00084f0b
+  src/combat.c:@DAT_00084eff_backing
+  src/weapon_swing.c:tick_weapon_swing_state src/weapon_swing.c:reset_weapon_swing_state
+  src/weapon_swing.c:update_weapon_ready_hud_icon)
+
 add_fixture_game_unit_test(head_bob
   src/movement.c:@DAT_00086e38_backing src/movement.c:@DAT_00086e48_backing
   src/player.c:@DAT_00086e58_backing
@@ -382,6 +407,7 @@ add_library(uw_test_static_strings STATIC "${static_strings_source}")
 uw_configure_test_target(uw_test_static_strings)
 target_include_directories(uw_test_static_strings PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/support")
 add_supported_game_unit_test(static_strings uw_test_static_strings)
+add_supported_game_unit_test(options)
 
 add_fixture_game_unit_test(scroll_messages
   src/hud.c:@s_Not_a_spell_00085a80 src/item_use.c:@DAT_000878ec_backing
@@ -502,6 +528,116 @@ add_fixture_game_unit_test(babl_vm
   src/babl.c:select_babl_menu_response
   src/ordinal_stubs.c:ce_strcmp src/ordinal_stubs.c:ce_tolower)
 
+# Run complete CNV.ARK conversations: the real script loader, interpreter,
+# menus, NPC/quest variable bridge and barter rules, driven through
+# start_npc_conversation. Presentation, input and the unrelated object-world
+# builtins are controlled at fixture boundaries.
+add_fixture_game_unit_test(babl_conversation
+  src/resources.c:get_message_string src/resources.c:decode_strings_pak_entry
+  src/resources.c:walk_strings_pak_huffman_tree src/resources.c:read_strings_pak_bit
+  src/interact.c:@s__DATA_cnv_ark_00084fc8
+  src/babl.c:@DAT_00085230_backing src/babl.c:%DAT_00085230
+  src/babl.c:@DAT_00085234_backing src/babl.c:%DAT_00085234
+  src/babl.c:@DAT_0008523c_backing src/babl.c:%DAT_0008523c
+  src/babl.c:@DAT_000845b8_backing src/babl.c:%DAT_000845b8 src/babl.c:%DAT_000845ba
+  src/babl.c:%PTR_DAT_000845c8
+  src/babl.c:@DAT_000845d8_backing src/babl.c:%DAT_000845d8 src/babl.c:%DAT_000845da
+  src/babl.c:%DAT_000845e8
+  src/babl.c:@DAT_000845a8
+  src/babl.c:@s__SAVE0_bglobals_dat_00084538
+  src/babl.c:@s__DATA_babglobs_dat_0008454c
+  src/babl.c:@s_val_00084560
+  src/babl.c:@s_length_00084564
+  src/babl.c:@s_find_0008456c
+  src/babl.c:@s_copy_00084574
+  src/babl.c:@s_append_0008457c
+  src/babl.c:@s_contains_00084584
+  src/babl.c:@s_plural_00084590
+  src/babl.c:@s_random_00084598
+  src/babl.c:@s_compare_000845a0
+  src/babl.c:@s_respond_000845ac
+  src/babl.c:@s_npc_attitude_000845f8
+  src/babl.c:@s_genhead_00084fd8
+  src/babl.c:@s_charhead_00084fe0
+  src/babl.c:@s_heads_00084fec
+  src/babl.c:@s_converse_00084ff4
+  src/babl.c:@s_take_id_from_npc_0008519c
+  src/babl.c:@s_take_from_npc_000851b0
+  src/babl.c:@s_find_inv_000851c0
+  src/babl.c:@s_give_to_npc_000851cc
+  src/babl.c:@s_show_inv_000851d8
+  src/babl.c:@s_print_000851e4
+  src/babl.c:@s_babl_ask_000851ec
+  src/babl.c:@s_sex_000851f8
+  src/babl.c:@s_set_quest_000851fc
+  src/babl.c:@s_get_quest_00085208
+  src/babl.c:@s_babl_fmenu_00085214
+  src/babl.c:@s_babl_menu_00085220
+  src/babl.c:@s_give_ptr_npc_00085000
+  src/babl.c:@s_find_barter_total_00085010
+  src/babl.c:@s_find_barter_00085024
+  src/babl.c:@s_x_obj_pos_00085030
+  src/babl.c:@s_x_obj_stuff_0008503c
+  src/babl.c:@s_x_traps_00085048
+  src/babl.c:@s_x_skills_00085050
+  src/babl.c:@s_remove_talker_0008505c
+  src/babl.c:@s_place_object_0008506c
+  src/babl.c:@s_add_to_npc_inv_0008507c
+  src/babl.c:@s_take_from_npc_inv_0008508c
+  src/babl.c:@s_set_race_attitude_000850a0
+  src/babl.c:@s_set_attitude_000850b4
+  src/babl.c:@s_gronk_door_000850c4
+  src/babl.c:@s_count_inv_000850d0
+  src/babl.c:@s_set_inv_quality_000850dc
+  src/babl.c:@s_check_inv_quality_000850ec
+  src/babl.c:@s_do_inv_delete_00085100
+  src/babl.c:@s_do_inv_create_00085110
+  src/babl.c:@s_set_likes_dislikes_00085120
+  src/babl.c:@s_pause_00085134
+  src/babl.c:@s_setup_to_barter_0008513c
+  src/babl.c:@s_end_barter_0008514c
+  src/babl.c:@s_do_judgement_00085158
+  src/babl.c:@s_do_decline_00085168
+  src/babl.c:@s_do_demand_00085174
+  src/babl.c:@s_do_offer_00085180
+  src/babl.c:@s_identify_inv_0008518c
+  src/babl.c:@s_npc_talkedto_00085340
+  src/babl.c:@s_npc_gtarg_00085350
+  src/babl.c:@s_npc_goal_0008535c
+  src/babl.c:@s_npc_power_00085368
+  src/babl.c:@s_npc_arms_00085374
+  src/babl.c:@s_npc_hp_00085380
+  src/babl.c:@s_npc_health_00085388
+  src/babl.c:@s_npc_hunger_00085394
+  src/babl.c:@s_npc_whoami_000853a0
+  src/babl.c:@s_play_name_0008524c
+  src/babl.c:@s_play_drawn_00085258
+  src/babl.c:@s_play_poison_00085264
+  src/babl.c:@s_play_sex_00085270
+  src/babl.c:@s_new_player_exp_0008527c
+  src/babl.c:@s_game_days_0008528c
+  src/babl.c:@s_game_mins_00085298
+  src/babl.c:@s_game_time_000852a4
+  src/babl.c:@s_dungeon_level_000852b0
+  src/babl.c:@s_play_level_000852c0
+  src/babl.c:@s_play_mana_000852cc
+  src/babl.c:@s_play_power_000852d8
+  src/babl.c:@s_play_arms_000852e4
+  src/babl.c:@s_play_hp_000852f0
+  src/babl.c:@s_play_health_000852f8
+  src/babl.c:@s_play_hunger_00085304
+  src/babl.c:@s_npc_name_00085310
+  src/babl.c:@s_npc_yhome_0008531c
+  src/babl.c:@s_npc_xhome_00085328
+  src/babl.c:@s_npc_level_00085334
+  src/babl.c:babl_expand_string_refs src/babl.c:parse_babl_string_ref_expr src/babl.c:babl_resize
+  src/resources.c:register_interned_string src/resources.c:overwrite_interned_string
+  src/resources.c:reset_string_resource_page src/ordinal_stubs.c:ce_strchr src/ordinal_stubs.c:ce_strncpy src/text.c:@s_0123456789ABCDEF_00084a28 src/text.c:itoa_radix
+  src/babl.c:start_npc_conversation src/babl.c:exit_talk_mode src/babl.c:load_npc_conversation_record src/babl.c:build_babl_symbol_table src/babl.c:babl_vm_load_script src/babl.c:load_npc_conversation_variables src/babl.c:save_npc_conversation_variables src/babl.c:init_conv_var_terminator_record src/babl.c:seed_conversation_globals_for_new_game src/babl.c:run_babl_bytecode_interpreter src/babl.c:babl_register_builtin src/babl.c:babl_set_variable src/babl.c:babl_get_variable src/babl.c:init_babl_variable_defaults src/babl.c:babl_var_word_addr src/babl.c:babl_read_var_word src/babl.c:babl_write_var_word src/babl.c:babl_read_frame_word src/babl.c:babl_builtin_default_handler src/babl.c:babl_op_add src/babl.c:babl_op_negate src/babl.c:babl_op_mul src/babl.c:babl_op_sub src/babl.c:babl_op_div src/babl.c:babl_op_mod src/babl.c:babl_op_or src/babl.c:babl_op_and src/babl.c:babl_op_gt src/babl.c:babl_op_ge src/babl.c:babl_op_lt src/babl.c:babl_op_le src/babl.c:babl_op_eq src/babl.c:babl_op_ne src/babl.c:babl_op_call src/babl.c:babl_op_return src/babl.c:babl_op_push_var_raw src/babl.c:babl_op_combine_index src/babl.c:babl_op_set_var src/babl.c:babl_op_call_builtin src/babl.c:babl_op_string_eq src/babl.c:babl_op_say src/babl.c:babl_op_respond src/babl.c:babl_builtin_compare src/babl.c:babl_builtin_random src/babl.c:babl_builtin_plural src/babl.c:babl_builtin_contains src/babl.c:babl_builtin_append src/babl.c:babl_builtin_copy src/babl.c:babl_builtin_find src/babl.c:babl_builtin_length src/babl.c:babl_builtin_val src/babl.c:babl_builtin_say src/babl.c:babl_builtin_respond src/babl.c:echo_selected_conversation_choice src/babl.c:babl_builtin_print src/babl.c:babl_builtin_pause src/babl.c:babl_builtin_get_quest src/babl.c:babl_builtin_set_quest src/babl.c:babl_builtin_sex src/babl.c:babl_builtin_do_offer src/babl.c:babl_builtin_do_demand src/babl.c:babl_builtin_do_decline src/babl.c:babl_builtin_do_judgement src/babl.c:babl_builtin_set_likes_dislikes src/babl.c:babl_builtin_setup_to_barter src/babl.c:babl_builtin_find_barter src/babl.c:babl_builtin_find_barter_total src/babl.c:babl_builtin_count_inv src/babl.c:babl_builtin_check_inv_quality src/babl.c:babl_builtin_set_inv_quality src/babl.c:babl_menu src/babl.c:babl_fmenu src/babl.c:run_babl_menu_wait_loop src/babl.c:select_babl_menu_response src/babl.c:sync_conv_vars_from_npc src/babl.c:sync_conv_vars_to_npc src/babl.c:check_npc_item_preference src/babl.c:barter_offer_is_empty src/babl.c:sum_barter_offer_value src/babl.c:compute_barter_item_value src/babl.c:finalize_npc_barter_items src/babl.c:finalize_player_barter_items src/babl.c:init_barter_ui src/babl.c:end_barter_ui src/babl.c:collect_included_player_barter_items src/babl.c:give_barter_item_by_item_id src/babl.c:add_item_to_npc_inventory src/babl.c:remove_item_from_npc_inventory_by_id
+  src/ordinal_stubs.c:orduint_divmod src/ordinal_stubs.c:ce_strcmp src/ordinal_stubs.c:ce_tolower
+  src/ordinal_stubs.c:ce_atoi src/ordinal_stubs.c:ce_memmove src/ordinal_stubs.c:ce_strstr
+  src/ordinal_stubs.c:_strlwr src/ordinal_stubs.c:_isctype)
+
 add_game_test_library(uw_test_cursor
   src/hud.c:uw_always_show_cursor src/hud.c:uw_composite_desktop_cursor
   src/hud.c:set_cursor_sprite_id
@@ -572,6 +708,7 @@ add_game_test_library(uw_test_npc_ai
   src/ai.c:npc_set_walk_target
   src/combat.c:npc_combat_engage_close_tick
   src/combat.c:npc_combat_engage_wide_tick
+  src/combat.c:try_npc_special_ability_alt
   src/combat.c:npc_combat_set_stance
   src/combat.c:load_monster_combat_stats)
 target_sources(uw_test_npc_ai PRIVATE support/npc_ai_fixture.c)
@@ -644,7 +781,10 @@ add_game_test_library(uw_test_lighting
   src/visibility.c:load_shading_level_config
   src/visibility.c:build_visibility_light_grid
   src/math.c:integer_sqrt
-  src/3d.c:raster_textured_span
+  src/lights.c:%UW_EYE_TO_LIGHT_UNITS src/lights.c:@g_extra_light_sources src/lights.c:%UW_EXTRA_LIGHT_SOURCE_COUNT
+  src/lights.c:extra_light_add src/lights.c:extra_lights_reset src/lights.c:extra_lights_consider_object
+  src/lights.c:shade_span_pixel
+  src/3d.c:raster_textured_span src/3d.c:update_fullbright_palette_mask
   src/graphics.c:build_shade_lut
   src/graphics.c:get_ambient_bias_reduction
   src/graphics.c:set_ambient_bias_with_light
@@ -849,6 +989,7 @@ add_game_test_library(uw_test_transitions
   src/graphics.c:expand_pals_bytes
   src/graphics.c:convert_palette_bgrx_to_rgb
   src/graphics.c:build_rgb565_palette
+  src/graphics.c:get_palette_brightness_bits
   src/graphics.c:bitmap_blit_to_framebuffer
   src/graphics.c:fade_in
   src/graphics.c:fade_out
@@ -1021,3 +1162,171 @@ target_compile_definitions(uw_test_sleep PRIVATE UW_TEST_FULL_REST)
 foreach(suite new_game traps visibility_walk)
   target_compile_options(uw_test_${suite} PRIVATE -fno-common)
 endforeach()
+
+# Independent packing checks before object-pointer/field migrations.
+add_supported_game_unit_test(object_layout)
+# Coccinelle semantic-patch checks: they re-parse the whole of src/ with spatch
+# and take minutes where the rest of the suite takes seconds (530s against 6s
+# when measured on this tree). They are a tool for large type-conversion
+# batches -- proving a field migration reached every access -- not something to
+# pay for on an ordinary run, so they are OFF unless asked for:
+#
+#   cmake -S . -B build -DUW_SPATCH_TESTS=ON && ctest --test-dir build
+#
+option(UW_SPATCH_TESTS
+  "Register the Coccinelle (spatch) semantic-patch tests. Slow; for large type-conversion batches." OFF)
+if(UW_SPATCH_TESTS)
+  find_program(UW_SPATCH_EXECUTABLE spatch)
+  if(NOT UW_SPATCH_EXECUTABLE)
+    message(FATAL_ERROR
+      "UW_SPATCH_TESTS=ON but spatch was not found. Install Coccinelle (brew install coccinelle) "
+      "or configure without -DUW_SPATCH_TESTS=ON.")
+  endif()
+  add_test(NAME object_semantic_patches
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_object_semantic_patches.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME named_struct_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_named_struct_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME partial_field_reads
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_partial_field_reads.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME named_struct_writes
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_named_struct_writes.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME packed_struct_stores
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_packed_struct_stores.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME packed_field_copies
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_packed_field_copies.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME npc_spawn_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_npc_spawn_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME npc_goal_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_npc_goal_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME player_position_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_player_position_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME player_reset_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_player_reset_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME position_sync_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_position_sync_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME shared_mobile_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_shared_mobile_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME mobile_consumer_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_mobile_consumer_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME npc_interaction_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_npc_interaction_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME projectile_spawn_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_projectile_spawn_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME projectile_lifecycle_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_projectile_lifecycle_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME void_object_headers
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_void_object_headers.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME npc_death_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_npc_death_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME inventory_record_words
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_inventory_record_words.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME trap_pair_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_trap_pair_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME trap_consumer_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_trap_consumer_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME debris_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_debris_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME scheduled_spawn_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_scheduled_spawn_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME item_scatter_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_item_scatter_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME stack_split_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_stack_split_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME held_drop_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_held_drop_fields.py")
+  add_test(NAME durability_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_durability_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME blood_splat_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_blood_splat_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  find_program(UW_CLANG_EXECUTABLE clang)
+  if(UW_CLANG_EXECUTABLE)
+    add_test(NAME current_object_aliases
+      COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_current_object_aliases.py"
+        "${UW_SPATCH_EXECUTABLE}" "${UW_CLANG_EXECUTABLE}")
+  endif()
+endif()
+add_game_test_library(uw_test_object_weight src/objects.c:calculate_object_weight)
+add_supported_game_unit_test(object_weight uw_test_object_weight)
+add_game_test_library(uw_test_object_core
+  src/objects.c:spawn_new_object src/objects.c:resolve_object_link
+  src/objects.c:find_object_in_chain src/objects.c:find_object_by_encoded_slot_in_chain
+  src/objects.c:object_list_insert_head src/objects.c:object_list_append_tail
+  src/objects.c:object_list_unlink src/containers.c:sum_container_weight
+  src/item_use.c:objects_can_stack)
+add_supported_game_unit_test(object_core uw_test_object_core uw_test_division)
+add_game_test_library(uw_test_npc_state src/ai.c:npc_set_goal src/ai.c:npc_set_walk_target
+  src/combat.c:npc_combat_disengage_tick src/combat.c:npc_combat_position_tick)
+add_supported_game_unit_test(npc_state uw_test_npc_state)
+
+# A cold save restore must work before any level archive seeds the free lists.
+add_game_test_library(uw_test_save_inventory
+  src/level.c:reset_level_object_arena
+  src/objects.c:alloc_object_slot src/objects.c:encode_object_slot_index
+  src/objects.c:resolve_object_link
+  src/player.c:restore_player_save_record src/player.c:build_player_save_record
+  src/inventory.c:deserialize_inventory_link_chain
+  src/inventory.c:serialize_inventory_link_chain
+  src/inventory.c:alloc_save_record_slot src/inventory.c:save_record_slot_from_index
+  src/containers.c:encode_equipped_item_index src/containers.c:decode_equipped_item_index)
+target_compile_options(uw_test_save_inventory PRIVATE
+  -include "${CMAKE_CURRENT_SOURCE_DIR}/save_inventory_test_globals.h")
+add_supported_game_unit_test(save_inventory uw_test_save_inventory uw_test_division)
+
+# NPC collision-response profiles must be populated in the buffers the sweep actually reads.
+add_fixture_game_unit_test(collision_profiles src/movement.c:init_collision_response_profiles)

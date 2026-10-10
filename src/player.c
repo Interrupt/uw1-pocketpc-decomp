@@ -2,6 +2,7 @@
    equipment-effect refresh, and HP adjustment. Split out of uw.c (the original monolithic
    decompile) once these functions' real roles were confirmed. */
 #include "headers/player.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,10 +10,9 @@
 
 char *DAT_0024fa2c;
 char s_font5x6p_sys_0008430c[] = "font5x6p.sys";
-/* Was `char *` -- but every `g_player_object[N]` bracket-index use throughout this file
-   (position/facing/type fields) matches the SAME ushort-array-index convention every other
-   object-record pointer in this codebase uses (e.g. `param_1[N]` for a `ushort *param_1`)... */
-ushort *g_player_object;
+/* The player occupies a UW1 27-byte mobile slot. Word/byte casts at
+ * remaining storage boundaries are temporary until their field sweep. */
+uw_mobile_object_t *g_player_object;
 char *DAT_0023be74;
 short DAT_0023beb4;
 /* Sizing-audit pass: investigated, NOT confidently shrunk to the minimum. */
@@ -242,28 +242,19 @@ void set_player_tile_position(uint tile_x, uint tile_y, int flag)
   if (((&DAT_000878d0)[*(byte *)(DAT_002029cc + iVar2 * 4) & 0xf] & 0x20) != 0) {
     DAT_00204884 = DAT_00204884 + 0x20;
   }
-  uVar3 = *(ushort *)((char *)g_player_object + 2) & 0xff80;
-  *(byte *)((char *)g_player_object + 2) =
-       (byte)uVar3 | (byte)((int)(((int)DAT_00204884 & 0x3f8U) << 0x10) >> 0x13);
-  *(char *)((char *)g_player_object + 3) = (char)(uVar3 >> 8);
-  uVar3 = *(ushort *)((char *)g_player_object + 0x16) & 0x3ff;
-  *(char *)((char *)g_player_object + 0x16) = (char)uVar3;
-  *(byte *)((char *)g_player_object + 0x17) = (byte)(uVar3 >> 8) | (byte)(((tile_x & 0x3f) << 10) >> 8);
-  uVar3 = *(ushort *)((char *)g_player_object + 0x16) & 0xfc0f | (tile_y & 0x3f) << 4;
-  *(char *)((char *)g_player_object + 0x16) = (char)uVar3;
-  *(char *)((char *)g_player_object + 0x17) = (char)(uVar3 >> 8);
-  uVar3 = *(ushort *)((char *)g_player_object + 2) & 0x1fff;
-  *(char *)((char *)g_player_object + 2) = (char)uVar3;
-  *(byte *)((char *)g_player_object + 3) = (byte)(uVar3 >> 8) | 0x60;
-  uVar3 = *(ushort *)((char *)g_player_object + 2) & 0xefff;
-  *(char *)((char *)g_player_object + 2) = (char)uVar3;
-  *(byte *)((char *)g_player_object + 3) = (byte)(uVar3 >> 8) | 0xc;
-  *(byte *)((char *)g_player_object + 0x15) = *(byte *)((char *)g_player_object + 0x15) & 0xec | 0x2c;
-  uVar3 = *(ushort *)((char *)g_player_object + 4) & 0xffc0;
-  *(char *)((char *)g_player_object + 4) = (char)uVar3;
-  *(char *)((char *)g_player_object + 5) = (char)(uVar3 >> 8);
-  *(byte *)((char *)g_player_object + 4) = *(byte *)((char *)g_player_object + 4) & 0x3f;
-  *(undefined1 *)((char *)g_player_object + 5) = 0;
+  uVar3 = g_player_object->hdr.position_word & 0xff80;
+  g_player_object->hdr.zpos = ((ushort)DAT_00204884 >> 3) & 0x7f;
+  uVar3 = g_player_object->tile_word & 0x3ff;
+  g_player_object->tile_x = tile_x & 0x3f;
+  g_player_object->tile_y = tile_y & 0x3f;
+  uVar3 = g_player_object->tile_word;
+  uVar3 = g_player_object->hdr.position_word & 0x1fff;
+  g_player_object->hdr.xpos = 3;
+  uVar3 = g_player_object->hdr.position_word & 0xefff;
+  g_player_object->hdr.ypos = 3;
+  g_player_object->animation_flags = g_player_object->animation_flags & 0xec | 0x2c;
+  uVar3 = g_player_object->hdr.next << 6;
+  g_player_object->hdr.chain_word = 0;
   DAT_00202c6c = local_3c;
   uVar1 = encode_object_slot_index(g_player_object);
   DAT_00202c6c[10] = (char)uVar1;
@@ -289,19 +280,17 @@ void set_player_tile_position(uint tile_x, uint tile_y, int flag)
   object_list_insert_head(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
 }
 
-
-
-/* Debug-only helper (UW_DEBUG_THROW-gated): print both player-position representations side by side
+/* Debug-only helper (--debug): print both player-position representations side by side
    -- the fine, continuous DAT_00204880/2 (used by the camera and by demo_set_player_pos) vs. the
-   coarser tile-position bytes packed into g_player_object's own record... */
+   coarser tile-position bytes packed into g_player_object's own record. */
 void debug_print_player_position(const char *label)
 {
-  if (getenv("UW_DEBUG_THROW"))
+  if (g_opts.debug)
     fprintf(stderr, "[playerpos:%s] fine=(%d,%d)=world(%g,%g) obj_bytes tile=(%d,%d)\n",
             label, (int)DAT_00204880, (int)DAT_00204882,
             (double)DAT_00204880 / 256.0, (double)DAT_00204882 / 256.0,
-            (int)((byte)*(byte *)((char *)g_player_object + 0x17) >> 2),
-            (int)((g_player_object[0xb] & 0x3f0) >> 4));
+            (int)((byte) g_player_object->tile_word_high >> 2),
+            (int)(g_player_object->npc_yhome));
 }
 
 
@@ -331,33 +320,22 @@ void commit_player_move()
     DAT_00202080 = (short)iVar8;
     object_list_insert_head(DAT_002029cc + iVar7 * 4 + 2,g_player_object);
     uVar5 = DAT_00204880 & 0x3f00;
-    uVar3 = *(ushort *)((char *)g_player_object + 0x16) & 0x3ff;
-    *(char *)((char *)g_player_object + 0x16) = (char)uVar3;
-    *(byte *)((char *)g_player_object + 0x17) =
-         (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar5 >> 8) << 10) >> 8);
-    uVar3 = *(ushort *)((char *)g_player_object + 0x16) & 0xfc0f |
-            ((int)(short)(DAT_00204882 & 0x3f00) >> 8) << 4;
-    *(char *)((char *)g_player_object + 0x16) = (char)uVar3;
-    *(char *)((char *)g_player_object + 0x17) = (char)(uVar3 >> 8);
+    uVar3 = g_player_object->tile_word & 0x3ff;
+    g_player_object->tile_x = (uVar5 >> 8) & 0x3f;
+    g_player_object->tile_y = ((ushort)DAT_00204882 >> 8) & 0x3f;
+    uVar3 = g_player_object->tile_word;
   }
   uVar5 = DAT_00204880 & 0xe0;
-  uVar3 = *(ushort *)((char *)g_player_object + 2) & 0x1fff;
-  *(char *)((char *)g_player_object + 2) = (char)uVar3;
-  *(byte *)((char *)g_player_object + 3) =
-       (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar5 >> 5) << 0xd) >> 8);
+  uVar3 = g_player_object->hdr.position_word & 0x1fff;
+  g_player_object->hdr.xpos = (uVar5 >> 5) & 7;
   uVar5 = DAT_00204882 & 0xe0;
-  uVar3 = *(ushort *)((char *)g_player_object + 2) & 0xe3ff;
-  *(char *)((char *)g_player_object + 2) = (char)uVar3;
-  *(byte *)((char *)g_player_object + 3) =
-       (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar5 >> 5) << 10) >> 8);
-  uVar3 = *(ushort *)((char *)g_player_object + 2) & 0xff80;
-  *(byte *)((char *)g_player_object + 2) =
-       (byte)uVar3 | (byte)((int)(((int)DAT_00204884 & 0x3f8U) << 0x10) >> 0x13);
-  *(char *)((char *)g_player_object + 3) = (char)(uVar3 >> 8);
+  uVar3 = g_player_object->hdr.position_word & 0xe3ff;
+  g_player_object->hdr.ypos = (uVar5 >> 5) & 7;
+  uVar3 = g_player_object->hdr.position_word & 0xff80;
+  g_player_object->hdr.zpos = ((ushort)DAT_00204884 >> 3) & 0x7f;
   uVar3 = read_realtime_clock_units();
-  uVar4 = *(ushort *)((char *)g_player_object + 0xb) & 0xfff;
-  *(char *)((char *)g_player_object + 0xb) = (char)uVar4;
-  *(byte *)((char *)g_player_object + 0xc) = (byte)(uVar4 >> 8) | (byte)(((uVar3 & 0xc0) << 6) >> 8);
+  uVar4 = g_player_object->goal_word & 0xfff;
+  g_player_object->npc_animation_frame = (uVar3 >> 6) & 3;
   /* ARM 0x3d668..0x3d694 compares two signed 16-bit headings. */
   if ((_DAT_002048a9 != 0) && (_DAT_002048a1 == (short)DAT_00201c78)) {
     g_jump_ascent_timer = 0;
@@ -375,12 +353,9 @@ void commit_player_move()
     }
   }
   DAT_00201c70 = uVar5;
-  uVar3 = *(ushort *)((char *)g_player_object + 2) & 0xfc7f | ((int)(short)DAT_00201c70 >> 0xd & 7U) << 7;
-  *(char *)((char *)g_player_object + 2) = (char)uVar3;
-  *(char *)((char *)g_player_object + 3) = (char)(uVar3 >> 8);
-  *(byte *)((char *)g_player_object + 0x18) =
-       ((byte)(DAT_00201c70 >> 8) ^ *(byte *)((char *)g_player_object + 0x18)) & 0x1f ^
-       *(byte *)((char *)g_player_object + 0x18);
+  g_player_object->hdr.heading = ((ushort)DAT_00201c70 >> 13) & 7;
+  uVar3 = g_player_object->hdr.position_word;
+  g_player_object->fine_heading = ((ushort)DAT_00201c70 >> 8) & 0x1f;
   if (_DAT_002048a9 != 0) {
     if (DAT_00204896 != '\0') {
       uVar3 = (uint)(_DAT_002048a9 >> 8);
@@ -419,10 +394,6 @@ void commit_player_move()
 void demo_set_player_pos(double x, double y, double z, double yaw_deg, double pitch_deg)
 {
   set_player_tile_position((int)floor(x), (int)floor(y), 1);
-  if (getenv("UW_DEBUG_FLOORZ")) {
-    fprintf(stderr, "[floorz] tile=(%d,%d) natural z (from set_player_tile_position) = %d, overriding to %g\n",
-            (int)floor(x), (int)floor(y), (int)DAT_00204884, z);
-  }
   /* Clear any in-flight smooth-turn interpolation (update_current_view_from_subject's
      DAT_0023bea8-gated add-on to DAT_00086e6c+0x2c): if a turn animation was still mid-flight when
      this runs... */
@@ -458,20 +429,20 @@ void sync_player_stats_to_hud()
   uint uVar3;
   
   tick_weapon_swing_state(0);
-  bVar2 = *(byte *)((char *)g_player_object + 8);
+  bVar2 = g_player_object->npc_hp;
   set_hud_status_value(0,bVar2);
-  if (((uint)DAT_001013a4 < (uint)*(byte *)((char *)g_player_object + 0x11) * 4) ||
-     ((bVar2 < 0x10 && (*(byte *)((char *)g_player_object + 0x11) != 0)))) {
+  if (((uint)DAT_001013a4 < (uint) g_player_object->recent_damage * 4) ||
+      ((bVar2 < 0x10 && (g_player_object->recent_damage != 0)))) {
     set_hud_status_value(4,3);
   }
-  *(undefined1 *)((char *)g_player_object + 0x11) = 0;
+  g_player_object->recent_damage = 0;
   set_hud_status_value(1,*(undefined1 *)(DAT_00086df8 + 0x37));
   if (DAT_00201b68 != 9) {
-    set_hud_status_value(2,(ushort)((((int)(((*(byte *)((char *)g_player_object + 0x18) & 0x1f) +
-                                   ((*(ushort *)((char *)g_player_object + 2) & 0x380) >> 2)) * 0x10000) >>
-                            0x10) + 8) >> 4) & 0xf);
+    set_hud_status_value(2,(ushort)((((int)(((g_player_object->npc_heading) +
+                                             ((g_player_object->hdr.heading << 7) >> 2)) * 0x10000) >>
+                                      0x10) + 8) >> 4) & 0xf);
   }
-  if (*(char *)((char *)g_player_object + 8) == '\0') {
+  if ((char)g_player_object->npc_hp == '\0') {
     handle_starvation_penalty();
   }
   uVar3 = read_realtime_clock_units();
@@ -521,8 +492,7 @@ void build_player_save_record(byte *out_record)
     iVar6 = iVar5;
     puVar7 = puVar7 + 1;
   } while (iVar5 != 0 && bVar1);
-  out_record[4] = out_record[4] & 0x3f;
-  out_record[5] = 0;
+  ((uw_object_hdr_t *)out_record)->next = 0;
   g_save_equip_table_ptr = out_record + 0x23;
   g_save_record_base_ptr = out_record + 0x5b;
   g_save_record_count = 0;
@@ -540,15 +510,11 @@ void build_player_save_record(byte *out_record)
   serialize_inventory_link_chain((char *)g_player_object + 6,out_record + 6);
   puVar4 = (undefined1 *)g_selected_object;
   if (g_cursor_holding_state == 1) {
-    out_record[0x1b] = *g_selected_object;
-    out_record[0x1c] = puVar4[1];
-    out_record[0x1d] = puVar4[2];
-    out_record[0x1e] = puVar4[3];
-    out_record[0x1f] = puVar4[4];
-    out_record[0x20] = puVar4[5];
-    out_record[0x21] = puVar4[6];
-    out_record[0x22] = puVar4[7];
-    if ((g_selected_object[1] & 0x80) == 0) {
+    ((uw_object_hdr_t *)(out_record + 0x1b))->type_flags = ((uw_object_hdr_t *)puVar4)->type_flags;
+    ((uw_object_hdr_t *)(out_record + 0x1b))->position_word = ((uw_object_hdr_t *)puVar4)->position_word;
+    ((uw_object_hdr_t *)(out_record + 0x1b))->chain_word = ((uw_object_hdr_t *)puVar4)->chain_word;
+    ((uw_object_hdr_t *)(out_record + 0x1b))->link_word = ((uw_object_hdr_t *)puVar4)->link_word;
+    if (((uw_object_hdr_t *)g_selected_object)->is_quant == 0) {
       serialize_inventory_link_chain(g_selected_object + 6,out_record + 0x21);
     }
     sVar3 = encode_object_slot_index(g_selected_object);
@@ -579,7 +545,6 @@ bool write_player_save_record(char *slot_dir)
     /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested): the real binary's own
        write_player_save_record never serializes DAT_0023bca8... */
     ce_memmove(g_save_record_buffer + 0x5b + g_save_record_count * 8,&DAT_0023bca8,220);
-    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[quest-persist] SAVE appending quest_bits=0x%x at buffer offset %d\n", *(unsigned int *)(DAT_00086df8 + 0x65), (int)(0x5b + g_save_record_count * 8));
     if (slot_dir != (char *)0x0) {
       pcDst = acStack_114;
       do {
@@ -639,15 +604,11 @@ void restore_player_save_record(byte *record)
   if (g_cursor_holding_state == 1) {
     puVar2 = (undefined1 *)alloc_object_slot(0);
     g_selected_object = (char *)puVar2;
-    *puVar2 = record[0x1b];
-    puVar2[1] = record[0x1c];
-    puVar2[2] = record[0x1d];
-    puVar2[3] = record[0x1e];
-    puVar2[4] = record[0x1f];
-    puVar2[5] = record[0x20];
-    puVar2[6] = record[0x21];
-    puVar2[7] = record[0x22];
-    if ((record[0x1c] & 0x80) == 0) {
+    ((uw_object_hdr_t *)puVar2)->type_flags = ((uw_object_hdr_t *)(record + 0x1b))->type_flags;
+    ((uw_object_hdr_t *)puVar2)->position_word = ((uw_object_hdr_t *)(record + 0x1b))->position_word;
+    ((uw_object_hdr_t *)puVar2)->chain_word = ((uw_object_hdr_t *)(record + 0x1b))->chain_word;
+    ((uw_object_hdr_t *)puVar2)->link_word = ((uw_object_hdr_t *)(record + 0x1b))->link_word;
+    if (((uw_object_hdr_t *)(record + 0x1b))->is_quant == 0) {
       deserialize_inventory_link_chain(g_selected_object + 6,record + 0x21);
     }
   }
@@ -655,7 +616,6 @@ void restore_player_save_record(byte *record)
      matching comment: restores DAT_0023bca8 from the same trailing offset that function now appends
      it at. g_save_record_count is already set here... */
   ce_memmove(&DAT_0023bca8,record + 0x5b + g_save_record_count * 8,220);
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[quest-persist] LOAD restored quest_bits=0x%x from buffer offset %d\n", *(unsigned int *)(DAT_00086df8 + 0x65), (int)(0x5b + g_save_record_count * 8));
 }
 
 
@@ -672,7 +632,7 @@ void refresh_player_equipment_effects()
   int iVar5;
   ushort *equipped;
   ushort *puVar6;
-  byte *iVar7; /* Was `int` -- truncated the 64-bit pointer get_scanned_object_class_effect_ptr
+  uw_light_type_props_t *iVar7; /* Was `int` -- truncated the 64-bit pointer get_scanned_object_class_effect_ptr
                   returns (see its own comment); made a real crash once
                   that return value stopped being a hardcoded 0. */
   uint uVar8;
@@ -710,17 +670,15 @@ void refresh_player_equipment_effects()
     DAT_0023be74[1] = DAT_0023be74[1] + cVar3;
   }
   DAT_0023be74[0x12] = *(char *)(DAT_00086df8 + 0x22);
-  g_scratch_object_ptr = (ushort *)get_equipped_item_at_slot(8 - (*(byte *)(DAT_00086df8 + 100) & 1));
+  g_scratch_object_ptr = get_equipped_item_at_slot(8 - (*(byte *)(DAT_00086df8 + 100) & 1));
   uVar11 = 2;
-  if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[weapon-gfx] refresh_player_equipment_effects: weapon_hand_item=%p id=0x%x\n", (void *)g_scratch_object_ptr, g_scratch_object_ptr ? (unsigned)*g_scratch_object_ptr : 0xffff);
-  if (g_scratch_object_ptr != (ushort *)0x0) {
-    uVar2 = *g_scratch_object_ptr;
+  if (g_scratch_object_ptr != NULL) {
+    uVar2 = g_scratch_object_ptr->type_flags;
     if (((uVar2 & 0x1c0) == 0) && ((uVar2 & 0x30) < 0x20)) {
       uVar8 = uVar2 & 0xf;
       if ((uVar2 & 0x30) == 0) {
-        if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[weapon-gfx] family0 nibble=%u table_byte(offset+6)=%d\n", uVar8, (int)(&DAT_00202806)[uVar8 * 8]);
-        uVar11 = (ushort)(byte)(&DAT_00202806)[uVar8 * 8];
-        uVar8 = (uint)(short)(ushort)(byte)(&DAT_00202806)[uVar8 * 8];
+        uVar11 = (ushort)(byte) g_melee_type_props[uVar8].skill;
+        uVar8 = (uint)(short)(ushort)(byte) g_melee_type_props[uVar8].skill;
         bVar13 = SBORROW4(uVar8,3);
         iVar4 = uVar8 - 3;
         bVar12 = uVar8 == 3;
@@ -744,7 +702,6 @@ void refresh_player_equipment_effects()
   }
   iVar4 = 3;
 LAB_000669a8:
-  if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[weapon-gfx] refresh_player_equipment_effects: resolved category=%d\n", iVar4);
   request_weapon_swing_graphic(iVar4);
   DAT_0023be74[0x12] = DAT_0023be74[0x12] + (*(byte *)(DAT_00086df8 + (short)uVar11 + 0x21) >> 1);
   reset_player_derived_state();
@@ -760,15 +717,11 @@ LAB_000669a8:
          light source. */
       puVar6 = (ushort *)get_equipped_item_at_slot((int)(char)(&g_light_source_slots)[iVar4]);
     }
-    g_scratch_object_ptr = puVar6;
-    if (getenv("UW_DEBUG_AMBIENT"))
-      fprintf(stderr, "[ambient] light-scan slot=%d puVar6=%p id=0x%03x nibble=0x%x\n",
-              (int)iVar4, (void *)puVar6, puVar6 ? (unsigned)(*puVar6 & 0x1ff) : 0u,
-              puVar6 ? (unsigned)(*puVar6 & 0xf) : 0u);
+    g_scratch_object_ptr = (uw_object_hdr_t *)puVar6;
     if ((((puVar6 != (ushort *)0x0) && ((*puVar6 & 0x1f0) == 0x90)) &&
         (uVar11 = *puVar6 & 0xf, 3 < uVar11)) && (uVar11 < 8)) {
       iVar7 = get_scanned_object_class_effect_ptr();
-      bVar1 = iVar7[1];
+      bVar1 = iVar7->brightness;
       if (bVar10 < bVar1) {
         /* ARM 0x66a54 sets r0 = 0 before the call at 0x66a5c;
            Ghidra omitted the reused-register argument. */
@@ -782,16 +735,6 @@ LAB_000669a8:
     bVar12 = iVar4 == 4;
   } while (iVar4 < 5);
   *(byte *)(DAT_00086df8 + 99) = bVar9 * '\x10' + (char)(uintptr_t)iVar5;
-  if (getenv("UW_DEBUG_AMBIENT")) {
-    int _s;
-    fprintf(stderr, "[ambient] light-scan result: bVar9=%d iVar5=%d -> DAT_00086df8+99=0x%02x; full slot dump:\n",
-            (int)bVar9, (int)(uintptr_t)iVar5, (unsigned)*(byte *)(DAT_00086df8 + 99));
-    for (_s = 0; _s < 11; _s++) {
-      ushort *_o = (ushort *)get_equipped_item_at_slot(_s);
-      fprintf(stderr, "  slot=%d ptr=%p id=0x%03x nibble=0x%x\n", _s, (void *)_o,
-              _o ? (unsigned)(*_o & 0x1ff) : 0u, _o ? (unsigned)(*_o & 0xf) : 0u);
-    }
-  }
   if ((*(ushort *)(DAT_00086df8 + 0x5f) & 0x3c0) != 0) {
     iVar4 = 0;
     do {
@@ -802,12 +745,12 @@ LAB_000669a8:
   }
   iVar4 = 0;
   do {
-    g_scratch_object_ptr = (ushort *)get_equipped_item_at_slot(iVar4);
-    if ((g_scratch_object_ptr != (ushort *)0x0) &&
-       (iVar5 = is_valid_equipment_slot_item(*g_scratch_object_ptr & 0x1ff,iVar4), iVar5 != 0)) {
+    g_scratch_object_ptr = get_equipped_item_at_slot(iVar4);
+    if ((g_scratch_object_ptr != NULL) &&
+        (iVar5 = is_valid_equipment_slot_item(g_scratch_object_ptr->object_id,iVar4), iVar5 != 0)) {
       iVar5 = resolve_object_variant_or_special_link(g_scratch_object_ptr,local_2c,local_2e,&local_28);
       if ((iVar5 == 0) || (local_28 != 0)) {
-        if ((*g_scratch_object_ptr & 0x1ff) == 0x2f) {
+        if (g_scratch_object_ptr->object_id == 0x2f) {
           DAT_0023bc98 = 1;
         }
       }
@@ -826,7 +769,7 @@ LAB_000669a8:
        bias controls drawing, but does not update the SHADES.DAT grid
        used to decide which tiles the automap can discover. */
     load_shading_level_config(*(byte *)(DAT_00086df8 + 99) >> 4);
-    const char *light_mode = getenv("UW_LIGHT_MODE");
+    const char *light_mode = g_opts.light_mode;
     if (!light_mode || strcasecmp(light_mode, "dos") != 0) {
       /* HACK: the ARM build only distinguished lit from unlit here.
          Restore per-strength brightness: start at the unlit bias (+8),
@@ -856,19 +799,19 @@ void adjust_player_hp(void *object_ptr, char delta)
   
   if ((void *)object == (void *)g_player_object) {
     if (delta < '\x01') {
-      sVar2 = (ushort)*(byte *)((char *)g_player_object + 8) - (short)delta;
+      sVar2 = (ushort) g_player_object->npc_hp - (short)delta;
     }
     else {
       uVar1 = ce_rand();
-      sVar2 = (ushort)*(byte *)((char *)g_player_object + 8) +
+      sVar2 = (ushort) g_player_object->npc_hp +
               ((short)(((uVar1 & 3) + (short)delta) * (ushort)*(byte *)(DAT_0023be74 + 4)) >> 4) +
               1;
     }
     if ((short)(ushort)*(byte *)(DAT_0023be74 + 4) < sVar2) {
-      *(byte *)((char *)g_player_object + 8) = *(byte *)(DAT_0023be74 + 4);
+      g_player_object->npc_hp = *(byte *)(DAT_0023be74 + 4);
     }
     else {
-      *(char *)((char *)g_player_object + 8) = (char)sVar2;
+      g_player_object->npc_hp = (byte)(char)sVar2;
     }
     refresh_experience_display();
   }
@@ -891,7 +834,7 @@ void write_player_status_block(int file_handle)
   DAT_00086df8[0x1e] = *(byte *)(DAT_0023be74 + 5);
   DAT_00086df8[0x1f] = *(byte *)(DAT_0023be74 + 6);
   DAT_00086df8[0x20] = *(byte *)(DAT_0023be74 + 7);
-  DAT_00086df8[0x35] = *(byte *)((char *)g_player_object + 8);
+  DAT_00086df8[0x35] = g_player_object->npc_hp;
   DAT_00086df8[0x36] = *(byte *)(DAT_0023be74 + 4);
   uVar1 = DAT_00204880;
   DAT_00086df8[0x54] = (byte)DAT_00204880;
@@ -933,7 +876,7 @@ void read_player_status_block(int file_handle)
   *(undefined1 *)(DAT_0023be74 + 5) = *(undefined1 *)(DAT_00086df8 + 0x1e);
   *(undefined1 *)(DAT_0023be74 + 6) = *(undefined1 *)(DAT_00086df8 + 0x1f);
   *(undefined1 *)(DAT_0023be74 + 7) = *(undefined1 *)(DAT_00086df8 + 0x20);
-  *(undefined1 *)((char *)g_player_object + 8) = *(undefined1 *)(DAT_00086df8 + 0x35);
+  g_player_object->npc_hp = *(undefined1 *)(DAT_00086df8 + 0x35);
   *(undefined1 *)(DAT_0023be74 + 4) = *(undefined1 *)(DAT_00086df8 + 0x36);
   DAT_00204880 = *(undefined2 *)(DAT_00086df8 + 0x54);
   DAT_00204882 = *(undefined2 *)(DAT_00086df8 + 0x56);
@@ -1307,8 +1250,8 @@ int compute_object_weight(ushort *object)
     iVar2 = 0;
   }
   else {
-    iVar2 = (((int)((uint)(byte)(&DAT_00202750)[(uVar1 & 0x1ff) * 4 - 0x80] * ((byte)object[2] & 0x3f)) >>
-             6) + 1) * 0x10000 >> 0x10;
+    iVar2 = (((int)((uint)(byte) g_armor_type_props[((uVar1 & 0x1ff)) - 0x20].protection * ((byte)object[2] & 0x3f)) >>
+              6) + 1) * 0x10000 >> 0x10;
   }
   return iVar2;
 }
@@ -1474,10 +1417,6 @@ void update_current_view_from_subject()
     if (DAT_0023bea8 == 0) {
       return;
     }
-    if (getenv("UW_DEBUG_EYEHEIGHT"))
-      fprintf(stderr, "[eyeheight] bea8=%d be98=%d base=%d -> %d\n",
-              (int)DAT_0023bea8, (int)DAT_0023be98, (int)g_current_view->view_elevation,
-              (int)(g_current_view->view_elevation + DAT_0023be98));
     g_current_view->view_elevation = g_current_view->view_elevation + DAT_0023be98;
     if (1000 < g_current_view->view_elevation) {
       g_current_view->view_elevation = 1000;
@@ -1626,9 +1565,9 @@ void sync_camera_from_player()
     }
     DAT_000db448 = (iVar6 >> 8) + (int)DAT_0023bf3c;
   }
-  /* Hack - Testing: UW_HACK_PITCH overrides the camera pitch angle (index into the sin/cos tables,
+  /* Hack - Testing: --hack-pitch overrides the camera pitch angle (index into the sin/cos tables,
      0..360). */
-  { const char *_p = getenv("UW_HACK_PITCH"); if (_p) DAT_000db448 = atoi(_p); }
+  if (UW_OPT_ISSET(g_opts.hack_pitch)) DAT_000db448 = g_opts.hack_pitch;
   if (cVar1 == '\0') {
     sVar8 = *(short *)(iVar4 + 0x2c);
   }
@@ -1652,10 +1591,10 @@ void sync_camera_from_player()
     iVar4 = ordint_divmod(0xb4, (int)sVar8).quot;
     DAT_000db44c = iVar4 + DAT_0023bf40;
   }
-  /* Always-on (no env var) position/heading debug print, for correlating a live playtester's exact
-     standing spot/facing with what the decompile is doing -- e.g. pinning down the wall-decal
-     depth/ parallax issue. */
-  if (!getenv("UW_QUIET_POSDEBUG")) {
+  /* Position/heading debug print (--debug), for correlating a live playtester's exact standing
+     spot/facing with what the decompile is doing -- e.g. pinning down the wall-decal depth/
+     parallax issue. */
+  if (g_opts.debug) {
     static int _last_x = -1, _last_y = -1, _last_z = -1, _last_yaw = -1, _last_pitch = -1;
     int _x = (unsigned short)DAT_00204880;
     int _y = (unsigned short)DAT_00204882;
@@ -2155,7 +2094,6 @@ void handle_mantra_chant()
     pcVar_typed = (char *)_strupr(local_58);
     pcVar_name = get_message_string((int)(char)iVar10 | 0x400);
     iVar6 = ce_strcmp(pcVar_name,pcVar_typed);
-    if (getenv("UW_DEBUG_MANTRA")) fprintf(stderr, "[mantra] id=0x%02x name='%s' typed='%s' cmp=%d\n", iVar10, pcVar_name, pcVar_typed, iVar6);
     if (iVar6 == 0) break;
     iVar10 = iVar10 + 1;
   } while (iVar10 * 0x1000000 >> 0x18 < 0x4d);
@@ -2190,8 +2128,10 @@ LAB_000709e0:
     if (iVar6 == 0x14) {
       if ((*(byte *)(DAT_00086df8 + 0x60) & 0x80) == 0) {
         msg_text = get_message_string(0x223);
-        print_message_with_proximity_qualifier(msg_text,*(ushort *)((char *)g_player_object + 0x16) >> 10,
-                     (*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4,(int)DAT_00201b68,0x18,0x2d,3,4
+        print_message_with_proximity_qualifier(msg_text,
+                                               g_player_object->npc_xhome,
+                                               g_player_object->npc_yhome,
+                                               (int)DAT_00201b68,0x18,0x2d,3,4
                     );
       }
 LAB_00070c78:
@@ -2547,7 +2487,7 @@ LAB_0007158c:
     if (mode < 0) {
       apply_rest_status_effects();
     }
-    if (*(char *)((char *)g_player_object + 8) == '\0') {
+    if ((char)g_player_object->npc_hp == '\0') {
       pick_random_pending_music_track();
     }
     else {
@@ -2558,7 +2498,7 @@ LAB_0007158c:
         uVar5 = ce_rand();
         uw_ord2005_rem_146 = ((int)(uVar5)) % (4);
         iVar4 = (uw_ord2005_rem_146 - iVar8) + 7;
-        if (*(byte *)((char *)g_player_object + 8) < 10) {
+        if (g_player_object->npc_hp < 10) {
           uVar5 = ce_rand();
           uw_ord2005_rem_147 = ((int)(uVar5)) % (2);
           iVar4 = iVar4 + uw_ord2005_rem_147 + 1;
@@ -2727,11 +2667,11 @@ void handle_game_victory_sequence()
     if (*(char *)(DAT_00086df8 + 0x6d) == '\0') {
       puVar5 = (undefined2 *)spawn_new_object(0x15a,0);
       if (puVar5 != (undefined2 *)0x0) {
-        uVar2 = *puVar5;
-        *(char *)puVar5 = (char)uVar2;
-        *(byte *)((char *)puVar5 + 1) = (byte)((ushort)uVar2 >> 8) | 0x80;
-        *(byte *)(puVar5 + 3) = *(byte *)(puVar5 + 3) & 0x3f;
-        *(undefined1 *)((char *)puVar5 + 7) = 0xb0;
+        uVar2 = ((uw_object_hdr_t *)puVar5)->type_flags;
+        ((uw_object_hdr_t *)puVar5)->type_flags_low = (byte)(char)uVar2;
+        ((uw_object_hdr_t *)puVar5)->type_flags_high = (byte)((ushort)uVar2 >> 8) | 0x80;
+        ((uw_object_hdr_t *)puVar5)->link_word_low = ((uw_object_hdr_t *)puVar5)->owner;
+        ((uw_object_hdr_t *)puVar5)->link_word_high = 0xb0;
         iVar6 = tilemap_lookup(0x20,0x20);
         local_11c = iVar6 + 2;
         object_list_append_tail(local_11c,puVar5);
@@ -2816,7 +2756,7 @@ void handle_starvation_penalty()
   char *pNewObj;
 
   if (*(char *)(DAT_00086df8 + 0x6d) == '\0') {
-    *(undefined1 *)((char *)g_player_object + 8) = 4;
+    g_player_object->npc_hp = 4;
     return;
   }
   stop_current_audio_handle_dup();
@@ -2844,21 +2784,21 @@ LAB_00072374:
   iVar7 = place_object_in_world((int)DAT_00204880 >> 5,(int)DAT_00204882 >> 5,(int)DAT_00204884 >> 3,
                        pNewObj,0,1);
   if (iVar7 != 0) {
-    uVar4 = *(undefined2 *)(pNewObj + 2);
+    uVar4 = ((uw_object_hdr_t *)pNewObj)->position_word;
     bVar1 = (byte)uVar4;
-    *(byte *)(pNewObj + 2) = (*(byte *)((char *)g_player_object + 2) ^ bVar1) & 0x7f ^ bVar1;
-    *(char *)(pNewObj + 3) = (char)((ushort)uVar4 >> 8);
-    *(byte *)(pNewObj + 6) = *(byte *)(pNewObj + 6) | 0x3f;
-    *(undefined1 *)(pNewObj + 7) = *(undefined1 *)(pNewObj + 7);
-    uVar8 = (*(ushort *)(pNewObj + 2) ^ *(ushort *)((char *)g_player_object + 2)) & 0x1fff ^
-            (uint)*(ushort *)((char *)g_player_object + 2);
+    ((uw_object_hdr_t *)pNewObj)->position_word_low = (g_player_object->hdr.position_word_low ^ bVar1) & 0x7f ^ bVar1;
+    ((uw_object_hdr_t *)pNewObj)->position_word_high = (byte)(char)((ushort)uVar4 >> 8);
+    ((uw_object_hdr_t *)pNewObj)->owner = 0x3f;
+    ((uw_object_hdr_t *)pNewObj)->link_word_high = ((uw_object_hdr_t *)pNewObj)->link_word_high;
+    uVar8 = (((uw_object_hdr_t *)pNewObj)->position_word ^ g_player_object->hdr.position_word) & 0x1fff ^
+            (uint) g_player_object->hdr.position_word;
     uVar2 = (undefined1)uVar8;
-    *(undefined1 *)(pNewObj + 2) = uVar2;
+    ((uw_object_hdr_t *)pNewObj)->position_word_low = uVar2;
     bVar3 = (byte)(uVar8 >> 8);
-    *(byte *)(pNewObj + 3) = bVar3;
-    bVar1 = *(byte *)((char *)g_player_object + 3);
-    *(undefined1 *)(pNewObj + 2) = uVar2;
-    *(byte *)(pNewObj + 3) = (bVar1 ^ bVar3) & 0x1c ^ bVar3;
+    ((uw_object_hdr_t *)pNewObj)->position_word_high = bVar3;
+    bVar1 = g_player_object->hdr.position_word_high;
+    ((uw_object_hdr_t *)pNewObj)->position_word_low = uVar2;
+    ((uw_object_hdr_t *)pNewObj)->position_word_high = (bVar1 ^ bVar3) & 0x1c ^ bVar3;
     settle_dropped_object(pNewObj,(int)DAT_00204880 >> 8,(int)DAT_00204882 >> 8,1);
   }
   if (((*(byte *)(DAT_00086df8 + 0x5e) & 0xf0) != 0) && (DAT_00201b68 != 9)) {
@@ -2926,7 +2866,7 @@ void restore_stat_capped(void *object_ptr, uint amount)
      is the per-monster-class max-stat table, indexed by the low 6 bits of a monster object's own
      type id (a valid index for any real monster, 0x40-0x7f). */
   bVar2 = ((void *)object == (void *)g_player_object) ? *(byte *)(DAT_0023be74 + 4) :
-          (&g_monster_max_stats_table)[(*object & 0x3f) * 0x30];
+          g_monster_type_props[(*object & 0x3f)].max_hp;
   if (bVar2 < uVar1) {
     object[8] = bVar2;
   }
@@ -3033,7 +2973,7 @@ void draw_hp_stat_display()
   int iVar2;
   undefined1 auStack_c [8];
   
-  itoa_radix(*(undefined1 *)((char *)g_player_object + 8),auStack_c,10);
+  itoa_radix(g_player_object->npc_hp,auStack_c,10);
   sVar1 = ce_strlen(auStack_c);
   auStack_c[sVar1] = 0x2f;
   itoa_radix(*(undefined1 *)(DAT_0023be74 + 4),auStack_c + ((sVar1 + 1) * 0x10000 >> 0x10),10);
@@ -3120,8 +3060,6 @@ void draw_stats_panel_content()
 {
   byte bVar1;
 
-  if (getenv("UW_DEBUG_CLICKREGION"))
-    fprintf(stderr, "[stats] draw_stats_panel_content (draw stats panel) entry, DAT_0024af88=%d\n", (int)DAT_0024af88);
   if (DAT_0024af88 == 0) {
     DAT_0024af88 = grtile_alloc_registered(0x96,0x2b);
     if (DAT_0024af88 != 0) {
@@ -3131,8 +3069,6 @@ void draw_stats_panel_content()
     if (DAT_0024af8c != 0) {
       capture_framebuffer_rect_to_grtile(DAT_0024af8c,0x115,0x32,0x23,0x15);
     }
-    if (getenv("UW_DEBUG_CLICKREGION"))
-      fprintf(stderr, "[stats] draw_stats_panel_content: allocated DAT_0024af88=%d DAT_0024af8c=%d\n", (int)DAT_0024af88, (int)DAT_0024af8c);
   }
   *g_draw_color_index = 0xf1;
   *DAT_00084298 = 0xf1;
@@ -3357,10 +3293,9 @@ void reset_player_for_resurrection()
 
   close_panels_before_level_change();
   refresh_player_equipment_effects();
-  uVar1 = *(ushort *)((char *)g_player_object + 2) & 0xfc7f;
-  *(char *)((char *)g_player_object + 2) = (char)uVar1;
-  *(char *)((char *)g_player_object + 3) = (char)(uVar1 >> 8);
-  *(byte *)((char *)g_player_object + 0x18) = *(byte *)((char *)g_player_object + 0x18) & 0xe0;
+  g_player_object->hdr.heading = 0x0;
+  uVar1 = g_player_object->hdr.position_word;
+  g_player_object->npc_heading = 0;
   DAT_00201c70 = 0;
   DAT_00201c78 = 0;
   DAT_00086b20 = 1;
@@ -3465,7 +3400,7 @@ void apply_level9_random_hazard_tick()
   byte bVar6;
 
   weapon_overlay_flash_once(0xb5);
-  bVar6 = *(byte *)((char *)g_player_object + 8);
+  bVar6 = g_player_object->npc_hp;
   uVar1 = (uint)(short)(ushort)bVar6;
   if (uVar1 < 0x65) {
     if (uVar1 < 0x33) {
@@ -3492,7 +3427,7 @@ void apply_level9_random_hazard_tick()
   }
   bVar6 = bVar6 - cVar5;
 LAB_0003c780:
-  *(byte *)((char *)g_player_object + 8) = bVar6;
+  g_player_object->npc_hp = bVar6;
   uVar3 = ce_rand();
   uw_ord2005_rem_109 = ((int)(uVar3)) % (0xc);
   if (uw_ord2005_rem_109 != 0) {
@@ -3781,9 +3716,9 @@ int decay_equipped_light_sources(short elapsed, byte tick_phase)
   do {
     puVar6 = (ushort *)get_equipped_item_at_slot((int)(char)(&g_light_source_slots)[iVar9]);
     if (puVar6 != (ushort *)0x0) {
-      uVar2 = *puVar6;
+      uVar2 = ((uw_object_hdr_t *)puVar6)->type_flags;
       if (((((uVar2 & 0x1f0) == 0x90) && (uVar7 = (uint)(short)(uVar2 & 0xf), 3 < uVar7)) &&
-          (uVar7 < 8)) && (cVar1 = (&g_light_radius_table)[uVar7 * 2], cVar1 != '\0')) {
+          (uVar7 < 8)) && (cVar1 = g_light_type_props[uVar7].decay_interval, cVar1 != '\0')) {
         /* ARM 0x540d4 uses the tick phase (tick_phase) for the remainder.
            Before the second division, 0x540ec reloads elapsed ticks
            (elapsed) into r1. Sleep needs that distinct bulk dividend. */
@@ -3795,19 +3730,18 @@ int decay_equipped_light_sources(short elapsed, byte tick_phase)
           uVar8 = (ushort)(extraout_r1 == 0) + sVar5;
         }
         if ((short)uVar8 != 0) {
-          uVar3 = puVar6[2];
+          uVar3 = ((uw_object_hdr_t *)puVar6)->chain_word;
           if ((int)(short)uVar8 < (int)(uVar3 & 0x3f)) {
             bVar4 = (byte)uVar3;
-            *(byte *)(puVar6 + 2) = (bVar4 - (char)uVar8 ^ bVar4) & 0x3f ^ bVar4;
-            *(byte *)((char *)puVar6 + 5) = (byte)(uVar3 >> 8);
+            ((uw_object_hdr_t *)puVar6)->chain_word_low = (bVar4 - (char)uVar8 ^ bVar4) & 0x3f ^ bVar4;
+            ((uw_object_hdr_t *)puVar6)->chain_word_high = (byte)(uVar3 >> 8);
           }
           else {
             uVar7 = uVar3 & 0xffc0;
-            *(byte *)(puVar6 + 2) = (byte)uVar7;
-            *(byte *)((char *)puVar6 + 5) = (byte)(uVar7 >> 8);
+            ((uw_object_hdr_t *)puVar6)->chain_word = (ushort)uVar7;
             bVar4 = (byte)uVar2;
-            *(byte *)puVar6 = (bVar4 - 4 ^ bVar4) & 0xf ^ bVar4;
-            *(byte *)((char *)puVar6 + 1) = (byte)(uVar2 >> 8);
+            ((uw_object_hdr_t *)puVar6)->type_flags_low = (bVar4 - 4 ^ bVar4) & 0xf ^ bVar4;
+            ((uw_object_hdr_t *)puVar6)->type_flags_high = (byte)(uVar2 >> 8);
             redraw_backpack_slot_widget((int)(char)(&g_light_source_slots)[iVar9]);
             uVar10 = 1;
             set_ambient_bias_without_light(0);
@@ -3885,7 +3819,7 @@ int dungeon_view_anim_tick()
        (iVar1 = find_placement_via_tile_flood_fill(g_player_object,(int)DAT_00201c90,(int)DAT_00201c8c,&local_20,&local_1e,1)
        , iVar1 == 0)) {
       DAT_00201c90 = 0;
-      *(undefined1 *)((char *)g_player_object + 8) = 0;
+      g_player_object->npc_hp = 0;
       return 0;
     }
     DAT_00201c90 = local_20;

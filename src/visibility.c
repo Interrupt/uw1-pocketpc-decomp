@@ -1,6 +1,7 @@
 /* Dungeon-view visibility and per-frame draw-list build: texture-id list loading, the visibility
    light grid/ray flood-fill, and the top-level per-frame redraw dispatch (full/timed/rebuild). */
 #include "headers/visibility.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -252,14 +253,6 @@ bool load_level_texture_ids(byte *archive, int level_number)
     iVar4 = iVar1;
   } while (iVar1 < 10);
   load_terrain_texture_props((char *)&DAT_0023ae58,(char *)&DAT_0023adb8);
-  if (getenv("UW_DEBUG_TEXIDS")) {
-    int _i;
-    fprintf(stderr, "[texids] wall:");
-    for (_i = 0; _i < 0x30; _i++) fprintf(stderr, " %d", (int)(&DAT_0023ae58)[_i]);
-    fprintf(stderr, "\n[texids] floor:");
-    for (_i = 0; _i < 10; _i++) fprintf(stderr, " %d", (int)(&DAT_0023adb8)[_i]);
-    fprintf(stderr, "\n");
-  }
   iVar4 = 0;
   do {
     uVar2 = local_tmap_buf[58 + iVar4];
@@ -1220,15 +1213,12 @@ void run_visibility_flood()
     }
   } while (g_visibility_ring_done != 0xf);
 
-  if (getenv("UW_DEBUG_AUTOMAP_REVEAL"))
-    fprintf(stderr, "[visibility-flood] g_visibility_ring_depth=%d g_visibility_max_ring_passes=%d\n",
-            (int)g_visibility_ring_depth, (int)g_visibility_max_ring_passes);
 
-  /* Hack - Testing (opt-in via UW_HACK_REVEAL_DEPTH): g_visibility_ring_depth is the row depth of
+  /* Hack - Testing (opt-in via --hack-reveal-depth): g_visibility_ring_depth is the row depth of
      walk_visible_tiles's reveal/visibility walk -- it starts at row &g_visibility_ring_buffer +
      g_visibility_ring_depth*0x42 and sweeps back to row 0... */
-  if (getenv("UW_HACK_REVEAL_DEPTH")) {
-    if (getenv("UW_HACK_REVEAL_DEPTH_ZERO")) {
+  if (g_opts.hack_reveal_depth) {
+    if (g_opts.hack_reveal_depth_zero) {
       int hack_row;
       for (hack_row = 0x42; hack_row < 0x42 * 9; hack_row = hack_row + 1) {
         g_visibility_ring_buffer_backing[hack_row] = 0;
@@ -1416,9 +1406,6 @@ void load_shading_level_config(char shading_level)
   char *pcVar2;
   int iVar3;
   char *pcVar4;
-  if (getenv("UW_DEBUG_AUTOMAP_REVEAL"))
-    fprintf(stderr, "[load_shading_level_config] called shading_level=%d DAT_000872a0=%d DAT_00201b68=%d\n",
-            (int)shading_level, (int)DAT_000872a0, (int)DAT_00201b68);
   /* Ghidra modelled the 12-byte SHADES.DAT per-level header as six separate `short` locals that
      read_file_handle(&local_12c, 0xc) reads into as one contiguous block -- but the C compiler is
      free to lay them out non-contiguously / reorder them... */
@@ -1467,6 +1454,7 @@ void load_shading_level_config(char shading_level)
   }
 LAB_0006fff4:
   DAT_000872a0 = shading_level;
+  update_fullbright_palette_mask();
   ce_memset(acStack_11c,0,0x104);
   /* Reset the walker after any LIGHT.DAT/MONO.DAT path construction. */
   stack0xffdc323c_ptr = acStack_11c;
@@ -1490,11 +1478,6 @@ LAB_0006fff4:
     DAT_00086b28 = local_124;
     DAT_00086b24 = local_122;
     CloseHandle(iVar3);
-    if (getenv("UW_DEBUG_AUTOMAP_REVEAL"))
-      fprintf(stderr, "[load_shading_level_config] loaded SHADES.DAT record %d: DAT_0025063c=%d DAT_0025064c=%d"
-              " DAT_002506dc=%d g_visibility_max_ring_passes=%d DAT_00086b28=%d DAT_00086b24=%d\n",
-              (int)shading_level, (int)DAT_0025063c, (int)DAT_0025064c, (int)DAT_002506dc,
-              (int)g_visibility_max_ring_passes, (int)DAT_00086b28, (int)DAT_00086b24);
     build_visibility_light_grid((int)g_visibility_max_ring_passes);
     set_pending_update_flags(2);
   }
@@ -1523,7 +1506,6 @@ void load_light_tables()
   char acStack_11c [260];
   
   DAT_0024fa2c = ce_malloc(0x1000);
-  if (getenv("UW_DEBUG_BAG_TRACE")) fprintf(stderr, "[bag-trace] DAT_0024fa2c allocated at %p\n", (void *)DAT_0024fa2c);
   if (DAT_0024fa2c == 0) {
     report_fatal_error_message_and_exit(s_cLightTabs_allocation_error_____000872e8);
   }
@@ -1543,6 +1525,7 @@ void load_light_tables()
     read_file_handle(iVar3,DAT_0024fa2c,0x1000);
     CloseHandle(iVar3);
   }
+  update_fullbright_palette_mask();
   ce_memset(acStack_11c,0,0x104);
   do {
     cVar1 = *pcVar4;

@@ -2,10 +2,12 @@
    transform/projection, near-plane clipping, and the triangle rasterizer (edge setup, perspective-
    correct texture span drawing). */
 #include "headers/3d.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 #define DAT_000869cc (DAT_000869cc_str[0])
 #define DAT_000869d4 (DAT_000869d4_str[0])
@@ -19,6 +21,22 @@
  undefined4 DAT_000b5638_backing[160];
 /* Initial byte at 0x842b0 in the original Pocket PC executable. */
 char DAT_000842b0 = 8;
+/* HACK: palette indices LIGHT.DAT (the DAT_0024fa2c shade table, 16 rows x 256) leaves unchanged at
+   every lit shade -- in DOS terms the fullbright colours (the 0x10-0x17 fire/lava ramp, the
+   0x00-0x0f effect colours, 0xf0-0xff). Row 0 is skipped: update_screen_flicker_effect zeroes its
+   first entries to flicker the view. Rebuilt whenever the table is (re)loaded. */
+unsigned char g_fullbright_palette_mask[256];
+
+void update_fullbright_palette_mask()
+{
+  int index, row;
+
+  for (index = 0; index < 256; index++) {
+    g_fullbright_palette_mask[index] = DAT_0024fa2c != 0;
+    for (row = 1; row < 16 && g_fullbright_palette_mask[index]; row++)
+      if ((unsigned char)DAT_0024fa2c[row * 256 + index] != index) g_fullbright_palette_mask[index] = 0;
+  }
+}
 char DAT_0023b830;
 undefined2 DAT_000da47c;
 /* build_trig_tables builds these as 361-entry (0..360 degrees) sin / cos tables (float bit
@@ -38,7 +56,7 @@ static int DAT_000db450;
 /* DAT_000c8ac0-family: 12 separately-declared globals that are really the 12 non-translation-column
    elements of one 4x4 (16 x undefined4, 64-byte) view/camera matrix -- build_view_matrix writes the
    whole matrix in one shot via `multiply_matrix4x4(...,...,&DAT_000c8ac0)`... */
-static undefined4 DAT_000c8ac0_mtx[16];
+undefined4 DAT_000c8ac0_mtx[16];
 #define DAT_000c8ac0 DAT_000c8ac0_mtx[0]
 #define DAT_000c8ac4 DAT_000c8ac0_mtx[1]
 #define DAT_000c8ac8 DAT_000c8ac0_mtx[2]
@@ -195,7 +213,7 @@ void vec3_cross(void *a_ptr, void *b_ptr, byte *out)
 
 // was FUN_00014350 -- textured-triangle driver: viewport-culls, sorts the 3 verts by Y, builds 3
 // edges via raster_edge_setup, walks scanlines stepping edges (raster_edge_step) and emitting spans
-// (raster_textured_span) UW_DEBUG_RASTER=1...
+// (raster_textured_span).
 /* was undefined4 -- the framebuffer base (g_uw_framebuffer) was undefined4 -- the tile's texture
    pixel data pointer */
 void raster_triangle(int stride, void *buffer, uint *vertices, int surface, int width, int size, char *texture, int *clip)
@@ -221,14 +239,6 @@ void raster_triangle(int stride, void *buffer, uint *vertices, int surface, int 
 #define local_b8 (*(int *)(auStack_c4 + 0xc))
 #define local_70 (*(int *)(auStack_7c + 0xc))
 
-  if (getenv("UW_DEBUG_RASTER")) {
-    fprintf(stderr, "[raster] ENTRY texid=0x%x v0=(%g,%g) v1=(%g,%g) v2=(%g,%g) clip=(%d,%d,%d,%d) tex=%p\n",
-            (unsigned)surface,
-            *(float *)vertices, *(float *)(vertices + 1),
-            *(float *)(vertices + 5), *(float *)(vertices + 6),
-            *(float *)(vertices + 10), *(float *)(vertices + 11),
-            clip[0], clip[1], clip[2], clip[3], (void *)texture);
-  }
   uVar8 = vertices[6];
   uVar10 = vertices[0xb];
   uVar6 = vertices[1];
@@ -237,31 +247,26 @@ void raster_triangle(int stride, void *buffer, uint *vertices, int surface, int 
   iVar2 = ordfloat_lt(uVar4,uVar1);
   if (((iVar2 != 0) && (iVar2 = ordfloat_lt(vertices[5],uVar1), iVar2 != 0)) &&
      (iVar2 = ordfloat_ge(vertices[10],uVar1), iVar2 == 0)) {
-    if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] REJECT: all verts left of clip-left\n");
     return;
   }
   uVar1 = ordfloat_int_to_float2(clip[2]);
   iVar2 = ordfloat_gt(uVar4,uVar1);
   if (((iVar2 != 0) && (iVar2 = ordfloat_gt(vertices[5],uVar1), iVar2 != 0)) &&
      (iVar2 = ordfloat_le(vertices[10],uVar1), iVar2 == 0)) {
-    if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] REJECT: all verts right of clip-right\n");
     return;
   }
   uVar1 = ordfloat_int_to_float2(clip[1]);
   iVar2 = ordfloat_lt(uVar6,uVar1);
   if (((iVar2 != 0) && (iVar2 = ordfloat_lt(uVar8,uVar1), iVar2 != 0)) &&
      (iVar2 = ordfloat_ge(uVar10,uVar1), iVar2 == 0)) {
-    if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] REJECT: all verts above clip-top\n");
     return;
   }
   uVar1 = ordfloat_int_to_float2(clip[3]);
   iVar2 = ordfloat_gt(uVar6,uVar1);
   if (((iVar2 != 0) && (iVar2 = ordfloat_gt(uVar8,uVar1), iVar2 != 0)) &&
      (iVar2 = ordfloat_le(uVar10,uVar1), iVar2 == 0)) {
-    if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] REJECT: all verts below clip-bottom\n");
     return;
   }
-  if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] passed bbox reject, entering scanline setup\n");
   int _uw_span_calls = 0;
   iVar2 = ordfloat_lt(uVar6,uVar8);
   if (iVar2 == 0) {
@@ -314,14 +319,6 @@ LAB_00014684:
   raster_edge_setup(auStack_10c,(char *)vertices,uVar11,uVar4,clip[1],auStack_154);
   raster_edge_setup(auStack_10c,(char *)vertices,uVar11,uVar1,clip[1],auStack_c4);
   raster_edge_setup(auStack_10c,(char *)vertices,uVar1,uVar4,clip[1],auStack_7c);
-  if (getenv("UW_DEBUG_RASTER")) {
-    fprintf(stderr, "[raster] sort top=%u mid=%u bot=%u  uVar7(short-half-idx)=%u uVar9(cmp)=%u  long_x0=%d short1_x0=%d short2_x0=%d\n",
-            (unsigned)uVar11, (unsigned)uVar1, (unsigned)uVar4,
-            (unsigned)uVar7, (unsigned)uVar9,
-            *(int *)(auStack_154 + 0x28) >> 0xe,
-            *(int *)(auStack_c4 + 0x28) >> 0xe,
-            *(int *)(auStack_7c + 0x28) >> 0xe);
-  }
   if (uVar9 < uVar7) {
     puVar3 = auStack_154;
     puVar5 = auStack_c4;
@@ -329,10 +326,6 @@ LAB_00014684:
   else {
     puVar3 = auStack_c4;
     puVar5 = auStack_154;
-  }
-  if (getenv("UW_DEBUG_RASTER")) {
-    fprintf(stderr, "[raster] first-half puVar3(assumed-left)_x0=%d puVar5(assumed-right)_x0=%d\n",
-            *(int *)(puVar3 + 0x28) >> 0xe, *(int *)(puVar5 + 0x28) >> 0xe);
   }
   iVar2 = local_b8;
   while( true ) {
@@ -358,7 +351,6 @@ LAB_00014684:
         raster_edge_step(auStack_154);
         iVar2 = iVar2 + -1;
       }
-      if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] DONE span_calls=%d\n", _uw_span_calls);
       return;
     }
     iVar2 = iVar2 + -1;
@@ -372,7 +364,6 @@ LAB_00014684:
     raster_edge_step(auStack_c4);
     raster_edge_step(auStack_154);
   }
-  if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] DONE (broke on clip-bottom) span_calls=%d\n", _uw_span_calls);
 }
 #undef local_b8
 #undef local_70
@@ -640,12 +631,14 @@ void raster_textured_span(int row, char *framebuffer, char *gradients, char *lef
   int local_34;
   /* HACK: optional DOS-style surface shading; unset/unknown modes retain
      the original ARM RGB falloff below. Resolve once per span, not texel. */
-  const char *light_mode = getenv("UW_LIGHT_MODE");
+  const char *light_mode = g_opts.light_mode;
   bool dos_light_mode = light_mode && strcasecmp(light_mode, "dos") == 0;
-  /* HACK: ordered dithering defaults on in both lighting modes. Explicit 0
-     or an empty value disables it. */
-  const char *dither_mode = getenv("UW_DITHER");
-  bool dither_enabled = !dither_mode || (*dither_mode && strcmp(dither_mode, "0") != 0);
+  /* HACK: ordered dithering defaults on in both lighting modes (--dither=0 disables it). */
+  bool dither_enabled = g_opts.dither;
+  /* HACK: skip the ARM distance falloff for texels whose palette index LIGHT.DAT treats as
+     fullbright (lava, fire, magic colours), like the DOS shade table does. On by default
+     (--fullbright=0 disables it). */
+  bool fullbright_enabled = g_opts.fullbright;
   char *local_4; /* fb row pointer */
 
   iVar12 = (intptr_t)DAT_0023cca0;
@@ -719,54 +712,12 @@ void raster_textured_span(int row, char *framebuffer, char *gradients, char *lef
       }
       if (bVar1 != 0) {
         double ray_x = (light_x - 140) / 100.0;
-        int light_distance = (int)(iVar6 * sqrt(1.0 + ray_x * ray_x + light_y * light_y));
         /* DOS's alternating +0.25/+0.75 thresholds, anchored to the screen.
            ARM applies them at RGB565 quantization rather than palette lookup. */
         int dither_offset = dither_enabled ?
             (((light_x + *(int *)(left_edge + 8)) & 1) ? 0xc0 : 0x40) : 0;
-        if (dos_light_mode) {
-          /* HACK: palette shading uses SHADES.DAT's selected light strength.
-             tmap supplies w = world_depth/1500. Edge setup scales 1/w by
-             16384, the span shifts it by 2, and 2^24 / that gives w*4096.
-             Convert to world_distance/32, retaining an 8.8 shade fraction.
-             DOS's span accumulators start at shade+0.5 +/-0.25, swapping
-             on odd rows. Use those same 0x40/0xc0 thresholds here, anchored
-             to screen x/y so clipping and triangle boundaries cannot shift
-             the dither. Deliberate deviation: keep per-pixel radial lighting,
-             rather than DOS's vertex shade/scanline gradient interpolation.
-             Reference: cimmerianpit/openabyss, src/uw_shade.c (MIT). */
-          int shade_fixed = (int)((int64_t)light_distance * 1500 * DAT_0025063c / 32768) +
-                            (int)DAT_002506dc * 256;
-          if (shade_fixed < 0) shade_fixed = 0;
-          shade_fixed += (int)DAT_0025064c * 256;
-          shade_fixed += dither_offset;
-          iVar12 = shade_fixed >> 8;
-          if (iVar12 < 0) iVar12 = 0;
-          if (iVar12 > 15) iVar12 = 15;
-          bVar1 = ((byte *)DAT_0024fa2c)[iVar12 * 256 + bVar1];
-          *puVar10 = (ushort)(&g_palette_rgb565)[bVar1];
-        }
-        else {
-          iVar12 = ((light_distance >> 4) + (int)DAT_000842b0) * 0x10000 >> 0x10;
-          if (iVar12 < 0) {
-            iVar12 = 0;
-          }
-          sVar7 = (short)iVar12;
-          uVar2 = (uint)(ushort)(&g_palette_rgb565)[bVar1];
-          if (0x9f < sVar7) {
-            sVar7 = 0x9f;
-          }
-          iVar12 = (&DAT_000b5638)[sVar7];
-          /* HACK: optionally dither the fractional RGB channels before their
-             final 18-bit shift. This preserves the ARM falloff LUT and avoids
-             creating another coarse shade-index step. Integer/full-bright
-             channels stay unchanged, including the RGB565 upper bounds. */
-          int round = dither_offset * 1024;
-          int red = (((uVar2 >> 11) & 31) * 64 * (int)iVar12 + round) >> 18;
-          int green = (((uVar2 >> 5) & 63) * 64 * (int)iVar12 + round) >> 18;
-          int blue = ((uVar2 & 31) * 64 * (int)iVar12 + round) >> 18;
-          *puVar10 = (ushort)((red << 11) | (green << 5) | blue);
-        }
+        *puVar10 = shade_span_pixel(bVar1, iVar6, ray_x, light_y, dither_offset, dos_light_mode,
+                                    fullbright_enabled);
         if (DAT_0023b830 != '\0') {
           *puVar13 = (char)DAT_000da47c;
         }
@@ -883,8 +834,6 @@ void translate_verts_to_camera_space(int *vertex_list)
   }
   iVar3 = 0;
   piVar2 = vertex_list;
-  if (getenv("UW_DEBUG_DOOR_POS"))
-    fprintf(stderr, "[doorpos] translate_verts_to_camera_space: second-list record count vertex_list[1]=%d\n", vertex_list[1]);
   if (0 < vertex_list[1]) {
     do {
       *(undefined1 *)(piVar2 + 0x121b) = 1;
@@ -1066,15 +1015,6 @@ void near_clip_visible_tiles(void *tile_list, int clip_mode)
               iVar7 = iVar7 * 0xc + tile_base;
               puVar8 = (undefined4 *)(iVar7 + 0x3010);
               uVar11 = *puVar8;
-              if (getenv("UW_DEBUG_NEARCLIP_RANGE")) {
-                int _lo = 0, _hi = -1;
-                sscanf(getenv("UW_DEBUG_NEARCLIP_RANGE"), "%d:%d", &_lo, &_hi);
-                if (local_48 >= _lo && local_48 <= _hi)
-                  fprintf(stderr, "[nearclip] rec=%d pointcount=%d edge=%d prev_vi=%d cur_vi=%d prev_w=%g cur_w=%g thresh=%g prev_behind=%d\n",
-                          local_48, iVar4, local_78, local_64,
-                          *(int *)(local_50 + 0x4818),
-                          *(float *)&uVar10, *(float *)&uVar11, *(float *)&DAT_00084608, (int)iVar6);
-              }
               if (iVar6 == 0) {
                 iVar6 = ordfloat_ge(uVar11,DAT_00084608);
                 if (iVar6 != 0) {
@@ -1247,16 +1187,6 @@ LAB_0002029c:
               local_64 = local_78;
               local_78 = local_78 + 1;
             } while (local_78 < iVar4);
-            if (getenv("UW_DEBUG_DOOR_POS") && local_48 >= 26 && local_48 <= 32)
-              fprintf(stderr, "[doorpos] near_clip: emit_idx=%d iVar18(clipped_verts)=%d out_idx_if_kept=%d\n",
-                      local_48, iVar18, local_7c);
-            if (getenv("UW_DEBUG_NEARCLIP_RANGE")) {
-              int _lo = 0, _hi = -1;
-              sscanf(getenv("UW_DEBUG_NEARCLIP_RANGE"), "%d:%d", &_lo, &_hi);
-              if (local_48 >= _lo && local_48 <= _hi)
-                fprintf(stderr, "[nearclip] rec=%d FINAL iVar18(clipped_verts)=%d out_idx_if_kept=%d\n",
-                        local_48, iVar18, local_7c);
-            }
             if (iVar18 != 0) {
               *puVar20 = (char)iVar18;
               (&DAT_000bc039)[iVar19] = (char)((uint)iVar18 >> 8);
@@ -1265,9 +1195,6 @@ LAB_0002029c:
               /* carry the real texture pointer from emit index to render index */
               if ((unsigned)local_7c < UW_MAX_VIS_TILES && (unsigned)local_48 < UW_MAX_VIS_TILES) {
                 g_tile_texptr_out[local_7c] = g_tile_texptr_emit[local_48];
-                if (getenv("UW_DEBUG_DOOR_POS") && local_48 >= 26 && local_48 <= 32)
-                  fprintf(stderr, "[doorpos] texptr carry: emit_idx=%d out_idx=%d texptr=%p\n",
-                          local_48, local_7c, g_tile_texptr_emit[local_48]);
               }
               local_7c = local_7c + 1;
               (&DAT_000bc03b)[iVar19] = (char)((uint)iVar18 >> 0x18);
@@ -1503,17 +1430,6 @@ void load_dungeon_texture_arenas()
   } while (cVar1 != '\0');
   DAT_0023ae30 = DAT_0023ae3c + local_11c[0] * 0x100;
   load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae30);
-  if (getenv("UW_DEBUG_TEXTURE_ARENA")) {
-    static long hwm_bytes = -1;
-    long used = (long)((DAT_0023ae30 + (int)DAT_0023aeb8 * 0x100) - (char *)&DAT_002049e0);
-    if (used > hwm_bytes) {
-      hwm_bytes = used;
-      fprintf(stderr, "[texture-arena] new high-water usage: %ld bytes (w16 count=%d f16 count=%d)\n",
-              used, (int)local_11c[0], (int)DAT_0023aeb8);
-    }
-  }
-  if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[door] load_dungeon_texture_arenas: about to call load_door_frames (door loader), DAT_00202734=%d\n", (int)DAT_00202734);
   load_door_frames();
 }
 
@@ -1555,7 +1471,7 @@ void init_dungeon_rendering()
 {
   reset_viewport_to_fullscreen();
   load_3d_object_models();
-  if (getenv("UW_DUMP_MODEL_RAW")) {
+  if (g_opts.dump_model_raw) {
     unsigned char *_b = (unsigned char *)&DAT_00123ccc;
     int _k;
     int _npts = *(int *)_b;

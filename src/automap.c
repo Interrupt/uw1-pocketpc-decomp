@@ -2,6 +2,7 @@
    walls/doors, edges) into the automap view. Split out of uw.c (the original monolithic decompile)
    once these functions' real roles were confirmed. */
 #include "headers/automap.h"
+#include "headers/options.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -427,15 +428,15 @@ void draw_automap_screen(int level_number)
     set_viewport_clip_rect(0,0,0x13f,199);
     set_palette_bank(1);
     bitmap_blit_to_framebuffer(0,1,uVar3,200,0x140,0,0,1);
-    uw_debug_dump_revealmap((unsigned char *)&DAT_000b99d0);
     g_automap_tint_bitmap = uVar3;
     draw_automap_tiles();
     g_automap_tint_bitmap = NULL;
     iVar5 = (int)(short)level_number;
     if ((iVar5 == DAT_00201b68) && (iVar5 != 9)) {
       g_blit_transparent_mode = 1;
-      draw_sprite_by_id(0x103f,((*(ushort *)((char *)g_player_object + 0x16) >> 10) + 2) * 3,
-                   (((*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4) + 3) * -3 + 200,5,8);
+      draw_sprite_by_id(0x103f,((g_player_object->npc_xhome) + 2) * 3,
+                        ((g_player_object->npc_yhome) + 3) * -3 + 200,
+                        5,8);
       g_blit_transparent_mode = 0;
     }
     DAT_000ba9d0 = (short)level_number;
@@ -510,7 +511,6 @@ void darken_pixel(uint x, int y, int amount, int divisor)
       (199 - y) * 320 + (x & 0xffff);
   *index = (byte)(*index + amount + roll);
   *puVar1 = (&g_palette_rgb565)[*index];
-  debug_framebuffer_dump("darken_pixel");
 }
 
 
@@ -687,9 +687,7 @@ void handle_automap_note_click()
   *DAT_00084298 = 0x2d;
   local_5e = *DAT_00085a6c;
   local_60 = 200 - DAT_00085a6c[1];
-  if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] handle_automap_note_click entry: local_5e=%d local_60=%d DAT_00085a6c[3]=%d\n", (int)local_5e, (int)local_60, (int)DAT_00085a6c[3]);
   if (3 < DAT_00085a6c[3]) {
-    if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] handle_automap_note_click: early return (DAT_00085a6c[3] > 3)\n");
     return;
   }
   wait_for_click_release(1);
@@ -723,7 +721,6 @@ LAB_000170bc:
     sVar2 = 0xff;
     change_game_mode(1);
   }
-  if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] handle_automap_note_click: branch sVar2=0x%x DAT_000bbef0(count)=%d\n", (unsigned)sVar2, (int)DAT_000bbef0);
   if (sVar2 == 0xfb) {
     if (0x62 < DAT_000ba9d0) goto LAB_0001764c;
     iVar10 = DAT_000ba9d0 + 1;
@@ -820,10 +817,8 @@ LAB_0001764c:
   return;
 LAB_000171a4:
   sVar2 = poll_keyboard_char_input(&local_5a);
-  if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] key-poll: poll_keyboard_char_input returned %d local_5a=%d\n", (int)sVar2, (int)local_5a);
   if (0 < sVar2) {
 LAB_000171d0:
-    if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] key-loop: sVar2=%d local_58=\"%s\"\n", (int)sVar2, local_58);
     if (((sVar2 == 0xd) || (sVar2 == 0x1b)) || (sVar2 < 4)) goto LAB_0001739c;
     if ((sVar2 < 0x20) || (0x7a < sVar2)) {
       if (sVar2 == 8) {
@@ -877,7 +872,6 @@ LAB_000171d0:
 LAB_0001739c:
   g_text_input_active = 0;
   select_active_font(s_font5x6p_sys_0008430c);
-  if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] COMMIT: local_58=\"%s\" (empty=%d)\n", local_58, local_58[0]=='\0');
   if (local_58[0] != '\0') {
     DAT_000b99c4 = 1;
     pcVar5 = local_58;
@@ -887,7 +881,6 @@ LAB_0001739c:
       pcVar5 = pcVar5 + 1;
     } while (cVar1 != '\0');
     DAT_000bbef0 = DAT_000bbef0 + 1;
-    if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] COMMIT: stored, new count=%d\n", (int)DAT_000bbef0);
   }
   flush_dirty_rect_to_display(1);
 LAB_00017404:
@@ -1056,14 +1049,6 @@ int debug_noop_overflow_hook(int limit, int word_count)
    record. */
 byte automap_reveal_byte(byte *tile_rec)
 {
-  if (getenv("UW_DEBUG_AUTOMAP_REVEAL")) {
-    intptr_t idx = (tile_rec - (byte *)DAT_002029cc) / 4;
-    ushort *pp = (ushort *)g_player_object;
-    fprintf(stderr, "[automap-reveal] tile_rec=%p idx=%ld tile=(%ld,%ld) player_tile=(%u,%u) heading=0x%x\n",
-            (void *)tile_rec, (long)idx, (long)(idx & 0x3f), (long)(idx >> 6),
-            (unsigned)(pp[0xb] >> 10), (unsigned)((pp[0xb] & 0x3f0) >> 4),
-            (unsigned)(ushort)DAT_00201c70);
-  }
   return (byte)DAT_0023ae40_backing[tile_rec[1] >> 2 & 0xf] |
          (*tile_rec & 0xf);
 }

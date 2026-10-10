@@ -1,3 +1,4 @@
+#include "headers/options.h"
 #include "headers/main.h"
 #include <signal.h>
 #include <execinfo.h>
@@ -84,8 +85,7 @@ static void crash_backtrace_handler(int sig) {
 }
 
 int main(int argc, char **argv) {
-    (void)argc;
-    (void)argv;
+    options_init(argc, argv);
     /* stderr is fully buffered (not line-buffered) once redirected to a file, which makes a live
        log look frozen even while the process is actively running -- force unbuffered so debug
        output shows up in real time. */
