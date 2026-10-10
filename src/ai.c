@@ -1557,18 +1557,14 @@ void spawn_creature_misc_item_drop(void *creature_ptr)
 // per-class record in the same table as g_monster_max_stats_table...
 void spawn_creature_death_loot(ushort *creature)
 {
-  undefined2 uVar1;
-
-  if ((creature[7] & 0x10) == 0) {
+  if (!((uw_mobile_object_t *)creature)->npc_loot_spawned) {
     g_despawn_creature_record = &DAT_001007d0 +
                    (((int)(short)*creature & 0xfU) + (short)((*creature & 0x30) >> 4) * 0x10) * 0x30;
     spawn_creature_treasure_drop(creature);
     spawn_creature_special_item_drop(creature);
     spawn_creature_equipment_drop(creature);
     spawn_creature_misc_item_drop(creature);
-    uVar1 = *(undefined2 *)((char *)creature + 0xd);
-    *(char *)((char *)creature + 0xd) = (char)uVar1;
-    *(byte *)(creature + 7) = (byte)((ushort)uVar1 >> 8) | 0x10;
+    ((uw_mobile_object_t *)creature)->npc_loot_spawned = 1;
   }
 }
 
