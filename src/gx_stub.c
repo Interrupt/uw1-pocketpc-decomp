@@ -166,8 +166,11 @@ static void poll_dungeon_movement_keys(int game_frame_due)
         return;
     }
 
+    /* With the debug console open, only injected (console command) keys count -- the human is
+       typing into the console, not walking. */
     const Uint8 *ks = SDL_GetKeyboardState(NULL);
-    #define UW_HELD(sc) (ks[(sc)] || g_synth_scancode_held[(sc)])
+    const int physical_keys = !dbgui_visible();
+    #define UW_HELD(sc) ((physical_keys && ks[(sc)]) || g_synth_scancode_held[(sc)])
     int left    = UW_HELD(SDL_SCANCODE_A);
     int right   = UW_HELD(SDL_SCANCODE_D);
     int run     = UW_HELD(SDL_SCANCODE_W);   /* W = run forward  */
@@ -378,7 +381,7 @@ void uw_pump_events(void) {
     /* poll_dungeon_movement_keys() reads physical keyboard state directly (not the SDL event
        queue), so swallowing key EVENTS below (the dbgui_visible() checks in the
        SDL_KEYDOWN/TEXTINPUT cases) doesn't stop it on its own... */
-    if (!dbgui_visible()) {
+    if (!dbgui_visible() || dbgui_console_active()) {
         poll_dungeon_movement_keys(game_frame_due);
     }
 
@@ -428,7 +431,7 @@ void uw_pump_events(void) {
                 /* While the debug UI is visible, it owns ALL keyboard input -- a debug/dev tool,
                    not meant to be driven simultaneously with normal gameplay input. Route and
                    swallow rather than also forwarding to the game. */
-                if (dbgui_visible()) {
+                if (dbgui_visible() && !(dbgui_console_active() && ev.key.keysym.unused == UW_SYNTH_KEY)) {
                     if (ev.type == SDL_KEYDOWN && !ev.key.repeat) {
                         dbgui_feed_key((int)ev.key.keysym.sym);
                     }
@@ -481,7 +484,7 @@ void uw_pump_events(void) {
                 return;
             }
             case SDL_TEXTINPUT: {
-                if (dbgui_visible()) {
+                if (dbgui_visible() && !(dbgui_console_active() && ev.text.windowID == UW_SYNTH_KEY)) {
                     dbgui_feed_text(ev.text.text);
                     return;
                 }
@@ -533,8 +536,8 @@ void uw_pump_events(void) {
                    the displayed area, including button releases outside it. */
                 landscape_x = SDL_clamp(landscape_x, 0, GX_W - 1);
                 landscape_y = SDL_clamp(landscape_y, 0, g_display_height - 1);
-                if (dbgui_visible()) {
-                    if (ev.type == SDL_MOUSEBUTTONDOWN && ev.button.button == SDL_BUTTON_LEFT) {
+                if (dbgui_visible() && !(dbgui_console_active() && ev.button.which == UW_SYNTH_MOUSE)) {
+                    if (ev.type == SDL_MOUSEBUTTONDOWN && ev.button.button == SDL_BUTTON_LEFT && !dbgui_console_active()) {
                         /* A click inside the 3D viewport's own registered
                            rect (the exact bounds pick_object_under_cursor
                            itself guards with -- see its own comment) runs
@@ -824,6 +827,7 @@ int uw_inject_key_down(int sdl_keycode) {
     if (sdl_keycode >= 32 && sdl_keycode < 127) {
         SDL_Event ti = {0};
         ti.type = SDL_TEXTINPUT;
+        ti.text.windowID = UW_SYNTH_KEY;
         ti.text.text[0] = (char)sdl_keycode;
         ti.text.text[1] = '\0';
         SDL_PushEvent(&ti);

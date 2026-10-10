@@ -207,6 +207,7 @@ void populate_debug_panel(void)
   dbgui_field_toggle("npc_tick", &g_npc_tick_enabled);
   dbgui_field_toggle("pick_diag", &g_uw_debug_pick_diag);
   dbgui_field_toggle("pick_view", &g_opts.debug_pick_view);
+  dbgui_field_button("console", dbgui_console_open);
   dbgui_end();
 }
 
