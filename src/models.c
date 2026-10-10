@@ -788,48 +788,6 @@ void emit_catalog_object(byte catalog, void *obj_ptr, char heading, short frame_
   int row_base;
   int faces_remaining;
   
-  /* UW_DEBUG_FORCE_MODEL=<catalog>: draw every model object with this
-     catalog's model instead of its own, so one model can be looked at
-     wherever objects appear rather than hunting the dungeon for the one
-     object that uses it. UW_DEBUG_FORCE_MODEL=4 is the Lotus Turbo Esprit
-     easter egg, which is otherwise close to unreachable -- and which the DOS
-     executable leaves out entirely, so from a DOS install it never renders at
-     all.
-
-     A catalog is its slot in load_3d_object_models' order plus one, so 1 is
-     the door frame, 2 the bridge, 4 the Lotus, 11 the shrine, 24 the table.
-
-     This overrides only the model SELECTION; every model still loads
-     normally, which is the point. An earlier version of this switch forced
-     the asset load instead -- loading one .E into all 29 slots -- and that
-     really did crash in play: it multiplied the model's NODES by 29 against a
-     budget of 23 for the whole asset set, and piled 29 copies of a model
-     whose faces overrun a part record. Selecting an already-loaded model
-     cannot do either.
-
-     Animated objects (doors, via emit_anim_object_frames) are not affected
-     and stay themselves. */
-  {
-    static int forced = -2;                 /* -2 = not yet resolved */
-    if (forced == -2) {
-      const char *env = getenv("UW_DEBUG_FORCE_MODEL");
-      forced = -1;
-      if (env && env[0]) {
-        int id = atoi(env);
-        /* 29 model slots, addressed as catalogs 1..29. */
-        if (id >= 1 && id <= 29) {
-          forced = id;
-          DEBUG(INFO, "[models] UW_DEBUG_FORCE_MODEL: drawing every model object as catalog %d\n", id);
-        } else {
-          DEBUG(WARN, "[models] UW_DEBUG_FORCE_MODEL=%s is not a catalog in 1..29 -- ignored\n", env);
-        }
-      }
-    }
-    if (forced >= 0) {
-      catalog = (byte)forced;
-    }
-  }
-
   catalog_u = (uint)catalog;
   iVar1 = catalog_u * 4;
   catalog_flags = (&DAT_00086c08)[iVar1];
