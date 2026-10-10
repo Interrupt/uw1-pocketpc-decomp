@@ -18,6 +18,7 @@ const Uint8 *SDL_GetKeyboardState(int *count)
     return keyboard;
 }
 int in_dungeon_freelook(void) { return freelook; }
+int dbgui_visible(void) { return 0; }
 void uw_set_analog_move_turn(int forward, int turn) {}
 int GXEndDraw(void) { return 1; }
 
