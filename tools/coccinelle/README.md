@@ -1305,3 +1305,32 @@ header. Guarded records, target/property bytes, globals and callback arguments/
 events/counts are compared. Use `--reference PATH` with the original `combat.c`
 and `--asan` for AddressSanitizer. The audited worklist now contains 97 byte
 views: six paired-store views removed and one retained target snapshot added.
+
+`generate_disengage_rules.py` / `disengage-fields.json` convert
+`npc_combat_disengage_tick` with the exact-source applier. Named goal-target
+and animation-frame writes replace three paired byte stores. The initial
+target is exactly one while goal and frame bits remain intact; optional frame
+advancement still uses the signed random remainder and modulo-four frame.
+Speed resets preserve gravity. The player heading uses its existing typed
+pointer directly. All full-word captures, arithmetic intermediates, callback
+order and pointer reloads remain intact.
+
+The three remaining goal-word operations are intentional captures, including
+the initial masked temporary. The far branch still reuses `uVar6` for a goal
+word; the near branch retains the distance captured before proximity detection
+for its conversation gate. Animation flags and low attack-state masks affect
+bits without documented semantic properties and remain explicit.
+
+The test requires exact generation/conversion, idempotence and rejection of
+changed callbacks, volatile/escaping captures, masks, intervening stores,
+excluded scopes, quoted bodies and ambiguous definitions. Its 6,815,744
+original/current executions cover every goal/position word and motion/pitch/
+heading byte, inactive combat, distance thresholds and 16-bit truncation,
+signed/high-bit detection and heading results, negative/zero random remainders,
+both frame-update paths and conversation gates. Callbacks mutate/rebind NPC
+and player pointers and alter deltas after the distance capture; the player
+can alias the NPC. Guarded records, globals and callback arguments/events/
+counts are compared. Assertions separately check target preservation, frame
+advancement, near/far branches and an actual conversation callback. Use
+`--reference PATH` with the original `combat.c` and `--asan` for AddressSanitizer.
+The audited worklist now contains 91 byte views (six fewer).
