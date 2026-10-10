@@ -171,11 +171,13 @@ static void poll_dungeon_movement_keys(int game_frame_due)
     const Uint8 *ks = SDL_GetKeyboardState(NULL);
     const int physical_keys = !dbgui_visible();
     #define UW_HELD(sc) ((physical_keys && ks[(sc)]) || g_synth_scancode_held[(sc)])
-    int left    = UW_HELD(SDL_SCANCODE_A);
-    int right   = UW_HELD(SDL_SCANCODE_D);
-    int run     = UW_HELD(SDL_SCANCODE_W);   /* W = run forward  */
+    /* Arrow keys: up forward (run), down backward, left/right turn -- the same held-key state as
+       WASD/X, so they combine with a jump or each other exactly as those do. */
+    int left    = UW_HELD(SDL_SCANCODE_A) || UW_HELD(SDL_SCANCODE_LEFT);
+    int right   = UW_HELD(SDL_SCANCODE_D) || UW_HELD(SDL_SCANCODE_RIGHT);
+    int run     = UW_HELD(SDL_SCANCODE_W) || UW_HELD(SDL_SCANCODE_UP);   /* W = run forward  */
     int walk    = UW_HELD(SDL_SCANCODE_S);   /* S = walk forward (slower) */
-    int back    = UW_HELD(SDL_SCANCODE_X);
+    int back    = UW_HELD(SDL_SCANCODE_X) || UW_HELD(SDL_SCANCODE_DOWN);
     int strafeL = UW_HELD(SDL_SCANCODE_Z);
     int strafeR = UW_HELD(SDL_SCANCODE_C);
     int lookUp  = UW_HELD(SDL_SCANCODE_1);
@@ -421,7 +423,8 @@ void uw_pump_events(void) {
                     if (msym == SDLK_a || msym == SDLK_d || msym == SDLK_w ||
                         msym == SDLK_s || msym == SDLK_x || msym == SDLK_z ||
                         msym == SDLK_c || msym == SDLK_1 || msym == SDLK_2 ||
-                        msym == SDLK_3) {
+                        msym == SDLK_3 || msym == SDLK_UP || msym == SDLK_DOWN ||
+                        msym == SDLK_LEFT || msym == SDLK_RIGHT) {
                         return;
                     }
                 }
@@ -432,6 +435,18 @@ void uw_pump_events(void) {
                     break;
                 }
                 int vk = translate_vk(ev.key.keysym.sym);
+                /* The game's arrow codes are the PocketPC D-pad rotated a quarter turn (see
+                   GXGetDefaultKeys), which is right for its menus. In the 3D view (SHIFT held, so
+                   the stepped movement handler runs) route each arrow to the VK that triggers the
+                   movement it names: up forward, down backward, left/right turn. */
+                if (DAT_00201b64 == 0 && !g_text_input_active) {
+                    switch (vk) {
+                        case VK_UP: vk = VK_LEFT; break;     /* forward  */
+                        case VK_DOWN: vk = VK_RIGHT; break;  /* backward */
+                        case VK_LEFT: vk = VK_UP; break;     /* turn left  */
+                        case VK_RIGHT: vk = VK_DOWN; break;  /* turn right */
+                    }
+                }
                 if (vk != 0) {
                     unsigned int msg = (ev.type == SDL_KEYDOWN) ? 0x100u : 0x101u;
                     handle_keyboard_message(0, msg, (unsigned int)vk);
