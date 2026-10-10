@@ -595,6 +595,13 @@
           "function": "npc_combat_position_tick",
           "roles": [
             {
+              "name": "target_header",
+              "type": "uw_object_hdr_t *",
+              "parameter": false,
+              "evidence": "typed UW1 object pointer declaration",
+              "current_mobile_alias": false
+            },
+            {
               "name": "iVar7_rec",
               "type": "uw_mobile_object_t *",
               "parameter": false,

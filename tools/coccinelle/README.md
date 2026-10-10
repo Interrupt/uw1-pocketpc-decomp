@@ -1273,3 +1273,35 @@ guard storage. Guarded records, tiles, player bytes, globals, callback
 arguments/events/counts and returned pointers are compared. Use
 `--reference PATH` with the original `ai.c` and `--asan` for AddressSanitizer.
 The audited worklist now contains 102 byte views (eight fewer).
+
+`generate_combat_position_rules.py` / `combat-position-fields.json` convert
+`npc_combat_position_tick` with the exact-source applier. Named animation
+frame, speed, pitch and NPC heading updates replace the three paired frame
+stores and several mask/XOR updates. Frame advancement remains modulo four;
+speed writes preserve gravity and truncate to seven bits, including the
+magic-power-255 case; pitch writes preserve the low attack-state bits.
+All captured words, bytes, arithmetic intermediates, random calls and exits
+remain intact.
+
+The target's raw `+2` read now uses a common-header alias acquired after the
+heading callback. `refresh_npc_target_delta` is the sole source assignment to
+`DAT_00101400` and supplies an object-slot accessor result. The role audit
+recognizes this global as a common header, without inferring an extension
+layout, and the test checks that assignment provenance. Its full low-byte
+position snapshot remains a byte view to preserve the original temporary;
+the four remaining full-word reads are intentional captures. Animation flag,
+AI-bit-4 and low attack-state masks remain because those individual bits have
+no documented semantic properties.
+
+The test requires exact generation/conversion and idempotence and rejects
+changed callbacks, volatile/escaping captures, masks, intervening stores,
+excluded scopes, quoted bodies and ambiguous definitions. Its 6,291,456
+original/current executions cover every goal and position word and all
+motion/pitch/heading bytes, each frame-update path, distance and vertical-gap
+boundaries, both flying pitch ranges, negative random results, special-ability
+exits, random-wander branches, heading adjustment and goal fallback. Callbacks
+mutate/rebind NPC, target and property pointers; the target can alias the NPC
+header. Guarded records, target/property bytes, globals and callback arguments/
+events/counts are compared. Use `--reference PATH` with the original `combat.c`
+and `--asan` for AddressSanitizer. The audited worklist now contains 97 byte
+views: six paired-store views removed and one retained target snapshot added.
