@@ -460,7 +460,10 @@ int dispatch_quest_event_code(void *trap_record_ptr, int tile_x, int tile_y)
     }
     else if (2 < uVar1) {
       if (uVar1 < 5) {
-        apply_quest_event_numeric_effect((*(byte *)(DAT_0024cff0 + 1) & 0x1e) >> 1,trap_record,tile_x,tile_y);
+        /* DAT_0024cff0 is a ushort *: the activating object's flag nibble is byte 1, so index bytes
+           explicitly (`DAT_0024cff0 + 1` is byte 2, the position word -- every dial position then
+           read the same constant and the eight-way dial stuck on its highest height). */
+        apply_quest_event_numeric_effect((((byte *)DAT_0024cff0)[1] & 0x1e) >> 1,trap_record,tile_x,tile_y);
       }
       else if (uVar1 == 5) {
         emit_player_noise_alert(*(ushort *)(trap_record + 6) & 0x3f);

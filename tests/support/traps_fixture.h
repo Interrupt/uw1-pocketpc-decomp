@@ -14,7 +14,10 @@ extern char message[];
 extern char *available_message;
 extern uint message_id;
 extern int lookups, prints;
+extern int terrain_calls, terrain_tile_x, terrain_tile_y, terrain_height;
 ushort *orb_text_trap(void);
+ushort *level_one_dial_switch(void);
+ushort *level_one_dial_trap(ushort *dial_switch);
 void traps_fixture_reset(void);
 void traps_fixture_dispose(void);
 #endif

@@ -214,7 +214,8 @@ target_compile_options(uw_test_npc_combat PUBLIC
   -include "${CMAKE_CURRENT_SOURCE_DIR}/combat_test_globals.h")
 add_supported_game_unit_test(npc_combat uw_test_npc_combat)
 
-add_fixture_game_unit_test(traps src/traps.c:dispatch_trap_type_effect)
+add_fixture_game_unit_test(traps src/traps.c:dispatch_trap_type_effect
+  src/traps.c:dispatch_quest_event_code src/traps.c:apply_quest_event_numeric_effect)
 add_fixture_game_unit_test(hotspot_marker src/babl.c:draw_hotspot_crosshair_marker)
 add_fixture_game_unit_test(noise
   src/ai.c:alert_npc_to_noise_callback src/ai.c:emit_noise_alert)
