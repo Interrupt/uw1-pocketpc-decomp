@@ -1,4 +1,5 @@
 #include "throw_fixture.h"
+#include "src/headers/options.h"
 
 void setUp(void) { throw_fixture_reset(); }
 void tearDown(void) { throw_fixture_dispose(); }
@@ -112,14 +113,14 @@ static void hard_player_landing(void)
 }
 static void test_player_no_bounce_is_disabled_by_zero(void)
 {
-    setenv("UW_PLAYER_NO_BOUNCE","0",1);
+    options_set("player-no-bounce", "0");
     hard_player_landing();
     TEST_ASSERT_GREATER_THAN_INT(0,g_vertical_velocity);
 }
 static void test_player_no_bounce_stops_the_player_on_first_landing(void)
 {
     for (int mode = 0; mode < 2; mode++) {
-        if (mode) setenv("UW_PLAYER_NO_BOUNCE","1",1);
+        if (mode) options_set("player-no-bounce", "1");
         hard_player_landing();
         TEST_ASSERT_EQUAL_INT(0,DAT_00204884);
         TEST_ASSERT_EQUAL_INT(0,g_vertical_velocity);
@@ -129,7 +130,7 @@ static void test_player_no_bounce_stops_the_player_on_first_landing(void)
 }
 static void test_player_no_bounce_preserves_thrown_item_wall_bounces(void)
 {
-    setenv("UW_PLAYER_NO_BOUNCE","1",1);
+    options_set("player-no-bounce", "1");
     test_thrown_item_bounces_off_a_wall_and_keeps_falling();
 }
 static void test_falling_selects_the_highest_bridge_below_the_player(void)
@@ -156,7 +157,7 @@ static void test_falling_player_lands_on_bridge_across_fall_speeds(void)
     const short heights[]={33,48,80};
     bridge_fixture=true; bridge_count=1; bridge_heights[0]=32;
     for(int mode=0;mode<2;mode++) {
-        setenv("UW_PLAYER_NO_BOUNCE",mode ? "1" : "0",1);
+        options_set("player-no-bounce", mode ? "1" : "0");
         for(unsigned height=0;height<3;height++) for(unsigned speed=0;speed<3;speed++) {
             byte *movement=DAT_00204880_backing;
             memset(movement,0,sizeof DAT_00204880_backing);

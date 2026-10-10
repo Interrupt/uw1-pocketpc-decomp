@@ -2,6 +2,7 @@
    look, use, attack). Split out of uw.c (the original monolithic decompile) once these functions'
    real roles were confirmed. */
 #include "headers/interact.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,9 +51,6 @@ void interact_default()
   ushort *puVar3;
 
   puVar3 = (ushort *)0x0;
-  if (getenv("UW_DEBUG_INV"))
-    fprintf(stderr, "[inv] interact_default entry: g_interact_target=%p g_cursor_holding_state=%d DAT_002020ec=%d DAT_002020e0=%d\n",
-            (void *)g_interact_target, (int)g_cursor_holding_state, (int)DAT_002020ec, (int)DAT_002020e0);
   iVar1 = target_in_range((int)DAT_000858c4,g_interact_target,DAT_002020b0);
   iVar2 = target_line_of_sight((int)DAT_000858c4,g_interact_target);
   if (DAT_002020ec == 0) {
@@ -62,8 +60,6 @@ void interact_default()
         interact_talk_npc();
         return;
       }
-      if (getenv("UW_DEBUG_DOOR"))
-        fprintf(stderr, "[door] interact_default -> interact_use\n");
       interact_use();
       return;
     }
@@ -77,27 +73,15 @@ void interact_default()
   }
   else {
     if ((iVar1 != 0) && (iVar2 == 0)) {
-      if (getenv("UW_DEBUG_THROW"))
-        fprintf(stderr, "[grab] target=%p type=0x%x bit8000=%d target3=0x%x target3_bit8000=%d target3_qty=0x%x in_arena=%d\n",
-                (void *)g_interact_target, (unsigned)(*g_interact_target & 0x1ff),
-                (int)((*g_interact_target & 0x8000) != 0), (unsigned)g_interact_target[3],
-                (int)((g_interact_target[3] & 0x8000) != 0), (unsigned)(g_interact_target[3] & 0xffc0),
-                (int)object_ptr_in_arena((char *)g_interact_target));
       if (((*g_interact_target & 0x8000) != 0) &&
          (((g_interact_target[3] & 0x8000) == 0 && ((g_interact_target[3] & 0xffc0) != 0x40)))) {
-        if (getenv("UW_DEBUG_THROW") && (*g_interact_target & 0x1ff) == 0x80)
-          fprintf(stderr, "[grab] taking STACK-SPLIT branch, calling prompt_split_object_stack\n");
         /* BUG FIX: was `FUN_000470fc();` -- dropped its only argument. g_interact_target (the
            object this whole "grab" handler is operating on throughout this function) is the obvious
            intended argument -- same dropped-argument idiom fixed repeatedly elsewhere this session. */
         puVar3 = (ushort *)prompt_split_object_stack((undefined1 *)g_interact_target);
         if (puVar3 == (ushort *)0x0) {
-          if (getenv("UW_DEBUG_THROW") && (*g_interact_target & 0x1ff) == 0x80)
-            fprintf(stderr, "[grab] prompt_split_object_stack returned NULL, bailing\n");
           return;
         }
-        if (getenv("UW_DEBUG_THROW") && (*g_interact_target & 0x1ff) == 0x80)
-          fprintf(stderr, "[grab] prompt_split_object_stack returned puVar3=%p (target=%p)\n", (void *)puVar3, (void *)g_interact_target);
         if (puVar3 != g_interact_target) {
           object_list_insert_head(g_interact_target + 2,puVar3);
         }
@@ -199,9 +183,6 @@ void interact_use()
   int iVar1;
 
   DEBUG(INFO, "Interact use");
-  if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[door] interact_use() called: g_interact_target=%p obj0=0x%04x\n",
-            (void *)g_interact_target, g_interact_target ? (unsigned)*g_interact_target : 0);
 
   wait_for_click_release(1);
   iVar1 = target_in_range((int)DAT_000858c4,g_interact_target,DAT_002020b0);
@@ -211,8 +192,6 @@ void interact_use()
     }
   }
   else {
-    if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[door] interact_use() -> use_object_on_target\n");
     use_object_on_target(g_player_object,g_interact_target,0);
   }
 }
@@ -233,8 +212,6 @@ void interact_attack()
   sVar2 = ordint_divmod(DAT_0023be88 + 2,DAT_00085a6c[1] * 3).quot;
   sVar3 = ordint_divmod(DAT_0023bd80 + 2,*psVar1 * 3).quot;
   iVar4 = sVar2 * 3 + (int)sVar3;
-  if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[attack-dir] click=(%d,%d) view=(%d,%d) row=%d col=%d grid=%d -> attack_type=%d\n",
-      (int)*psVar1, (int)DAT_00085a6c[1], (int)DAT_0023bd80, (int)DAT_0023be88, (int)sVar2, (int)sVar3, iVar4, iVar4+1);
   if (iVar4 * 0x10000 >> 0x10 < 2) {
     iVar4 = 2;
   }
@@ -587,7 +564,6 @@ void attempt_talk_interaction(void *target_ptr)
   char acStack_114 [260];
   
   uVar6 = *target & 0x1ff;
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] attempt_talk_interaction entry: target=%p uVar6(itemid)=0x%x raw=0x%x classcheck=0x%x\n", (void *)target, (unsigned)uVar6, (unsigned)*target, (unsigned)(*target & 0x1c0));
   if (uVar6 == 0x157) {
     handle_mantra_chant();
     return;
@@ -600,13 +576,11 @@ void attempt_talk_interaction(void *target_ptr)
     return;
   }
   if ((*target & 0x1c0) != 0x40) {
-    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] attempt_talk_interaction: not-a-creature branch (uVar3=0xe00)\n");
     uVar3 = 0xe00;
     goto LAB_0002865c;
   }
   uVar6 = (ushort)(byte)target[0xd];
   DAT_00100674 = target;
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] attempt_talk_interaction: conv-id byte(uVar6)=0x%x uVar5=0x%x flagbits(target+7)=0x%x flagbyte(target+0x19)=0x%x\n", (unsigned)uVar6, (unsigned)(*(ushort *)((char *)target + 0xb) & 0xf), (unsigned)(target[7] & 0xc0), (unsigned)(*(byte *)((char *)target + 0x19) & 0x40));
   if (((uVar6 == 0x16) || (uVar6 == 0x8e)) || (uVar6 == 0xe7)) {
 LAB_000285e4:
     if (uVar6 == 0) {
@@ -840,7 +814,7 @@ ushort *pick_object_under_cursor(int mode)
      object/texture id buffer DAT_0023cca0 this function reads below is fresh for the current cursor
      position. */
   { static int _rr = -1;
-    if (_rr < 0) _rr = (getenv("UW_DISABLE_PICK_RERENDER") == NULL);
+    if (_rr < 0) _rr = (!g_opts.disable_pick_rerender);
     if (_rr) render_dungeon_view_frame();
   }
   iVar2 = 0;
@@ -853,9 +827,9 @@ ushort *pick_object_under_cursor(int mode)
   }
   bVar1 = *(byte *)(g_mouse_y * 0x140 + (int)g_mouse_x + DAT_0023cca0);
   uVar4 = (uint)bVar1;
-  { const char *_f = getenv("UW_PICK_FORCE_SLOT");   /* debug: force the object branch */
-    if (_f && (uint)DAT_0023b830 > 1) { uVar4 = (uint)atoi(_f); if (uVar4 == 0 || uVar4 >= (uint)DAT_0023b830) uVar4 = 1; bVar1 = (byte)uVar4; } }
-  int _pick_diag = g_uw_debug_pick_diag || (getenv("UW_PICK_DIAG") != NULL);
+  { /* debug: force the object branch */
+    if (UW_OPT_ISSET(g_opts.pick_force_slot) && (uint)DAT_0023b830 > 1) { uVar4 = (uint)g_opts.pick_force_slot; if (uVar4 == 0 || uVar4 >= (uint)DAT_0023b830) uVar4 = 1; bVar1 = (byte)uVar4; } }
+  int _pick_diag = g_uw_debug_pick_diag || g_opts.pick_diag;
   if (_pick_diag)
     fprintf(stderr, "[pick] mx=%d my=%d stencil=0x%02x nobj=%d\n",
             (int)g_mouse_x, (int)g_mouse_y, uVar4, (int)DAT_0023b830);
@@ -885,17 +859,6 @@ ushort *pick_object_under_cursor(int mode)
     }
 
     DAT_002020a8 = DAT_002020b0 + 2;
-    if (getenv("UW_DEBUG_THROW"))
-      fprintf(stderr, "[pick-grab] puVar3=%p type=0x%x classbit20=%d in_arena=%d off10=0x%x off13=0x%x off14=0x%x off15=0x%x off4000=%d\n",
-              (void *)puVar3,
-              (unsigned)(((uw_object_hdr_t *)puVar3)->object_id),
-              (int)(g_object_type_props[(((uw_object_hdr_t *)puVar3)->object_id)].owner_flags & 0x20),
-              (int)object_ptr_in_arena((char *)puVar3),
-              (unsigned)((uw_mobile_object_t *)puVar3)->movement_flags,
-              (unsigned)((uw_mobile_object_t *)puVar3)->motion_flags,
-              (unsigned)((uw_mobile_object_t *)puVar3)->attack_pitch,
-              (unsigned)((uw_mobile_object_t *)puVar3)->animation_flags,
-              (int)(((uw_object_hdr_t *)puVar3)->invisible != 0));
     if (((g_object_type_props[(((uw_object_hdr_t *)puVar3)->object_id)].owner_flags & 0x20) != 0) &&
         (iVar2 = object_ptr_in_arena(puVar3), iVar2 == 0)) {
       DAT_002020ec = 1;

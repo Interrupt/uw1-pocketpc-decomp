@@ -1,11 +1,12 @@
 #include "lighting_fixture.h"
+#include "src/headers/options.h"
 
 void setUp(void) { lighting_fixture_reset(); }
 void tearDown(void) { lighting_fixture_dispose(); }
 
 static void test_each_light_selects_its_data_mode_and_extinguishes(void)
 {
-    setenv("UW_LIGHT_MODE", "dos", 1);
+    options_set("light-mode", "dos");
     const int modes[] = {4,2,1,3}, falloffs[] = {28,39,46,30};
     const int initial[] = {0,2,4,1}, offset[] = {0,-2,-3,0};
     slots[5] = lights[0]; lights[0][2] = 63;
@@ -22,7 +23,7 @@ static void test_each_light_selects_its_data_mode_and_extinguishes(void)
 }
 static void test_extinguishing_one_source_keeps_the_other_source(void)
 {
-    setenv("UW_LIGHT_MODE", "dos", 1);
+    options_set("light-mode", "dos");
     slots[5] = lights[0]; slots[8] = lights[1];
     lights[0][0] = 0x94; lights[0][2] = 63; lights[1][0] = 0x95;
     refresh_player_equipment_effects(); assert_mode(4,28,0,0);
@@ -31,7 +32,7 @@ static void test_extinguishing_one_source_keeps_the_other_source(void)
 }
 static void test_held_light_and_intrinsic_light_compete_by_strength(void)
 {
-    setenv("UW_LIGHT_MODE", "dos", 1);
+    options_set("light-mode", "dos");
     lights[0][0] = 0x96; g_selected_object = (char *)lights[0];
     refresh_player_equipment_effects(); assert_mode(1,46,4,-3);
     player[0x5f] = 0x40; player[0x3e] = 0x30; /* one light effect, mode 3 */
@@ -61,8 +62,8 @@ static ushort draw_one_texel(int inverse_depth)
 }
 static void test_textured_surfaces_use_palette_mapping_and_light_strength(void)
 {
-    setenv("UW_DITHER", "1", 1);
-    setenv("UW_LIGHT_MODE", "dos", 1);
+    options_set("dither", "1");
+    options_set("light-mode", "dos");
     load_shading_level_config(0);
     /* Fractional distance gives shade 7 (no light), shade 2 (lantern). */
     ushort dark = draw_one_texel(512); /* 187.5 world units, ~0.73 tile */
@@ -85,8 +86,8 @@ static ushort draw_at_world_depth(float depth)
 }
 static void test_wall_light_falloff_at_known_world_distances(void)
 {
-    setenv("UW_DITHER", "1", 1);
-    setenv("UW_LIGHT_MODE", "dos", 1);
+    options_set("dither", "1");
+    options_set("light-mode", "dos");
     /* One tile is 256 world units. Offset samples by 16 units to avoid
        integer perspective rounding at an exact eighth-tile boundary. */
     const float depths[] = {144,272,528,784};
@@ -118,7 +119,7 @@ static void test_arm_mode_toggles_rgb_bias_and_updates_automap_light_grid(void)
 {
     /* ARM renders through RGB bias; both modes still update automap discovery. */
     for (int explicit_mode = 0; explicit_mode < 2; explicit_mode++) {
-        if (explicit_mode) setenv("UW_LIGHT_MODE", "arm", 1);
+        if (explicit_mode) options_set("light-mode", "arm");
         slots[5] = lights[0]; lights[0][2] = 63; lights[0][0] = 0x91;
         use_light_source(lights[0], 1);
         TEST_ASSERT_EQUAL_HEX16(0x95, lights[0][0]);
@@ -144,9 +145,9 @@ static void test_arm_surfaces_use_original_rgb_lut_and_clamps(void)
     set_ambient_bias_without_light(0);
     TEST_ASSERT_EQUAL_HEX16(0xbdf7, draw_one_texel(512)); /* distance 32 + 8 */
     TEST_ASSERT_EQUAL_HEX16(0, draw_one_texel(8192)); /* far clamp */
-    setenv("UW_LIGHT_MODE", "arm", 1);
+    options_set("light-mode", "arm");
     TEST_ASSERT_EQUAL_HEX16(0xbdf7, draw_one_texel(512));
-    setenv("UW_LIGHT_MODE", "unknown", 1);
+    options_set("light-mode", "unknown");
     TEST_ASSERT_EQUAL_HEX16(0xbdf7, draw_one_texel(512));
 }
 static void test_ambient_bias_calibration_restores_default_and_env_override(void)
@@ -154,15 +155,15 @@ static void test_ambient_bias_calibration_restores_default_and_env_override(void
     g_ambient_bias_reduction = 64;
     set_ambient_bias_with_light(0); TEST_ASSERT_EQUAL_INT(32, DAT_000842b0);
     set_ambient_bias_without_light(0); TEST_ASSERT_EQUAL_INT(72, DAT_000842b0);
-    setenv("UW_AMBIENT_BIAS_REDUCTION", "0", 1);
+    options_set("ambient-bias-reduction", "0");
     set_ambient_bias_with_light(0); TEST_ASSERT_EQUAL_INT(-32, DAT_000842b0);
     set_ambient_bias_without_light(0); TEST_ASSERT_EQUAL_INT(8, DAT_000842b0);
-    setenv("UW_AMBIENT_BIAS_REDUCTION", "-8", 1);
+    options_set("ambient-bias-reduction", "-8");
     set_ambient_bias_with_light(0); TEST_ASSERT_EQUAL_INT(-40, DAT_000842b0);
     set_ambient_bias_without_light(0); TEST_ASSERT_EQUAL_INT(0, DAT_000842b0);
     g_palette_rgb565_backing[88] = 0xffff;
     TEST_ASSERT_EQUAL_HEX16(0xc658, draw_one_texel(512));
-    setenv("UW_AMBIENT_BIAS_REDUCTION", "8", 1);
+    options_set("ambient-bias-reduction", "8");
     set_ambient_bias_without_light(0); TEST_ASSERT_EQUAL_INT(16, DAT_000842b0);
     TEST_ASSERT_EQUAL_HEX16(0xad95, draw_one_texel(512));
 }
@@ -186,13 +187,13 @@ static void test_arm_light_types_step_bias_by_sixteen_and_keep_calibration(void)
     /* An intrinsic light stronger than the torch wins, using the same steps. */
     player[0x5f] = 0x40; player[0x3e] = 0x30;
     refresh_player_equipment_effects(); TEST_ASSERT_EQUAL_INT(24, DAT_000842b0);
-    setenv("UW_AMBIENT_BIAS_REDUCTION", "0", 1);
+    options_set("ambient-bias-reduction", "0");
     refresh_player_equipment_effects(); TEST_ASSERT_EQUAL_INT(-40, DAT_000842b0);
 }
 static void test_dos_shading_uses_radial_distance_horizontally_and_vertically(void)
 {
-    setenv("UW_DITHER", "1", 1);
-    setenv("UW_LIGHT_MODE", "dos", 1);
+    options_set("dither", "1");
+    options_set("light-mode", "dos");
     load_shading_level_config(2); /* torch */
     ushort center = g_palette_rgb565_backing[(byte)mappings[10*256+88]];
     ushort side = g_palette_rgb565_backing[(byte)mappings[11*256+88]];
@@ -213,7 +214,7 @@ static void test_arm_shading_uses_the_same_radial_distance(void)
     g_palette_rgb565_backing[88] = 0xffff;
     const char *modes[] = {"arm", "unknown"};
     for (int i = 0; i < 2; i++) {
-        setenv("UW_LIGHT_MODE", modes[i], 1);
+        options_set("light-mode", modes[i]);
         int reciprocal = (0x1000000 / 512) * 4;
         ushort center = lighting_draw_texel(reciprocal, 140, 80);
         ushort side = lighting_draw_texel(reciprocal, 190, 80);
@@ -231,7 +232,7 @@ static void test_span_advances_radial_distance_and_respects_left_clipping(void)
 {
     const char *modes[] = {"dos", "arm"};
     for (int i = 0; i < 2; i++) {
-        setenv("UW_LIGHT_MODE", modes[i], 1);
+        options_set("light-mode", modes[i]);
         load_shading_level_config(2);
         ushort span[111];
         int reciprocal = (int)(16384.0f / (528.0f / 1500.0f));
@@ -247,8 +248,8 @@ static void test_span_advances_radial_distance_and_respects_left_clipping(void)
 }
 static void test_dos_fractional_shades_alternate_like_the_original_span_accumulators(void)
 {
-    setenv("UW_DITHER", "1", 1);
-    setenv("UW_LIGHT_MODE", "dos", 1);
+    options_set("dither", "1");
+    options_set("light-mode", "dos");
     DAT_0025063c = 64;
     DAT_002506dc = DAT_0025064c = 0;
     /* 272/32 = 8.5: +0.25 chooses shade 8, +0.75 chooses shade 9.
@@ -266,8 +267,8 @@ static void test_dos_fractional_shades_alternate_like_the_original_span_accumula
 }
 static void test_dos_dither_keeps_its_phase_across_spans_and_clipping(void)
 {
-    setenv("UW_DITHER", "1", 1);
-    setenv("UW_LIGHT_MODE", "dos", 1);
+    options_set("dither", "1");
+    options_set("light-mode", "dos");
     DAT_0025063c = 64;
     DAT_002506dc = DAT_0025064c = 0;
     int reciprocal = (int)(16384.0f / (272.0f / 1500.0f));
@@ -282,8 +283,8 @@ static void test_dos_dither_keeps_its_phase_across_spans_and_clipping(void)
 }
 static void test_dos_bias_clamps_before_initial_shade_and_uses_all_sixteen_rows(void)
 {
-    setenv("UW_DITHER", "1", 1);
-    setenv("UW_LIGHT_MODE", "dos", 1);
+    options_set("dither", "1");
+    options_set("light-mode", "dos");
     DAT_0025063c = 64;
     DAT_002506dc = -20;
     DAT_0025064c = 2;
@@ -300,33 +301,33 @@ static void test_dither_defaults_on_and_zero_or_empty_disables_it_in_both_modes(
 {
     const char *modes[] = {"dos", "arm"};
     for (int i = 0; i < 2; i++) {
-        setenv("UW_LIGHT_MODE", modes[i], 1);
+        options_set("light-mode", modes[i]);
         g_palette_rgb565_backing[88] = 0xffff;
         DAT_0025063c = 64;
         DAT_002506dc = DAT_0025064c = 0;
         int reciprocal = i == 0 ? (int)(16384.0f / (272.0f / 1500.0f)) : 131072;
-        setenv("UW_DITHER", "0", 1);
+        options_set("dither", "0");
         ushort first = lighting_draw_texel(reciprocal, 140, 80);
         ushort second = lighting_draw_texel(reciprocal, 141, 80);
         TEST_ASSERT_EQUAL_HEX16(first, second);
-        setenv("UW_DITHER", "0", 1);
+        options_set("dither", "0");
         TEST_ASSERT_EQUAL_HEX16(first, lighting_draw_texel(reciprocal, 140, 80));
         TEST_ASSERT_EQUAL_HEX16(second, lighting_draw_texel(reciprocal, 141, 80));
-        setenv("UW_DITHER", "", 1);
+        options_set("dither", "");
         TEST_ASSERT_EQUAL_HEX16(second, lighting_draw_texel(reciprocal, 141, 80));
-        unsetenv("UW_DITHER");
+        options_unset("dither");
         ushort default_first = lighting_draw_texel(reciprocal, 140, 80);
         ushort default_second = lighting_draw_texel(reciprocal, 141, 80);
         TEST_ASSERT_NOT_EQUAL(default_first, default_second);
-        setenv("UW_DITHER", "1", 1);
+        options_set("dither", "1");
         TEST_ASSERT_EQUAL_HEX16(default_first, lighting_draw_texel(reciprocal, 140, 80));
         TEST_ASSERT_EQUAL_HEX16(default_second, lighting_draw_texel(reciprocal, 141, 80));
     }
 }
 static void test_arm_dithers_rgb565_fractional_channels_with_stable_row_parity(void)
 {
-    setenv("UW_LIGHT_MODE", "arm", 1);
-    setenv("UW_DITHER", "1", 1);
+    options_set("light-mode", "arm");
+    options_set("dither", "1");
     g_palette_rgb565_backing[88] = 0xffff;
     /* Shade 40 gives 75% brightness: RGB fractions are .25. The two
        thresholds yield (23,47,23) or (24,48,24) without changing falloff. */
@@ -352,7 +353,7 @@ static void test_dos_mode_is_case_insensitive_for_equipment_and_surface_shading(
     const char *modes[] = {"dos", "DOS", "Dos", "dOs"};
     slots[5] = lights[0];
     for (int i = 0; i < 4; i++) {
-        setenv("UW_LIGHT_MODE", modes[i], 1);
+        options_set("light-mode", modes[i]);
         lights[0][0] = 0x95;
         lights[0][2] = 63;
         DAT_000842b0 = 37;
@@ -394,13 +395,13 @@ static void test_arm_fullbright_colours_skip_distance_falloff_unless_disabled(vo
     lighting_span_shade = 88; /* an ordinary colour still falls off */
     TEST_ASSERT_NOT_EQUAL(0x158, draw_one_texel(4096));
     lighting_span_shade = 0x12;
-    setenv("UW_FULLBRIGHT", "0", 1);
+    options_set("fullbright", "0");
     TEST_ASSERT_NOT_EQUAL(0x112, draw_one_texel(4096)); /* explicit 0 restores the falloff */
-    setenv("UW_FULLBRIGHT", "", 1);
+    options_set("fullbright", "");
     TEST_ASSERT_NOT_EQUAL(0x112, draw_one_texel(4096));
-    setenv("UW_FULLBRIGHT", "1", 1);
+    options_set("fullbright", "1");
     TEST_ASSERT_EQUAL_HEX16(0x112, draw_one_texel(4096));
-    setenv("UW_LIGHT_MODE", "dos", 1);
+    options_set("light-mode", "dos");
     lighting_span_shade = 0x12;
     TEST_ASSERT_EQUAL_HEX16(0x112, draw_one_texel(4096)); /* DOS table already leaves it alone */
 }

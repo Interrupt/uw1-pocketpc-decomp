@@ -22,8 +22,8 @@ void *uw_file_fopen(const char *win_path, const char *mode);
  * CopyFileW-shaped coredll ordinal). Returns 1 on success, 0 on failure. */
 int uw_file_copy(const char *win_src, const char *win_dst);
 
-/* Translate a Windows-style game path ("\SAVE1\desc") into a real path under UW_DATA_DIR (see
-   resolve_path()'s comment in file_io.c). Returns 1 on success (out filled), 0 if UW_DATA_DIR isn't
+/* Translate a Windows-style game path ("\SAVE1\desc") into a real path under --data-dir (see
+   resolve_path()'s comment in file_io.c). Returns 1 on success (out filled), 0 if --data-dir isn't
    set. */
 int uw_resolve_win_path(const char *win_path, char *out, unsigned int out_sz);
 

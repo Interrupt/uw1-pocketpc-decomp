@@ -118,7 +118,7 @@ bool apply_swim_wade_pose(ushort collision_mask) { (void)collision_mask; TEST_FA
 
 void throw_fixture_reset(void)
 {
-    unsetenv("UW_PLAYER_NO_BOUNCE");
+    options_unset("player-no-bounce");
     memset(arena,0,sizeof arena); memset(held,0,sizeof held);
     memset(character,0,sizeof character); memset(game_mode,0,sizeof game_mode);
     memset(((byte *)g_object_type_props),0,sizeof g_object_type_props);
@@ -144,7 +144,7 @@ void throw_fixture_reset(void)
     mobile_allocations=static_allocations=freed=0;
     thrown=NULL;
 }
-void throw_fixture_dispose(void) { unsetenv("UW_PLAYER_NO_BOUNCE"); }
+void throw_fixture_dispose(void) { options_unset("player-no-bounce"); }
 void launch(void)
 {
     TEST_ASSERT_EQUAL_UINT(1,drop_held_object_near_player(held,1));

@@ -1,5 +1,6 @@
 /* See demomode.h. */
 #include "headers/demomode.h"
+#include "headers/options.h"
 #include "headers/uw.h"
 
 #include <SDL.h>
@@ -110,18 +111,17 @@ static int demo_translate_sdlkey(const char *name) {
 }
 
 void demomode_init(void) {
-    const char *path = getenv("UW_DEMO_FILE");
+    const char *path = g_opts.demo_file;
     if (!path) return;
 
     g_demo_file = fopen(path, "r");
     if (!g_demo_file) {
-        fprintf(stderr, "[demo] failed to open UW_DEMO_FILE=%s\n", path);
+        fprintf(stderr, "[demo] failed to open --demo-file=%s\n", path);
         return;
     }
 
-    const char *delay_env = getenv("UW_DEMO_DELAY_MS");
-    if (delay_env) {
-        int v = atoi(delay_env);
+    if (UW_OPT_ISSET(g_opts.demo_delay_ms)) {
+        int v = g_opts.demo_delay_ms;
         /* v==0 is a real, meaningful value (see demomode_pump's own
            comment: no wall-clock gate at all, one line per real pump
            call) -- only reject a negative/malformed value, not zero. */
@@ -170,7 +170,7 @@ void demomode_abort(const char *reason) {
 void demomode_pump(void) {
     if (!g_demo_active || g_demo_done) return;
     Uint32 now = SDL_GetTicks();
-    /* g_demo_delay_ms == 0 (via a DELAY 0 line or UW_DEMO_DELAY_MS=0) means tick-native playback:
+    /* g_demo_delay_ms == 0 (via a DELAY 0 line or --demo-delay-ms=0) means tick-native playback:
        no wall-clock gate at all, process exactly one line every real uw_pump_events() call -- the
        same tick source democapture.c's recorder counts against (see its own top comment)... */
     if (g_demo_delay_ms > 0 && now < g_demo_next_tick) return;
@@ -229,13 +229,9 @@ void demomode_pump(void) {
         fclose(g_demo_file);
         g_demo_file = NULL;
         /* Quitting here (instead of idling with the window still open) makes scripted test runs
-           self-terminating -- set UW_DEMO_KEEP_RUNNING=1 to keep the window open after playback
+           self-terminating -- pass --demo-keep-running to keep the window open after playback
            finishes (e.g. to keep manually poking at the resulting state). */
-        const char *keep_running = getenv("UW_DEMO_KEEP_RUNNING");
-        int keep = keep_running && *keep_running != '\0' &&
-                   strcmp(keep_running, "0") != 0 &&
-                   strcasecmp(keep_running, "false") != 0;
-        if (!keep) {
+        if (!g_opts.demo_keep_running) {
             fprintf(stderr, "[demo] end of input, exiting\n");
             exit(0);
         }
@@ -256,7 +252,7 @@ void demomode_pump(void) {
     }
 
     if (strncasecmp(p, "DELAY ", 6) == 0) {
-        /* Sets the per-line pacing (same units/effect as UW_DEMO_DELAY_MS) from WITHIN the file
+        /* Sets the per-line pacing (same units/effect as --demo-delay-ms) from WITHIN the file
            itself, taking effect immediately (this line's own retry, and every line after it, use
            the new value)... */
         int ms = -1;
@@ -800,13 +796,7 @@ void demomode_pump(void) {
           g_force_flush = 1;
           flush_dirty_rect_to_display(1);
           g_force_flush = 0; }
-        if (getenv("UW_DEBUG_DOOR"))
-          fprintf(stderr, "[demo] SCREENSHOT %s\n", path);
         uw_save_screenshot(path);
-        if (getenv("UW_DEBUG_INV")) {
-            extern void uw_debug_dump_inventory_state(void);
-            uw_debug_dump_inventory_state();
-        }
         g_demo_next_tick = now;
         return;
     }

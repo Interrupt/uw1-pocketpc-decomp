@@ -156,7 +156,6 @@ static void reset(unsigned seed, int mode) {
     allocations = frees = sounds = inserts = lookup_x = lookup_y = 0;
 }
 int main(void) {
-    unsetenv("UW_DEBUG_THROW");
     for (unsigned seed = 0; seed < 65536; ++seed) {
         for (int mode = 0; mode < 4; ++mode) {
             byte expected[sizeof(storage)], source[sizeof(template_record)];

@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include "src/headers/options.h"
 #include "transitions_fixture.h"
 
 void setUp(void) { transitions_fixture_reset(); }
@@ -77,7 +78,7 @@ static void test_missing_window_image_releases_viewer_buffers(void)
 static void test_palette_defaults_to_unboosted_dos_brightness(void)
 {
     byte palette[768] = {0};
-    unsetenv("UW_BRIGHTNESS");
+    options_unset("brightness");
     palette[3] = 64;                  /* red -> 64 -> 8 RGB565 bits */
     palette[7] = 128;                 /* green -> 128 -> 32 */
     palette[11] = 255;                /* blue -> 255 -> 31 */
@@ -88,7 +89,7 @@ static void test_palette_defaults_to_unboosted_dos_brightness(void)
 }
 static void test_palette_preserves_channel_values_and_clamps_brightness(void)
 {
-    setenv("UW_BRIGHTNESS", "1.5", 1); /* the original Pocket PC 1.5x palette boost */
+    options_set("brightness", "1.5"); /* the original Pocket PC 1.5x palette boost */
     byte palette[768] = {0};
     palette[3] = 64;                  /* red -> 96 -> 12 RGB565 bits */
     palette[7] = 128;                 /* green -> 192 -> 48 */
@@ -98,11 +99,11 @@ static void test_palette_preserves_channel_values_and_clamps_brightness(void)
     TEST_ASSERT_EQUAL_HEX16(12 << 11, g_palette_rgb565_backing[1]);
     TEST_ASSERT_EQUAL_HEX16(48 << 5, g_palette_rgb565_backing[2]);
     TEST_ASSERT_EQUAL_HEX16(31, g_palette_rgb565_backing[3]);
-    unsetenv("UW_BRIGHTNESS");
+    options_unset("brightness");
 }
 static void test_palette_builds_original_dungeon_shade_rows(void)
 {
-    setenv("UW_BRIGHTNESS", "1.5", 1); /* the original Pocket PC 1.5x palette boost */
+    options_set("brightness", "1.5"); /* the original Pocket PC 1.5x palette boost */
     byte palette[768] = {0};
     palette[3] = 64;
     palette[7] = 128;
@@ -114,7 +115,7 @@ static void test_palette_builds_original_dungeon_shade_rows(void)
     TEST_ASSERT_EQUAL_HEX16(0, DAT_00248418_backing[19 * 256 + 1]);
     TEST_ASSERT_EQUAL_HEX16(2 << 5, DAT_00248418_backing[19 * 256 + 2]);
     TEST_ASSERT_EQUAL_HEX16(1, DAT_00248418_backing[19 * 256 + 3]);
-    unsetenv("UW_BRIGHTNESS");
+    options_unset("brightness");
 }
 static void test_window_dismissal_requests_original_dungeon_redraw_handler(void)
 {

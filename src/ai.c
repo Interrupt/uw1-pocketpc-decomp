@@ -2,6 +2,7 @@
    sync, and the mobile<->immobile object settle/destroy-roll logic. Split out of uw.c (the original
    monolithic decompile) once these functions' real roles were confirmed. */
 #include "headers/ai.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -664,12 +665,6 @@ int npc_ai_tick()
   uint uVar10;
   ushort *puVar11;
 
-  if (getenv("UW_DEBUG_NPC_POS"))
-    fprintf(stderr, "[npc-pos] obj=%p type=0x%x tile=(%u,%u) hp=%d\n", (void *)DAT_0010190c,
-            (unsigned)(DAT_0010190c->hdr.object_id),
-            (unsigned)(DAT_0010190c->npc_xhome),
-            (unsigned)(DAT_0010190c->npc_yhome),
-            (int) DAT_0010190c->npc_hp);
   DAT_00101738 = encode_object_slot_index(DAT_0010190c);
   DAT_00101404 = &g_monster_type_props[(DAT_0010190c->hdr.object_id & 0x3f)];
   DAT_00101918 = DAT_0010190c->npc_xhome;
@@ -690,8 +685,6 @@ int npc_ai_tick()
        then read its remainder back through the extraout_r1 register-leftover fiction" pattern
        already fixed elsewhere this session (itoa_radix, draw_chargen_field_options's sVar_rem)... */
     bVar8 = ((bVar3 & 0xf) + 8) % 0x10;
-    if (getenv("UW_DEBUG_NPC_WANDER"))
-      fprintf(stderr, "[npc-branch] obj=%p took too-far-early-exit\n", (void *)DAT_0010190c);
     goto LAB_00033860;
   }
   if ((*(char *)&DAT_00101404->movement_flags & 0x80) == 0) {
@@ -735,31 +728,14 @@ int npc_ai_tick()
        ((DAT_0010190c->motion_flags & 0x7f) != 0)) || ((((ushort *)DAT_0010190c)[10] & 0xf8) != 0x80)) {
     build_object_placement_snapshot(DAT_0010190c,DAT_0010172c);
     bVar3 = DAT_0010190c->full_heading;
-    if (getenv("UW_DEBUG_NPC_WANDER"))
-      fprintf(stderr, "[npc-sweep] obj=%p pre_tile=(%u,%u) snap0=0x%04x snap1=0x%04x\n",
-              (void *)DAT_0010190c,
-              (unsigned)(DAT_0010190c->npc_xhome),
-              (unsigned)(DAT_0010190c->npc_yhome),
-              (unsigned)((ushort *)DAT_0010172c)[0], (unsigned)((ushort *)DAT_0010172c)[1]);
     /* Was `build_collision_height_field_for_object()` -- a dropped argument (K&R declared, relying
        on whatever register-content reuse the real ARM code got for free).
        build_collision_height_field_for_object's own single param is dereferenced the exact same... */
     DAT_00101414 = build_collision_height_field_for_object(DAT_0010190c);
     apply_placement_collision_sweep(DAT_0010172c,DAT_00101438);
-    if (getenv("UW_DEBUG_NPC_WANDER"))
-      fprintf(stderr, "[npc-sweep] obj=%p post_sweep snap0=0x%04x snap1=0x%04x (tile=(%u,%u))\n",
-              (void *)DAT_0010190c,
-              (unsigned)((ushort *)DAT_0010172c)[0], (unsigned)((ushort *)DAT_0010172c)[1],
-              (unsigned)(byte)(((ushort *)DAT_0010172c)[0] >> 8),
-              (unsigned)(byte)(((ushort *)DAT_0010172c)[1] >> 8));
     DAT_0010144c = (ushort)(DAT_0010190c->npc_xhome);
     DAT_00101454 = (undefined2)(DAT_0010190c->npc_yhome);
     sync_object_tile_position(DAT_0010190c,DAT_0010172c);
-    if (getenv("UW_DEBUG_NPC_WANDER"))
-      fprintf(stderr, "[npc-sweep] obj=%p post_sync tile=(%u,%u)\n",
-              (void *)DAT_0010190c,
-              (unsigned)(DAT_0010190c->npc_xhome),
-              (unsigned)(DAT_0010190c->npc_yhome));
     if (DAT_0010190c->full_heading != bVar3) {
       DAT_00101430 = 1;
     }
@@ -790,23 +766,9 @@ int npc_ai_tick()
   DAT_00101434 = DAT_0010190c->motion_flags & 0x7f;
   DAT_00101730 = g_object_type_props[(DAT_0010190c->hdr.object_id)].height;
   uVar9 = (uint) DAT_0010190c->goal_word;
-  if (getenv("UW_DEBUG_NPC_STATE"))
-    fprintf(stderr, "[npc-state] obj=%p uVar9=0x%x class=0x%x byte15=0x%x\n", (void *)DAT_0010190c,
-            uVar9, (unsigned)(uVar9 & 0xf000),
-            (unsigned)(DAT_0010190c->animation_flags & 0x3f));
   if (((uVar9 & 0xf) == 0xb) || ((uVar9 & 0xf) == 3)) {
 LAB_00033830:
-    if (getenv("UW_DEBUG_NPC_WANDER"))
-      fprintf(stderr, "[npc-branch] obj=%p entering npc_ai_default_tick pre_tile=(%u,%u)\n",
-              (void *)DAT_0010190c,
-              (unsigned)(DAT_0010190c->npc_xhome),
-              (unsigned)(DAT_0010190c->npc_yhome));
     npc_ai_default_tick();
-    if (getenv("UW_DEBUG_NPC_WANDER"))
-      fprintf(stderr, "[npc-branch] obj=%p returned from npc_ai_default_tick post_tile=(%u,%u)\n",
-              (void *)DAT_0010190c,
-              (unsigned)(DAT_0010190c->npc_xhome),
-              (unsigned)(DAT_0010190c->npc_yhome));
     goto LAB_00033834;
   }
   bVar3 = DAT_0010190c->animation_flags & 0x3f;
@@ -894,14 +856,6 @@ LAB_00033834:
   bVar8 = ((DAT_0010190c->attack_pitch & 7) + (bVar3 & 0xf)) % 0x10;
 LAB_00033860:
   ((uw_mobile_object_t *)puVar11)->movement_flags = (bVar3 ^ bVar8) & 0xf ^ bVar3;
-  if (getenv("UW_DEBUG_NPC_PHASE"))
-    fprintf(stderr, "[npc-phase] obj=%p old=0x%x new=0x%x bVar8=0x%x speed=0x%x\n",
-            (void *)puVar11, bVar3, (unsigned)((bVar3 ^ bVar8) & 0xf ^ bVar3), bVar8,
-            (unsigned)(((uw_mobile_object_t *)puVar11)->attack_pitch & 7));
-  if (getenv("UW_DEBUG_NPC_WANDER"))
-    fprintf(stderr, "[npc-exit] obj=%p exit_tile=(%u,%u)\n", (void *)DAT_0010190c,
-            (unsigned)(DAT_0010190c->npc_xhome),
-            (unsigned)(DAT_0010190c->npc_yhome));
   return 1;
 }
 
@@ -1570,9 +1524,6 @@ void spawn_creature_misc_item_drop(void *creature_ptr)
     uVar1 = *(ushort *)(g_despawn_creature_record + uVar8 * 2 + 0x22);
     uw_ord2005_rem_164 = ((int)(uVar5)) % (0x10);
     if (uw_ord2005_rem_164 < (int)(uVar1 & 0xf)) {
-      if (getenv("UW_DEBUG_LOOT"))
-        fprintf(stderr, "[loot] spawn_creature_misc_item_drop slot=%u raw=0x%x id=0x%x\n",
-                uVar8, (unsigned)uVar1, (unsigned)(uVar1 >> 4));
       iVar6 = (char *)spawn_new_object(uVar1 >> 4,0);
       uVar5 = ce_rand();
       uw_ord2005_rem_165 = ((int)(uVar5)) % (2);
@@ -1611,9 +1562,6 @@ void spawn_creature_death_loot(ushort *creature)
   if ((creature[7] & 0x10) == 0) {
     g_despawn_creature_record = &DAT_001007d0 +
                    (((int)(short)*creature & 0xfU) + (short)((*creature & 0x30) >> 4) * 0x10) * 0x30;
-    if (getenv("UW_DEBUG_LOOT"))
-      fprintf(stderr, "[loot] spawn_creature_death_loot creature=%p *creature=0x%x (id=0x%x)\n",
-              (void *)creature, (unsigned)*creature, (unsigned)(*creature & 0x1ff));
     spawn_creature_treasure_drop(creature);
     spawn_creature_special_item_drop(creature);
     spawn_creature_equipment_drop(creature);
@@ -3014,11 +2962,6 @@ LAB_00033d18:
   /* Main per-tick goal dispatch -- see this function's header comment
      for the scaling-bug fix that applies here too (was reading byte
      0x16 instead of the real goal nibble at byte 0xb). */
-  if (getenv("UW_DEBUG_NPC_GOAL_SWITCH"))
-    fprintf(stderr, "[npc-goal-switch] obj=%p goal=%d tile=(%u,%u)\n", (void *)DAT_0010190c,
-            (int)(DAT_0010190c->npc_goal),
-            (unsigned)(DAT_0010190c->npc_xhome),
-            (unsigned)(DAT_0010190c->npc_yhome));
   switch(DAT_0010190c->npc_goal) {
   case 0:
     goto LAB_00033e9c;
@@ -3403,10 +3346,6 @@ void npc_movement_tick(ushort *npc_object, char *scratch)
   uVar9 = (uint)(npc_object[0xb] >> 10);
   uVar11 = npc_object[0xb] >> 4 & 0x3f;
   local_28 = (char *)tilemap_lookup(uVar9,uVar11);
-  if (getenv("UW_DEBUG_NPC_TICK"))
-    fprintf(stderr, "[npc-tick] obj=%p class=0x%x tile=(%u,%u) target=(%u,%u)\n",
-            (void *)npc_object, (unsigned)(*npc_object & 0x1ff), uVar9, uVar11,
-            (unsigned)((byte)npc_object[2] & 0x3f), (unsigned)(npc_object[3] & 0x3f));
   if ((npc_object[7] & 1) != 0) {
     unlink_and_free_object(local_28 + 2,npc_object);
     return;
@@ -4114,12 +4053,6 @@ void npc_idle_behavior_tick()
 
 {
   int uw_ord2005_rem_23 = 0; int uw_ord2005_rem_24 = 0; int uw_ord2005_rem_25 = 0; int uw_ord2005_rem_26 = 0; int uw_ord2005_rem_27 = 0; int uw_ord2005_rem_28 = 0; int uw_ord2005_rem_29 = 0; int uw_ord2005_rem_30 = 0; int uw_ord2005_rem_31 = 0; int uw_ord2005_rem_32 = 0; int uw_ord2005_rem_33 = 0; int uw_ord2005_rem_34 = 0; int uw_ord2005_rem_35 = 0; int uw_ord2005_rem_36 = 0; int uw_ord2005_rem_37 = 0; int uw_ord2005_rem_38 = 0; int uw_ord2005_rem_39 = 0;
-  if (getenv("UW_DEBUG_NPC_STATEMACHINE"))
-    fprintf(stderr, "[npc-f124] ENTER obj=%p state=0x%x frame_nibble(0xc)=0x%x DAT_00101734=%d\n",
-            (void *)DAT_0010190c,
-            (unsigned)(DAT_0010190c->animation_flags & 0x3f),
-            (unsigned)(DAT_0010190c->npc_animation_frame << 4) >> 4,
-            (int)DAT_00101734);
   ushort uVar1;
   byte *pbVar2;
   undefined4 uVar3;
@@ -4322,11 +4255,6 @@ void npc_wander_return_home_tick()
     iVar2 = ((int)DAT_0010143c - (int)DAT_00101918) * 0x1000000 >> 0x18;
     iVar3 = ((int)DAT_0010173c - (int)DAT_001013f8) * 0x1000000 >> 0x18;
     uVar1 = (uint)(DAT_00101404->morale_flags >> 4);
-    if (getenv("UW_DEBUG_NPC_MOVE"))
-      fprintf(stderr, "[npc-move] obj=%p target=(%d,%d) cur=(%d,%d) dx=%d dy=%d thresh=%u distsq=%d %s\n",
-              (void *)DAT_0010190c, (int)DAT_0010143c, (int)DAT_0010173c,
-              (int)DAT_00101918, (int)DAT_001013f8, iVar2, iVar3, uVar1,
-              iVar2*iVar2+iVar3*iVar3, (int)(uVar1*uVar1) < iVar2*iVar2+iVar3*iVar3 ? "WALK" : "idle");
     if ((int)(uVar1 * uVar1) < iVar2 * iVar2 + iVar3 * iVar3) {
       puVar4 = (ushort *)tilemap_lookup(DAT_0010143c,DAT_0010173c);
       npc_walk_toward_tile(DAT_0010143c,DAT_0010173c,*puVar4 >> 4 & 0xf);
@@ -4366,15 +4294,6 @@ void npc_notice_and_idle_tick()
   /* HACK: DAT_0010190c is `ushort *`, so bare `DAT_0010190c + N` pointer arithmetic scales N by 2
      -- correct for the handful of genuine 16-bit- array-style fields elsewhere in this file, but
      WRONG here... */
-  if (getenv("UW_DEBUG_NPC_ATTITUDE")) {
-    /* uw-formats.txt (4.3.3, "Mobile object extra info"): offset 0xd is a 16-bit field -- bits 0-3
-       npc_level, bit 13 npc_talkedto, bits 14-15 npc_attitude. Byte 0xe is that field's high byte,
-       so its own bits 6-7 (mask 0xc0) ARE npc_attitude, and bit 5 (mask 0x20) is npc_talkedto. */
-    ushort _de = DAT_0010190c->status_word;
-    fprintf(stderr, "[npc-attitude] obj=%p npc_attitude=%d npc_talkedto=%d npc_level=%d npc_goal=%d\n",
-            (void *)DAT_0010190c, (_de >> 14) & 3, (_de >> 13) & 1, _de & 0xf,
-            (int)(DAT_0010190c->npc_goal));
-  }
   if (DAT_0010190c->npc_attitude == 0) {
     uVar6 = DAT_0010190c->goal_word & 0xf01f;
     DAT_0010190c->npc_gtarg = 1;
@@ -4420,8 +4339,6 @@ LAB_0002fe88:
      this session (see [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is `ushort *`, so
      bare `DAT_0010190c + 0xb` scales to byte offset 0x16... */
   uVar5 = DAT_0010190c->npc_goal;
-  if (getenv("UW_DEBUG_NPC_WANDER"))
-    fprintf(stderr, "[npc-fcec-dispatch] obj=%p uVar5=%d\n", (void *)DAT_0010190c, (int)uVar5);
   if ((DAT_0010190c->npc_goal) != 0) {
     if (uVar5 == 2) {
       npc_idle_behavior_tick();
@@ -5067,17 +4984,11 @@ void build_object_placement_snapshot(ushort *object, byte *snapshot)
     uVar4 = ((uw_mobile_object_t *)object)->speed;
     snapshot[0x14] = (byte)uVar4;
     snapshot[0x15] = 0;
-    if (getenv("UW_DEBUG_NPC_SPEED"))
-      fprintf(stderr, "[npc-speed] obj=%p byte13&0x7f=%d class0x40=%d\n", (void *)object,
-              (int)uVar4,
-              (int)((((uw_object_hdr_t *)object)->type_flags & 0x1c0) == 0x40));
     if ((((((uw_object_hdr_t *)object)->type_flags & 0x1c0) == 0x40) ||
          (*(short *)(snapshot + 0x10) != 0 || *(short *)(snapshot + 10) != 0)) ||
         ((g_object_type_props[iVar5 / 0xd].flags & 8) != 0)) {
       snapshot[0x14] = (byte)(uVar4 * 0x2f);
       snapshot[0x15] = (byte)(uVar4 * 0x2f >> 8);
-      if (getenv("UW_DEBUG_NPC_SPEED"))
-        fprintf(stderr, "[npc-speed] obj=%p -> final speed=%d\n", (void *)object, (int)(short)(uVar4 * 0x2f));
       if ((((uw_object_hdr_t *)object)->type_flags & 0x1c0) == 0x40) {
         snapshot[0x27] = 8;
       }

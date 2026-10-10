@@ -82,7 +82,7 @@ with tempfile.TemporaryDirectory() as tmp:
             '-Wno-address-of-packed-member', *flags, '-I', str(ROOT), '-I',
             str(ROOT / 'third_party/unity/src'), str(path),
             str(ROOT / 'tests/test_save_inventory.c'),
-            str(ROOT / 'tests/support/division.c'),
+            str(ROOT / 'tests/support/division.c'), str(ROOT / 'src/options.c'),
             str(ROOT / 'third_party/unity/src/unity.c'), '-o', str(executable)],
             capture_output=True, text=True)
         assert result.returncode == 0, result.stdout + result.stderr

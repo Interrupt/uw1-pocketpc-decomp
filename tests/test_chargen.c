@@ -19,8 +19,7 @@ static void test_reset_creates_blank_stats_and_new_character_defaults(void)
     TEST_ASSERT_EQUAL_UINT8(0x18, record[0x49]);
     unsigned int quest_bits;
     memcpy(&quest_bits, record + 0x65, sizeof(quest_bits));
-    TEST_ASSERT_EQUAL_HEX32(getenv("UW_DEBUG_FORCE_QUEST_TEST") ? 0x12345678 : 0,
-                           quest_bits);
+    TEST_ASSERT_EQUAL_HEX32(0, quest_bits);
     for (int i = 0x69; i <= 0x6c; i++) TEST_ASSERT_EQUAL_UINT8(0, record[i]);
     for (int i = 0xc2; i < 0xca; i++) TEST_ASSERT_EQUAL_UINT8(0, record[i]);
     TEST_ASSERT_EQUAL_UINT8(0, record[0x70]);

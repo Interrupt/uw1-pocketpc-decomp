@@ -2,6 +2,7 @@
    and the sprite list's own entry allocation/positioning/lifetime management (the moving-object-
    overlay renderer used for HUD icons, thrown/dropped items, and other transient sprites). */
 #include "headers/bitmap.h"
+#include "headers/options.h"
 #include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -105,11 +106,6 @@ void blit_raw_sprite_clipped(short x, short y, char *pixels, short height, short
   /* Same missing-4th-argument K&R-call bug as bitmap_blit_to_framebuffer's own dirty_rect_union
      call (see graphics.c's fix comment) -- this is the more directly relevant instance for
      inventory icons specifically... */
-  if (getenv("UW_DEBUG_BLITRAW")) {
-    fprintf(stderr, "[blitraw] dstX=%d dstY=%d w=%d h=%d -> dirty top=%d bottom=%d left=%d right=%d\n",
-            (int)x, (int)y, (int)iVar2, (int)iVar3,
-            iVar6, iVar6 + iVar3, iVar14, iVar14 + iVar2);
-  }
   dirty_rect_union(iVar6,iVar6 + iVar3,iVar14,iVar14 + iVar2);
   if (g_blit_transparent_mode == 0) {
     iVar11 = (int)local_3c;
@@ -172,7 +168,6 @@ void blit_raw_sprite_clipped(short x, short y, char *pixels, short height, short
       } while (iVar4 < iVar11);
     }
   }
-  debug_framebuffer_dump("blit_raw_sprite_clipped");
 }
 
 
@@ -232,10 +227,6 @@ void blit_object_sprite_by_frame(short frame, int x, int y, int width, int heigh
      as a pointer below (iVar4+5, matching the pcVar3+5 idiom in the branch right above it), so it's
      retyped from int to char* rather than truncated through a 4-byte read. */
   iVar4 = (char *)g_grtile_registry[frame];
-  if (getenv("UW_DEBUG_MODEICON"))
-    fprintf(stderr, "[modeicon] blit_object_sprite_by_frame: resolved_frame=%d DAT_00202738=%d slot_ptr=%p branch=%s\n",
-            (int)frame, (int)(uint)DAT_00202738, (void *)iVar4,
-            (int)frame < (int)(uint)DAT_00202738 ? "registered-resource(lookup_grtile_by_id)" : "absolute-frame-table(g_grtile_registry)");
   if (iVar4 == (char *)0x0) {
     /* Table slot never populated. */
     static char dummy_sprite[8];
@@ -247,10 +238,6 @@ void blit_object_sprite_by_frame(short frame, int x, int y, int width, int heigh
     if (pcVar3 != (char *)0x0) {
       cVar1 = pcVar3[1];
       cVar2 = pcVar3[2];
-      if (getenv("UW_DEBUG_INV"))
-        fprintf(stderr, "[inv] blit_object_sprite_by_frame real sprite size: frame=%d w(cVar2)=%d h(cVar1)=%d at x=%d y=%d\n",
-                (int)frame, (int)(unsigned char)cVar2, (int)(unsigned char)cVar1,
-                (int)(short)(intptr_t)x, (int)(short)(intptr_t)y);
       if (*pcVar3 == '\x04') {
         pcVar3 = pcVar3 + 5;
       }
@@ -298,7 +285,7 @@ void draw_sprite_by_id(int sprite_id, int x, int y, int width, short height)
 
 
 // was FUN_00040be0 -- the sprite-list compositor flush loop's second draw path ("path=FUN_00040be0"
-// in UW_DIAG_SPRLIST output, taken for entries with puVar4[5]!=0), a sibling of
+// in --diag-sprlist output, taken for entries with puVar4[5]!=0), a sibling of
 // draw_sprite_by_id...
 void sprite_list_flush_blit_raw(int sprite_id, int x, int y, short clip_top, short width, short clip_rows)
 {
@@ -641,10 +628,6 @@ int sprite_list_set_rect(short slot, int x, int y, int width, short height)
 
   if (slot < 0x40) {
     iVar2 = slot * 0x14 + DAT_0023c3e8;
-    if (getenv("UW_DEBUG_SPRPOS")) {
-      fprintf(stderr, "[sprpos] sprite_list_set_rect create: slot=%d x=%d y=%d w=%d h=%d\n",
-              (int)slot, (int)x, (int)y, (int)width, (int)height);
-    }
     *(char *)(iVar2 + 6) = (char)width;
     *(char *)(iVar2 + 7) = (char)((uint)width >> 8);
     *(char *)(iVar2 + 2) = (char)x;
@@ -674,9 +657,6 @@ int sprite_list_set_position(short slot, int x, int y)
 
   if (slot < 0x40) {
     iVar2 = slot * 0x14 + DAT_0023c3e8;
-    if (getenv("UW_DEBUG_SPRPOS")) {
-      fprintf(stderr, "[sprpos] sprite_list_set_position slot=%d x=%d y=%d\n", (int)slot, (int)x, (int)y);
-    }
     *(char *)(iVar2 + 2) = (char)x;
     *(char *)(iVar2 + 4) = (char)y;
     *(char *)(iVar2 + 3) = (char)((uint)x >> 8);
@@ -791,9 +771,6 @@ int decode_tile_object_billboard_texture(short frame, uint unused)
   pcVar3 = (char *)lookup_grtile_by_id(resolved);
   bVar1 = pcVar3[1];
   bVar2 = pcVar3[2];
-  if (getenv("UW_DEBUG_THROW") && frame == 0x80)
-    fprintf(stderr, "[throw-sprite] frame(type)=0x%x resolved_frame=%d w=%d h=%d compressed_flag=%d\n",
-            (unsigned)frame, resolved, (int)bVar1, (int)bVar2, (int)*pcVar3);
   if (*pcVar3 == '\x04') {
     pcVar3 = pcVar3 + 5;
   }

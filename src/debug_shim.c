@@ -1,8 +1,9 @@
 /* The general debug panel's own population/inspector logic (populate_debug_panel and friends) plus
-   the one-shot UW_DEBUG_ and UW_DUMP_ dump tools, split out of hud.c once these grew well past the
+   the one-shot --dump-* dump tools, split out of hud.c once these grew well past the
    handful of call sites main_loop_hud_flush needs -- none of this is reachable from normal
    gameplay, so it doesn't belong mixed in with the real HUD logic. */
 #include "headers/debug_shim.h"
+#include "headers/options.h"
 #include "headers/debug_ui.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -197,7 +198,7 @@ void populate_debug_panel(void)
   }
   dbgui_begin("Debug Panel");
   dbgui_field_toggle("hide_walls", &g_uw_hide_walls);
-  if (g_uw_3d_objects_enabled < 0) g_uw_3d_objects_enabled = (getenv("UW_DISABLE_3D_OBJECTS") == NULL);
+  if (g_uw_3d_objects_enabled < 0) g_uw_3d_objects_enabled = (!g_opts.disable_3d_objects);
   /* Field names kept short (DBGUI_PANEL_W, debug_ui.c, is a fixed 140
      logical px, sized for the panel's small top-left corner of free
      screen real estate -- a longer name runs into neighboring HUD
@@ -205,10 +206,11 @@ void populate_debug_panel(void)
   dbgui_field_toggle("3d_objects", &g_uw_3d_objects_enabled);
   dbgui_field_toggle("npc_tick", &g_npc_tick_enabled);
   dbgui_field_toggle("pick_diag", &g_uw_debug_pick_diag);
+  dbgui_field_toggle("pick_view", &g_opts.debug_pick_view);
   dbgui_end();
 }
 
-/* Debug view (UW_DEBUG_PICK_VIEW): paint the per-pixel object-pick buffer DAT_0023cca0 over the 3D
+/* Debug view (--debug-pick-view): paint the per-pixel object-pick buffer DAT_0023cca0 over the 3D
    viewport instead of the rendered dungeon, so the pick/stencil coverage is directly visible. Call
    *after* a pick-mode render pass (render_dungeon_view_frame) has populated the buffer. */
 void uw_debug_blit_pick_buffer(void)
@@ -248,40 +250,7 @@ void uw_debug_blit_pick_buffer(void)
   }
 }
 
-/* Debug view (UW_DEBUG_DRAW_INV_POSITIONS): outline every real inventory hotspot's click rect
-   (g_inventory_hotspot_table's 23 records) in bright red, directly into the framebuffer... */
-void uw_debug_draw_inv_hotspot_positions(void)
-{
-  unsigned short *fb = (unsigned short *)g_uw_framebuffer;
-  int i, min_x = 0x7fffffff, max_x = -1, min_y = 0x7fffffff, max_y = -1;
-  if (fb == 0) return;
-  for (i = 0; i < 0x17; i++) {
-    int x1, y1, x2, y2, x, y;
-    int off = i * 0xe;
-    x1 = *(short *)(&g_inv_hotspot_click_x1 + off);
-    y1 = *(short *)(&g_inv_hotspot_click_y1 + off);
-    x2 = *(short *)(&g_inv_hotspot_click_x2 + off);
-    y2 = *(short *)(&g_inv_hotspot_click_y2 + off);
-    if (x1 == x2 && y1 == y2) continue;
-    for (x = x1; x <= x2; x++) {
-      if (x < 0 || x >= 320) continue;
-      if (y1 >= 0 && y1 < 200) fb[y1 * 0x140 + x] = 0xF800;
-      if (y2 >= 0 && y2 < 200) fb[y2 * 0x140 + x] = 0xF800;
-    }
-    for (y = y1; y <= y2; y++) {
-      if (y < 0 || y >= 200) continue;
-      if (x1 >= 0 && x1 < 320) fb[y * 0x140 + x1] = 0xF800;
-      if (x2 >= 0 && x2 < 320) fb[y * 0x140 + x2] = 0xF800;
-    }
-    if (x1 < min_x) min_x = x1;
-    if (x2 > max_x) max_x = x2;
-    if (y1 < min_y) min_y = y1;
-    if (y2 > max_y) max_y = y2;
-  }
-  if (max_x >= 0) dirty_rect_union(min_y, max_y, min_x, max_x);
-}
-
-/* Debug tool (UW_DUMP_SPRITE_FRAMES / UW_DUMP_SPRITE_IDS): dump individual sprites to standalone
+/* Debug tool (--dump-sprite-frames / --dump-sprite-ids): dump individual sprites to standalone
    BMP files by real resource id, one file per id, using the game's own real render path... */
 static void _uw_dump_sprite_to_file(int is_frame, int id, const char *dir) {
   unsigned short *fb = (unsigned short *)g_uw_framebuffer;
@@ -302,8 +271,7 @@ static void _uw_dump_sprite_to_file(int is_frame, int id, const char *dir) {
   uw_save_rgb565_region_bmp(path, fb + oy * 0x140 + ox, cw, ch, 0x140);
 }
 
-static void _uw_dump_sprite_ids_from_env(const char *envname, int is_frame, const char *dir) {
-  const char *spec = getenv(envname);
+static void _uw_dump_sprite_ids_from_spec(const char *spec, int is_frame, const char *dir) {
   if (!spec || !spec[0]) return;
   uw_debug_mkdir_p(dir);
   const char *p = spec;
@@ -329,51 +297,30 @@ static void _uw_dump_sprite_ids_from_env(const char *envname, int is_frame, cons
   }
 }
 
-/* Temporary test hook for verifying the armor paper-doll equip flow without a real "give item"
-   mechanism: once per run, the first time backpack grid slot 12 holds a real object, overwrite its
-   low 9 id bits with UW_DEBUG_FORCE_ITEM_ID (hex) in place -- reusing a real... */
-void uw_debug_force_item_id_once(void) {
-  static int done = 0;
-  if (done) return;
-  const char *idstr = getenv("UW_DEBUG_FORCE_ITEM_ID");
-  if (!idstr) return;
-  ushort *obj = (ushort *)get_equipped_item_at_slot(12);
-  if (!obj) return;
-  done = 1;
-  int newid = (int)strtol(idstr, NULL, 16);
-  ushort old = ((uw_object_hdr_t *)obj)->type_flags;
-  ((uw_object_hdr_t *)obj)->type_flags = (old & ~(ushort)0x1ff) | (newid & 0x1ff);
-  fprintf(stderr, "[armor] forced slot12 object id 0x%03x -> 0x%03x\n", old & 0x1ff,
-          ((uw_object_hdr_t *)obj)->object_id);
-}
-
 void uw_debug_dump_sprite_frames_once(void) {
   static int done = 0;
   if (done) return;
   done = 1;
-  if (!getenv("UW_DUMP_SPRITE_FRAMES") && !getenv("UW_DUMP_SPRITE_IDS")) return;
-  const char *dir = getenv("UW_DUMP_SPRITE_DIR");
+  if (!g_opts.dump_sprite_frames && !g_opts.dump_sprite_ids) return;
+  const char *dir = g_opts.dump_sprite_dir;
   if (!dir || !dir[0]) dir = "debug/sprites";
-  _uw_dump_sprite_ids_from_env("UW_DUMP_SPRITE_FRAMES", 1, dir);
-  _uw_dump_sprite_ids_from_env("UW_DUMP_SPRITE_IDS", 0, dir);
+  _uw_dump_sprite_ids_from_spec(g_opts.dump_sprite_frames, 1, dir);
+  _uw_dump_sprite_ids_from_spec(g_opts.dump_sprite_ids, 0, dir);
 }
 
-/* Debug tool (UW_DUMP_CRITTER_SHEET): systematically drive decode_critter_sprite_page across every
+/* Debug tool (--dump-critter-sheet): systematically drive decode_critter_sprite_page across every
    (tier, direction, frame) combination for one or more critter type indices, instead of passively
    capturing whatever poses a demo happens to render. */
 void uw_debug_dump_critter_sheet_once(void) {
   static int done = 0;
   if (done) return;
   done = 1;
-  const char *spec = getenv("UW_DUMP_CRITTER_SHEET");
+  const char *spec = g_opts.dump_critter_sheet;
   if (!spec || !spec[0]) return;
-  setenv("UW_DEBUG_DUMP_CRIT", "1", 0);
   /* default maxdir kept conservative (63, not the full 0-255 clamp resolve_critter_sprite_tier
      allows): sweeping direction values past a creature's real per-page table found a separate,
      unfixed bug... */
-  int maxdir = 63, maxframe = 15;
-  { const char *e = getenv("UW_DUMP_CRITTER_SHEET_MAXDIR"); if (e) maxdir = atoi(e); }
-  { const char *e = getenv("UW_DUMP_CRITTER_SHEET_MAXFRAME"); if (e) maxframe = atoi(e); }
+  int maxdir = g_opts.dump_critter_sheet_maxdir, maxframe = g_opts.dump_critter_sheet_maxframe;
   const char *p = spec;
   while (*p) {
     char *end;

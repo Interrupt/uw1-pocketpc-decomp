@@ -2,6 +2,7 @@
    record's chain is triggered. Split out of uw.c (the original monolithic decompile) once its real
    role was confirmed. */
 #include "headers/traps.h"
+#include "headers/options.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -204,11 +205,6 @@ int dispatch_trap_type_effect(ushort *trap_record, int tile_x, int tile_y)
         return 2;
       }
       uVar4 = ((uw_object_hdr_t *)trap_record)->quality;
-      if (getenv("UW_DEBUG_DOOR"))
-        fprintf(stderr, "[door] dispatch_trap_type_effect case8(branchA): trigger_state(uVar4)=%d target_nibble=%d target_obj0=0x%04x\n",
-                (int)uVar4,
-                (int)(((uw_object_hdr_t *)_case8_p1)->owner & 0xf),
-                (unsigned)((uw_object_hdr_t *)_case8_p1)->type_flags);
       if (7 < (((uw_object_hdr_t *)_case8_p1)->owner & 0xf)) {
         if ((uVar4 != 1) && (uVar4 != 3)) {
           return 2;
@@ -243,10 +239,6 @@ int dispatch_trap_type_effect(ushort *trap_record, int tile_x, int tile_y)
         }
       }
       uVar4 = ((uw_object_hdr_t *)trap_record)->quality;
-      if (getenv("UW_DEBUG_DOOR"))
-        fprintf(stderr, "[door] dispatch_trap_type_effect case8(branchB): trigger_state(uVar4)=%d target_obj0=0x%04x\n",
-                (int)uVar4,
-                (unsigned)((uw_object_hdr_t *)_case8_p1)->type_flags);
       if (uVar4 == 1) {
 LAB_0007dbc0:
         /* HACK: was `close_door_object(DAT_0024cff4,iVar16);` -- same truncated-pointer class as

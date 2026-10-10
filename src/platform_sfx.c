@@ -442,7 +442,6 @@ static void extract_all_wave_resources(void)
       continue;
     }
     extracted++;
-    DEBUG(TRACE, "[audio] extracted WAVE resource %d -> %s (%u bytes)\n", id, win_path, wav_size);
   }
 
   DEBUG(INFO, "[audio] SFX WAVE resource extraction: %d extracted, %d already present, %d failed\n",
@@ -636,8 +635,6 @@ static void sfx_cache_load(int id, sfx_cache_entry_t *entry)
   entry->pcm = cvt_buf;
   entry->len = (unsigned int)cvt.len_cvt;
   entry->loaded = 1;
-  DEBUG(TRACE, "[audio] platform_sfx: loaded+cached resource %d (%s, %u bytes converted)\n",
-        id, real_path, entry->len);
 }
 
 /* Finds a voice slot to play into: prefers one that's finished (pos >=

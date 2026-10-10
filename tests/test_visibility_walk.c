@@ -1,4 +1,5 @@
 #include "visibility_walk_fixture.h"
+#include "src/headers/options.h"
 
 void setUp(void) { visibility_walk_fixture_reset(); }
 void tearDown(void) { visibility_walk_fixture_dispose(); }
@@ -253,7 +254,7 @@ static void test_stronger_light_expands_the_visible_automap_area(void)
 
 static void test_arm_torch_updates_automap_light_and_extinguishing_restores_darkness(void)
 {
-    unsetenv("UW_LIGHT_MODE"); /* Default ARM rendering. */
+    options_unset("light-mode"); /* Default ARM rendering. */
     refresh_player_equipment_effects();
     TEST_ASSERT_EQUAL_INT(0, visibility_light_config_record);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(8, g_visibility_ring_buffer_backing[66 + 33] & 0xf);
@@ -274,10 +275,10 @@ static void test_arm_torch_updates_automap_light_and_extinguishing_restores_dark
 
 static void test_dos_torch_updates_the_same_automap_light_table(void)
 {
-    setenv("UW_LIGHT_MODE","dos",1);
+    options_set("light-mode", "dos");
     equip_visibility_test_torch(1);
     refresh_player_equipment_effects();
-    unsetenv("UW_LIGHT_MODE");
+    options_unset("light-mode");
     TEST_ASSERT_EQUAL_INT(4, visibility_light_config_record);
     TEST_ASSERT_EQUAL_INT(-1, visibility_ambient_strength);
     TEST_ASSERT_LESS_THAN_INT(8, g_visibility_ring_buffer_backing[66 + 33] & 0xf);
