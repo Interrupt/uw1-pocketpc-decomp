@@ -1135,3 +1135,25 @@ their historical expected bodies. Current bodies still require an exact
 match (C tokens for blood splats); historical rule application and executable
 before/after references remain unchanged. The conversation fixture now sets
 its temporary data directory through the runtime options API used by main.
+
+`generate_starvation_rules.py` / `starvation-fields.json` convert the spawned
+header in `handle_starvation_penalty` to a typed pointer and named z/x/y
+position writes. The link-high self-store and redundant position-low stores
+are removed. Full word/byte captures and the original audio, experience,
+cursor, allocation, placement, settling, teleport and death/UI callbacks
+remain intact; heading and unrelated header bits remain unchanged.
+
+Coccinelle rejected the complete control-flow patch, so this batch uses
+`apply_exact_source_rules.py`, a reusable complete-function JSON applier.
+It masks comments and literals when locating a definition, rejects ambiguous
+definitions, then requires a byte-for-byte original-body match before writing.
+Changed callbacks, volatile/escaping captures, masks and intervening stores
+reject conversion. The test requires an actual exact conversion and verifies
+generation, idempotence, scope and an original body embedded in a comment.
+Its 1,179,648 original/current executions cover every packed position word,
+callback-mutated player/spawned positions, cursor states, early survival,
+allocation/placement failures, teleport gates and both death/UI paths.
+Record/guard/player/status bytes and callback arguments/events/counts are
+compared. Use `--reference PATH` with the original `player.c` and `--asan` for
+AddressSanitizer. The worklist now contains 155 byte views (ten fewer); full
+position captures remain intentional.

@@ -2753,7 +2753,7 @@ void handle_starvation_penalty()
   int iVar7;
   uint uVar8;
   short extraout_r1;
-  char *pNewObj;
+  uw_object_hdr_t *pNewObj;
 
   if (*(char *)(DAT_00086df8 + 0x6d) == '\0') {
     g_player_object->npc_hp = 4;
@@ -2780,25 +2780,21 @@ LAB_00072374:
   /* Was `iVar6 = spawn_new_object(...)` (plain int) -- spawn_new_object now really returns a fresh
      object pointer (see its fix) instead of always 0, so storing it in a 32-bit int truncates it on
      this 64-bit host. */
-  pNewObj = (char *)spawn_new_object(uw_ord2005_rem_148 + 0xc2,0);
+  pNewObj = spawn_new_object(uw_ord2005_rem_148 + 0xc2,0);
   iVar7 = place_object_in_world((int)DAT_00204880 >> 5,(int)DAT_00204882 >> 5,(int)DAT_00204884 >> 3,
                        pNewObj,0,1);
   if (iVar7 != 0) {
-    uVar4 = ((uw_object_hdr_t *)pNewObj)->position_word;
+    uVar4 = pNewObj->position_word;
     bVar1 = (byte)uVar4;
-    ((uw_object_hdr_t *)pNewObj)->position_word_low = (g_player_object->hdr.position_word_low ^ bVar1) & 0x7f ^ bVar1;
-    ((uw_object_hdr_t *)pNewObj)->position_word_high = (byte)(char)((ushort)uVar4 >> 8);
-    ((uw_object_hdr_t *)pNewObj)->owner = 0x3f;
-    ((uw_object_hdr_t *)pNewObj)->link_word_high = ((uw_object_hdr_t *)pNewObj)->link_word_high;
-    uVar8 = (((uw_object_hdr_t *)pNewObj)->position_word ^ g_player_object->hdr.position_word) & 0x1fff ^
+    pNewObj->zpos = g_player_object->hdr.zpos;
+    pNewObj->owner = 0x3f;
+    uVar8 = (pNewObj->position_word ^ g_player_object->hdr.position_word) & 0x1fff ^
             (uint) g_player_object->hdr.position_word;
     uVar2 = (undefined1)uVar8;
-    ((uw_object_hdr_t *)pNewObj)->position_word_low = uVar2;
     bVar3 = (byte)(uVar8 >> 8);
-    ((uw_object_hdr_t *)pNewObj)->position_word_high = bVar3;
-    bVar1 = g_player_object->hdr.position_word_high;
-    ((uw_object_hdr_t *)pNewObj)->position_word_low = uVar2;
-    ((uw_object_hdr_t *)pNewObj)->position_word_high = (bVar1 ^ bVar3) & 0x1c ^ bVar3;
+    pNewObj->xpos = bVar3 >> 5;
+    bVar1 = (byte)(g_player_object->hdr.position_word >> 8);
+    pNewObj->ypos = (bVar1 >> 2) & 7;
     settle_dropped_object(pNewObj,(int)DAT_00204880 >> 8,(int)DAT_00204882 >> 8,1);
   }
   if (((*(byte *)(DAT_00086df8 + 0x5e) & 0xf0) != 0) && (DAT_00201b68 != 9)) {

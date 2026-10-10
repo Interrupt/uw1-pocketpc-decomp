@@ -1538,15 +1538,6 @@ R F(...) {
 |
 - *(ushort *)pNewObj & 0x1ff
 + ((uw_object_hdr_t *)pNewObj)->object_id
-|
-- *(ushort *)(pNewObj + 0x0) & 0x1ff
-+ ((uw_object_hdr_t *)pNewObj)->object_id
-|
-- CONCAT11(pNewObj[1], *pNewObj) & 0x1ff
-+ ((uw_object_hdr_t *)pNewObj)->object_id
-|
-- CONCAT11(pNewObj[1], pNewObj[0]) & 0x1ff
-+ ((uw_object_hdr_t *)pNewObj)->object_id
 )
 ...>
 }
@@ -1577,34 +1568,10 @@ R F(...) {
 - (*(ushort *)pNewObj & 0xe00) >> 9
 + ((uw_object_hdr_t *)pNewObj)->flags_res
 |
-- (*(ushort *)(pNewObj + 0x0) >> 9) & 0x7
-+ ((uw_object_hdr_t *)pNewObj)->flags_res
-|
-- (*(ushort *)(pNewObj + 0x0) & 0xe00) >> 9
-+ ((uw_object_hdr_t *)pNewObj)->flags_res
-|
-- (CONCAT11(pNewObj[1], *pNewObj) >> 9) & 0x7
-+ ((uw_object_hdr_t *)pNewObj)->flags_res
-|
-- (CONCAT11(pNewObj[1], *pNewObj) & 0xe00) >> 9
-+ ((uw_object_hdr_t *)pNewObj)->flags_res
-|
-- (CONCAT11(pNewObj[1], pNewObj[0]) >> 9) & 0x7
-+ ((uw_object_hdr_t *)pNewObj)->flags_res
-|
-- (CONCAT11(pNewObj[1], pNewObj[0]) & 0xe00) >> 9
-+ ((uw_object_hdr_t *)pNewObj)->flags_res
-|
 - (*(byte *)((char *)pNewObj + 0x1) >> 1) & 0x7
 + ((uw_object_hdr_t *)pNewObj)->flags_res
 |
 - (*(byte *)((char *)pNewObj + 0x1) & 0xe) >> 1
-+ ((uw_object_hdr_t *)pNewObj)->flags_res
-|
-- (*(byte *)(pNewObj + 0x1) >> 1) & 0x7
-+ ((uw_object_hdr_t *)pNewObj)->flags_res
-|
-- (*(byte *)(pNewObj + 0x1) & 0xe) >> 1
 + ((uw_object_hdr_t *)pNewObj)->flags_res
 )
 ...>
@@ -1636,34 +1603,10 @@ R F(...) {
 - (*(ushort *)pNewObj & 0x1000) >> 12
 + ((uw_object_hdr_t *)pNewObj)->enchanted
 |
-- (*(ushort *)(pNewObj + 0x0) >> 12) & 0x1
-+ ((uw_object_hdr_t *)pNewObj)->enchanted
-|
-- (*(ushort *)(pNewObj + 0x0) & 0x1000) >> 12
-+ ((uw_object_hdr_t *)pNewObj)->enchanted
-|
-- (CONCAT11(pNewObj[1], *pNewObj) >> 12) & 0x1
-+ ((uw_object_hdr_t *)pNewObj)->enchanted
-|
-- (CONCAT11(pNewObj[1], *pNewObj) & 0x1000) >> 12
-+ ((uw_object_hdr_t *)pNewObj)->enchanted
-|
-- (CONCAT11(pNewObj[1], pNewObj[0]) >> 12) & 0x1
-+ ((uw_object_hdr_t *)pNewObj)->enchanted
-|
-- (CONCAT11(pNewObj[1], pNewObj[0]) & 0x1000) >> 12
-+ ((uw_object_hdr_t *)pNewObj)->enchanted
-|
 - (*(byte *)((char *)pNewObj + 0x1) >> 4) & 0x1
 + ((uw_object_hdr_t *)pNewObj)->enchanted
 |
 - (*(byte *)((char *)pNewObj + 0x1) & 0x10) >> 4
-+ ((uw_object_hdr_t *)pNewObj)->enchanted
-|
-- (*(byte *)(pNewObj + 0x1) >> 4) & 0x1
-+ ((uw_object_hdr_t *)pNewObj)->enchanted
-|
-- (*(byte *)(pNewObj + 0x1) & 0x10) >> 4
 + ((uw_object_hdr_t *)pNewObj)->enchanted
 )
 ...>
@@ -1695,34 +1638,10 @@ R F(...) {
 - (*(ushort *)pNewObj & 0x2000) >> 13
 + ((uw_object_hdr_t *)pNewObj)->doordir
 |
-- (*(ushort *)(pNewObj + 0x0) >> 13) & 0x1
-+ ((uw_object_hdr_t *)pNewObj)->doordir
-|
-- (*(ushort *)(pNewObj + 0x0) & 0x2000) >> 13
-+ ((uw_object_hdr_t *)pNewObj)->doordir
-|
-- (CONCAT11(pNewObj[1], *pNewObj) >> 13) & 0x1
-+ ((uw_object_hdr_t *)pNewObj)->doordir
-|
-- (CONCAT11(pNewObj[1], *pNewObj) & 0x2000) >> 13
-+ ((uw_object_hdr_t *)pNewObj)->doordir
-|
-- (CONCAT11(pNewObj[1], pNewObj[0]) >> 13) & 0x1
-+ ((uw_object_hdr_t *)pNewObj)->doordir
-|
-- (CONCAT11(pNewObj[1], pNewObj[0]) & 0x2000) >> 13
-+ ((uw_object_hdr_t *)pNewObj)->doordir
-|
 - (*(byte *)((char *)pNewObj + 0x1) >> 5) & 0x1
 + ((uw_object_hdr_t *)pNewObj)->doordir
 |
 - (*(byte *)((char *)pNewObj + 0x1) & 0x20) >> 5
-+ ((uw_object_hdr_t *)pNewObj)->doordir
-|
-- (*(byte *)(pNewObj + 0x1) >> 5) & 0x1
-+ ((uw_object_hdr_t *)pNewObj)->doordir
-|
-- (*(byte *)(pNewObj + 0x1) & 0x20) >> 5
 + ((uw_object_hdr_t *)pNewObj)->doordir
 )
 ...>
@@ -1754,34 +1673,10 @@ R F(...) {
 - (*(ushort *)pNewObj & 0x4000) >> 14
 + ((uw_object_hdr_t *)pNewObj)->invisible
 |
-- (*(ushort *)(pNewObj + 0x0) >> 14) & 0x1
-+ ((uw_object_hdr_t *)pNewObj)->invisible
-|
-- (*(ushort *)(pNewObj + 0x0) & 0x4000) >> 14
-+ ((uw_object_hdr_t *)pNewObj)->invisible
-|
-- (CONCAT11(pNewObj[1], *pNewObj) >> 14) & 0x1
-+ ((uw_object_hdr_t *)pNewObj)->invisible
-|
-- (CONCAT11(pNewObj[1], *pNewObj) & 0x4000) >> 14
-+ ((uw_object_hdr_t *)pNewObj)->invisible
-|
-- (CONCAT11(pNewObj[1], pNewObj[0]) >> 14) & 0x1
-+ ((uw_object_hdr_t *)pNewObj)->invisible
-|
-- (CONCAT11(pNewObj[1], pNewObj[0]) & 0x4000) >> 14
-+ ((uw_object_hdr_t *)pNewObj)->invisible
-|
 - (*(byte *)((char *)pNewObj + 0x1) >> 6) & 0x1
 + ((uw_object_hdr_t *)pNewObj)->invisible
 |
 - (*(byte *)((char *)pNewObj + 0x1) & 0x40) >> 6
-+ ((uw_object_hdr_t *)pNewObj)->invisible
-|
-- (*(byte *)(pNewObj + 0x1) >> 6) & 0x1
-+ ((uw_object_hdr_t *)pNewObj)->invisible
-|
-- (*(byte *)(pNewObj + 0x1) & 0x40) >> 6
 + ((uw_object_hdr_t *)pNewObj)->invisible
 )
 ...>
@@ -1813,24 +1708,6 @@ R F(...) {
 - (*(ushort *)pNewObj & 0x8000) >> 15
 + ((uw_object_hdr_t *)pNewObj)->is_quant
 |
-- (*(ushort *)(pNewObj + 0x0) >> 15) & 0x1
-+ ((uw_object_hdr_t *)pNewObj)->is_quant
-|
-- (*(ushort *)(pNewObj + 0x0) & 0x8000) >> 15
-+ ((uw_object_hdr_t *)pNewObj)->is_quant
-|
-- (CONCAT11(pNewObj[1], *pNewObj) >> 15) & 0x1
-+ ((uw_object_hdr_t *)pNewObj)->is_quant
-|
-- (CONCAT11(pNewObj[1], *pNewObj) & 0x8000) >> 15
-+ ((uw_object_hdr_t *)pNewObj)->is_quant
-|
-- (CONCAT11(pNewObj[1], pNewObj[0]) >> 15) & 0x1
-+ ((uw_object_hdr_t *)pNewObj)->is_quant
-|
-- (CONCAT11(pNewObj[1], pNewObj[0]) & 0x8000) >> 15
-+ ((uw_object_hdr_t *)pNewObj)->is_quant
-|
 - (*(byte *)((char *)pNewObj + 0x1) >> 7) & 0x1
 + ((uw_object_hdr_t *)pNewObj)->is_quant
 |
@@ -1838,15 +1715,6 @@ R F(...) {
 + ((uw_object_hdr_t *)pNewObj)->is_quant
 |
 - *(byte *)((char *)pNewObj + 0x1) >> 7
-+ ((uw_object_hdr_t *)pNewObj)->is_quant
-|
-- (*(byte *)(pNewObj + 0x1) >> 7) & 0x1
-+ ((uw_object_hdr_t *)pNewObj)->is_quant
-|
-- (*(byte *)(pNewObj + 0x1) & 0x80) >> 7
-+ ((uw_object_hdr_t *)pNewObj)->is_quant
-|
-- *(byte *)(pNewObj + 0x1) >> 7
 + ((uw_object_hdr_t *)pNewObj)->is_quant
 )
 ...>
@@ -1866,16 +1734,7 @@ R F(...) {
 - ((ushort *)pNewObj)[1] & 0x7f
 + ((uw_object_hdr_t *)pNewObj)->zpos
 |
-- *(ushort *)(pNewObj + 0x2) & 0x7f
-+ ((uw_object_hdr_t *)pNewObj)->zpos
-|
 - *(byte *)((char *)pNewObj + 0x2) & 0x7f
-+ ((uw_object_hdr_t *)pNewObj)->zpos
-|
-- pNewObj[2] & 0x7f
-+ ((uw_object_hdr_t *)pNewObj)->zpos
-|
-- *(byte *)(pNewObj + 0x2) & 0x7f
 + ((uw_object_hdr_t *)pNewObj)->zpos
 )
 ...>
@@ -1899,12 +1758,6 @@ R F(...) {
 + ((uw_object_hdr_t *)pNewObj)->heading
 |
 - (((ushort *)pNewObj)[1] & 0x380) >> 7
-+ ((uw_object_hdr_t *)pNewObj)->heading
-|
-- (*(ushort *)(pNewObj + 0x2) >> 7) & 0x7
-+ ((uw_object_hdr_t *)pNewObj)->heading
-|
-- (*(ushort *)(pNewObj + 0x2) & 0x380) >> 7
 + ((uw_object_hdr_t *)pNewObj)->heading
 )
 ...>
@@ -1930,22 +1783,10 @@ R F(...) {
 - (((ushort *)pNewObj)[1] & 0x1c00) >> 10
 + ((uw_object_hdr_t *)pNewObj)->ypos
 |
-- (*(ushort *)(pNewObj + 0x2) >> 10) & 0x7
-+ ((uw_object_hdr_t *)pNewObj)->ypos
-|
-- (*(ushort *)(pNewObj + 0x2) & 0x1c00) >> 10
-+ ((uw_object_hdr_t *)pNewObj)->ypos
-|
 - (*(byte *)((char *)pNewObj + 0x3) >> 2) & 0x7
 + ((uw_object_hdr_t *)pNewObj)->ypos
 |
 - (*(byte *)((char *)pNewObj + 0x3) & 0x1c) >> 2
-+ ((uw_object_hdr_t *)pNewObj)->ypos
-|
-- (*(byte *)(pNewObj + 0x3) >> 2) & 0x7
-+ ((uw_object_hdr_t *)pNewObj)->ypos
-|
-- (*(byte *)(pNewObj + 0x3) & 0x1c) >> 2
 + ((uw_object_hdr_t *)pNewObj)->ypos
 )
 ...>
@@ -1971,12 +1812,6 @@ R F(...) {
 - (((ushort *)pNewObj)[1] & 0xe000) >> 13
 + ((uw_object_hdr_t *)pNewObj)->xpos
 |
-- (*(ushort *)(pNewObj + 0x2) >> 13) & 0x7
-+ ((uw_object_hdr_t *)pNewObj)->xpos
-|
-- (*(ushort *)(pNewObj + 0x2) & 0xe000) >> 13
-+ ((uw_object_hdr_t *)pNewObj)->xpos
-|
 - (*(byte *)((char *)pNewObj + 0x3) >> 5) & 0x7
 + ((uw_object_hdr_t *)pNewObj)->xpos
 |
@@ -1984,15 +1819,6 @@ R F(...) {
 + ((uw_object_hdr_t *)pNewObj)->xpos
 |
 - *(byte *)((char *)pNewObj + 0x3) >> 5
-+ ((uw_object_hdr_t *)pNewObj)->xpos
-|
-- (*(byte *)(pNewObj + 0x3) >> 5) & 0x7
-+ ((uw_object_hdr_t *)pNewObj)->xpos
-|
-- (*(byte *)(pNewObj + 0x3) & 0xe0) >> 5
-+ ((uw_object_hdr_t *)pNewObj)->xpos
-|
-- *(byte *)(pNewObj + 0x3) >> 5
 + ((uw_object_hdr_t *)pNewObj)->xpos
 )
 ...>
@@ -2012,16 +1838,7 @@ R F(...) {
 - ((ushort *)pNewObj)[2] & 0x3f
 + ((uw_object_hdr_t *)pNewObj)->quality
 |
-- *(ushort *)(pNewObj + 0x4) & 0x3f
-+ ((uw_object_hdr_t *)pNewObj)->quality
-|
 - *(byte *)((char *)pNewObj + 0x4) & 0x3f
-+ ((uw_object_hdr_t *)pNewObj)->quality
-|
-- pNewObj[4] & 0x3f
-+ ((uw_object_hdr_t *)pNewObj)->quality
-|
-- *(byte *)(pNewObj + 0x4) & 0x3f
 + ((uw_object_hdr_t *)pNewObj)->quality
 )
 ...>
@@ -2046,12 +1863,6 @@ R F(...) {
 |
 - (((ushort *)pNewObj)[2] & 0xffc0) >> 6
 + ((uw_object_hdr_t *)pNewObj)->next
-|
-- (*(ushort *)(pNewObj + 0x4) >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)pNewObj)->next
-|
-- (*(ushort *)(pNewObj + 0x4) & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)pNewObj)->next
 )
 ...>
 }
@@ -2070,16 +1881,7 @@ R F(...) {
 - ((ushort *)pNewObj)[3] & 0x3f
 + ((uw_object_hdr_t *)pNewObj)->owner
 |
-- *(ushort *)(pNewObj + 0x6) & 0x3f
-+ ((uw_object_hdr_t *)pNewObj)->owner
-|
 - *(byte *)((char *)pNewObj + 0x6) & 0x3f
-+ ((uw_object_hdr_t *)pNewObj)->owner
-|
-- pNewObj[6] & 0x3f
-+ ((uw_object_hdr_t *)pNewObj)->owner
-|
-- *(byte *)(pNewObj + 0x6) & 0x3f
 + ((uw_object_hdr_t *)pNewObj)->owner
 )
 ...>
@@ -2103,12 +1905,6 @@ R F(...) {
 + ((uw_object_hdr_t *)pNewObj)->link
 |
 - (((ushort *)pNewObj)[3] & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)pNewObj)->link
-|
-- (*(ushort *)(pNewObj + 0x6) >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)pNewObj)->link
-|
-- (*(ushort *)(pNewObj + 0x6) & 0xffc0) >> 6
 + ((uw_object_hdr_t *)pNewObj)->link
 )
 ...>
