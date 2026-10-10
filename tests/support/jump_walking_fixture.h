@@ -5,9 +5,7 @@
 #include "src/headers/input.h"
 #include "src/headers/movement.h"
 
-/* The key latch (DAT_0023c448), the held-movement latch and the jump key dispatch, with
-   decode_movement_command replaced by a recorder. */
+/* The pending-key slot (DAT_0023c448), the polled held-movement state, the real
+   decode_movement_command and the jump key's dispatch. */
 void jump_walking_fixture_reset(void);
-extern unsigned decode_calls;
-extern unsigned short decode_latch_seen; /* DAT_0023c448 when decode_movement_command last ran */
 #endif

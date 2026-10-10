@@ -817,17 +817,7 @@ void move_command_dispatch(short command)
   }
   else {
     DAT_0023bf50 = 1;
-    if ((command == 6 || command == 7) && g_held_move_code != 0) {
-      /* DOS reads the held movement keys from its key array (do_player_keyboard) when a jump is
-         requested, so a jump with forward held is a running jump. Here the jump key's own code is
-         in the latch, so put the held movement key back for the decode and consume the jump. */
-      DAT_0023c448 = g_held_move_code;
-      decode_movement_command();
-      DAT_0023c448 = 0;
-    }
-    else {
-      decode_movement_command();
-    }
+    decode_movement_command();
     if (command == 0) {
       g_movement_mode = command;
       DAT_0023bf48 = 0;
@@ -851,35 +841,25 @@ void move_command_dispatch(short command)
 
 
 
-/* Port: the movement keys are polled from the keyboard state every pump and latched in
-   DAT_0023c448, the one slot a discrete key press (the jump key) also arrives in. Overwriting a
-   pending discrete code every pump meant a key pressed while walking never reached its binding.
-   held_code is the movement key now held (0 for none); it is remembered for a jump's decode, and
-   latch_code only goes into the slot when no other key is waiting there. */
-ushort g_held_move_code;
+/* Port, DOS style: the polled movement keys (W/S/X/A/D/Z/C) are not funnelled through the one
+   pending-key slot (DAT_0023c448) a typed key or button code lands in. They are a held-key state
+   of their own, like DOS's key array read by do_player_keyboard, which decode_movement_command
+   reads directly. A jump (or any other key) pressed while walking therefore reaches its binding
+   untouched, and decodes together with the held walk. */
+ushort g_held_move_keys;
 
-/* True while DAT_0023c448 is empty or holds only a movement key's code (nothing else is waiting). */
-int movement_latch_is_free(void)
+void set_held_movement_keys(ushort mask)
 {
-  return (DAT_0023c448 == 0) || (DAT_0023c448 == 0x8d) || (DAT_0023c448 == 0x8f) ||
-         (DAT_0023c448 == 0x91) || (DAT_0023c448 == 0x93) || (DAT_0023c448 == 0x2c) ||
-         (DAT_0023c448 == 0x2e);
-}
-
-void latch_held_movement_code(ushort held_code, ushort latch_code)
-{
-  g_held_move_code = held_code;
-  if (held_code == 0) {
-    return;
+  if (mask != 0) {
+    if (g_held_move_keys == 0) {
+      DAT_0024af6c = 0x14; /* press edge: restart the held-key accelerator ramp */
+    }
+    DAT_000876c8 = 0;
   }
-  /* Releasing any other key (the jump key) zeroes the held-key accelerator that the walk is
-     still using; re-arm it so the walk carries on. */
-  if (DAT_0024af6c == 0) {
-    DAT_0024af6c = 0x14;
+  else if (g_held_move_keys != 0) {
+    DAT_000876c8 = 1; /* all released: the main loop clears the pending-key slot */
   }
-  if (movement_latch_is_free()) {
-    DAT_0023c448 = latch_code;
-  }
+  g_held_move_keys = mask;
 }
 
 /* Sets DAT_0023bf48 (forward rate, same 0x500000 scale decode_movement_command's own forward code
@@ -1040,19 +1020,18 @@ int handle_keyboard_message(int window, int message, uint wparam)
   uVar1 = (ushort)wparam;
   if (message != 0x100) {
     if (message == 0x101) {
-      DAT_000876c8 = 1;
-      DAT_0024af6c = 0;
+      /* Releasing some other key (the jump key) must not stall a walk the polled movement keys
+         still hold. */
+      if (g_held_move_keys == 0) {
+        DAT_000876c8 = 1;
+        DAT_0024af6c = 0;
+      }
       return 0;
     }
     if (message != 0x102) {
       return 0;
     }
-    /* No case-folding here any more. A typed key replaces the held movement code the keyboard
-       poller keeps in this slot: OR-ing 'j' (0x6a) into forward's 0x8d made 0xef, which no
-       binding matches, so a jump pressed while walking was lost. */
-    if (movement_latch_is_free()) {
-      DAT_0023c448 = 0;
-    }
+    /* No case-folding here any more. */
     DAT_0023c448 = DAT_0023c448 | uVar1;
     return 0;
   }

@@ -1,4 +1,6 @@
 #include "jump_walking_fixture.h"
+#include "src/headers/options.h"
+#include "src/headers/ordinal_stubs.h"
 
 int GXResume(void) { return 1; }
 int GXSuspend(void) { return 1; }
@@ -13,24 +15,16 @@ undefined1 DAT_0023ce10_backing[128];
 int g_text_input_active;
 undefined4 DAT_0023c648;
 undefined4 DAT_0023bf50;
-ushort g_held_move_code;
+ushort g_held_move_keys;
+byte DAT_0020208c;
+struct uw_options g_opts;
+char DAT_00087944_backing[128], DAT_00087948_backing[128], DAT_0008794c_backing[128],
+    DAT_00087950_backing[128];
 short g_movement_mode;
 short DAT_0023bf48, DAT_0023bf4c, DAT_0023be88, DAT_0023bd80;
 short *DAT_00085a6c;
 char *DAT_00086df8;
 undefined1 DAT_00204880_backing[128];
-
-unsigned decode_calls;
-unsigned short decode_latch_seen;
-/* The forward key's decode: forward rate from the accelerator, movement mode 1. */
-void decode_movement_command(void)
-{
-    decode_calls++;
-    decode_latch_seen = DAT_0023c448;
-    DAT_0023bf48 = DAT_0023c448 == 0x8d ? 100 : 0;
-    DAT_0023bf4c = 0;
-    if (DAT_0023c448 == 0x8d) g_movement_mode = 1;
-}
 
 static char character[256];
 void jump_walking_fixture_reset(void)
@@ -46,7 +40,12 @@ void jump_walking_fixture_reset(void)
     memset(DAT_00204880_backing, 0, sizeof DAT_00204880_backing);
     memset(character, 0, sizeof character);
     DAT_00086df8 = character;
-    g_held_move_code = 0;
-    decode_calls = 0;
-    decode_latch_seen = 0;
+    g_held_move_keys = 0;
+    DAT_0020208c = 0;
+    memset(DAT_00087944_backing, 0, 128);
+    memset(DAT_00087948_backing, 0, 128);
+    memset(DAT_0008794c_backing, 0, 128);
+    memset(DAT_00087950_backing, 0, 128);
+    g_opts.walk_accel = 0x30;
+    g_opts.turn_accel = 0x20;
 }

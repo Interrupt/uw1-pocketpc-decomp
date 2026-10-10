@@ -4,6 +4,7 @@
 #include "headers/options.h"
 #include "headers/ordinal_stubs.h"
 #include "headers/uw.h"
+#include "headers/input.h"
 #include "headers/demomode.h"
 #include "headers/democapture.h"
 #include "headers/debug_ui.h"
@@ -86,8 +87,6 @@ extern short DAT_0024af6c;            /* held-key repeat accelerator (turn/move 
 extern short DAT_0023beb4;            /* view pitch (1/256 deg); sync_camera_from_player -> DAT_000db448 */
 extern unsigned int g_uw_frame_clock_units; /* GX elapsed-time sample for movement; see movement.c */
 extern short g_movement_mode;             /* pending movement command (6/7 jump) */
-extern void uw_set_analog_move_turn(int fwd_held, int turn_dir);
-extern void latch_held_movement_code(unsigned short held_code, unsigned short latch_code);
 
 /* OR'd into the real SDL_GetKeyboardState() so scripted tests (SDLHOLD /
    uw_inject_key_down/up) can drive the same movement path -- SDL_PushEvent
@@ -162,10 +161,8 @@ static int in_dungeon_freelook(void) {
    down; released -> stop. SHIFT+WASD and all of this in menus fall through untouched. */
 static void poll_dungeon_movement_keys(int game_frame_due)
 {
-    static int active = 0;
-
     if (!in_dungeon_freelook()) {     /* menu, or SHIFT held */
-        if (active) { DAT_000876c8 = 1; active = 0; }
+        set_held_movement_keys(0);
         return;
     }
 
@@ -199,52 +196,12 @@ static void poll_dungeon_movement_keys(int game_frame_due)
         DAT_0023beb4 = (short)(p > 0x1800 ? 0x1800 : p);
     }
 
-    /* One latched code for turn-alone/forward-alone/back/strafe -- matches
-       decode_movement_command's own single-code dispatch. */
-    int code = 0, walk_slow = 0;
-    int turning = 0;   /* -1 left, +1 right, 0 none */
-    if (left && !right)         { code = 0x8f; turning = -1; }  /* turn left  */
-    else if (right && !left)    { code = 0x91; turning = 1; }   /* turn right */
-    int forward = run || walk;
-    if (!turning) {
-        if (run)               code = 0x8d;                     /* W: run  -- let the accelerator ramp */
-        else if (walk)         { code = 0x8d; walk_slow = 1; }   /* S: walk -- pin accelerator below the step clamp */
-        else if (back)          code = 0x93;   /* backward / turn-around */
-        else if (strafeL && !strafeR) code = 0x2c; /* sidestep left  (DOS ",") */
-        else if (strafeR && !strafeL) code = 0x2e; /* sidestep right (DOS ".") */
-    } else if (walk) {
-        walk_slow = 1;   /* turning + S: still pin the accelerator for a slow diagonal */
-    }
-
-    if (code || (turning && forward)) {
-        /* Re-arm accel on press edge only -- the actual ramp-while-held lives in game.c's
-           app_main_loop (the real WinMain message-pump loop), which already doubles/quadruples
-           DAT_0024af6c every iteration while DAT_000876c8==0 (key still down) -- confirmed... */
-        if (!active) { DAT_0024af6c = 0x14; active = 1; }
-        if (walk_slow) {
-            /* keep S's forward rate below decode_movement_command's per-tick
-               step clamp so it is a genuine slow walk, not a clamped run. */
-            DAT_0024af6c = (short)g_opts.walk_accel;
-        }
-        DAT_000876c8 = 0;
-        if (turning && forward) {
-            /* Diagonal: set both rates directly and skip the single-code dispatch entirely --
-               movement_tick only calls decode_movement_command() while g_movement_mode == 0, so
-               setting it to 1 here (inside uw_set_analog_move_turn) pre-empts that for this tick.
-               A jump waiting to be run (mode 6/7) must not be turned back into a walk. */
-            latch_held_movement_code(0x8d, 0);
-            if (g_movement_mode != 6 && g_movement_mode != 7)
-                uw_set_analog_move_turn(1, turning);
-        } else {
-            latch_held_movement_code((unsigned short)code, (unsigned short)code);
-        }
-    } else if (active) {
-        DAT_000876c8 = 1;   /* release: main loop clears DAT_0023c448 -> stop */
-        active = 0;
-        latch_held_movement_code(0, 0);
-    } else {
-        latch_held_movement_code(0, 0);
-    }
+    /* The held movement keys are their own state (DOS key array), decoded by
+       decode_movement_command; they never go through the pending-key slot, so a jump or any other
+       key pressed meanwhile is not disturbed. */
+    set_held_movement_keys((unsigned short)((run ? HELD_MOVE_RUN : 0) | (walk ? HELD_MOVE_WALK : 0) |
+        (back ? HELD_MOVE_BACK : 0) | (left ? HELD_MOVE_LEFT : 0) | (right ? HELD_MOVE_RIGHT : 0) |
+        (strafeL ? HELD_MOVE_STRAFE_LEFT : 0) | (strafeR ? HELD_MOVE_STRAFE_RIGHT : 0)));
 }
 
 struct uw_frame_pacing {
@@ -391,6 +348,8 @@ void uw_pump_events(void) {
        SDL_KEYDOWN/TEXTINPUT cases) doesn't stop it on its own... */
     if (!dbgui_visible() || dbgui_console_active()) {
         poll_dungeon_movement_keys(game_frame_due);
+    } else {
+        set_held_movement_keys(0);   /* the debug UI owns the keyboard: nothing is held */
     }
 
     if (g_mouseup_deferred) {
