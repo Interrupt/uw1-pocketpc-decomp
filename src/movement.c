@@ -2,6 +2,7 @@
    resolution, and the reticle object pick. Split out of uw.c (the original monolithic decompile)
    once these functions' real roles were confirmed. */
 #include "headers/movement.h"
+#include "headers/input.h"
 #include "headers/options.h"
 #include "headers/debug.h"
 #include <stdio.h>
@@ -1225,6 +1226,50 @@ int uw_turn_rate_accel(void) {
   return g_opts.turn_accel;
 }
 
+/* Port, DOS style (do_player_keyboard): turn the held movement keys into the forward rate
+   DAT_0023bf48, turn rate DAT_0023bf4c and movement mode, without going through the pending-key
+   slot. Turning wins over the single-direction moves; forward and a turn combine into a diagonal. */
+static void decode_held_movement_keys(void)
+{
+  ushort held = g_held_move_keys;
+  int turning = 0;
+  int forward = (held & (HELD_MOVE_RUN | HELD_MOVE_WALK)) != 0;
+  int walk_slow;
+  int accel;
+
+  if ((held & HELD_MOVE_LEFT) && !(held & HELD_MOVE_RIGHT)) {
+    turning = -1;
+  }
+  else if ((held & HELD_MOVE_RIGHT) && !(held & HELD_MOVE_LEFT)) {
+    turning = 1;
+  }
+  /* S walks: pin the accelerator below the step clamp so it is a genuine slow walk. */
+  walk_slow = (held & HELD_MOVE_WALK) && (turning != 0 || !(held & HELD_MOVE_RUN));
+  accel = walk_slow ? (int)g_opts.walk_accel : (int)DAT_0024af6c;
+
+  if (turning != 0) {
+    if (forward) {
+      DAT_0023bf48 = ordint_divmod(100,(int)((long long)accel * 0x500000 >> 0x10)).quot;
+    }
+    DAT_0023bf4c = ordint_divmod(100,(int)((long long)uw_turn_rate_accel() *
+                                           (turning < 0 ? -0x5a0000 : 0x5a0000) >> 0x10)).quot;
+    g_movement_mode = 1;
+  }
+  else if (forward) {
+    DAT_0023bf48 = ordint_divmod(100,(int)((long long)accel * 0x500000 >> 0x10)).quot;
+    g_movement_mode = 1;
+  }
+  else if (held & HELD_MOVE_BACK) {
+    g_movement_mode = 8;
+  }
+  else if ((held & HELD_MOVE_STRAFE_LEFT) && !(held & HELD_MOVE_STRAFE_RIGHT)) {
+    g_movement_mode = 9;
+  }
+  else if ((held & HELD_MOVE_STRAFE_RIGHT) && !(held & HELD_MOVE_STRAFE_LEFT)) {
+    g_movement_mode = 10;
+  }
+}
+
 // was FUN_000685e8 -- turn the latched input code (DAT_0023c448) into the analog forward rate
 // DAT_0023bf48 / turn rate DAT_0023bf4c.
 void decode_movement_command()
@@ -1251,6 +1296,10 @@ void decode_movement_command()
   if (*DAT_00087944 != '\0') {
     DAT_0023bf48 = 0;
     DAT_0023bf4c = 0;
+    return;
+  }
+  if (g_held_move_keys != 0) {
+    decode_held_movement_keys();
     return;
   }
   if (DAT_0023c448 < 0x2f) {

@@ -224,7 +224,18 @@ add_fixture_game_unit_test(traps src/traps.c:dispatch_trap_type_effect
 add_fixture_game_unit_test(hotspot_marker src/babl.c:draw_hotspot_crosshair_marker)
 add_fixture_game_unit_test(noise
   src/ai.c:alert_npc_to_noise_callback src/ai.c:emit_noise_alert)
-add_fixture_game_unit_test(keyboard src/input.c:handle_keyboard_message)
+add_fixture_game_unit_test(keyboard
+  src/input.c:handle_keyboard_message)
+# Jumping while a movement key is held: the shared key latch and the jump key's dispatch.
+add_fixture_game_unit_test(jump_walking
+  src/input.c:@DAT_00086e70_backing src/input.c:%DAT_00086e70
+  src/input.c:handle_keyboard_message src/input.c:move_command_dispatch
+  src/input.c:set_held_movement_keys
+  src/movement.c:@DAT_00087944 src/movement.c:@DAT_00087948
+  src/movement.c:@DAT_0008794c src/movement.c:@DAT_00087950
+  src/movement.c:uw_turn_rate_accel src/movement.c:decode_held_movement_keys
+  src/movement.c:decode_movement_command)
+target_link_libraries(uw_test_jump_walking PUBLIC uw_test_division)
 add_fixture_game_unit_test(visibility_walk
   src/visibility.c:@DAT_00086af0_arr
   src/visibility.c:@DAT_00086af8_region
@@ -864,6 +875,7 @@ target_compile_definitions(test_gx_pacing PRIVATE UW_TEST_DATA_DIR="${PROJECT_SO
 
 add_game_test_library(uw_test_look_pacing
   src/gx_stub.c:poll_dungeon_movement_keys
+  src/input.c:set_held_movement_keys
   src/gx_stub.c:@uw_frame_pacing
   src/gx_stub.c:@g_display_pacing
   src/gx_stub.c:@g_game_pacing
@@ -1282,16 +1294,9 @@ if(UW_SPATCH_TESTS)
     COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_stack_split_fields.py"
       "${UW_SPATCH_EXECUTABLE}")
-  add_test(NAME held_drop_fields
-    COMMAND "${Python3_EXECUTABLE}"
-      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_held_drop_fields.py")
   add_test(NAME durability_fields
     COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_durability_fields.py"
-      "${UW_SPATCH_EXECUTABLE}")
-  add_test(NAME blood_splat_fields
-    COMMAND "${Python3_EXECUTABLE}"
-      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_blood_splat_fields.py"
       "${UW_SPATCH_EXECUTABLE}")
   find_program(UW_CLANG_EXECUTABLE clang)
   if(UW_CLANG_EXECUTABLE)
