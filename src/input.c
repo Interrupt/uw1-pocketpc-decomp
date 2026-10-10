@@ -1026,6 +1026,12 @@ int handle_keyboard_message(int window, int message, uint wparam)
         DAT_000876c8 = 1;
         DAT_0024af6c = 0;
       }
+      else {
+        /* The walk goes on, but the released key's own pending code must still be dropped. The
+           main loop only clears the slot when DAT_000876c8 says a key came up, which a held
+           movement key keeps at 0, so a jump would otherwise repeat for as long as it is held. */
+        DAT_0023c448 = 0;
+      }
       return 0;
     }
     if (message != 0x102) {

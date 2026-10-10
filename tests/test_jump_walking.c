@@ -44,6 +44,15 @@ static void test_releasing_another_key_does_not_stall_the_walk(void)
     TEST_ASSERT_TRUE(DAT_0024af6c > 0);
     TEST_ASSERT_EQUAL_INT(0, DAT_000876c8);
 }
+static void test_a_released_jump_key_is_not_repeated_while_walking(void)
+{
+    set_held_movement_keys(HELD_MOVE_RUN);
+    DAT_0023c448 = 0x4a;                /* the jump key's pending code */
+    key_up();
+    TEST_ASSERT_EQUAL_HEX16(0, DAT_0023c448);
+    TEST_ASSERT_TRUE(DAT_0024af6c > 0); /* and the walk carries on */
+    TEST_ASSERT_EQUAL_INT(0, DAT_000876c8);
+}
 static void test_releasing_every_movement_key_stops_the_walk(void)
 {
     set_held_movement_keys(HELD_MOVE_RUN);
@@ -121,6 +130,7 @@ int main(void)
     RUN_TEST(test_jump_with_forward_held_is_a_running_jump);
     RUN_TEST(test_jump_without_movement_is_a_standing_jump);
     RUN_TEST(test_releasing_another_key_does_not_stall_the_walk);
+    RUN_TEST(test_a_released_jump_key_is_not_repeated_while_walking);
     RUN_TEST(test_releasing_every_movement_key_stops_the_walk);
     RUN_TEST(test_pressing_forward_restarts_the_accelerator);
     RUN_TEST(test_forward_and_turn_make_a_diagonal);
