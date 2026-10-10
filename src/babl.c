@@ -917,7 +917,7 @@ void babl_builtin_x_obj_stuff(char *args)
   short *psVar9;
   ushort *puVar10;
 
-  ushort *puVar11_rec;
+  uw_object_hdr_t *puVar11_rec;
   uint uVar12;
   
   psVar4 = (short *)babl_var_word_addr((int)*(short *)(args + -0xe));
@@ -927,75 +927,67 @@ void babl_builtin_x_obj_stuff(char *args)
   psVar8 = (short *)babl_var_word_addr((int)*(short *)(args + -6));
   psVar9 = (short *)babl_var_word_addr((int)*(short *)(args + -4));
   puVar10 = (ushort *)babl_var_word_addr((int)*(short *)(args + -2));
-  puVar11_rec = (ushort *)get_object_record_by_slot_index(babl_read_var_word((int)*(short *)(args + -0x12)));  /* r0 passthrough */
+  puVar11_rec = get_object_record_by_slot_index(babl_read_var_word((int)*(short *)(args + -0x12)));  /* r0 passthrough */
   sVar3 = babl_read_var_word((int)*(short *)(args + -0x10));
   if (sVar3 == 0) {
-    if (((*psVar4 != -1) && ((((uw_object_hdr_t *)puVar11_rec)->object_id & 0x1c0) != 0x140)) &&
-        ((g_object_type_props[(((uw_object_hdr_t *)puVar11_rec)->object_id)].class_flags & 3) != 2)) {
-      *psVar4 = (short)(((uw_object_hdr_t *)puVar11_rec)->heading);
+    if (((*psVar4 != -1) && ((puVar11_rec->object_id & 0x1c0) != 0x140)) &&
+        ((g_object_type_props[(puVar11_rec->object_id)].class_flags & 3) != 2)) {
+      *psVar4 = (short)(puVar11_rec->heading);
     }
     if (*puVar5 != 0xffff) {
-      *puVar5 = ((uw_object_hdr_t *)puVar11_rec)->owner;
+      *puVar5 = puVar11_rec->owner;
     }
     if (*psVar6 != -1) {
-      *psVar6 = (short)((((uw_object_hdr_t *)puVar11_rec)->type_flags_high & 0x1e) >> 1);
+      *psVar6 = (short)(puVar11_rec->flags_res | (puVar11_rec->enchanted << 3));
     }
     if (*psVar7 != -1) {
-      *psVar7 = (short)(((((uw_object_hdr_t *)puVar11_rec)->link & 0x1ff) << 6) >> 6);
+      *psVar7 = (short)(puVar11_rec->link & 0x1ff);
     }
     if (*psVar8 != -1) {
-      *psVar8 = ((short)(char)((uw_object_hdr_t *)puVar11_rec)->type_flags_high & 4U) << 8;
+      *psVar8 = (puVar11_rec->flags_res & 2) << 9;
     }
     if (*psVar9 != -1) {
-      *psVar9 = ((short)(char)((uw_object_hdr_t *)puVar11_rec)->type_flags_high & 2U) << 8;
+      *psVar9 = (puVar11_rec->flags_res & 1) << 9;
     }
     if (*puVar10 != 0xffff) {
-      *puVar10 = ((uw_object_hdr_t *)puVar11_rec)->quality;
+      *puVar10 = puVar11_rec->quality;
     }
   }
   else {
-    if ((((int)*psVar4 != 0xffffffff) && ((((uw_object_hdr_t *)puVar11_rec)->object_id & 0x1c0) != 0x140)) &&
-        ((g_object_type_props[(((uw_object_hdr_t *)puVar11_rec)->object_id)].class_flags & 3) != 2)) {
-      uVar12 = ((uw_object_hdr_t *)puVar11_rec)->position_word & 0xfc7f | ((int)*psVar4 & 7U) << 7;
-      ((uw_object_hdr_t *)puVar11_rec)->position_word = (ushort)uVar12;
+    if ((((int)*psVar4 != 0xffffffff) && ((puVar11_rec->object_id & 0x1c0) != 0x140)) &&
+        ((g_object_type_props[(puVar11_rec->object_id)].class_flags & 3) != 2)) {
+      uVar12 = puVar11_rec->position_word & 0xfc7f | ((int)*psVar4 & 7U) << 7;
+      puVar11_rec->heading = (uVar12 >> 7) & 7;
     }
     if (*puVar5 != 0xffff) {
-      uVar1 = ((uw_object_hdr_t *)puVar11_rec)->link_word;
+      uVar1 = puVar11_rec->link_word;
       bVar2 = (byte)uVar1;
-      ((uw_object_hdr_t *)puVar11_rec)->link_word_low = (bVar2 ^ (byte)*puVar5) & 0x3f ^ bVar2;
-      ((uw_object_hdr_t *)puVar11_rec)->link_word_high = (byte)(char)(uVar1 >> 8);
+      puVar11_rec->owner = *puVar5 & 0x3f;
     }
     sVar3 = *psVar6;
     if ((int)sVar3 != 0xffffffff) {
-      uVar1 = ((uw_object_hdr_t *)puVar11_rec)->type_flags;
-      ((uw_object_hdr_t *)puVar11_rec)->type_flags_low = (byte)(char)(uVar1 & 0xe1ff);
-      ((uw_object_hdr_t *)puVar11_rec)->type_flags_high =
-          (byte)((uVar1 & 0xe1ff) >> 8) | (byte)((((int)sVar3 & 0xfU) << 9) >> 8);
+      uVar1 = puVar11_rec->type_flags;
+      puVar11_rec->flags_res = sVar3 & 7;
+      puVar11_rec->enchanted = (sVar3 >> 3) & 1;
     }
     uVar12 = (uint)*psVar7;
     if (uVar12 != 0xffffffff) {
-      ((uw_object_hdr_t *)puVar11_rec)->link_word_low = ((uw_object_hdr_t *)puVar11_rec)->owner | (byte)(uVar12 << 6);
-      ((uw_object_hdr_t *)puVar11_rec)->link_word_high = (byte)(char)((uVar12 & 0x3ffffff | 0xfe00) >> 2);
+      puVar11_rec->link = (uVar12 & 0x1ff) | 0x200;
     }
     sVar3 = *psVar8;
     if ((int)sVar3 != 0xffffffff) {
-      uVar1 = ((uw_object_hdr_t *)puVar11_rec)->type_flags;
-      ((uw_object_hdr_t *)puVar11_rec)->type_flags_low = (byte)(char)(uVar1 & 0xfbff);
-      ((uw_object_hdr_t *)puVar11_rec)->type_flags_high =
-          (byte)((uVar1 & 0xfbff) >> 8) | (byte)((((int)sVar3 & 1U) << 10) >> 8);
+      uVar1 = puVar11_rec->type_flags;
+      puVar11_rec->flags_res = ((uVar1 >> 9) & 5) | ((sVar3 & 1) << 1);
     }
     sVar3 = *psVar9;
     if ((int)sVar3 != 0xffffffff) {
-      uVar1 = ((uw_object_hdr_t *)puVar11_rec)->type_flags;
-      ((uw_object_hdr_t *)puVar11_rec)->type_flags_low = (byte)(char)(uVar1 & 0xfdff);
-      ((uw_object_hdr_t *)puVar11_rec)->type_flags_high =
-          (byte)((uVar1 & 0xfdff) >> 8) | (byte)((((int)sVar3 & 1U) << 9) >> 8);
+      uVar1 = puVar11_rec->type_flags;
+      puVar11_rec->flags_res = ((uVar1 >> 9) & 6) | (sVar3 & 1);
     }
     if (*puVar10 != 0xffff) {
-      uVar1 = ((uw_object_hdr_t *)puVar11_rec)->chain_word;
+      uVar1 = puVar11_rec->chain_word;
       bVar2 = (byte)uVar1;
-      ((uw_object_hdr_t *)puVar11_rec)->chain_word_low = (bVar2 ^ (byte)*puVar10) & 0x3f ^ bVar2;
-      ((uw_object_hdr_t *)puVar11_rec)->chain_word_high = (byte)(char)(uVar1 >> 8);
+      puVar11_rec->quality = *puVar10 & 0x3f;
     }
   }
 }

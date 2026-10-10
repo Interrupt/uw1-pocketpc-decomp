@@ -4177,12 +4177,6 @@ R F(...) {
 |
 - *(ushort *)puVar11_rec & 0x1ff
 + ((uw_object_hdr_t *)puVar11_rec)->object_id
-|
-- puVar11_rec[0] & 0x1ff
-+ ((uw_object_hdr_t *)puVar11_rec)->object_id
-|
-- *puVar11_rec & 0x1ff
-+ ((uw_object_hdr_t *)puVar11_rec)->object_id
 )
 ...>
 }
@@ -4211,18 +4205,6 @@ R F(...) {
 + ((uw_object_hdr_t *)puVar11_rec)->flags_res
 |
 - (*(ushort *)puVar11_rec & 0xe00) >> 9
-+ ((uw_object_hdr_t *)puVar11_rec)->flags_res
-|
-- (puVar11_rec[0] >> 9) & 0x7
-+ ((uw_object_hdr_t *)puVar11_rec)->flags_res
-|
-- (puVar11_rec[0] & 0xe00) >> 9
-+ ((uw_object_hdr_t *)puVar11_rec)->flags_res
-|
-- (*puVar11_rec >> 9) & 0x7
-+ ((uw_object_hdr_t *)puVar11_rec)->flags_res
-|
-- (*puVar11_rec & 0xe00) >> 9
 + ((uw_object_hdr_t *)puVar11_rec)->flags_res
 |
 - (*(byte *)((char *)puVar11_rec + 0x1) >> 1) & 0x7
@@ -4260,18 +4242,6 @@ R F(...) {
 - (*(ushort *)puVar11_rec & 0x1000) >> 12
 + ((uw_object_hdr_t *)puVar11_rec)->enchanted
 |
-- (puVar11_rec[0] >> 12) & 0x1
-+ ((uw_object_hdr_t *)puVar11_rec)->enchanted
-|
-- (puVar11_rec[0] & 0x1000) >> 12
-+ ((uw_object_hdr_t *)puVar11_rec)->enchanted
-|
-- (*puVar11_rec >> 12) & 0x1
-+ ((uw_object_hdr_t *)puVar11_rec)->enchanted
-|
-- (*puVar11_rec & 0x1000) >> 12
-+ ((uw_object_hdr_t *)puVar11_rec)->enchanted
-|
 - (*(byte *)((char *)puVar11_rec + 0x1) >> 4) & 0x1
 + ((uw_object_hdr_t *)puVar11_rec)->enchanted
 |
@@ -4305,18 +4275,6 @@ R F(...) {
 + ((uw_object_hdr_t *)puVar11_rec)->doordir
 |
 - (*(ushort *)puVar11_rec & 0x2000) >> 13
-+ ((uw_object_hdr_t *)puVar11_rec)->doordir
-|
-- (puVar11_rec[0] >> 13) & 0x1
-+ ((uw_object_hdr_t *)puVar11_rec)->doordir
-|
-- (puVar11_rec[0] & 0x2000) >> 13
-+ ((uw_object_hdr_t *)puVar11_rec)->doordir
-|
-- (*puVar11_rec >> 13) & 0x1
-+ ((uw_object_hdr_t *)puVar11_rec)->doordir
-|
-- (*puVar11_rec & 0x2000) >> 13
 + ((uw_object_hdr_t *)puVar11_rec)->doordir
 |
 - (*(byte *)((char *)puVar11_rec + 0x1) >> 5) & 0x1
@@ -4354,18 +4312,6 @@ R F(...) {
 - (*(ushort *)puVar11_rec & 0x4000) >> 14
 + ((uw_object_hdr_t *)puVar11_rec)->invisible
 |
-- (puVar11_rec[0] >> 14) & 0x1
-+ ((uw_object_hdr_t *)puVar11_rec)->invisible
-|
-- (puVar11_rec[0] & 0x4000) >> 14
-+ ((uw_object_hdr_t *)puVar11_rec)->invisible
-|
-- (*puVar11_rec >> 14) & 0x1
-+ ((uw_object_hdr_t *)puVar11_rec)->invisible
-|
-- (*puVar11_rec & 0x4000) >> 14
-+ ((uw_object_hdr_t *)puVar11_rec)->invisible
-|
 - (*(byte *)((char *)puVar11_rec + 0x1) >> 6) & 0x1
 + ((uw_object_hdr_t *)puVar11_rec)->invisible
 |
@@ -4389,43 +4335,16 @@ R F(...) {
 - (*(ushort *)((char *)puVar11_rec + 0x0) & 0x8000) >> 15
 + ((uw_object_hdr_t *)puVar11_rec)->is_quant
 |
-- *(ushort *)((char *)puVar11_rec + 0x0) >> 15
-+ ((uw_object_hdr_t *)puVar11_rec)->is_quant
-|
 - (((ushort *)puVar11_rec)[0] >> 15) & 0x1
 + ((uw_object_hdr_t *)puVar11_rec)->is_quant
 |
 - (((ushort *)puVar11_rec)[0] & 0x8000) >> 15
 + ((uw_object_hdr_t *)puVar11_rec)->is_quant
 |
-- ((ushort *)puVar11_rec)[0] >> 15
-+ ((uw_object_hdr_t *)puVar11_rec)->is_quant
-|
 - (*(ushort *)puVar11_rec >> 15) & 0x1
 + ((uw_object_hdr_t *)puVar11_rec)->is_quant
 |
 - (*(ushort *)puVar11_rec & 0x8000) >> 15
-+ ((uw_object_hdr_t *)puVar11_rec)->is_quant
-|
-- *(ushort *)puVar11_rec >> 15
-+ ((uw_object_hdr_t *)puVar11_rec)->is_quant
-|
-- (puVar11_rec[0] >> 15) & 0x1
-+ ((uw_object_hdr_t *)puVar11_rec)->is_quant
-|
-- (puVar11_rec[0] & 0x8000) >> 15
-+ ((uw_object_hdr_t *)puVar11_rec)->is_quant
-|
-- puVar11_rec[0] >> 15
-+ ((uw_object_hdr_t *)puVar11_rec)->is_quant
-|
-- (*puVar11_rec >> 15) & 0x1
-+ ((uw_object_hdr_t *)puVar11_rec)->is_quant
-|
-- (*puVar11_rec & 0x8000) >> 15
-+ ((uw_object_hdr_t *)puVar11_rec)->is_quant
-|
-- *puVar11_rec >> 15
 + ((uw_object_hdr_t *)puVar11_rec)->is_quant
 |
 - (*(byte *)((char *)puVar11_rec + 0x1) >> 7) & 0x1
@@ -4454,13 +4373,7 @@ R F(...) {
 - ((ushort *)puVar11_rec)[1] & 0x7f
 + ((uw_object_hdr_t *)puVar11_rec)->zpos
 |
-- puVar11_rec[1] & 0x7f
-+ ((uw_object_hdr_t *)puVar11_rec)->zpos
-|
 - *(byte *)((char *)puVar11_rec + 0x2) & 0x7f
-+ ((uw_object_hdr_t *)puVar11_rec)->zpos
-|
-- (byte)puVar11_rec[1] & 0x7f
 + ((uw_object_hdr_t *)puVar11_rec)->zpos
 )
 ...>
@@ -4484,12 +4397,6 @@ R F(...) {
 + ((uw_object_hdr_t *)puVar11_rec)->heading
 |
 - (((ushort *)puVar11_rec)[1] & 0x380) >> 7
-+ ((uw_object_hdr_t *)puVar11_rec)->heading
-|
-- (puVar11_rec[1] >> 7) & 0x7
-+ ((uw_object_hdr_t *)puVar11_rec)->heading
-|
-- (puVar11_rec[1] & 0x380) >> 7
 + ((uw_object_hdr_t *)puVar11_rec)->heading
 )
 ...>
@@ -4515,12 +4422,6 @@ R F(...) {
 - (((ushort *)puVar11_rec)[1] & 0x1c00) >> 10
 + ((uw_object_hdr_t *)puVar11_rec)->ypos
 |
-- (puVar11_rec[1] >> 10) & 0x7
-+ ((uw_object_hdr_t *)puVar11_rec)->ypos
-|
-- (puVar11_rec[1] & 0x1c00) >> 10
-+ ((uw_object_hdr_t *)puVar11_rec)->ypos
-|
 - (*(byte *)((char *)puVar11_rec + 0x3) >> 2) & 0x7
 + ((uw_object_hdr_t *)puVar11_rec)->ypos
 |
@@ -4544,25 +4445,10 @@ R F(...) {
 - (*(ushort *)((char *)puVar11_rec + 0x2) & 0xe000) >> 13
 + ((uw_object_hdr_t *)puVar11_rec)->xpos
 |
-- *(ushort *)((char *)puVar11_rec + 0x2) >> 13
-+ ((uw_object_hdr_t *)puVar11_rec)->xpos
-|
 - (((ushort *)puVar11_rec)[1] >> 13) & 0x7
 + ((uw_object_hdr_t *)puVar11_rec)->xpos
 |
 - (((ushort *)puVar11_rec)[1] & 0xe000) >> 13
-+ ((uw_object_hdr_t *)puVar11_rec)->xpos
-|
-- ((ushort *)puVar11_rec)[1] >> 13
-+ ((uw_object_hdr_t *)puVar11_rec)->xpos
-|
-- (puVar11_rec[1] >> 13) & 0x7
-+ ((uw_object_hdr_t *)puVar11_rec)->xpos
-|
-- (puVar11_rec[1] & 0xe000) >> 13
-+ ((uw_object_hdr_t *)puVar11_rec)->xpos
-|
-- puVar11_rec[1] >> 13
 + ((uw_object_hdr_t *)puVar11_rec)->xpos
 |
 - (*(byte *)((char *)puVar11_rec + 0x3) >> 5) & 0x7
@@ -4591,13 +4477,7 @@ R F(...) {
 - ((ushort *)puVar11_rec)[2] & 0x3f
 + ((uw_object_hdr_t *)puVar11_rec)->quality
 |
-- puVar11_rec[2] & 0x3f
-+ ((uw_object_hdr_t *)puVar11_rec)->quality
-|
 - *(byte *)((char *)puVar11_rec + 0x4) & 0x3f
-+ ((uw_object_hdr_t *)puVar11_rec)->quality
-|
-- (byte)puVar11_rec[2] & 0x3f
 + ((uw_object_hdr_t *)puVar11_rec)->quality
 )
 ...>
@@ -4617,25 +4497,10 @@ R F(...) {
 - (*(ushort *)((char *)puVar11_rec + 0x4) & 0xffc0) >> 6
 + ((uw_object_hdr_t *)puVar11_rec)->next
 |
-- *(ushort *)((char *)puVar11_rec + 0x4) >> 6
-+ ((uw_object_hdr_t *)puVar11_rec)->next
-|
 - (((ushort *)puVar11_rec)[2] >> 6) & 0x3ff
 + ((uw_object_hdr_t *)puVar11_rec)->next
 |
 - (((ushort *)puVar11_rec)[2] & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)puVar11_rec)->next
-|
-- ((ushort *)puVar11_rec)[2] >> 6
-+ ((uw_object_hdr_t *)puVar11_rec)->next
-|
-- (puVar11_rec[2] >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)puVar11_rec)->next
-|
-- (puVar11_rec[2] & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)puVar11_rec)->next
-|
-- puVar11_rec[2] >> 6
 + ((uw_object_hdr_t *)puVar11_rec)->next
 )
 ...>
@@ -4655,13 +4520,7 @@ R F(...) {
 - ((ushort *)puVar11_rec)[3] & 0x3f
 + ((uw_object_hdr_t *)puVar11_rec)->owner
 |
-- puVar11_rec[3] & 0x3f
-+ ((uw_object_hdr_t *)puVar11_rec)->owner
-|
 - *(byte *)((char *)puVar11_rec + 0x6) & 0x3f
-+ ((uw_object_hdr_t *)puVar11_rec)->owner
-|
-- (byte)puVar11_rec[3] & 0x3f
 + ((uw_object_hdr_t *)puVar11_rec)->owner
 )
 ...>
@@ -4681,25 +4540,10 @@ R F(...) {
 - (*(ushort *)((char *)puVar11_rec + 0x6) & 0xffc0) >> 6
 + ((uw_object_hdr_t *)puVar11_rec)->link
 |
-- *(ushort *)((char *)puVar11_rec + 0x6) >> 6
-+ ((uw_object_hdr_t *)puVar11_rec)->link
-|
 - (((ushort *)puVar11_rec)[3] >> 6) & 0x3ff
 + ((uw_object_hdr_t *)puVar11_rec)->link
 |
 - (((ushort *)puVar11_rec)[3] & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)puVar11_rec)->link
-|
-- ((ushort *)puVar11_rec)[3] >> 6
-+ ((uw_object_hdr_t *)puVar11_rec)->link
-|
-- (puVar11_rec[3] >> 6) & 0x3ff
-+ ((uw_object_hdr_t *)puVar11_rec)->link
-|
-- (puVar11_rec[3] & 0xffc0) >> 6
-+ ((uw_object_hdr_t *)puVar11_rec)->link
-|
-- puVar11_rec[3] >> 6
 + ((uw_object_hdr_t *)puVar11_rec)->link
 )
 ...>

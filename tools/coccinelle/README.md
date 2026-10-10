@@ -1197,3 +1197,24 @@ records. Header/guard/tile bytes, placement globals and callback arguments/
 events/counts are compared. Use `--reference PATH` with the original `ai.c`
 and `--asan` for AddressSanitizer. The worklist now contains 135 byte views
 (ten fewer); retained captures remain intentional.
+
+`generate_babl_stuff_rules.py` / `babl-stuff-fields.json` convert
+`babl_builtin_x_obj_stuff` using the exact-source applier. The record returned
+by the slot accessor uses a common-header pointer. Named heading, owner,
+quality, link and flag properties replace byte views and paired stores.
+The flag getters retain their script-visible values of 512 and 1024, and the
+link setter still forces bit 9 while the getter exposes only the low nine bits.
+Full intermediate captures, sentinel checks, class gates and the order of
+script-variable reads/writes remain intact. Unknown flag slices keep their
+neutral `flags_res` name.
+
+The complete-body rule and test require exact generation/conversion,
+idempotence and rejection of changed callbacks, volatile/escaping captures,
+masks, intervening stores, excluded scopes, quoted bodies and ambiguous
+definitions. The 1,310,720 original/current executions cover every packed
+header word, getter/setter modes, sentinel combinations, shared script
+variables, script variables aliasing header words and callback-mutated records.
+Header/guard/argument/variable bytes and callback events/counts are compared.
+Use `--reference PATH` with the original `babl.c` and `--asan` for
+AddressSanitizer. The worklist now contains 120 byte views (fifteen fewer);
+retained full-word captures remain intentional.

@@ -1244,6 +1244,9 @@ if(UW_SPATCH_EXECUTABLE)
   add_test(NAME monster_loot_fields
     COMMAND "${Python3_EXECUTABLE}" -B
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_monster_loot_fields.py")
+  add_test(NAME babl_stuff_fields
+    COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_babl_stuff_fields.py")
   find_program(UW_CLANG_EXECUTABLE clang)
   if(UW_CLANG_EXECUTABLE)
     add_test(NAME current_object_aliases
