@@ -249,6 +249,126 @@ static void test_toggle_action_field_calls_its_callback(void)
     TEST_ASSERT_NOT_EQUAL_INT_MESSAGE(before[1], vals[1], "selection did not pass through the action row to f1");
 }
 
+/* ---- console ---- */
+#define DBGUI_KEY_ESCAPE    27
+#define DBGUI_KEY_BACKSPACE 8
+
+static char g_con_lines[8][64];
+static int g_con_line_count;
+static void record_console_line(const char *line)
+{
+    if (g_con_line_count < 8) {
+        strncpy(g_con_lines[g_con_line_count], line, 63);
+        g_con_lines[g_con_line_count][63] = 0;
+    }
+    g_con_line_count++;
+}
+
+static void open_console(void)
+{
+    g_con_line_count = 0;
+    dbgui_console_set_handler(record_console_line);
+    build_fields();
+    dbgui_draw();
+    dbgui_console_open();
+}
+
+static void type_line(const char *text)
+{
+    dbgui_feed_text(text);
+    dbgui_feed_key(DBGUI_KEY_RETURN);
+}
+
+void test_console_button_style_open_makes_console_active(void)
+{
+    TEST_ASSERT_FALSE(dbgui_console_active());
+    open_console();
+    TEST_ASSERT_TRUE(dbgui_console_active());
+    TEST_ASSERT_TRUE_MESSAGE(dbgui_visible(), "console must keep owning input via dbgui_visible()");
+}
+
+void test_console_submits_typed_line_to_handler(void)
+{
+    open_console();
+    type_line("TELEPORT 56 45");
+    TEST_ASSERT_EQUAL_INT(1, g_con_line_count);
+    TEST_ASSERT_EQUAL_STRING("TELEPORT 56 45", g_con_lines[0]);
+}
+
+void test_console_backspace_edits_the_line(void)
+{
+    open_console();
+    dbgui_feed_text("OPENMAPP");
+    dbgui_feed_key(DBGUI_KEY_BACKSPACE);
+    dbgui_feed_key(DBGUI_KEY_RETURN);
+    TEST_ASSERT_EQUAL_STRING("OPENMAP", g_con_lines[0]);
+}
+
+void test_console_empty_line_and_clear_do_not_reach_handler(void)
+{
+    open_console();
+    dbgui_feed_key(DBGUI_KEY_RETURN);
+    type_line("clear");
+    TEST_ASSERT_EQUAL_INT(0, g_con_line_count);
+}
+
+void test_console_up_recalls_previous_commands(void)
+{
+    open_console();
+    type_line("REVEAL");
+    type_line("OPENMAP");
+    dbgui_feed_key(DBGUI_KEY_UP);
+    dbgui_feed_key(DBGUI_KEY_RETURN);
+    TEST_ASSERT_EQUAL_STRING("OPENMAP", g_con_lines[2]);
+    dbgui_feed_key(DBGUI_KEY_UP);
+    dbgui_feed_key(DBGUI_KEY_UP);
+    dbgui_feed_key(DBGUI_KEY_RETURN);
+    TEST_ASSERT_EQUAL_STRING("REVEAL", g_con_lines[3]);
+}
+
+void test_console_ignores_backtick_text_and_does_not_edit_panel_fields(void)
+{
+    open_console();
+    dbgui_feed_text("`W");
+    dbgui_feed_key(DBGUI_KEY_RETURN);
+    TEST_ASSERT_EQUAL_STRING("W", g_con_lines[0]);
+    /* Panel rows must not react to clicks or keys while the console owns input. */
+    dbgui_feed_mouse_down(dbgui_test_row_x(), dbgui_test_row_y(0));
+    TEST_ASSERT_EQUAL_INT(0, vals[0]);
+}
+
+void test_console_escape_returns_to_panel_and_backtick_closes_all(void)
+{
+    open_console();
+    dbgui_feed_key(DBGUI_KEY_ESCAPE);
+    TEST_ASSERT_FALSE(dbgui_console_active());
+    TEST_ASSERT_TRUE(dbgui_visible());
+
+    dbgui_console_open();
+    TEST_ASSERT_TRUE(dbgui_console_active());
+    dbgui_toggle();
+    TEST_ASSERT_FALSE(dbgui_console_active());
+    TEST_ASSERT_FALSE(dbgui_visible());
+}
+
+void test_console_open_requires_visible_panel(void)
+{
+    dbgui_toggle(); /* hide */
+    dbgui_console_open();
+    TEST_ASSERT_FALSE(dbgui_console_active());
+}
+
+void test_console_draw_does_not_crash_with_long_output(void)
+{
+    int i;
+    open_console();
+    for (i = 0; i < 400; i++) dbgui_console_print("a long line of output that keeps scrolling the log around\nsecond");
+    dbgui_feed_key(0x4000004B); /* PageUp */
+    dbgui_draw();
+    dbgui_feed_key(0x4000004E); /* PageDown */
+    dbgui_draw();
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -262,5 +382,14 @@ int main(void)
     RUN_TEST(test_text_field_is_read_only);
     RUN_TEST(test_shrinking_panel_clears_the_now_unused_rows);
     RUN_TEST(test_toggle_action_field_calls_its_callback);
+    RUN_TEST(test_console_button_style_open_makes_console_active);
+    RUN_TEST(test_console_submits_typed_line_to_handler);
+    RUN_TEST(test_console_backspace_edits_the_line);
+    RUN_TEST(test_console_empty_line_and_clear_do_not_reach_handler);
+    RUN_TEST(test_console_up_recalls_previous_commands);
+    RUN_TEST(test_console_ignores_backtick_text_and_does_not_edit_panel_fields);
+    RUN_TEST(test_console_escape_returns_to_panel_and_backtick_closes_all);
+    RUN_TEST(test_console_open_requires_visible_panel);
+    RUN_TEST(test_console_draw_does_not_crash_with_long_output);
     return UNITY_END();
 }
