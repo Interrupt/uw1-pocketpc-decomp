@@ -17,7 +17,6 @@ int apply_area_terrain_effect(short tile_x, int tile_y, short wall_texture, shor
 int apply_poison_or_damage_trap_effect(int object_slot, uint damage_delta, int unused_a, int unused_b);
 int check_object_area_for_spawn_block(ushort *object);
 void close_door_object(void *actor, ushort *door);
-int dispatch_quest_event_code(void *trap_record, int tile_x, int tile_y);
 int dispatch_trap_special_or_tile_action(byte context_x, byte context_y, void *tile_x, void *tile_y, ushort action_id, byte argument);
 int encode_object_slot_index(const uw_object_hdr_t *object);
 void free_object_slot(uw_object_hdr_t *object);
@@ -57,6 +56,8 @@ char *available_message;
 uint message_id;
 
 int lookups, prints;
+int terrain_calls, terrain_tile_x, terrain_tile_y, terrain_height;
+char DAT_0023c27c;
 
 char *get_message_string(ushort id)
 { lookups++; message_id = id; return available_message; }
@@ -86,15 +87,19 @@ uw_object_hdr_t *find_object_in_chain(ushort **link_cursor, int recurse,
 
 uw_object_hdr_t *alloc_object_slot(int region) { (void)region; TEST_FAIL_MESSAGE("Unexpected alloc_object_slot in text trap"); return 0; }
 
-int apply_area_terrain_effect(short tile_x, int tile_y, short wall_texture, short height_value, short height_adjust, short floor_texture, short width, short height_extent, short mode) { (void)tile_x; (void)tile_y; (void)wall_texture; (void)height_value; (void)height_adjust; (void)floor_texture; (void)width; (void)height_extent; (void)mode; TEST_FAIL_MESSAGE("Unexpected apply_area_terrain_effect in text trap"); return 0; }
+int apply_area_terrain_effect(short tile_x, int tile_y, short wall_texture, short height_value, short height_adjust, short floor_texture, short width, short height_extent, short mode)
+{
+    (void)wall_texture; (void)height_value; (void)floor_texture; (void)width; (void)height_extent; (void)mode;
+    terrain_calls++;
+    terrain_tile_x = tile_x; terrain_tile_y = tile_y; terrain_height = height_adjust;
+    return 2;
+}
 
 int apply_poison_or_damage_trap_effect(int object_slot, uint damage_delta, int unused_a, int unused_b) { (void)object_slot; (void)damage_delta; (void)unused_a; (void)unused_b; TEST_FAIL_MESSAGE("Unexpected apply_poison_or_damage_trap_effect in text trap"); return 0; }
 
 int check_object_area_for_spawn_block(ushort *object) { (void)object; TEST_FAIL_MESSAGE("Unexpected check_object_area_for_spawn_block in text trap"); return 0; }
 
 void close_door_object(void *actor, ushort *door) { (void)actor; (void)door; TEST_FAIL_MESSAGE("Unexpected close_door_object in text trap"); }
-
-int dispatch_quest_event_code(void *trap_record, int tile_x, int tile_y) { (void)trap_record; (void)tile_x; (void)tile_y; TEST_FAIL_MESSAGE("Unexpected dispatch_quest_event_code in text trap"); return 0; }
 
 int dispatch_trap_special_or_tile_action(byte context_x, byte context_y, void *tile_x, void *tile_y, ushort action_id, byte argument) { (void)context_x; (void)context_y; (void)tile_x; (void)tile_y; (void)action_id; (void)argument; TEST_FAIL_MESSAGE("Unexpected dispatch_trap_special_or_tile_action in text trap"); return 0; }
 
@@ -130,6 +135,19 @@ void toggle_door_object(char *actor, void *door) { (void)actor; (void)door; TEST
 
 void unlink_and_free_object(ushort *link_field, uw_object_hdr_t *object) { (void)link_field; (void)object; TEST_FAIL_MESSAGE("Unexpected unlink_and_free_object in text trap"); }
 
+
+/* Link-only stubs: branches of dispatch_quest_event_code the dial test never takes. */
+void restore_view_from_object_record(char *record, short x, short y) { (void)record; (void)x; (void)y; TEST_FAIL_MESSAGE("Unexpected restore_view_from_object_record"); }
+void trigger_exploding_book_trap_at_tile(int unused, int tile_x, int tile_y) { (void)unused; (void)tile_x; (void)tile_y; TEST_FAIL_MESSAGE("Unexpected trigger_exploding_book_trap_at_tile"); }
+void emit_player_noise_alert(byte noise_type) { (void)noise_type; TEST_FAIL_MESSAGE("Unexpected emit_player_noise_alert"); }
+void handle_level4_maze_puzzle_button(short button, int tile_x, int tile_y) { (void)button; (void)tile_x; (void)tile_y; TEST_FAIL_MESSAGE("Unexpected handle_level4_maze_puzzle_button"); }
+void try_combine_shrine_markers(int unused, int tile_x, int tile_y) { (void)unused; (void)tile_x; (void)tile_y; TEST_FAIL_MESSAGE("Unexpected try_combine_shrine_markers"); }
+void trigger_scripted_npc_conversation(void) { TEST_FAIL_MESSAGE("Unexpected trigger_scripted_npc_conversation"); }
+void for_each_object_of_type(ushort type_id, int mode, int argument, int (*callback)()) { (void)type_id; (void)mode; (void)argument; (void)callback; TEST_FAIL_MESSAGE("Unexpected for_each_object_of_type"); }
+int reset_object_ui_state_callback(char *object) { (void)object; TEST_FAIL_MESSAGE("Unexpected reset_object_ui_state_callback"); return 0; }
+void advance_scheduler_and_show_page3(void) { TEST_FAIL_MESSAGE("Unexpected advance_scheduler_and_show_page3"); }
+void apply_quest_vertical_effect(ushort effect_bits, int unused) { (void)effect_bits; (void)unused; TEST_FAIL_MESSAGE("Unexpected apply_quest_vertical_effect"); }
+
 ushort *level_object(unsigned slot)
 {
     return uw_test_level_object(level_one, sizeof level_one, slot);
@@ -155,6 +173,30 @@ ushort *orb_text_trap(void)
 }
 
 void traps_fixture_reset(void)
-{ available_message = message; lookups = prints = 0; message_id = 0; }
+{ available_message = message; lookups = prints = 0; message_id = 0; terrain_calls = 0; }
 
 void traps_fixture_dispose(void) {}
+
+/* Level 1 tile (56,45): the eight-position dial switch (0x161) -> use trigger (0x1a2) -> "do trap" (0x183). */
+ushort *level_one_dial_switch(void)
+{
+    uw_test_load_map(level_one, sizeof level_one, 1);
+    ushort *tile = (ushort *)(level_one + (56 + 45 * 64) * 4);
+    unsigned slot = tile[1] >> 6;
+    for (unsigned count = 0; slot && count < 1024; count++) {
+        ushort *object = level_object(slot);
+        if ((*object & 0x1ff) == 0x161) return object;
+        slot = object[2] >> 6;
+    }
+    TEST_FAIL_MESSAGE("Expected dial switch 0x161 at (56,45)");
+    return NULL;
+}
+
+ushort *level_one_dial_trap(ushort *sw)
+{
+    ushort *trigger = level_object(sw[3] >> 6);
+    TEST_ASSERT_EQUAL_HEX16(0x1a2, *trigger & 0x1ff);
+    ushort *trap = level_object(trigger[3] >> 6);
+    TEST_ASSERT_EQUAL_HEX16(0x183, *trap & 0x1ff);
+    return trap;
+}
