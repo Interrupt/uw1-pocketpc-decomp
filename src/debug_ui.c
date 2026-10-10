@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <strings.h>
 
 /* g_text_use_palette_color/g_draw_color_index are already declared in
    uw.h; g_text_flat_color (uw.c:32, `undefined2`) isn't -- declare it
@@ -127,6 +128,222 @@ void dbgui_invalidate_region(void)
 #define DBGUI_KEY_DOWN      0x40000051
 #define DBGUI_KEY_LEFT      0x40000050
 #define DBGUI_KEY_RIGHT     0x4000004F
+#define DBGUI_KEY_PAGEUP    0x4000004B
+#define DBGUI_KEY_PAGEDOWN  0x4000004E
+
+/* ---- Quake-style console -------------------------------------------------------------------
+   Opened from the panel's "console" button. Same input ownership as the panel (dbgui_visible()
+   stays true while it is open, so gx_stub.c keeps routing raw keys/text here), but drawn as a
+   full-width drop-down with a scrollback log and an input line. Submitted lines go to whatever
+   handler the owner registered with dbgui_console_set_handler -- demomode.c registers the demofile
+   command executor, so the console accepts exactly the commands a demofile does. This file stays
+   free of any dependency on that: it only knows "call the handler with a line". */
+#define CON_W 320
+#define CON_ROW_H 8                       /* tighter than the panel's DBGUI_ROW_H */
+#define CON_ROWS 8                        /* log rows shown above the input row */
+#define CON_H (CON_ROW_H * (CON_ROWS + 1) + 4)
+#define CON_LOG_LINES 128
+#define CON_LINE_MAX 120
+#define CON_INPUT_MAX 120
+#define CON_HIST_MAX 16
+
+static int g_console_open = 0;
+static char g_con_log[CON_LOG_LINES][CON_LINE_MAX];
+static int g_con_log_count = 0;           /* total lines ever added, ring-indexed by % CON_LOG_LINES */
+static int g_con_scroll = 0;              /* lines scrolled back from the newest */
+static char g_con_input[CON_INPUT_MAX];
+static int g_con_input_len = 0;
+static char g_con_hist[CON_HIST_MAX][CON_INPUT_MAX];
+static int g_con_hist_count = 0;
+static int g_con_hist_pos = -1;           /* -1 = editing a fresh line */
+static unsigned g_con_frame = 0;          /* caret blink */
+static void (*g_con_handler)(const char *line) = 0;
+static unsigned short g_con_saved_px[CON_W * CON_H];
+static int g_con_saved_valid = 0;
+
+static void dbgui_con_save_backing()
+{
+  unsigned short *fb = (unsigned short *)g_uw_framebuffer;
+  int y;
+  if (!fb) return;
+  for (y = 0; y < CON_H && y < DBGUI_FB_HEIGHT; y++)
+    memcpy(&g_con_saved_px[y * CON_W], &fb[y * DBGUI_FB_STRIDE], CON_W * sizeof(unsigned short));
+  g_con_saved_valid = 1;
+}
+
+static void dbgui_con_restore_backing()
+{
+  unsigned short *fb = (unsigned short *)g_uw_framebuffer;
+  int y;
+  if (!fb || !g_con_saved_valid) return;
+  for (y = 0; y < CON_H && y < DBGUI_FB_HEIGHT; y++)
+    memcpy(&fb[y * DBGUI_FB_STRIDE], &g_con_saved_px[y * CON_W], CON_W * sizeof(unsigned short));
+  dirty_rect_union(0, CON_W, 0, CON_H);
+  g_con_saved_valid = 0;
+}
+
+void dbgui_console_set_handler(void (*handler)(const char *line))
+{
+  g_con_handler = handler;
+}
+
+static void dbgui_con_add_line(const char *s, size_t n)
+{
+  char *dst = g_con_log[g_con_log_count % CON_LOG_LINES];
+  if (n > CON_LINE_MAX - 1) n = CON_LINE_MAX - 1;
+  memcpy(dst, s, n);
+  dst[n] = 0;
+  g_con_log_count++;
+  /* Keep a reader who scrolled back parked on the same text as new lines arrive. */
+  if (g_con_scroll > 0 && g_con_scroll < CON_LOG_LINES - CON_ROWS) g_con_scroll++;
+}
+
+/* Splits on '\n' (a trailing newline does not add an empty line) and wraps anything longer than a
+   log line, so callers can hand over printf-style output as is. */
+void dbgui_console_print(const char *text)
+{
+  const char *p = text;
+  if (!text) return;
+  while (*p) {
+    const char *nl = strchr(p, '\n');
+    size_t n = nl ? (size_t)(nl - p) : strlen(p);
+    while (n > CON_LINE_MAX - 1) {
+      dbgui_con_add_line(p, CON_LINE_MAX - 1);
+      p += CON_LINE_MAX - 1;
+      n -= CON_LINE_MAX - 1;
+    }
+    dbgui_con_add_line(p, n);
+    p += n;
+    if (*p == '\n') p++;
+  }
+}
+
+int dbgui_console_active(void) { return g_visible && g_console_open; }
+
+void dbgui_console_open(void)
+{
+  if (!g_visible || g_console_open) return;
+  /* Put the real pixels back under the small panel, then snapshot the larger console region. */
+  dbgui_restore_backing();
+  dbgui_con_save_backing();
+  g_console_open = 1;
+  g_editing = 0;
+  if (g_con_log_count == 0)
+    dbgui_console_print("UW1 debug console -- type HELP for commands, ESC for the panel");
+}
+
+/* Back to the small panel (ESC), keeping the panel open. */
+static void dbgui_console_close_to_panel(void)
+{
+  if (!g_console_open) return;
+  dbgui_con_restore_backing();
+  g_console_open = 0;
+  dbgui_save_backing();
+}
+
+static void dbgui_con_submit(void)
+{
+  char line[CON_INPUT_MAX + 4];
+  char *s = g_con_input;
+  g_con_input[g_con_input_len] = 0;
+  while (*s == ' ' || *s == '\t') s++;
+  if (*s) {
+    snprintf(line, sizeof(line), "> %s", s);
+    dbgui_console_print(line);
+    if (g_con_hist_count == 0 || strcmp(g_con_hist[(g_con_hist_count - 1) % CON_HIST_MAX], s) != 0) {
+      strncpy(g_con_hist[g_con_hist_count % CON_HIST_MAX], s, CON_INPUT_MAX - 1);
+      g_con_hist[g_con_hist_count % CON_HIST_MAX][CON_INPUT_MAX - 1] = 0;
+      g_con_hist_count++;
+    }
+    if (strcasecmp(s, "CLEAR") == 0) {
+      g_con_log_count = 0;
+      g_con_scroll = 0;
+    } else if (g_con_handler) {
+      g_con_handler(s);
+    } else {
+      dbgui_console_print("no command handler registered");
+    }
+  }
+  g_con_input_len = 0;
+  g_con_input[0] = 0;
+  g_con_hist_pos = -1;
+  g_con_scroll = 0;
+}
+
+static void dbgui_con_set_input(const char *s)
+{
+  strncpy(g_con_input, s, CON_INPUT_MAX - 1);
+  g_con_input[CON_INPUT_MAX - 1] = 0;
+  g_con_input_len = (int)strlen(g_con_input);
+}
+
+static void dbgui_con_feed_key(int key)
+{
+  int shown = g_con_hist_count < CON_HIST_MAX ? g_con_hist_count : CON_HIST_MAX;
+  int max_scroll = g_con_log_count < CON_LOG_LINES ? g_con_log_count : CON_LOG_LINES;
+  max_scroll = max_scroll > CON_ROWS ? max_scroll - CON_ROWS : 0;
+  if (key == DBGUI_KEY_RETURN) {
+    dbgui_con_submit();
+  } else if (key == DBGUI_KEY_ESCAPE) {
+    dbgui_console_close_to_panel();
+  } else if (key == DBGUI_KEY_BACKSPACE) {
+    if (g_con_input_len > 0) g_con_input[--g_con_input_len] = 0;
+  } else if (key == DBGUI_KEY_UP) {
+    if (g_con_hist_pos + 1 < shown) {
+      g_con_hist_pos++;
+      dbgui_con_set_input(g_con_hist[(g_con_hist_count - 1 - g_con_hist_pos) % CON_HIST_MAX]);
+    }
+  } else if (key == DBGUI_KEY_DOWN) {
+    if (g_con_hist_pos > 0) {
+      g_con_hist_pos--;
+      dbgui_con_set_input(g_con_hist[(g_con_hist_count - 1 - g_con_hist_pos) % CON_HIST_MAX]);
+    } else if (g_con_hist_pos == 0) {
+      g_con_hist_pos = -1;
+      dbgui_con_set_input("");
+    }
+  } else if (key == DBGUI_KEY_PAGEUP) {
+    g_con_scroll += CON_ROWS - 1;
+    if (g_con_scroll > max_scroll) g_con_scroll = max_scroll;
+  } else if (key == DBGUI_KEY_PAGEDOWN) {
+    g_con_scroll -= CON_ROWS - 1;
+    if (g_con_scroll < 0) g_con_scroll = 0;
+  }
+}
+
+static void dbgui_con_draw()
+{
+  int x0 = 0, y0 = 0, x1 = CON_W, y1 = CON_H;
+  int avail = g_con_log_count < CON_LOG_LINES ? g_con_log_count : CON_LOG_LINES;
+  int newest = g_con_log_count - 1 - g_con_scroll;   /* absolute index of the bottom visible line */
+  int r;
+
+  /* Palette index 0 is real black (see the panel's selected-row highlight). */
+  set_draw_color(0);
+  rect_fill_or_save_restore(x0, y0, x1, y1);
+
+  for (r = 0; r < CON_ROWS; r++) {
+    int idx = newest - (CON_ROWS - 1 - r);
+    char line[CON_LINE_MAX];
+    int len;
+    if (idx < 0 || g_con_log_count - idx > avail) continue;
+    strncpy(line, g_con_log[idx % CON_LOG_LINES], sizeof(line) - 1);
+    line[sizeof(line) - 1] = 0;
+    len = (int)strlen(line);
+    while (len > 0 && measure_text_width(line) > CON_W - 6) line[--len] = 0;
+    draw_text_string(line, x0 + 3, y0 + 2 + r * CON_ROW_H);
+  }
+
+  {
+    char in[CON_INPUT_MAX + 4];
+    int len, skip = 0;
+    g_con_frame++;
+    snprintf(in, sizeof(in), "> %s%s", g_con_input, (g_con_frame / 16) & 1 ? "" : "_");
+    /* Keep the tail (where typing happens) visible once the line outgrows the console width. */
+    len = (int)strlen(in);
+    while (len - skip > 2 && measure_text_width(in + skip) > CON_W - 6) skip++;
+    draw_text_string(in + skip, x0 + 3, y1 - CON_ROW_H - 1);
+  }
+}
 
 void dbgui_begin(const char *title)
 {
@@ -254,6 +471,16 @@ void dbgui_draw()
   /* Called once per frame from app_main_loop, AFTER main_loop_hud_flush() -- i.e. after the 3D view
      and every other HUD element for this frame have already drawn into the shared software
      framebuffer. */
+  if (g_visible && g_console_open) {
+    int _up = g_text_use_palette_color;
+    unsigned short _fc = g_text_flat_color;
+    g_text_use_palette_color = 0;
+    g_text_flat_color = (unsigned short)0xffff;
+    dbgui_con_draw();
+    g_text_use_palette_color = _up;
+    g_text_flat_color = _fc;
+    return;
+  }
   if (!g_visible || g_field_count == 0) return;
 
   /* The background fill below covers max(this frame's rows, last
@@ -349,6 +576,11 @@ int dbgui_visible(void) { return g_visible; }
 void dbgui_toggle()
 {
   int was_visible = g_visible;
+  /* Backtick closes everything, console included. */
+  if (g_console_open) {
+    dbgui_con_restore_backing();
+    g_console_open = 0;
+  }
   g_visible = !g_visible;
   g_editing = 0;
   /* Closing the panel stops it from drawing (dbgui_draw's own `if (!g_visible ...) return`), but
@@ -363,7 +595,7 @@ void dbgui_toggle()
 
 void dbgui_feed_mouse_down(int lx, int ly)
 {
-  if (!g_visible) return;
+  if (!g_visible || g_console_open) return;
   int i;
   for (i = 0; i < g_field_count; i++) {
     DbgField *f = &g_fields[i];
@@ -393,6 +625,10 @@ void dbgui_feed_mouse_down(int lx, int ly)
 
 void dbgui_feed_key(int sdl_keycode)
 {
+  if (g_visible && g_console_open) {
+    dbgui_con_feed_key(sdl_keycode);
+    return;
+  }
   if (!g_visible || g_field_count == 0) return;
   DbgField *f = &g_fields[g_selected];
 
@@ -445,6 +681,15 @@ void dbgui_test_reset(void)
   g_visible = 0;
   g_saved_valid = 0;
   g_last_rows = 0;
+  g_console_open = 0;
+  g_con_saved_valid = 0;
+  g_con_log_count = 0;
+  g_con_scroll = 0;
+  g_con_input_len = 0;
+  g_con_input[0] = 0;
+  g_con_hist_count = 0;
+  g_con_hist_pos = -1;
+  g_con_handler = 0;
 }
 
 int dbgui_test_row_x(void) { return DBGUI_PANEL_X + 1; }
@@ -457,6 +702,19 @@ int dbgui_test_row_y(int field_index)
 
 void dbgui_feed_text(const char *utf8)
 {
+  if (g_visible && g_console_open) {
+    const char *q;
+    for (q = utf8; *q; q++) {
+      unsigned char c = (unsigned char)*q;
+      /* Printable ASCII only; backtick is the close key, not text. */
+      if (c >= 0x20 && c < 0x7f && c != '`' && g_con_input_len < CON_INPUT_MAX - 1) {
+        g_con_input[g_con_input_len++] = (char)c;
+        g_con_input[g_con_input_len] = 0;
+        g_con_hist_pos = -1;
+      }
+    }
+    return;
+  }
   if (!g_visible || !g_editing || g_field_count == 0) return;
   const char *p;
   for (p = utf8; *p; p++) {
