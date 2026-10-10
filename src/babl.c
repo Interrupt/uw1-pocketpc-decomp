@@ -709,7 +709,7 @@ int babl_builtin_place_object(char *args)
   puVar4 = (undefined1 *)get_object_record_by_slot_index(uVar3);
   uVar5 = babl_read_var_word((int)*(short *)(args + -4));
   uVar6 = babl_read_var_word((int)*(short *)(args + -2));
-  puVar7 = (ushort *)(DAT_00100674 + 6);
+  puVar7 = (ushort *)((char *)DAT_00100674 + 6);
   uVar2 = *puVar7;
   if ((uVar2 & 0xffc0) != 0) {
     do {
@@ -723,7 +723,7 @@ int babl_builtin_place_object(char *args)
     } while ((uVar2 & 0xffc0) != 0);
   }
   if ((*puVar7 & 0xffc0) != 0) {
-    object_list_unlink(DAT_00100674 + 6,puVar4);
+    object_list_unlink((char *)DAT_00100674 + 6,puVar4);
   }
   iVar8 = (int)(short)uVar5;
   if (iVar8 < 0) {
@@ -771,7 +771,7 @@ ushort babl_builtin_take_from_npc_inv(char *args)
   
   sVar1 = babl_read_var_word((int)*(short *)(args + -2));
   iVar4 = 0;
-  puVar2 = (ushort *)(DAT_00100674 + 6);
+  puVar2 = (ushort *)((char *)DAT_00100674 + 6);
   if (0 < sVar1) {
     do {
       if ((*puVar2 & 0xffc0) == 0) break;
@@ -791,7 +791,7 @@ void babl_builtin_add_to_npc_inv(char *args)
   void *uVar1;
 
   uVar1 = get_object_record_by_slot_index(babl_read_var_word((int)*(short *)(args + -2)));  /* r0 passthrough */
-  object_list_append_tail(DAT_00100674 + 6,uVar1);
+  object_list_append_tail((char *)DAT_00100674 + 6,uVar1);
 }
 
 
@@ -2094,11 +2094,11 @@ int babl_builtin_do_demand(char *args)
     iVar12 = 1;
   }
   else {
-    sVar7 = ordint_divmod(uVar8,(DAT_00100674[8] - uVar8) * 2).quot;
+    sVar7 = ordint_divmod(uVar8,(((byte *)DAT_00100674)[8] - uVar8) * 2).quot;
     iVar12 = sVar7 + 2;
   }
   babl_get_variable(s_npc_attitude_000845f8,&local_2c,1);
-  bVar4 = DAT_00100674[0x19];
+  bVar4 = ((byte *)DAT_00100674)[0x19];
   if ((bVar4 & 0x40) == 0) {
     iVar10 = 1;
     if (1 < local_2c) {
@@ -2220,13 +2220,13 @@ void enter_conversation_mode_screen()
       } while (cVar1 != '\0');
       draw_text_string(local_44,0x90,3);
       DAT_00100670 = DAT_00100784;
-      if (DAT_00100674[0x1a] == 0) {
+      if (((byte *)DAT_00100674)[0x1a] == 0) {
         uVar6 = 2;
         load_gr_resource_entries(s_genhead_00084fd8,*DAT_00100674 & 0x3f,1,&converse_res_bump_alloc_entry,&converse_res_slot_store_callback);
       }
       else {
         uVar6 = 2;
-        iVar3 = load_gr_resource_entries(s_charhead_00084fe0,DAT_00100674[0x1a] - 1,1,&converse_res_bump_alloc_entry,
+        iVar3 = load_gr_resource_entries(s_charhead_00084fe0,((byte *)DAT_00100674)[0x1a] - 1,1,&converse_res_bump_alloc_entry,
                              &converse_res_slot_store_callback);
         if (iVar3 == 0) {
           uVar6 = 2;
@@ -2248,7 +2248,7 @@ void enter_conversation_mode_screen()
       reset_cursor_confine_rect();
       mode_icon_highlight_off(5);
       g_cursor_mode = 0;
-      start_npc_conversation(DAT_00100674[0x1a],*DAT_00100674 & 0x3f);
+      start_npc_conversation(((byte *)DAT_00100674)[0x1a],*DAT_00100674 & 0x3f);
       change_game_mode(1);
       return;
     }
@@ -2321,7 +2321,7 @@ void start_npc_conversation(int conversation_id, int npc_type)
     babl_register_builtin(s_give_ptr_npc_00085000,babl_builtin_give_ptr_npc);
     sync_conv_vars_from_npc(DAT_00100674);
     DAT_001007b8 = babl_alloc(0xa0);
-    if ((*(byte *)(DAT_00100674 + 0xe) & 0x10) == 0) {
+    if ((*(byte *)((char *)DAT_00100674 + 0xe) & 0x10) == 0) {
       /* Dropped argument -- see babl_builtin_take_from_npc's identical
          call for the full explanation; intended arg is DAT_00100674. */
       spawn_creature_death_loot(DAT_00100674);
@@ -2774,7 +2774,7 @@ void babl_builtin_find_inv(char *args)
   sVar3 = babl_read_var_word((int)*(short *)(args + -2));
   uVar4 = babl_read_var_word((int)*(short *)(args + -4));
   local_10 = (char *)g_player_object;
-  if ((sVar3 == 0) && (local_10 = (char *)DAT_00100674, (*(byte *)(DAT_00100674 + 0xe) & 0x10) == 0)) {
+  if ((sVar3 == 0) && (local_10 = (char *)DAT_00100674, (*(byte *)((char *)DAT_00100674 + 0xe) & 0x10) == 0)) {
     /* Dropped argument -- see babl_builtin_take_from_npc's identical
        call for the full explanation; intended arg is DAT_00100674. */
     spawn_creature_death_loot(DAT_00100674);
@@ -3260,8 +3260,8 @@ void babl_builtin_remove_talker()
 {
   char *iVar1;  /* was `int` -- truncated tilemap_lookup's real `void *` return */
 
-  iVar1 = (char *)tilemap_lookup(*(ushort *)(DAT_00100674 + 0x16) >> 10,
-                       (*(ushort *)(DAT_00100674 + 0x16) & 0x3f0) >> 4);
+  iVar1 = (char *)tilemap_lookup(*(ushort *)((char *)DAT_00100674 + 0x16) >> 10,
+                       (*(ushort *)((char *)DAT_00100674 + 0x16) & 0x3f0) >> 4);
   discard_misplaced_object(iVar1 + 2,DAT_00100674,1);
   return;
 }
@@ -4552,7 +4552,7 @@ void add_item_to_npc_inventory(ushort *object)
   int iVar2;
   
   if ((*object & 0x1ff) == 0xa1) {
-    puVar1 = (ushort *)(DAT_00100674 + 6);
+    puVar1 = (ushort *)((char *)DAT_00100674 + 6);
     while (puVar1 = (ushort *)resolve_object_link(puVar1), puVar1 != (ushort *)0x0) {
       if (((((*object & 0x8000) != 0) && ((*puVar1 & 0x8000) != 0)) && ((object[3] & 0x8000) == 0)
           ) && ((((puVar1[3] & 0x8000) == 0 && (((*puVar1 ^ *object) & 0x1ff) == 0)) &&
@@ -4568,7 +4568,7 @@ void add_item_to_npc_inventory(ushort *object)
     }
   }
   if (object != (ushort *)0x0) {
-    object_list_insert_head(DAT_00100674 + 6,object);
+    object_list_insert_head((char *)DAT_00100674 + 6,object);
   }
 }
 
@@ -4610,7 +4610,7 @@ int remove_item_from_npc_inventory_by_id(short item_id)
   ushort *puVar1;
   void *iVar2;
   
-  iVar2 = DAT_00100674 + 6;
+  iVar2 = (char *)DAT_00100674 + 6;
   puVar1 = (ushort *)resolve_object_link(iVar2);
   if (puVar1 != (ushort *)0x0) {
     do {
