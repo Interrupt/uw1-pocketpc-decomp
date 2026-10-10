@@ -1220,7 +1220,24 @@ void emit_catalog_object(byte catalog, void *obj_ptr, char heading, short frame_
       *(short *)(_face_rec + 0x22) = (short)tex_h >> 0xf;
                     // WARNING: Store size is inaccurate
       *(short *)(_face_rec + 0x23) = (short)tex_h >> 0xf;
-      if (catalog_u == 1) {
+      /* DEVIATION FROM THE ORIGINAL, deliberate: the pillar is clamped too.
+
+         The original clamps catalog 1 alone -- `if (uVar13 == 1)` in UU.exe's
+         FUN_00061e60, and that binary contains exactly one 1024.0f compare,
+         so there is no second clamp anywhere. But exactly TWO models are
+         authored with the 1024 "reaches the ceiling" sentinel, and the clamp
+         covered one of them:
+
+             catalog  1  door frame   DFRAME.E  0..1024   model 0x01, 0x008c x4
+             catalog 10  pillar       NEWPILL.E 0..1024   model 0x0a, 0x008c x4
+
+         Both asset sets agree, since models_dos.c emits the same 1024 for the
+         DOS "extend to ceiling" opcode. Measured on the pillar at tile
+         (34,17) before this change: anchor 768 plus a model height of 1024
+         put its top at 1792 against a 1024 ceiling, three quarters of a tile
+         through it. It is easy to miss in play because the ceiling plane
+         hides the overshoot from most angles. */
+      if (catalog_u == 1 || catalog_u == 10) {
         local_60 = 0;
         do {
           iVar27 = (int)(short)DAT_0023b91c;
