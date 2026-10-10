@@ -8,6 +8,8 @@ short DAT_00201b64, DAT_00201c84, DAT_0023beb4, DAT_0024af6c;
 undefined2 DAT_00201c90;
 ushort DAT_0023c448;
 int DAT_000876c8;
+short g_movement_mode;
+ushort g_held_move_code;
 int freelook;
 
 const Uint8 *SDL_GetKeyboardState(int *count)
