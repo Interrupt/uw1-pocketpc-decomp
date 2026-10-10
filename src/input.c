@@ -576,6 +576,20 @@ void wait_for_click_release(int mode)
   }
   while( true ) {
     sVar1 = peek_input_event();
+    /* Desktop input adaptation: the original only sees mouse codes (0..3) here, so any other event
+       meant the stylus had lifted. A held movement key latches its code in DAT_0023c448, and that
+       made peek_input_event return the key instead of the button state, ending the wait and
+       dropping the dragged item the moment the player moved. Only while an item is held, keys
+       leave the wait running; the button's own state decides when it ends. */
+    if (sVar1 > 3 && g_selected_object != 0) {
+      if (DAT_000876c8 != 0) {
+        DAT_0023c448 = 0; /* key released: stop the walk, as app_main_loop does */
+      }
+      sVar1 = (short)poll_mouse_button_flags();
+      if (sVar1 == 0) {
+        sVar1 = -1;
+      }
+    }
     if (((((int)sVar2 | 0xfffcU) & (int)sVar1) != (int)sVar2) || (DAT_0008696e != -1)) break;
     if (mode != 0) {
       dispatch_sticky_mode_handlers();
