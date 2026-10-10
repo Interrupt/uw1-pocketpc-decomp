@@ -6,6 +6,8 @@
 char *DAT_00086df8, *DAT_0023be74, *DAT_0024fa2c, *DAT_0023cca0;
 uw_object_hdr_t *g_scratch_object_ptr;
 unsigned char g_fullbright_palette_mask[256];
+uw_extra_light_t g_extra_lights[UW_MAX_EXTRA_LIGHTS];
+int g_extra_light_count;
 byte lighting_span_shade = 88;
 char *g_selected_object;
 undefined1 DAT_00086da8;
@@ -73,6 +75,8 @@ void lighting_fixture_reset(void)
     options_set("data-dir", UW_TEST_DATA_DIR);
     options_unset("light-mode");
     options_unset("fullbright");
+    options_unset("extralights");
+    extra_lights_reset();
     lighting_span_shade = 88;
     options_set("dither", "0"); /* Isolate undithered falloff assertions. */
     options_unset("ambient-bias-reduction");
@@ -102,6 +106,7 @@ void lighting_fixture_dispose(void)
     options_unset("dither");
     options_unset("ambient-bias-reduction");
     options_unset("fullbright");
+    options_unset("extralights");
 }
 void assert_mode(int mode, int falloff, int initial, int offset)
 {

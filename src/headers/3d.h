@@ -39,6 +39,7 @@ void vec3_cross(void *a, void *b, byte *out);
 int raster_edge_step(char *edge);
 void raster_triangle_perspective_setup(uint *triangle, void *coefficients);
 void raster_edge_setup(char *coefficients, char *vertices, int vertex_a, int vertex_b, int row_limit, void *edge);
+extern undefined4 DAT_000c8ac0_mtx[16]; /* the view/camera matrix build_view_matrix builds */
 void update_fullbright_palette_mask();
 extern unsigned char g_fullbright_palette_mask[256];
 void raster_textured_span(int row, char *framebuffer, char *gradients, char *left_edge, char *right_edge, int texture_stride, int texture_size, char *texture_pixels, int *depth_limit, byte shade);

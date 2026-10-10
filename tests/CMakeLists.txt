@@ -657,6 +657,9 @@ add_game_test_library(uw_test_lighting
   src/visibility.c:load_shading_level_config
   src/visibility.c:build_visibility_light_grid
   src/math.c:integer_sqrt
+  src/lights.c:%UW_EYE_TO_LIGHT_UNITS src/lights.c:@g_extra_light_sources src/lights.c:%UW_EXTRA_LIGHT_SOURCE_COUNT
+  src/lights.c:extra_light_add src/lights.c:extra_lights_reset src/lights.c:extra_lights_consider_object
+  src/lights.c:shade_span_pixel
   src/3d.c:raster_textured_span src/3d.c:update_fullbright_palette_mask
   src/graphics.c:build_shade_lut
   src/graphics.c:get_ambient_bias_reduction

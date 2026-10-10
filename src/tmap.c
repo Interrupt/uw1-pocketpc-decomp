@@ -389,6 +389,7 @@ void walk_visible_tiles()
   DAT_0023b814 = tilemap_lookup(0,0);
   DAT_0023b808 = tilemap_lookup(0x3f,0x3f);
   DAT_0023b83c = 0;
+  extra_lights_reset();
   uVar6 = (uint)(short)(((byte *)pbVar8 - (byte *)DAT_0023b814) >> 2);
   DAT_0023b838 = 0;
   /* Also clear the arena's own count fields (offset 0 = vertex count, offset 4 = record count).
@@ -2069,6 +2070,9 @@ void emit_tile_objects(ushort *tile)
     DAT_0023b904 = (DAT_0023b904 & 0xff00) + local_54;
     DAT_0023b920 = (DAT_0023b920 & 0xff00) + uVar16;
   }
+  /* --extralights: every visible object is checked for being a light source (campfire, magic
+     projectile, ...) as the tiles are walked; see extra_lights_consider_object. */
+  extra_lights_consider_object(*tile, (short)DAT_0023b904, (short)DAT_0023b920, (short)DAT_0023b91c);
   if (UW_OPT_ISSET(g_opts.look_slot)) {
     static int _done = 0;
     if (!_done) {

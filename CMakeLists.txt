@@ -27,6 +27,7 @@ set(UW_SOURCES
   src/combat.c
   src/bitmap.c
   src/3d.c
+  src/lights.c
   src/player.c
   src/tmap.c
   src/objects.c

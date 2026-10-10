@@ -38,6 +38,7 @@ X(STR, dump_sprite_ids, NULL, "Object-sprite ids/ranges to dump as standalone sp
 X(BOOL, fast_sleep, 0, "Make Sleep() return immediately (used by the regression runner).")
 X(INT, force_critter_frame, UW_OPT_UNSET, "Force every critter to this animation frame.")
 X(INT, force_critter_state, UW_OPT_UNSET, "Force every critter into this animation state.")
+X(BOOL, extralights, 0, "Add small distance lights around campfires, glowing rocks, lit torches and magic projectiles (up to 8 at once).")
 X(BOOL, fullbright, 1, "Skip the ARM distance falloff for palette indices LIGHT.DAT leaves fullbright (lava, magic).")
 X(INT, hack_pitch, UW_OPT_UNSET, "Force the camera pitch (0-360).")
 X(BOOL, hack_reveal_depth, 0, "Hack reveal depth.")

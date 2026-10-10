@@ -749,6 +749,7 @@ void emit_object_billboard();
 #include "combat.h"
 #include "bitmap.h"
 #include "3d.h"
+#include "lights.h"
 #include "player.h"
 #include "tmap.h"
 #include "objects.h"
