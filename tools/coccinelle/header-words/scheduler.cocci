@@ -83,7 +83,7 @@ R F(...) {
 
 @word_1_0@
 type R;
-identifier F =~ "^\(scheduler_finish_entry\|scheduler_step_entry\)$";
+identifier F =~ "^\(scheduler_finish_entry\)$";
 typedef ushort, uw_object_hdr_t;
 @@
 R F(...) {
@@ -97,19 +97,13 @@ R F(...) {
 |
 - *(ushort *)puVar4
 + ((uw_object_hdr_t *)puVar4)->type_flags
-|
-- puVar4[0]
-+ ((uw_object_hdr_t *)puVar4)->type_flags
-|
-- *puVar4
-+ ((uw_object_hdr_t *)puVar4)->type_flags
 )
 ...>
 }
 
 @word_1_1@
 type R;
-identifier F =~ "^\(scheduler_finish_entry\|scheduler_step_entry\)$";
+identifier F =~ "^\(scheduler_finish_entry\)$";
 typedef ushort, uw_object_hdr_t;
 @@
 R F(...) {
@@ -120,16 +114,13 @@ R F(...) {
 |
 - ((ushort *)puVar4)[1]
 + ((uw_object_hdr_t *)puVar4)->position_word
-|
-- puVar4[1]
-+ ((uw_object_hdr_t *)puVar4)->position_word
 )
 ...>
 }
 
 @word_1_2@
 type R;
-identifier F =~ "^\(scheduler_finish_entry\|scheduler_step_entry\)$";
+identifier F =~ "^\(scheduler_finish_entry\)$";
 typedef ushort, uw_object_hdr_t;
 @@
 R F(...) {
@@ -140,16 +131,13 @@ R F(...) {
 |
 - ((ushort *)puVar4)[2]
 + ((uw_object_hdr_t *)puVar4)->chain_word
-|
-- puVar4[2]
-+ ((uw_object_hdr_t *)puVar4)->chain_word
 )
 ...>
 }
 
 @word_1_3@
 type R;
-identifier F =~ "^\(scheduler_finish_entry\|scheduler_step_entry\)$";
+identifier F =~ "^\(scheduler_finish_entry\)$";
 typedef ushort, uw_object_hdr_t;
 @@
 R F(...) {
@@ -159,9 +147,6 @@ R F(...) {
 + ((uw_object_hdr_t *)puVar4)->link_word
 |
 - ((ushort *)puVar4)[3]
-+ ((uw_object_hdr_t *)puVar4)->link_word
-|
-- puVar4[3]
 + ((uw_object_hdr_t *)puVar4)->link_word
 )
 ...>
@@ -252,6 +237,92 @@ R F(...) {
 
 @word_3_0@
 type R;
+identifier F =~ "^\(scheduler_step_entry\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar4 + 0)
++ ((uw_object_hdr_t *)puVar4)->type_flags
+|
+- ((ushort *)puVar4)[0]
++ ((uw_object_hdr_t *)puVar4)->type_flags
+|
+- *(ushort *)puVar4
++ ((uw_object_hdr_t *)puVar4)->type_flags
+|
+- puVar4[0]
++ ((uw_object_hdr_t *)puVar4)->type_flags
+|
+- *puVar4
++ ((uw_object_hdr_t *)puVar4)->type_flags
+)
+...>
+}
+
+@word_3_1@
+type R;
+identifier F =~ "^\(scheduler_step_entry\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar4 + 2)
++ ((uw_object_hdr_t *)puVar4)->position_word
+|
+- ((ushort *)puVar4)[1]
++ ((uw_object_hdr_t *)puVar4)->position_word
+|
+- puVar4[1]
++ ((uw_object_hdr_t *)puVar4)->position_word
+)
+...>
+}
+
+@word_3_2@
+type R;
+identifier F =~ "^\(scheduler_step_entry\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar4 + 4)
++ ((uw_object_hdr_t *)puVar4)->chain_word
+|
+- ((ushort *)puVar4)[2]
++ ((uw_object_hdr_t *)puVar4)->chain_word
+|
+- puVar4[2]
++ ((uw_object_hdr_t *)puVar4)->chain_word
+)
+...>
+}
+
+@word_3_3@
+type R;
+identifier F =~ "^\(scheduler_step_entry\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)puVar4 + 6)
++ ((uw_object_hdr_t *)puVar4)->link_word
+|
+- ((ushort *)puVar4)[3]
++ ((uw_object_hdr_t *)puVar4)->link_word
+|
+- puVar4[3]
++ ((uw_object_hdr_t *)puVar4)->link_word
+)
+...>
+}
+
+@word_4_0@
+type R;
 identifier F =~ "^\(spawn_scheduled_effect_object\)$";
 typedef ushort, uw_object_hdr_t;
 @@
@@ -270,7 +341,7 @@ R F(...) {
 ...>
 }
 
-@word_3_1@
+@word_4_1@
 type R;
 identifier F =~ "^\(spawn_scheduled_effect_object\)$";
 typedef ushort, uw_object_hdr_t;
@@ -287,7 +358,7 @@ R F(...) {
 ...>
 }
 
-@word_3_2@
+@word_4_2@
 type R;
 identifier F =~ "^\(spawn_scheduled_effect_object\)$";
 typedef ushort, uw_object_hdr_t;
@@ -304,7 +375,7 @@ R F(...) {
 ...>
 }
 
-@word_3_3@
+@word_4_3@
 type R;
 identifier F =~ "^\(spawn_scheduled_effect_object\)$";
 typedef ushort, uw_object_hdr_t;
@@ -321,7 +392,7 @@ R F(...) {
 ...>
 }
 
-@word_4_0@
+@word_5_0@
 type R;
 identifier F =~ "^\(spawn_scheduled_effect_object\)$";
 typedef ushort, uw_object_hdr_t;
@@ -347,7 +418,7 @@ R F(...) {
 ...>
 }
 
-@word_4_1@
+@word_5_1@
 type R;
 identifier F =~ "^\(spawn_scheduled_effect_object\)$";
 typedef ushort, uw_object_hdr_t;
@@ -367,7 +438,7 @@ R F(...) {
 ...>
 }
 
-@word_4_2@
+@word_5_2@
 type R;
 identifier F =~ "^\(spawn_scheduled_effect_object\)$";
 typedef ushort, uw_object_hdr_t;
@@ -387,7 +458,7 @@ R F(...) {
 ...>
 }
 
-@word_4_3@
+@word_5_3@
 type R;
 identifier F =~ "^\(spawn_scheduled_effect_object\)$";
 typedef ushort, uw_object_hdr_t;
@@ -407,7 +478,7 @@ R F(...) {
 ...>
 }
 
-@word_5_0@
+@word_6_0@
 type R;
 identifier F =~ "^\(scheduler_advance_effect\)$";
 typedef ushort, uw_object_hdr_t;
@@ -433,7 +504,7 @@ R F(...) {
 ...>
 }
 
-@word_5_1@
+@word_6_1@
 type R;
 identifier F =~ "^\(scheduler_advance_effect\)$";
 typedef ushort, uw_object_hdr_t;
@@ -453,7 +524,7 @@ R F(...) {
 ...>
 }
 
-@word_5_2@
+@word_6_2@
 type R;
 identifier F =~ "^\(scheduler_advance_effect\)$";
 typedef ushort, uw_object_hdr_t;
@@ -473,7 +544,7 @@ R F(...) {
 ...>
 }
 
-@word_5_3@
+@word_6_3@
 type R;
 identifier F =~ "^\(scheduler_advance_effect\)$";
 typedef ushort, uw_object_hdr_t;

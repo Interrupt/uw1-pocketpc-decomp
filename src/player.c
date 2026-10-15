@@ -2754,7 +2754,7 @@ void handle_starvation_penalty()
   int iVar7;
   uint uVar8;
   short extraout_r1;
-  char *pNewObj;
+  uw_object_hdr_t *pNewObj;
 
   if (*(char *)(DAT_00086df8 + 0x6d) == '\0') {
     g_player_object->npc_hp = 4;
@@ -2781,25 +2781,21 @@ LAB_00072374:
   /* Was `iVar6 = spawn_new_object(...)` (plain int) -- spawn_new_object now really returns a fresh
      object pointer (see its fix) instead of always 0, so storing it in a 32-bit int truncates it on
      this 64-bit host. */
-  pNewObj = (char *)spawn_new_object(uw_ord2005_rem_148 + 0xc2,0);
+  pNewObj = spawn_new_object(uw_ord2005_rem_148 + 0xc2,0);
   iVar7 = place_object_in_world((int)DAT_00204880 >> 5,(int)DAT_00204882 >> 5,(int)DAT_00204884 >> 3,
                        pNewObj,0,1);
   if (iVar7 != 0) {
-    uVar4 = ((uw_object_hdr_t *)pNewObj)->position_word;
+    uVar4 = pNewObj->position_word;
     bVar1 = (byte)uVar4;
-    ((uw_object_hdr_t *)pNewObj)->position_word_low = (g_player_object->hdr.position_word_low ^ bVar1) & 0x7f ^ bVar1;
-    ((uw_object_hdr_t *)pNewObj)->position_word_high = (byte)(char)((ushort)uVar4 >> 8);
-    ((uw_object_hdr_t *)pNewObj)->owner = 0x3f;
-    ((uw_object_hdr_t *)pNewObj)->link_word_high = ((uw_object_hdr_t *)pNewObj)->link_word_high;
-    uVar8 = (((uw_object_hdr_t *)pNewObj)->position_word ^ g_player_object->hdr.position_word) & 0x1fff ^
+    pNewObj->zpos = g_player_object->hdr.zpos;
+    pNewObj->owner = 0x3f;
+    uVar8 = (pNewObj->position_word ^ g_player_object->hdr.position_word) & 0x1fff ^
             (uint) g_player_object->hdr.position_word;
     uVar2 = (undefined1)uVar8;
-    ((uw_object_hdr_t *)pNewObj)->position_word_low = uVar2;
     bVar3 = (byte)(uVar8 >> 8);
-    ((uw_object_hdr_t *)pNewObj)->position_word_high = bVar3;
-    bVar1 = g_player_object->hdr.position_word_high;
-    ((uw_object_hdr_t *)pNewObj)->position_word_low = uVar2;
-    ((uw_object_hdr_t *)pNewObj)->position_word_high = (bVar1 ^ bVar3) & 0x1c ^ bVar3;
+    pNewObj->xpos = bVar3 >> 5;
+    bVar1 = (byte)(g_player_object->hdr.position_word >> 8);
+    pNewObj->ypos = (bVar1 >> 2) & 7;
     settle_dropped_object(pNewObj,(int)DAT_00204880 >> 8,(int)DAT_00204882 >> 8,1);
   }
   if (((*(byte *)(DAT_00086df8 + 0x5e) & 0xf0) != 0) && (DAT_00201b68 != 9)) {
@@ -3670,7 +3666,7 @@ int decay_equipped_light_sources(short elapsed, byte tick_phase)
   ushort uVar3;
   byte bVar4;
   short sVar5;
-  ushort *puVar6;
+  uw_object_hdr_t *puVar6;
   int extraout_r1;
   uint uVar7;
   ushort uVar8;
@@ -3680,9 +3676,9 @@ int decay_equipped_light_sources(short elapsed, byte tick_phase)
   uVar10 = 0;
   iVar9 = 0;
   do {
-    puVar6 = (ushort *)get_equipped_item_at_slot((int)(char)(&g_light_source_slots)[iVar9]);
-    if (puVar6 != (ushort *)0x0) {
-      uVar2 = ((uw_object_hdr_t *)puVar6)->type_flags;
+    puVar6 = get_equipped_item_at_slot((int)(char)(&g_light_source_slots)[iVar9]);
+    if (puVar6 != (uw_object_hdr_t *)0x0) {
+      uVar2 = puVar6->type_flags;
       if (((((uVar2 & 0x1f0) == 0x90) && (uVar7 = (uint)(short)(uVar2 & 0xf), 3 < uVar7)) &&
           (uVar7 < 8)) && (cVar1 = g_light_type_props[uVar7].decay_interval, cVar1 != '\0')) {
         /* ARM 0x540d4 uses the tick phase (tick_phase) for the remainder.
@@ -3696,18 +3692,16 @@ int decay_equipped_light_sources(short elapsed, byte tick_phase)
           uVar8 = (ushort)(extraout_r1 == 0) + sVar5;
         }
         if ((short)uVar8 != 0) {
-          uVar3 = ((uw_object_hdr_t *)puVar6)->chain_word;
+          uVar3 = puVar6->chain_word;
           if ((int)(short)uVar8 < (int)(uVar3 & 0x3f)) {
             bVar4 = (byte)uVar3;
-            ((uw_object_hdr_t *)puVar6)->chain_word_low = (bVar4 - (char)uVar8 ^ bVar4) & 0x3f ^ bVar4;
-            ((uw_object_hdr_t *)puVar6)->chain_word_high = (byte)(uVar3 >> 8);
+            puVar6->quality = (bVar4 - (char)uVar8) & 0x3f;
           }
           else {
             uVar7 = uVar3 & 0xffc0;
-            ((uw_object_hdr_t *)puVar6)->chain_word = (ushort)uVar7;
+            puVar6->quality = 0;
             bVar4 = (byte)uVar2;
-            ((uw_object_hdr_t *)puVar6)->type_flags_low = (bVar4 - 4 ^ bVar4) & 0xf ^ bVar4;
-            ((uw_object_hdr_t *)puVar6)->type_flags_high = (byte)(uVar2 >> 8);
+            puVar6->type_flags = (ushort)(uVar2 - 4);
             redraw_backpack_slot_widget((int)(char)(&g_light_source_slots)[iVar9]);
             uVar10 = 1;
             set_ambient_bias_without_light(0);

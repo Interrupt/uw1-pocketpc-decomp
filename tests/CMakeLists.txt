@@ -1333,6 +1333,59 @@ if(UW_SPATCH_TESTS)
     COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_durability_fields.py"
       "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME light_decay_fields
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_light_decay_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME starvation_fields
+    COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_starvation_fields.py")
+  add_test(NAME ranged_fields
+    COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_ranged_fields.py")
+  add_test(NAME monster_loot_fields
+    COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_monster_loot_fields.py")
+  add_test(NAME babl_stuff_fields
+    COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_babl_stuff_fields.py")
+  add_test(NAME approach_fields
+    COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_approach_fields.py")
+  add_test(NAME settle_fields
+    COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_settle_fields.py")
+  add_test(NAME combat_position_fields
+    COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_combat_position_fields.py")
+  add_test(NAME disengage_fields
+    COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_disengage_fields.py")
+  add_test(NAME drop_height_fields
+    COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_drop_height_fields.py")
+  add_test(NAME slot_fit_fields
+    COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_slot_fit_fields.py")
+  add_test(NAME scheduler_finish_fields
+    COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_scheduler_finish_fields.py")
+  add_test(NAME combat_stance_fields
+    COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_combat_stance_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME special_header_reads
+    COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_special_header_reads.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME promoted_struct_fields
+    COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_promoted_struct_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
+  add_test(NAME light_use_fields
+    COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_light_use_fields.py"
+      "${UW_SPATCH_EXECUTABLE}")
   find_program(UW_CLANG_EXECUTABLE clang)
   if(UW_CLANG_EXECUTABLE)
     add_test(NAME current_object_aliases

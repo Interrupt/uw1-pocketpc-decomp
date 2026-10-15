@@ -14,9 +14,6 @@ R F(...) {
 |
 - *(ushort *)iVar5_rec
 + ((uw_object_hdr_t *)iVar5_rec)->type_flags
-|
-- *(ushort *)(iVar5_rec + 0)
-+ ((uw_object_hdr_t *)iVar5_rec)->type_flags
 )
 ...>
 }
@@ -33,9 +30,6 @@ R F(...) {
 + ((uw_object_hdr_t *)iVar5_rec)->position_word
 |
 - ((ushort *)iVar5_rec)[1]
-+ ((uw_object_hdr_t *)iVar5_rec)->position_word
-|
-- *(ushort *)(iVar5_rec + 2)
 + ((uw_object_hdr_t *)iVar5_rec)->position_word
 )
 ...>
@@ -54,9 +48,6 @@ R F(...) {
 |
 - ((ushort *)iVar5_rec)[2]
 + ((uw_object_hdr_t *)iVar5_rec)->chain_word
-|
-- *(ushort *)(iVar5_rec + 4)
-+ ((uw_object_hdr_t *)iVar5_rec)->chain_word
 )
 ...>
 }
@@ -73,9 +64,6 @@ R F(...) {
 + ((uw_object_hdr_t *)iVar5_rec)->link_word
 |
 - ((ushort *)iVar5_rec)[3]
-+ ((uw_object_hdr_t *)iVar5_rec)->link_word
-|
-- *(ushort *)(iVar5_rec + 6)
 + ((uw_object_hdr_t *)iVar5_rec)->link_word
 )
 ...>
@@ -255,6 +243,77 @@ typedef ushort, uw_object_hdr_t;
 R F(...) {
 <...
 (
+- *(ushort *)((char *)target_header + 0)
++ ((uw_object_hdr_t *)target_header)->type_flags
+|
+- ((ushort *)target_header)[0]
++ ((uw_object_hdr_t *)target_header)->type_flags
+|
+- *(ushort *)target_header
++ ((uw_object_hdr_t *)target_header)->type_flags
+)
+...>
+}
+
+@word_3_1@
+type R;
+identifier F =~ "^\(npc_combat_position_tick\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)target_header + 2)
++ ((uw_object_hdr_t *)target_header)->position_word
+|
+- ((ushort *)target_header)[1]
++ ((uw_object_hdr_t *)target_header)->position_word
+)
+...>
+}
+
+@word_3_2@
+type R;
+identifier F =~ "^\(npc_combat_position_tick\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)target_header + 4)
++ ((uw_object_hdr_t *)target_header)->chain_word
+|
+- ((ushort *)target_header)[2]
++ ((uw_object_hdr_t *)target_header)->chain_word
+)
+...>
+}
+
+@word_3_3@
+type R;
+identifier F =~ "^\(npc_combat_position_tick\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
+- *(ushort *)((char *)target_header + 6)
++ ((uw_object_hdr_t *)target_header)->link_word
+|
+- ((ushort *)target_header)[3]
++ ((uw_object_hdr_t *)target_header)->link_word
+)
+...>
+}
+
+@word_4_0@
+type R;
+identifier F =~ "^\(npc_combat_position_tick\)$";
+typedef ushort, uw_object_hdr_t;
+@@
+R F(...) {
+<...
+(
 - *(ushort *)((char *)iVar7_rec + 0)
 + ((uw_object_hdr_t *)iVar7_rec)->type_flags
 |
@@ -267,7 +326,7 @@ R F(...) {
 ...>
 }
 
-@word_3_1@
+@word_4_1@
 type R;
 identifier F =~ "^\(npc_combat_position_tick\)$";
 typedef ushort, uw_object_hdr_t;
@@ -284,7 +343,7 @@ R F(...) {
 ...>
 }
 
-@word_3_2@
+@word_4_2@
 type R;
 identifier F =~ "^\(npc_combat_position_tick\)$";
 typedef ushort, uw_object_hdr_t;
@@ -301,7 +360,7 @@ R F(...) {
 ...>
 }
 
-@word_3_3@
+@word_4_3@
 type R;
 identifier F =~ "^\(npc_combat_position_tick\)$";
 typedef ushort, uw_object_hdr_t;
@@ -318,7 +377,7 @@ R F(...) {
 ...>
 }
 
-@word_4_0@
+@word_5_0@
 type R;
 identifier F =~ "^\(npc_combat_disengage_tick\)$";
 typedef ushort, uw_object_hdr_t;
@@ -338,7 +397,7 @@ R F(...) {
 ...>
 }
 
-@word_4_1@
+@word_5_1@
 type R;
 identifier F =~ "^\(npc_combat_disengage_tick\)$";
 typedef ushort, uw_object_hdr_t;
@@ -355,7 +414,7 @@ R F(...) {
 ...>
 }
 
-@word_4_2@
+@word_5_2@
 type R;
 identifier F =~ "^\(npc_combat_disengage_tick\)$";
 typedef ushort, uw_object_hdr_t;
@@ -372,7 +431,7 @@ R F(...) {
 ...>
 }
 
-@word_4_3@
+@word_5_3@
 type R;
 identifier F =~ "^\(npc_combat_disengage_tick\)$";
 typedef ushort, uw_object_hdr_t;
@@ -389,7 +448,7 @@ R F(...) {
 ...>
 }
 
-@word_5_0@
+@word_6_0@
 type R;
 identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\|play_weapon_impact_sound\)$";
 typedef ushort, uw_object_hdr_t;
@@ -415,7 +474,7 @@ R F(...) {
 ...>
 }
 
-@word_5_1@
+@word_6_1@
 type R;
 identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\|play_weapon_impact_sound\)$";
 typedef ushort, uw_object_hdr_t;
@@ -435,7 +494,7 @@ R F(...) {
 ...>
 }
 
-@word_5_2@
+@word_6_2@
 type R;
 identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\|play_weapon_impact_sound\)$";
 typedef ushort, uw_object_hdr_t;
@@ -455,7 +514,7 @@ R F(...) {
 ...>
 }
 
-@word_5_3@
+@word_6_3@
 type R;
 identifier F =~ "^\(apply_melee_damage\|find_nearest_hit_target\|play_weapon_impact_sound\)$";
 typedef ushort, uw_object_hdr_t;
@@ -475,7 +534,7 @@ R F(...) {
 ...>
 }
 
-@word_6_0@
+@word_7_0@
 type R;
 identifier F =~ "^\(spawn_blood_splat_object\)$";
 typedef ushort, uw_object_hdr_t;
@@ -495,7 +554,7 @@ R F(...) {
 ...>
 }
 
-@word_6_1@
+@word_7_1@
 type R;
 identifier F =~ "^\(spawn_blood_splat_object\)$";
 typedef ushort, uw_object_hdr_t;
@@ -512,7 +571,7 @@ R F(...) {
 ...>
 }
 
-@word_6_2@
+@word_7_2@
 type R;
 identifier F =~ "^\(spawn_blood_splat_object\)$";
 typedef ushort, uw_object_hdr_t;
@@ -529,7 +588,7 @@ R F(...) {
 ...>
 }
 
-@word_6_3@
+@word_7_3@
 type R;
 identifier F =~ "^\(spawn_blood_splat_object\)$";
 typedef ushort, uw_object_hdr_t;
@@ -546,7 +605,7 @@ R F(...) {
 ...>
 }
 
-@word_7_0@
+@word_8_0@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, uw_object_hdr_t;
@@ -572,7 +631,7 @@ R F(...) {
 ...>
 }
 
-@word_7_1@
+@word_8_1@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, uw_object_hdr_t;
@@ -592,7 +651,7 @@ R F(...) {
 ...>
 }
 
-@word_7_2@
+@word_8_2@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, uw_object_hdr_t;
@@ -612,7 +671,7 @@ R F(...) {
 ...>
 }
 
-@word_7_3@
+@word_8_3@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, uw_object_hdr_t;
@@ -632,7 +691,7 @@ R F(...) {
 ...>
 }
 
-@word_8_0@
+@word_9_0@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, uw_object_hdr_t;
@@ -655,7 +714,7 @@ R F(...) {
 ...>
 }
 
-@word_8_1@
+@word_9_1@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, uw_object_hdr_t;
@@ -675,7 +734,7 @@ R F(...) {
 ...>
 }
 
-@word_8_2@
+@word_9_2@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, uw_object_hdr_t;
@@ -695,7 +754,7 @@ R F(...) {
 ...>
 }
 
-@word_8_3@
+@word_9_3@
 type R;
 identifier F =~ "^\(resolve_weapon_hit_skill_check\)$";
 typedef ushort, uw_object_hdr_t;
@@ -715,7 +774,7 @@ R F(...) {
 ...>
 }
 
-@word_9_0@
+@word_10_0@
 type R;
 identifier F =~ "^\(apply_melee_damage\)$";
 typedef ushort, uw_object_hdr_t;
@@ -741,7 +800,7 @@ R F(...) {
 ...>
 }
 
-@word_9_1@
+@word_10_1@
 type R;
 identifier F =~ "^\(apply_melee_damage\)$";
 typedef ushort, uw_object_hdr_t;
@@ -761,7 +820,7 @@ R F(...) {
 ...>
 }
 
-@word_9_2@
+@word_10_2@
 type R;
 identifier F =~ "^\(apply_melee_damage\)$";
 typedef ushort, uw_object_hdr_t;
@@ -781,7 +840,7 @@ R F(...) {
 ...>
 }
 
-@word_9_3@
+@word_10_3@
 type R;
 identifier F =~ "^\(apply_melee_damage\)$";
 typedef ushort, uw_object_hdr_t;
@@ -801,7 +860,7 @@ R F(...) {
 ...>
 }
 
-@word_10_0@
+@word_11_0@
 type R;
 identifier F =~ "^\(play_weapon_impact_sound\)$";
 typedef ushort, uw_object_hdr_t;
@@ -824,7 +883,7 @@ R F(...) {
 ...>
 }
 
-@word_10_1@
+@word_11_1@
 type R;
 identifier F =~ "^\(play_weapon_impact_sound\)$";
 typedef ushort, uw_object_hdr_t;
@@ -844,7 +903,7 @@ R F(...) {
 ...>
 }
 
-@word_10_2@
+@word_11_2@
 type R;
 identifier F =~ "^\(play_weapon_impact_sound\)$";
 typedef ushort, uw_object_hdr_t;
@@ -864,7 +923,7 @@ R F(...) {
 ...>
 }
 
-@word_10_3@
+@word_11_3@
 type R;
 identifier F =~ "^\(play_weapon_impact_sound\)$";
 typedef ushort, uw_object_hdr_t;
@@ -884,7 +943,7 @@ R F(...) {
 ...>
 }
 
-@word_11_0@
+@word_12_0@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, uw_object_hdr_t;
@@ -907,7 +966,7 @@ R F(...) {
 ...>
 }
 
-@word_11_1@
+@word_12_1@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, uw_object_hdr_t;
@@ -927,7 +986,7 @@ R F(...) {
 ...>
 }
 
-@word_11_2@
+@word_12_2@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, uw_object_hdr_t;
@@ -947,7 +1006,7 @@ R F(...) {
 ...>
 }
 
-@word_11_3@
+@word_12_3@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, uw_object_hdr_t;
@@ -967,7 +1026,7 @@ R F(...) {
 ...>
 }
 
-@word_12_0@
+@word_13_0@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, uw_object_hdr_t;
@@ -990,7 +1049,7 @@ R F(...) {
 ...>
 }
 
-@word_12_1@
+@word_13_1@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1010,7 +1069,7 @@ R F(...) {
 ...>
 }
 
-@word_12_2@
+@word_13_2@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1030,7 +1089,7 @@ R F(...) {
 ...>
 }
 
-@word_12_3@
+@word_13_3@
 type R;
 identifier F =~ "^\(compute_attack_relative_facing\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1050,7 +1109,7 @@ R F(...) {
 ...>
 }
 
-@word_13_0@
+@word_14_0@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1076,7 +1135,7 @@ R F(...) {
 ...>
 }
 
-@word_13_1@
+@word_14_1@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1096,7 +1155,7 @@ R F(...) {
 ...>
 }
 
-@word_13_2@
+@word_14_2@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1116,7 +1175,7 @@ R F(...) {
 ...>
 }
 
-@word_13_3@
+@word_14_3@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1136,7 +1195,7 @@ R F(...) {
 ...>
 }
 
-@word_14_0@
+@word_15_0@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1162,7 +1221,7 @@ R F(...) {
 ...>
 }
 
-@word_14_1@
+@word_15_1@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1182,7 +1241,7 @@ R F(...) {
 ...>
 }
 
-@word_14_2@
+@word_15_2@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1202,7 +1261,7 @@ R F(...) {
 ...>
 }
 
-@word_14_3@
+@word_15_3@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1222,7 +1281,7 @@ R F(...) {
 ...>
 }
 
-@word_15_0@
+@word_16_0@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1248,7 +1307,7 @@ R F(...) {
 ...>
 }
 
-@word_15_1@
+@word_16_1@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1268,7 +1327,7 @@ R F(...) {
 ...>
 }
 
-@word_15_2@
+@word_16_2@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1288,7 +1347,7 @@ R F(...) {
 ...>
 }
 
-@word_15_3@
+@word_16_3@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1308,7 +1367,7 @@ R F(...) {
 ...>
 }
 
-@word_16_0@
+@word_17_0@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1334,7 +1393,7 @@ R F(...) {
 ...>
 }
 
-@word_16_1@
+@word_17_1@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1354,7 +1413,7 @@ R F(...) {
 ...>
 }
 
-@word_16_2@
+@word_17_2@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1374,7 +1433,7 @@ R F(...) {
 ...>
 }
 
-@word_16_3@
+@word_17_3@
 type R;
 identifier F =~ "^\(process_melee_attack_swing\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1394,7 +1453,7 @@ R F(...) {
 ...>
 }
 
-@word_17_0@
+@word_18_0@
 type R;
 identifier F =~ "^\(resolve_collision_candidate_interaction\|resolve_equipped_weapon_attack\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1420,7 +1479,7 @@ R F(...) {
 ...>
 }
 
-@word_17_1@
+@word_18_1@
 type R;
 identifier F =~ "^\(resolve_collision_candidate_interaction\|resolve_equipped_weapon_attack\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1440,7 +1499,7 @@ R F(...) {
 ...>
 }
 
-@word_17_2@
+@word_18_2@
 type R;
 identifier F =~ "^\(resolve_collision_candidate_interaction\|resolve_equipped_weapon_attack\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1460,7 +1519,7 @@ R F(...) {
 ...>
 }
 
-@word_17_3@
+@word_18_3@
 type R;
 identifier F =~ "^\(resolve_collision_candidate_interaction\|resolve_equipped_weapon_attack\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1480,7 +1539,7 @@ R F(...) {
 ...>
 }
 
-@word_18_0@
+@word_19_0@
 type R;
 identifier F =~ "^\(apply_direct_object_hit\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1506,7 +1565,7 @@ R F(...) {
 ...>
 }
 
-@word_18_1@
+@word_19_1@
 type R;
 identifier F =~ "^\(apply_direct_object_hit\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1526,7 +1585,7 @@ R F(...) {
 ...>
 }
 
-@word_18_2@
+@word_19_2@
 type R;
 identifier F =~ "^\(apply_direct_object_hit\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1546,7 +1605,7 @@ R F(...) {
 ...>
 }
 
-@word_18_3@
+@word_19_3@
 type R;
 identifier F =~ "^\(apply_direct_object_hit\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1566,7 +1625,7 @@ R F(...) {
 ...>
 }
 
-@word_19_0@
+@word_20_0@
 type R;
 identifier F =~ "^\(check_npc_target_alignment\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1589,7 +1648,7 @@ R F(...) {
 ...>
 }
 
-@word_19_1@
+@word_20_1@
 type R;
 identifier F =~ "^\(check_npc_target_alignment\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1609,7 +1668,7 @@ R F(...) {
 ...>
 }
 
-@word_19_2@
+@word_20_2@
 type R;
 identifier F =~ "^\(check_npc_target_alignment\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1629,7 +1688,7 @@ R F(...) {
 ...>
 }
 
-@word_19_3@
+@word_20_3@
 type R;
 identifier F =~ "^\(check_npc_target_alignment\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1649,7 +1708,7 @@ R F(...) {
 ...>
 }
 
-@word_20_0@
+@word_21_0@
 type R;
 identifier F =~ "^\(apply_object_durability_damage\|resolve_damage_type_resistance\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1675,7 +1734,7 @@ R F(...) {
 ...>
 }
 
-@word_20_1@
+@word_21_1@
 type R;
 identifier F =~ "^\(apply_object_durability_damage\|resolve_damage_type_resistance\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1695,7 +1754,7 @@ R F(...) {
 ...>
 }
 
-@word_20_2@
+@word_21_2@
 type R;
 identifier F =~ "^\(apply_object_durability_damage\|resolve_damage_type_resistance\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1715,7 +1774,7 @@ R F(...) {
 ...>
 }
 
-@word_20_3@
+@word_21_3@
 type R;
 identifier F =~ "^\(apply_object_durability_damage\|resolve_damage_type_resistance\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1735,7 +1794,7 @@ R F(...) {
 ...>
 }
 
-@word_21_0@
+@word_22_0@
 type R;
 identifier F =~ "^\(apply_object_durability_damage\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1755,7 +1814,7 @@ R F(...) {
 ...>
 }
 
-@word_21_1@
+@word_22_1@
 type R;
 identifier F =~ "^\(apply_object_durability_damage\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1772,7 +1831,7 @@ R F(...) {
 ...>
 }
 
-@word_21_2@
+@word_22_2@
 type R;
 identifier F =~ "^\(apply_object_durability_damage\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1789,7 +1848,7 @@ R F(...) {
 ...>
 }
 
-@word_21_3@
+@word_22_3@
 type R;
 identifier F =~ "^\(apply_object_durability_damage\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1806,7 +1865,7 @@ R F(...) {
 ...>
 }
 
-@word_22_0@
+@word_23_0@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1826,7 +1885,7 @@ R F(...) {
 ...>
 }
 
-@word_22_1@
+@word_23_1@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1843,7 +1902,7 @@ R F(...) {
 ...>
 }
 
-@word_22_2@
+@word_23_2@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1860,7 +1919,7 @@ R F(...) {
 ...>
 }
 
-@word_22_3@
+@word_23_3@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1877,7 +1936,7 @@ R F(...) {
 ...>
 }
 
-@word_23_0@
+@word_24_0@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1900,7 +1959,7 @@ R F(...) {
 ...>
 }
 
-@word_23_1@
+@word_24_1@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1920,7 +1979,7 @@ R F(...) {
 ...>
 }
 
-@word_23_2@
+@word_24_2@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, uw_object_hdr_t;
@@ -1940,7 +1999,7 @@ R F(...) {
 ...>
 }
 
-@word_23_3@
+@word_24_3@
 type R;
 identifier F =~ "^\(damage_equipped_item_in_slot\)$";
 typedef ushort, uw_object_hdr_t;
